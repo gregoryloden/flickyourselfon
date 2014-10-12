@@ -1,0 +1,107 @@
+NAME:
+	Flick Yourself On
+
+MECHANICS:
+	have a powered boot (left foot)
+	kick switches (small radio towers)
+		big tower in the middle
+		small towers receive signals from the big tower
+		small towers power rails that raise up
+	only one switch per frequency can be active at a time
+		rails can receive from multiple receivers per frequency
+	rails can become permanently active
+	kick to climb up ledges
+	rails in the level
+		final level brings you back to the beginning
+		rail you have to ride on with your boot
+		boot is finally powered up
+		you control the AI of the boot to get to the end level
+			(you are actually both the boot and the human repowering you)
+			(or maybe you're both and your boot fell off)
+			(it's up to the player's interpretation)
+		fall off if you haven't fully powered it on
+		fall off animations
+		respawn blinking where you were
+		rail winds through the level
+		4 levels each unlock a direction to cross rails
+		4 different style frequencies to get
+			1: square- green
+			2: triangle- blue
+			3: saw- red
+			4: sine- white
+
+CONTROLS:
+	controls can be changed in the pause menu
+	move in 4 directions
+	pause
+	kick/hop on rail
+	ESC: pause
+
+SCREEN SIZE:
+	200 x 150 game pixels
+	pixel size changeable
+
+LEVELS:
+	1: bottom left
+	2: top left
+	3: top right
+	4: bottom right
+
+ART NEEDED:
+	character- all in each of 4 directions:
+		without boot- 3 frames
+			idle
+			left foot
+			right foot
+		with boot- 5 frames
+			idle
+			left foot
+			right foot
+			kicking bent
+			kicking straight
+		balancing- 1 frame
+	character- 2 frames from front
+		kicking bent no boot
+		foot down in boot
+	big radio tower- 5 frames
+		idle
+		one wave small
+		one wave medium
+		two waves small and big
+		one wave big
+	small radio receiver- 2 frames
+		idle
+		radio frequency
+	overall map- 1 big frame
+	rail- 6 frames
+		up/down
+		left/right
+		up/right
+		up/left
+		down/right
+		down/left
+	wiring- 6 frames
+		up/down
+		left/right
+		up/right
+		up/left
+		down/right
+		down/left
+
+----------------------------------------------------------------
+puzzle game
+
+top down
+
+have to power things to do ????
+	platforms raise, except when missing a signal
+	bridges need a signal
+	different frequencies disable things
+	some things need a certain combination of frequencies
+	frequencies are color coded
+
+switches turn on things
+	switches are small radio towers that have lost function
+
+no intense timing (but maybe some timing?)
+	rail mechanic will require timing
