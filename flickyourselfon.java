@@ -30,11 +30,12 @@ public class flickyourselfon extends JPanel implements MouseListener, KeyListene
 	public static final int BASE_HEIGHT = 149;
 	public static final int SPRITE_WIDTH = 9;
 	public static final int SPRITE_HEIGHT = 19;
-	public static final int SPRITE_FRAMES = 1;
+	public static final int SPRITE_FRAMES = 3;
 	public static final int TILE_SIZE = 6;
 	public static final int MAP_HEIGHTS = 8; // height = blue / 32
 	public static final int MAP_TILES = 32; // tile = green / 8
 	public static final int FPS = 60;
+	public static final int WALK_FRAMES = 15;
 	public static final double HALF_SQRT2 = Math.sqrt(2) * 0.5;
 	public static final double SPEED = 0.625;
 	public static final double DIAGONAL_SPEED = SPEED * HALF_SQRT2;
@@ -49,6 +50,7 @@ public class flickyourselfon extends JPanel implements MouseListener, KeyListene
 	public BufferedImage[][] playerSprites = null;
 	public BufferedImage[] currentPlayerSprites = null;
 	public int facing = 3;
+	public int walkFrame = 0;
 	public int mapWidth = 0;
 	public int mapHeight = 0;
 	public boolean painting = false;
@@ -127,7 +129,7 @@ setBackground(Color.BLACK);
 		}
 	}
 	////////////////////////////////Main loop////////////////////////////////
-	public void begin() {
+	public void begin() throws Exception {
 		long now = System.currentTimeMillis();
 		int next = 1;
 		while (true) {
@@ -148,7 +150,9 @@ super.paintComponent(g);
 		Graphics2D g2 = (Graphics2D)(g);
 		g2.transform(AffineTransform.getScaleInstance(pixelWidth, pixelHeight));
 		drawFloor(g);
-		g.drawImage(currentPlayerSprites[0], (BASE_WIDTH - SPRITE_WIDTH) / 2, (BASE_HEIGHT - SPRITE_HEIGHT) / 2, null);
+		int spriteFrame = walkFrame / WALK_FRAMES % 4;
+		g.drawImage(currentPlayerSprites[spriteFrame < 2 ? spriteFrame : (spriteFrame - 2) << 1],
+			(BASE_WIDTH - SPRITE_WIDTH) / 2, (BASE_HEIGHT - SPRITE_HEIGHT) / 2, null);
 		g.setColor(Color.WHITE);
 		g.setFont(new Font("Monospace", Font.BOLD, 8));
 		g.drawString("W: " + String.format("%.3f", pixelWidth), 30, 30);
@@ -192,6 +196,11 @@ super.paintComponent(g);
 			currentPlayerSprites = playerSprites[newFacing];
 			facing = newFacing;
 		}
+		//update the animation frame
+		if ((vertKey | horizKey) != 0)
+			walkFrame += 1;
+		else
+			walkFrame = 0;
 	}
 	////////////////////////////////Input////////////////////////////////
 	public void keyPressed(KeyEvent evt) {
