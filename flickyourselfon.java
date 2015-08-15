@@ -34,7 +34,7 @@ public class flickyourselfon extends JPanel implements MouseListener, MouseMotio
 	public static final int SPRITE_FRAMES = 3;
 	public static final int TILE_SIZE = 6;
 	public static final int MAP_HEIGHTS = 16; // height = blue / 16
-	public static final int MAP_TILES = 32; // tile = green / 8
+	public static final int MAP_TILES = 64; // tile = green / 8
 	public static final int MAP_HEIGHTS_FACTOR = 256 / MAP_HEIGHTS;
 	public static final int MAP_TILES_FACTOR = 256 / MAP_TILES;
 	public static final int FPS = 60;
@@ -42,8 +42,8 @@ public class flickyourselfon extends JPanel implements MouseListener, MouseMotio
 	public static final double HALF_SQRT2 = Math.sqrt(2) * 0.5;
 	public static final double SPEED = 0.625;
 	public static final double DIAGONAL_SPEED = SPEED * HALF_SQRT2;
-	public static final double STARTING_PLAYER_X = 198;
-	public static final double STARTING_PLAYER_Y = 166;
+	public static final double STARTING_PLAYER_X = 198.0;
+	public static final double STARTING_PLAYER_Y = 166.0;
 	public static File playerImageFile = new File("images/player.png");
 	public static File tilesImageFile = new File("images/tiles.png");
 	public static File floorImageFile = new File("images/floor.png");
@@ -71,8 +71,8 @@ public class flickyourselfon extends JPanel implements MouseListener, MouseMotio
 	public int mapHeight = 0;
 	public boolean painting = false;
 	//game state
-	public double px = 0.0;
-	public double py = 0.0;
+	public double px = STARTING_PLAYER_X;
+	public double py = STARTING_PLAYER_Y;
 	public int vertKey = 0;
 	public int horizKey = 0;
 	public boolean pressedVertLast = true;
@@ -140,15 +140,12 @@ else if (args[i].equals("-dothing")) {
 	int[] rgbs = image.getRGB(0, 0, image.getWidth(), image.getHeight(), null, 0, image.getWidth());
 	for (int j = 0; j < rgbs.length; j++) {
 		int pixel = rgbs[j];
-		int green = ((pixel >> 8) & 255) / MAP_TILES_FACTOR;
+		int tilenum = ((pixel >> 8) & 255) / MAP_TILES_FACTOR;
 		if (pixel != 0) {
-			if (green == 0)
-				green = (int)(Math.random() * 4);
-			else if (green >= 1 && green <= 5)
-				green += 3;
-			else if (green >= 6)
-				green += 24;
-			rgbs[j] = (pixel & 0xFFFF00FF) | (((green + 1) * MAP_TILES_FACTOR - 1) << 8);
+//VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
+	tilenum = (tilenum - 1) / 2;
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+			rgbs[j] = (pixel & 0xFFFF00FF) | (((tilenum + 1) * MAP_TILES_FACTOR - 1) << 8);
 		}
 	}
 	image.setRGB(0, 0, image.getWidth(), image.getHeight(), rgbs, 0, image.getWidth());
@@ -244,6 +241,11 @@ setBackground(Color.BLACK);
 		//setup game state
 		px = STARTING_PLAYER_X;
 		py = STARTING_PLAYER_Y;
+		facing = 3;
+		vertKey = 0;
+		horizKey = 0;
+		pressedVertLast = true;
+		bootKeyPressed = false;
 	}
 	////////////////////////////////Draw////////////////////////////////
 	public void paintComponent(Graphics g) {
@@ -357,45 +359,43 @@ super.paintComponent(g);
 			}
 			//save button
 			g.setColor(editorSaveRed);
-			g.fillRect(width + 20, height + 20, 150, 60);
-			g.setColor(editorBlue);
-			g.drawRect(width + 22, height + 22, 145, 55);
-			g.drawRect(width + 23, height + 23, 143, 53);
+			g.drawRect(20, height + 20, 149, 59);
+			g.drawRect(21, height + 21, 147, 57);
+			g.fillRect(24, height + 24, 142, 52);
 			g.setColor(editorSaveGreen);
 			g.setFont(saveFont);
-			g.drawString("Save", width + 43, height + 63);
+			g.drawString("Save", 43, height + 63);
 			g.setColor(Color.WHITE);
-			g.fillRect(width + 181, height + 31, 38, 38);
+			g.fillRect(181, height + 31, 38, 38);
 			g.setColor(editorGray);
-			g.drawRect(width + 180, height + 30, 39, 39);
+			g.drawRect(180, height + 30, 39, 39);
 			if (saveSuccess == 1) {
 				g.setColor(editorSaveSuccessGreen);
-				g.drawString("\u2713", width + 182, height + 65);
+				g.drawString("\u2713", 182, height + 65);
 			} else if (saveSuccess == -1) {
 				g.setColor(editorSaveSuccessRed);
-				g.drawString("\u2715", width + 179, height + 65);
+				g.drawString("\u2715", 179, height + 65);
 			}
 			//export map button
 			g.setColor(editorExportGreen);
-			g.fillRect(width + 20, height - 50, 150, 50);
-			g.setColor(editorBlue);
-			g.drawRect(width + 22, height - 48, 145, 45);
-			g.drawRect(width + 23, height - 47, 143, 43);
+			g.drawRect(240, height + 20, 149, 59);
+			g.drawRect(241, height + 21, 147, 57);
+			g.fillRect(244, height + 24, 142, 52);
 			g.setColor(editorExportRed);
 			g.setFont(exportFont);
-			g.drawString("Export Map", width + 30, height - 19);
+			g.drawString("Export Map", 250, height + 56);
 			g.setColor(Color.WHITE);
-			g.fillRect(width + 181, height - 44, 38, 38);
+			g.fillRect(401, height + 31, 38, 38);
 			g.setColor(editorGray);
-			g.drawRect(width + 180, height - 45, 39, 39);
+			g.drawRect(400, height + 30, 39, 39);
 			if (exportSuccess == 1) {
 				g.setFont(saveFont);
 				g.setColor(editorSaveSuccessGreen);
-				g.drawString("\u2713", width + 182, height - 10);
+				g.drawString("\u2713", 402, height + 65);
 			} else if (exportSuccess == -1) {
 				g.setFont(saveFont);
 				g.setColor(editorSaveSuccessRed);
-				g.drawString("\u2715", width + 179, height - 10);
+				g.drawString("\u2715", 399, height + 65);
 			}
 		}
 		painting = false;
@@ -476,6 +476,12 @@ super.paintComponent(g);
 			pressedVertLast = false;
 		} else if (code == bootKey)
 			bootKeyPressed = true;
+		else if (code == KeyEvent.VK_R) {
+			try {
+				resetGame();
+			} catch(Exception e) {
+			}
+		}
 	}
 	public void keyReleased(KeyEvent evt) {
 		int code = evt.getKeyCode();
@@ -537,9 +543,10 @@ super.paintComponent(g);
 						}
 					}
 					saveSuccess = 0;
+					exportSuccess = 0;
 				}
 			//save button
-			} else if (mouseX >= width + 20 && mouseX < width + 170 && mouseY >= height + 20 && mouseY < height + 80) {
+			} else if (mouseX >= 20 && mouseX < 170 && mouseY >= height + 20 && mouseY < height + 80) {
 				if (saveSuccess == 0) {
 					try {
 						floorImage = new BufferedImage(mapWidth, mapHeight, BufferedImage.TYPE_INT_ARGB);
@@ -561,7 +568,7 @@ super.paintComponent(g);
 					}
 				}
 			//export button
-			} else if (mouseX >= width + 20 && mouseX < width + 170 && mouseY >= height - 50 && mouseY < height) {
+			} else if (mouseX >= 240 && mouseX < 390 && mouseY >= height + 20 && mouseY < height + 80) {
 				if (exportSuccess == 0) {
 					try {
 						BufferedImage mapImage = new BufferedImage(
@@ -674,6 +681,7 @@ super.paintComponent(g);
 		pixelWidth = (double)(width) / BASE_WIDTH;
 		pixelHeight = (double)(height) / BASE_HEIGHT;
 	}
+	////////////////////////////////Unused////////////////////////////////
 	public void mouseClicked(MouseEvent evt) {}
 	public void mouseReleased(MouseEvent evt) {}
 	public void mouseEntered(MouseEvent evt) {}
