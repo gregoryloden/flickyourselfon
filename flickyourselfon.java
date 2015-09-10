@@ -125,7 +125,7 @@ public class flickyourselfon extends JPanel implements MouseListener, MouseMotio
 	public Font exportFont = new Font("Monospaced", Font.BOLD, 22);
 	public Font noiseFont = new Font("Monospaced", Font.BOLD, 16);
 	public Font noiseChanceFont = new Font("Monospaced", Font.BOLD, 12);
-	public int saveSuccess = 0;
+	public int saveSuccess = 1;
 	public int exportSuccess = 0;
 	public static void main(String[] args) {
 		try {
@@ -143,7 +143,8 @@ else if (args[i].equals("-dothing")) {
 		int tilenum = ((pixel >> 8) & 255) / MAP_TILES_FACTOR;
 		if (pixel != 0) {
 //VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
-	tilenum = (tilenum - 1) / 2;
+if (tilenum >= 19 && tilenum < 27)
+	tilenum += 10;
 //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 			rgbs[j] = (pixel & 0xFFFF00FF) | (((tilenum + 1) * MAP_TILES_FACTOR - 1) << 8);
 		}
@@ -246,6 +247,8 @@ setBackground(Color.BLACK);
 		horizKey = 0;
 		pressedVertLast = true;
 		bootKeyPressed = false;
+		saveSuccess = 1;
+		exportSuccess = 0;
 	}
 	////////////////////////////////Draw////////////////////////////////
 	public void paintComponent(Graphics g) {
@@ -262,11 +265,12 @@ super.paintComponent(g);
 //g.drawString("W: " + String.format("%.3f", pixelWidth), 30, 30);
 //g.drawString("H: " + String.format("%.3f", pixelHeight), 30, 40);
 		if (editor) {
-			//hover tint
-			if (selectingTile || selectingHeight || (noisyTileSelection && noiseTileCount > 0)) {
+			//hover box
+			if (noisyTileSelection ? (noiseTileCount > 0) : (selectingTile || selectingHeight)) {
 				int dx = (int)(BASE_WIDTH / 2 - px) + (mapX - selectedBrushSize) * TILE_SIZE;
 				int dy = (int)(BASE_HEIGHT / 2 - py) + (mapY - selectedBrushSize) * TILE_SIZE;
 				int drawSize = ((selectedBrushSize << 1) + 1) * TILE_SIZE;
+				g2.translate(0.5, 0.5);
 				g.setColor(Color.BLACK);
 				g.drawRect(dx - 1, dy - 1, drawSize + 1, drawSize + 1);
 				g.setColor(Color.WHITE);
@@ -506,11 +510,7 @@ super.paintComponent(g);
 		if (editor) {
 			//paint a tile
 			if (mouseX < width && mouseY < height) {
-				if (selectingTile || selectingHeight || (noisyTileSelection && noiseTileCount > 0)) {
-					produceMapCoordinates(mouseX, mouseY);
-					int maxX = Math.min(mapX + selectedBrushSize, mapWidth - 1);
-					int maxY = Math.min(mapY + selectedBrushSize, mapHeight - 1);
-					int minX = Math.max(mapX - selectedBrushSize, 0);
+				if (noisyTileSelection ? (noiseTileCount > 0) : (selectingTile || selectingHeight)) {
 					int[] randIndices = null;
 					int randCount = 0;
 					//prebuild a list for direct array access during the random index selection
@@ -527,6 +527,10 @@ super.paintComponent(g);
 								randIndices[chance] = tileIndex;
 						}
 					}
+					produceMapCoordinates(mouseX, mouseY);
+					int maxX = Math.min(mapX + selectedBrushSize, mapWidth - 1);
+					int maxY = Math.min(mapY + selectedBrushSize, mapHeight - 1);
+					int minX = Math.max(mapX - selectedBrushSize, 0);
 					for (int y = Math.max(0, mapY - selectedBrushSize); y <= maxY; y++) {
 						BufferedImage[] tilesY = tiles[y];
 						int[] tileIndicesY = tileIndices[y];
