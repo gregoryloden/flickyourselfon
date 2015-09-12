@@ -34,16 +34,22 @@ public class flickyourselfon extends JPanel implements MouseListener, MouseMotio
 	public static final int SPRITE_FRAMES = 3;
 	public static final int TILE_SIZE = 6;
 	public static final int MAP_HEIGHTS = 16; // height = blue / 16
-	public static final int MAP_TILES = 64; // tile = green / 8
+	public static final int MAP_TILES = 64; // tile = green / 4
 	public static final int MAP_HEIGHTS_FACTOR = 256 / MAP_HEIGHTS;
 	public static final int MAP_TILES_FACTOR = 256 / MAP_TILES;
 	public static final int FPS = 60;
 	public static final int WALK_FRAMES = 15;
+	public static final int STARTING_PLAYER_Z = 0;
 	public static final double HALF_SQRT2 = Math.sqrt(2) * 0.5;
 	public static final double SPEED = 0.625;
 	public static final double DIAGONAL_SPEED = SPEED * HALF_SQRT2;
-	public static final double STARTING_PLAYER_X = 198.0;
-	public static final double STARTING_PLAYER_Y = 166.0;
+	public static final double STARTING_PLAYER_X = 198.5;
+	public static final double STARTING_PLAYER_Y = 166.5;
+	public static final double SMALL_DISTANCE = 1.0 / 65536.0;
+	public static final double BOUNDING_BOX_RIGHT_OFFSET = SPRITE_WIDTH * 0.5;
+	public static final double BOUNDING_BOX_LEFT_OFFSET = -BOUNDING_BOX_RIGHT_OFFSET;
+	public static final double BOUNDING_BOX_TOP_OFFSET = 5.5;
+	public static final double BOUNDING_BOX_BOTTOM_OFFSET = 9.5;
 	public static File playerImageFile = new File("images/player.png");
 	public static File tilesImageFile = new File("images/tiles.png");
 	public static File floorImageFile = new File("images/floor.png");
@@ -73,6 +79,7 @@ public class flickyourselfon extends JPanel implements MouseListener, MouseMotio
 	//game state
 	public double px = STARTING_PLAYER_X;
 	public double py = STARTING_PLAYER_Y;
+	public double pz = STARTING_PLAYER_Z;
 	public int vertKey = 0;
 	public int horizKey = 0;
 	public boolean pressedVertLast = true;
@@ -229,19 +236,17 @@ setBackground(Color.BLACK);
 			int[] heightsY = heights[y];
 			for (int x = 0; x < mapWidth; x++) {
 				int pixel = floorImage.getRGB(x, y);
-				if (pixel == 0) {
-					heightsY[x] = -1;
+				if ((heightsY[x] = (pixel & 255) / MAP_HEIGHTS_FACTOR) == MAP_HEIGHTS - 1) {
 					tilesY[x] = null;
 					tileIndicesY[x] = -1;
-				} else {
-					heightsY[x] = (pixel & 255) / MAP_HEIGHTS_FACTOR;
+				} else
 					tilesY[x] = tileList[tileIndicesY[x] = ((pixel >> 8) & 255) / MAP_TILES_FACTOR];
-				}
 			}
 		}
 		//setup game state
 		px = STARTING_PLAYER_X;
 		py = STARTING_PLAYER_Y;
+		pz = STARTING_PLAYER_Z;
 		facing = 3;
 		vertKey = 0;
 		horizKey = 0;
@@ -260,6 +265,9 @@ super.paintComponent(g);
 		int spriteFrame = walkFrame / WALK_FRAMES % 4;
 		g.drawImage(currentPlayerSprites[spriteFrame < 2 ? spriteFrame : (spriteFrame - 2) << 1],
 			(BASE_WIDTH - SPRITE_WIDTH) / 2, (BASE_HEIGHT - SPRITE_HEIGHT) / 2, null);
+		//bounding box
+		// g.setColor(new Color(255, 255, 255, 192));
+		// g.fillRect((BASE_WIDTH - SPRITE_WIDTH) / 2, BASE_HEIGHT / 2 + 6, SPRITE_WIDTH, 4);
 //g.setColor(Color.WHITE);
 //g.setFont(new Font("Dialog", Font.BOLD, 8));
 //g.drawString("W: " + String.format("%.3f", pixelWidth), 30, 30);
@@ -405,8 +413,8 @@ super.paintComponent(g);
 		painting = false;
 	}
 	public void drawFloor(Graphics g) {
-		int addX = (int)(BASE_WIDTH / 2 - px);
-		int addY = (int)(BASE_HEIGHT / 2 - py);
+		int addX = BASE_WIDTH / 2 - (int)(px);
+		int addY = BASE_HEIGHT / 2 - (int)(py);
 		int tileMinY = Math.max(-addY / TILE_SIZE, 0);
 		int tileMaxY = Math.min((BASE_HEIGHT - addY - 1) / TILE_SIZE + 1, mapHeight);
 		int tileMinX = Math.max(-addX / TILE_SIZE, 0);
@@ -453,6 +461,85 @@ super.paintComponent(g);
 				newFacing = 3;
 			py += dist;
 		}
+		// collide with walls and off-map area
+		if (!editor) {
+			int lowmapx = (int)(px + BOUNDING_BOX_LEFT_OFFSET) / TILE_SIZE;
+			int highmapx = (int)(px + BOUNDING_BOX_RIGHT_OFFSET) / TILE_SIZE;
+			int lowmapy = (int)(py + BOUNDING_BOX_TOP_OFFSET) / TILE_SIZE;
+			int highmapy = (int)(py + BOUNDING_BOX_BOTTOM_OFFSET) / TILE_SIZE;
+			int chosenx,
+				choseny,
+				iterlowx,
+				iterhighx,
+				iterlowy,
+				iterhighy;
+			boolean xside = false;
+			boolean yside = false;
+			if (horizKey == -1) {
+				chosenx = lowmapx;
+				iterlowx = lowmapx + 1;
+				iterhighx = highmapx;
+			} else {
+				chosenx = highmapx;
+				iterlowx = lowmapx;
+				iterhighx = highmapx - 1;
+			}
+			if (vertKey == -1) {
+				choseny = lowmapy;
+				iterlowy = lowmapy + 1;
+				iterhighy = highmapy;
+			} else {
+				choseny = highmapy;
+				iterlowy = lowmapy;
+				iterhighy = highmapy - 1;
+			}
+			//go through and check to see if any of the (possibly) new tiles are walls, except the corner
+			for (mapY = iterlowy; mapY <= iterhighy; mapY++) {
+				if (heights[mapY][chosenx] != pz) {
+					xside = true;
+					break;
+				}
+			}
+			for (mapX = iterlowx; mapX <= iterhighx; mapX++) {
+				if (heights[choseny][mapX] != pz) {
+					yside = true;
+					break;
+				}
+			}
+			//if we haven't hit any of the side walls, we need to check the corner
+			if (!xside && !yside && heights[choseny][chosenx] != pz) {
+				if (horizKey == 0)
+					yside = true;
+				else if (vertKey == 0)
+					xside = true;
+				//compare the x-diff to the y-diff: the shorter one gets the wall designation
+				else if ((
+					(horizKey == -1) ?
+						((lowmapx + 1) * TILE_SIZE - px - BOUNDING_BOX_LEFT_OFFSET) :
+						(px + BOUNDING_BOX_RIGHT_OFFSET - highmapx * TILE_SIZE)
+					) < (
+					(vertKey == -1) ?
+						((lowmapy + 1) * TILE_SIZE - py - BOUNDING_BOX_TOP_OFFSET) :
+						(py + BOUNDING_BOX_BOTTOM_OFFSET - highmapy * TILE_SIZE)
+				))
+					xside = true;
+				else
+					yside = true;
+			}
+			if (xside) {
+				if (horizKey == -1)
+					px = (lowmapx + 1) * TILE_SIZE + SMALL_DISTANCE - BOUNDING_BOX_LEFT_OFFSET;
+				else
+					px = highmapx * TILE_SIZE - SMALL_DISTANCE - BOUNDING_BOX_RIGHT_OFFSET;
+			}
+			if (yside) {
+				if (vertKey == -1)
+					py = (lowmapy + 1) * TILE_SIZE + SMALL_DISTANCE - BOUNDING_BOX_TOP_OFFSET;
+				else
+					py = highmapy * TILE_SIZE - SMALL_DISTANCE - BOUNDING_BOX_BOTTOM_OFFSET;
+			}
+		}
+		// update the facing direction
 		if (newFacing != -1) {
 			currentPlayerSprites = playerSprites[newFacing];
 			facing = newFacing;
