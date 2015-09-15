@@ -31,31 +31,36 @@ public class flickyourselfon extends JPanel implements MouseListener, MouseMotio
 	public static final int BASE_HEIGHT = 149;
 	public static final int SPRITE_WIDTH = 9;
 	public static final int SPRITE_HEIGHT = 19;
-	public static final int SPRITE_FRAMES = 3;
+	public static final int SPRITE_FRAMES = 9;
 	public static final int TILE_SIZE = 6;
 	public static final int MAP_HEIGHTS = 16; // height = blue / 16
 	public static final int MAP_TILES = 64; // tile = green / 4
 	public static final int MAP_HEIGHTS_FACTOR = 256 / MAP_HEIGHTS;
 	public static final int MAP_TILES_FACTOR = 256 / MAP_TILES;
 	public static final int FPS = 60;
-	public static final int WALK_FRAMES = 15;
+	public static final int WALKING_FRAMES = 15;
+	public static final int KICKING_FRAMES = 20;
 	public static final int STARTING_PLAYER_Z = 0;
+	public static final int[] ANIMATION_NEXT_FRAME_INDICES =   new int[] {1, 2, 3, 0, 0, 6, 7, 8, 5, 10, 11, 5};
+	public static final int[] ANIMATION_FRAME_SPRITE_INDICES = new int[] {0, 1, 0, 2, 3, 4, 5, 4, 6,  7,  8, 7};
+	public static final int BOOT_TILE = 37;
 	public static final double HALF_SQRT2 = Math.sqrt(2) * 0.5;
 	public static final double SPEED = 0.625;
 	public static final double DIAGONAL_SPEED = SPEED * HALF_SQRT2;
-	public static final double STARTING_PLAYER_X = 198.5;
-	public static final double STARTING_PLAYER_Y = 166.5;
+	public static final double STARTING_PLAYER_X = 173.5;
+	public static final double STARTING_PLAYER_Y = 160.5;
 	public static final double SMALL_DISTANCE = 1.0 / 65536.0;
 	public static final double BOUNDING_BOX_RIGHT_OFFSET = SPRITE_WIDTH * 0.5;
 	public static final double BOUNDING_BOX_LEFT_OFFSET = -BOUNDING_BOX_RIGHT_OFFSET;
-	public static final double BOUNDING_BOX_TOP_OFFSET = 5.5;
+	public static final double BOUNDING_BOX_TOP_OFFSET = 4.5;
 	public static final double BOUNDING_BOX_BOTTOM_OFFSET = 9.5;
+	public static final double BOOT_CENTER_PLAYER_Y_OFFSET = 8.0;
 	public static File playerImageFile = new File("images/player.png");
 	public static File tilesImageFile = new File("images/tiles.png");
 	public static File floorImageFile = new File("images/floor.png");
 	//function outputs
-	public static int mapX = 0;
-	public static int mapY = 0;
+	public static int mouseMapX = 0;
+	public static int mouseMapY = 0;
 	//screen setup
 	public double pixelWidth = 3.0;
 	public double pixelHeight = 3.0;
@@ -71,8 +76,12 @@ public class flickyourselfon extends JPanel implements MouseListener, MouseMotio
 	public int[][] heights = null;
 	public BufferedImage[][] playerSprites = new BufferedImage[4][SPRITE_FRAMES];
 	public BufferedImage[] currentPlayerSprites = null;
+	//0=right 1=up 2=left 3=down
 	public int facing = 3;
-	public int walkFrame = 0;
+	public int idleAnimationIndex = 0;
+	public int animationFrame = -1;
+	public int animationIndex = 0;
+	public boolean kicking = false;
 	public int mapWidth = 0;
 	public int mapHeight = 0;
 	public boolean painting = false;
@@ -83,12 +92,14 @@ public class flickyourselfon extends JPanel implements MouseListener, MouseMotio
 	public int vertKey = 0;
 	public int horizKey = 0;
 	public boolean pressedVertLast = true;
-	public boolean bootKeyPressed = false;
 	public int upKey = KeyEvent.VK_UP;
 	public int downKey = KeyEvent.VK_DOWN;
 	public int leftKey = KeyEvent.VK_LEFT;
 	public int rightKey = KeyEvent.VK_RIGHT;
 	public int bootKey = KeyEvent.VK_SPACE;
+	public boolean grabbingBoot = false;
+	public double grabbingBootVX = 0.0;
+	public double grabbingBootVY = 0.0;
 	//editor constants
 	public static final int EDITOR_MARGIN_RIGHT = 250;
 	public static final int EDITOR_MARGIN_BOTTOM = 100;
@@ -134,6 +145,7 @@ public class flickyourselfon extends JPanel implements MouseListener, MouseMotio
 	public Font noiseChanceFont = new Font("Monospaced", Font.BOLD, 12);
 	public int saveSuccess = 1;
 	public int exportSuccess = 0;
+	public boolean editorSpeeding = false;
 	public static void main(String[] args) {
 		try {
 			//initialize game
@@ -202,7 +214,7 @@ if (tilenum >= 19 && tilenum < 27)
 		addKeyListener(this);
 		addMouseListener(this);
 		addMouseMotionListener(this);
-setBackground(Color.BLACK);
+setBackground(new Color(48, 0, 48));
 	}
 	public void resetGame() throws Exception {
 		//load all sprites
@@ -251,7 +263,6 @@ setBackground(Color.BLACK);
 		vertKey = 0;
 		horizKey = 0;
 		pressedVertLast = true;
-		bootKeyPressed = false;
 		saveSuccess = 1;
 		exportSuccess = 0;
 	}
@@ -262,12 +273,12 @@ super.paintComponent(g);
 		AffineTransform oldTransform = g2.getTransform();
 		g2.transform(AffineTransform.getScaleInstance(pixelWidth, pixelHeight));
 		drawFloor(g);
-		int spriteFrame = walkFrame / WALK_FRAMES % 4;
-		g.drawImage(currentPlayerSprites[spriteFrame < 2 ? spriteFrame : (spriteFrame - 2) << 1],
+		g.drawImage(currentPlayerSprites[ANIMATION_FRAME_SPRITE_INDICES[animationIndex]],
 			(BASE_WIDTH - SPRITE_WIDTH) / 2, (BASE_HEIGHT - SPRITE_HEIGHT) / 2, null);
 		//bounding box
 		// g.setColor(new Color(255, 255, 255, 192));
-		// g.fillRect((BASE_WIDTH - SPRITE_WIDTH) / 2, BASE_HEIGHT / 2 + 6, SPRITE_WIDTH, 4);
+		// g.fillRect((int)(BASE_WIDTH / 2.0 + BOUNDING_BOX_LEFT_OFFSET), (int)(BASE_HEIGHT / 2.0 + BOUNDING_BOX_TOP_OFFSET),
+			// (int)(BOUNDING_BOX_RIGHT_OFFSET - BOUNDING_BOX_LEFT_OFFSET), (int)(BOUNDING_BOX_BOTTOM_OFFSET - BOUNDING_BOX_TOP_OFFSET));
 //g.setColor(Color.WHITE);
 //g.setFont(new Font("Dialog", Font.BOLD, 8));
 //g.drawString("W: " + String.format("%.3f", pixelWidth), 30, 30);
@@ -275,8 +286,8 @@ super.paintComponent(g);
 		if (editor) {
 			//hover box
 			if (noisyTileSelection ? (noiseTileCount > 0) : (selectingTile || selectingHeight)) {
-				int dx = (int)(BASE_WIDTH / 2 - px) + (mapX - selectedBrushSize) * TILE_SIZE;
-				int dy = (int)(BASE_HEIGHT / 2 - py) + (mapY - selectedBrushSize) * TILE_SIZE;
+				int dx = BASE_WIDTH / 2 - (int)(px) + (mouseMapX - selectedBrushSize) * TILE_SIZE;
+				int dy = BASE_HEIGHT / 2 - (int)(py) + (mouseMapY - selectedBrushSize) * TILE_SIZE;
 				int drawSize = ((selectedBrushSize << 1) + 1) * TILE_SIZE;
 				g2.translate(0.5, 0.5);
 				g.setColor(Color.BLACK);
@@ -437,106 +448,149 @@ super.paintComponent(g);
 	}
 	////////////////////////////////Update////////////////////////////////
 	public void update() {
-		//move sqrt2/2 in each direction if both directions are pressed
-		boolean bothPressed = ((vertKey & horizKey) != 0);
-		double dist = bothPressed ? DIAGONAL_SPEED : SPEED;
-		if (editor && bootKeyPressed)
-			dist *= EDITOR_SPEED_BOOST;
 		int newFacing = -1;
-		if (horizKey == 1) {
-			if (!bothPressed || !pressedVertLast)
-				newFacing = 0;
-			px += dist;
-		} else if (horizKey == -1) {
-			if (!bothPressed || !pressedVertLast)
-				newFacing = 2;
-			px -= dist;
-		}
-		if (vertKey == -1) {
-			if (!bothPressed || pressedVertLast)
-				newFacing = 1;
-			py -= dist;
-		} else if (vertKey == 1) {
-			if (!bothPressed || pressedVertLast)
-				newFacing = 3;
-			py += dist;
-		}
-		// collide with walls and off-map area
-		if (!editor) {
-			int lowmapx = (int)(px + BOUNDING_BOX_LEFT_OFFSET) / TILE_SIZE;
-			int highmapx = (int)(px + BOUNDING_BOX_RIGHT_OFFSET) / TILE_SIZE;
-			int lowmapy = (int)(py + BOUNDING_BOX_TOP_OFFSET) / TILE_SIZE;
-			int highmapy = (int)(py + BOUNDING_BOX_BOTTOM_OFFSET) / TILE_SIZE;
-			int chosenx,
-				choseny,
-				iterlowx,
-				iterhighx,
-				iterlowy,
-				iterhighy;
-			boolean xside = false;
-			boolean yside = false;
-			if (horizKey == -1) {
-				chosenx = lowmapx;
-				iterlowx = lowmapx + 1;
-				iterhighx = highmapx;
-			} else {
-				chosenx = highmapx;
-				iterlowx = lowmapx;
-				iterhighx = highmapx - 1;
+		if (kicking) {
+			//player has the boot
+			if (idleAnimationIndex == 5) {
+			//player is in the process of putting on the boot
+			} else if (grabbingBoot) {
+				px += grabbingBootVX;
+				py += grabbingBootVY;
+			//player kicked without a boot, possibly putting on the boot
+			} else if (animationFrame == -1) {
+				int lowmapx,
+					highmapx,
+					lowmapy,
+					highmapy;
+				boolean foundboot = false;
+				if ((facing & 1) == 0) {
+					lowmapy = (int)(py + BOUNDING_BOX_TOP_OFFSET) / TILE_SIZE;
+					highmapy = (int)(py + BOUNDING_BOX_BOTTOM_OFFSET) / TILE_SIZE;
+					lowmapx = (highmapx = (facing == 2 ?
+						((int)(px + BOUNDING_BOX_LEFT_OFFSET) / TILE_SIZE - 1) :
+						((int)(px + BOUNDING_BOX_RIGHT_OFFSET) / TILE_SIZE + 1)));
+				} else {
+					lowmapx = (int)(px + BOUNDING_BOX_LEFT_OFFSET) / TILE_SIZE;
+					highmapx = (int)(px + BOUNDING_BOX_RIGHT_OFFSET) / TILE_SIZE;
+					lowmapy = (highmapy = (facing == 1 ?
+						((int)(py + BOUNDING_BOX_TOP_OFFSET) / TILE_SIZE - 1) :
+						((int)(py + BOUNDING_BOX_BOTTOM_OFFSET) / TILE_SIZE + 1)));
+				}
+				for (int itermapy = lowmapy; itermapy <= highmapy; itermapy++) {
+					for (int itermapx = lowmapx; itermapx <= highmapx; itermapx++) {
+						if (tileIndices[itermapy][itermapx] == BOOT_TILE) {
+							grabbingBoot = true;
+							grabbingBootVX = ((itermapx * TILE_SIZE + 3.5) - px) / KICKING_FRAMES;
+							grabbingBootVY = ((itermapy * TILE_SIZE + 3.5) - (py + BOOT_CENTER_PLAYER_Y_OFFSET)) / KICKING_FRAMES;
+							px += grabbingBootVX;
+							py += grabbingBootVY;
+							itermapy = highmapy;
+							break;
+						}
+					}
+				}
+			}
+		} else {
+			//move sqrt2/2 in each direction if both directions are pressed
+			boolean bothPressed = ((vertKey & horizKey) != 0);
+			double dist = bothPressed ? DIAGONAL_SPEED : SPEED;
+			if (editor && editorSpeeding)
+				dist *= EDITOR_SPEED_BOOST;
+			if (horizKey == 1) {
+				if (!bothPressed || !pressedVertLast)
+					newFacing = 0;
+				px += dist;
+			} else if (horizKey == -1) {
+				if (!bothPressed || !pressedVertLast)
+					newFacing = 2;
+				px -= dist;
 			}
 			if (vertKey == -1) {
-				choseny = lowmapy;
-				iterlowy = lowmapy + 1;
-				iterhighy = highmapy;
-			} else {
-				choseny = highmapy;
-				iterlowy = lowmapy;
-				iterhighy = highmapy - 1;
+				if (!bothPressed || pressedVertLast)
+					newFacing = 1;
+				py -= dist;
+			} else if (vertKey == 1) {
+				if (!bothPressed || pressedVertLast)
+					newFacing = 3;
+				py += dist;
 			}
-			//go through and check to see if any of the (possibly) new tiles are walls, except the corner
-			for (mapY = iterlowy; mapY <= iterhighy; mapY++) {
-				if (heights[mapY][chosenx] != pz) {
-					xside = true;
-					break;
+			// collide with walls and off-map area
+			if (!editor) {
+				int lowmapx = (int)(px + BOUNDING_BOX_LEFT_OFFSET) / TILE_SIZE;
+				int highmapx = (int)(px + BOUNDING_BOX_RIGHT_OFFSET) / TILE_SIZE;
+				int lowmapy = (int)(py + BOUNDING_BOX_TOP_OFFSET) / TILE_SIZE;
+				int highmapy = (int)(py + BOUNDING_BOX_BOTTOM_OFFSET) / TILE_SIZE;
+				int chosenx,
+					choseny,
+					iterlowx,
+					iterhighx,
+					iterlowy,
+					iterhighy;
+				boolean xside = false;
+				boolean yside = false;
+				if (horizKey == -1) {
+					chosenx = lowmapx;
+					iterlowx = lowmapx + 1;
+					iterhighx = highmapx;
+				} else {
+					chosenx = highmapx;
+					iterlowx = lowmapx;
+					iterhighx = highmapx - 1;
 				}
-			}
-			for (mapX = iterlowx; mapX <= iterhighx; mapX++) {
-				if (heights[choseny][mapX] != pz) {
-					yside = true;
-					break;
+				if (vertKey == -1) {
+					choseny = lowmapy;
+					iterlowy = lowmapy + 1;
+					iterhighy = highmapy;
+				} else {
+					choseny = highmapy;
+					iterlowy = lowmapy;
+					iterhighy = highmapy - 1;
 				}
-			}
-			//if we haven't hit any of the side walls, we need to check the corner
-			if (!xside && !yside && heights[choseny][chosenx] != pz) {
-				if (horizKey == 0)
-					yside = true;
-				else if (vertKey == 0)
-					xside = true;
-				//compare the x-diff to the y-diff: the shorter one gets the wall designation
-				else if ((
-					(horizKey == -1) ?
-						((lowmapx + 1) * TILE_SIZE - px - BOUNDING_BOX_LEFT_OFFSET) :
-						(px + BOUNDING_BOX_RIGHT_OFFSET - highmapx * TILE_SIZE)
-					) < (
-					(vertKey == -1) ?
-						((lowmapy + 1) * TILE_SIZE - py - BOUNDING_BOX_TOP_OFFSET) :
-						(py + BOUNDING_BOX_BOTTOM_OFFSET - highmapy * TILE_SIZE)
-				))
-					xside = true;
-				else
-					yside = true;
-			}
-			if (xside) {
-				if (horizKey == -1)
-					px = (lowmapx + 1) * TILE_SIZE + SMALL_DISTANCE - BOUNDING_BOX_LEFT_OFFSET;
-				else
-					px = highmapx * TILE_SIZE - SMALL_DISTANCE - BOUNDING_BOX_RIGHT_OFFSET;
-			}
-			if (yside) {
-				if (vertKey == -1)
-					py = (lowmapy + 1) * TILE_SIZE + SMALL_DISTANCE - BOUNDING_BOX_TOP_OFFSET;
-				else
-					py = highmapy * TILE_SIZE - SMALL_DISTANCE - BOUNDING_BOX_BOTTOM_OFFSET;
+				//go through and check to see if any of the (possibly) new tiles are walls, except the corner
+				for (int itermapy = iterlowy; itermapy <= iterhighy; itermapy++) {
+					if (heights[itermapy][chosenx] != pz) {
+						xside = true;
+						break;
+					}
+				}
+				for (int itermapx = iterlowx; itermapx <= iterhighx; itermapx++) {
+					if (heights[choseny][itermapx] != pz) {
+						yside = true;
+						break;
+					}
+				}
+				//if we haven't hit any of the side walls, we need to check the corner
+				if (!xside && !yside && heights[choseny][chosenx] != pz) {
+					if (horizKey == 0)
+						yside = true;
+					else if (vertKey == 0)
+						xside = true;
+					//compare the x-diff to the y-diff: the shorter one gets the wall designation
+					else if ((
+						(horizKey == -1) ?
+							((lowmapx + 1) * TILE_SIZE - px - BOUNDING_BOX_LEFT_OFFSET) :
+							(px + BOUNDING_BOX_RIGHT_OFFSET - highmapx * TILE_SIZE)
+						) < (
+						(vertKey == -1) ?
+							((lowmapy + 1) * TILE_SIZE - py - BOUNDING_BOX_TOP_OFFSET) :
+							(py + BOUNDING_BOX_BOTTOM_OFFSET - highmapy * TILE_SIZE)
+					))
+						xside = true;
+					else
+						yside = true;
+				}
+				if (xside) {
+					if (horizKey == -1)
+						px = (lowmapx + 1) * TILE_SIZE + SMALL_DISTANCE - BOUNDING_BOX_LEFT_OFFSET;
+					else
+						px = highmapx * TILE_SIZE - SMALL_DISTANCE - BOUNDING_BOX_RIGHT_OFFSET;
+				}
+				if (yside) {
+					if (vertKey == -1)
+						py = (lowmapy + 1) * TILE_SIZE + SMALL_DISTANCE - BOUNDING_BOX_TOP_OFFSET;
+					else
+						py = highmapy * TILE_SIZE - SMALL_DISTANCE - BOUNDING_BOX_BOTTOM_OFFSET;
+				}
 			}
 		}
 		// update the facing direction
@@ -545,10 +599,27 @@ super.paintComponent(g);
 			facing = newFacing;
 		}
 		//update the animation frame
-		if ((vertKey | horizKey) != 0)
-			walkFrame += 1;
-		else
-			walkFrame = 0;
+		if ((vertKey | horizKey) != 0 || kicking) {
+			animationFrame += 1;
+			if (animationFrame >= (kicking ? KICKING_FRAMES : WALKING_FRAMES)) {
+				animationFrame = 0;
+				animationIndex = ANIMATION_NEXT_FRAME_INDICES[animationIndex];
+				if (kicking && animationIndex == idleAnimationIndex) {
+					kicking = false;
+					if (grabbingBoot) {
+						int tilex = (int)(px) / TILE_SIZE;
+						int tiley = (int)(py + BOOT_CENTER_PLAYER_Y_OFFSET) / TILE_SIZE;
+						tiles[tiley][tilex] = tileList[tileIndices[tiley][tilex] = 0];
+						heights[tiley][tilex] = STARTING_PLAYER_Z;
+						animationIndex = (idleAnimationIndex = 5);
+						grabbingBoot = false;
+					}
+				}
+			}
+		} else {
+			animationFrame = -1;
+			animationIndex = idleAnimationIndex;
+		}
 	}
 	////////////////////////////////Input////////////////////////////////
 	public void keyPressed(KeyEvent evt) {
@@ -565,9 +636,15 @@ super.paintComponent(g);
 		} else if (code == rightKey) {
 			horizKey = 1;
 			pressedVertLast = false;
-		} else if (code == bootKey)
-			bootKeyPressed = true;
-		else if (code == KeyEvent.VK_R) {
+		} else if (code == bootKey) {
+			if (editor)
+				editorSpeeding = true;
+			else {
+				animationFrame = -1;
+				animationIndex = idleAnimationIndex + 4;
+				kicking = true;
+			}
+		} else if (code == KeyEvent.VK_R) {
 			try {
 				resetGame();
 			} catch(Exception e) {
@@ -588,8 +665,10 @@ super.paintComponent(g);
 		} else if (code == rightKey) {
 			if (horizKey == 1)
 				horizKey = 0;
-		} else if (code == bootKey)
-			bootKeyPressed = false;
+		} else if (code == bootKey) {
+			if (editor)
+				editorSpeeding = false;
+		}
 	}
 	public void mousePressed(MouseEvent evt) {
 		int mouseX = evt.getX();
@@ -615,10 +694,10 @@ super.paintComponent(g);
 						}
 					}
 					produceMapCoordinates(mouseX, mouseY);
-					int maxX = Math.min(mapX + selectedBrushSize, mapWidth - 1);
-					int maxY = Math.min(mapY + selectedBrushSize, mapHeight - 1);
-					int minX = Math.max(mapX - selectedBrushSize, 0);
-					for (int y = Math.max(0, mapY - selectedBrushSize); y <= maxY; y++) {
+					int maxX = Math.min(mouseMapX + selectedBrushSize, mapWidth - 1);
+					int maxY = Math.min(mouseMapY + selectedBrushSize, mapHeight - 1);
+					int minX = Math.max(mouseMapX - selectedBrushSize, 0);
+					for (int y = Math.max(0, mouseMapY - selectedBrushSize); y <= maxY; y++) {
 						BufferedImage[] tilesY = tiles[y];
 						int[] tileIndicesY = tileIndices[y];
 						int[] heightsY = heights[y];
@@ -754,8 +833,8 @@ super.paintComponent(g);
 	}
 	////////////////////////////////Helpers////////////////////////////////
 	public void produceMapCoordinates(int mouseX, int mouseY) {
-		mapX = ((int)(px - BASE_WIDTH / 2) + (int)(mouseX / pixelWidth)) / TILE_SIZE;
-		mapY = ((int)(py - BASE_HEIGHT / 2) + (int)(mouseY / pixelHeight)) / TILE_SIZE;
+		mouseMapX = ((int)(px - BASE_WIDTH / 2) + (int)(mouseX / pixelWidth)) / TILE_SIZE;
+		mouseMapY = ((int)(py - BASE_HEIGHT / 2) + (int)(mouseY / pixelHeight)) / TILE_SIZE;
 	}
 	////////////////////////////////Other////////////////////////////////
 	public void ancestorResized(HierarchyEvent evt) {
