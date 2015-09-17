@@ -29,7 +29,7 @@ public class flickyourselfon extends JPanel implements MouseListener, MouseMotio
 	//constants
 	public static final int BASE_WIDTH = 199;
 	public static final int BASE_HEIGHT = 149;
-	public static final int SPRITE_WIDTH = 9;
+	public static final int SPRITE_WIDTH = 11;
 	public static final int SPRITE_HEIGHT = 19;
 	public static final int SPRITE_FRAMES = 9;
 	public static final int TILE_SIZE = 6;
@@ -88,7 +88,7 @@ public class flickyourselfon extends JPanel implements MouseListener, MouseMotio
 	//game state
 	public double px = STARTING_PLAYER_X;
 	public double py = STARTING_PLAYER_Y;
-	public double pz = STARTING_PLAYER_Z;
+	public int pz = STARTING_PLAYER_Z;
 	public int vertKey = 0;
 	public int horizKey = 0;
 	public boolean pressedVertLast = true;
@@ -98,8 +98,9 @@ public class flickyourselfon extends JPanel implements MouseListener, MouseMotio
 	public int rightKey = KeyEvent.VK_RIGHT;
 	public int bootKey = KeyEvent.VK_SPACE;
 	public boolean grabbingBoot = false;
-	public double grabbingBootVX = 0.0;
-	public double grabbingBootVY = 0.0;
+	public double kickingVX = 0.0;
+	public double kickingVY = 0.0;
+	public boolean climbing = false;
 	//editor constants
 	public static final int EDITOR_MARGIN_RIGHT = 250;
 	public static final int EDITOR_MARGIN_BOTTOM = 100;
@@ -265,6 +266,7 @@ setBackground(new Color(48, 0, 48));
 		pressedVertLast = true;
 		saveSuccess = 1;
 		exportSuccess = 0;
+		idleAnimationIndex = 0;
 	}
 	////////////////////////////////Draw////////////////////////////////
 	public void paintComponent(Graphics g) {
@@ -452,12 +454,43 @@ super.paintComponent(g);
 		if (kicking) {
 			//player has the boot
 			if (idleAnimationIndex == 5) {
+				//don't kick or climb if we're already doing something
+				if (!climbing) {
+					if (animationFrame == 0 && animationIndex == 10) {
+						//kicking north means climbing or kicking a switch
+						if (facing == 1) {
+							int checky = (int)(py + BOUNDING_BOX_TOP_OFFSET) / TILE_SIZE;
+							int lowmapx = (int)(px + BOUNDING_BOX_LEFT_OFFSET) / TILE_SIZE;
+							int highmapx = (int)(px + BOUNDING_BOX_RIGHT_OFFSET) / TILE_SIZE;
+							boolean canclimb = true;
+							for (int offsety = 1; offsety <= 2; offsety++) {
+								int[] heightsY = heights[checky -= 1];
+								for (int itermapx = lowmapx; itermapx <= highmapx; itermapx++) {
+									if (heightsY[itermapx] != pz + offsety) {
+										canclimb = false;
+										offsety = 2;
+										break;
+									}
+								}
+							}
+							if (canclimb) {
+								kickingVY = TILE_SIZE * -1.0 / KICKING_FRAMES;
+								pz += 2;
+								py += kickingVY;
+								climbing = true;
+							}
+						//kicking in another direction could mean jumping off or kicking a switch
+						} else {
+						}
+					}
+				} else
+					py += kickingVY;
 			//player is in the process of putting on the boot
 			} else if (grabbingBoot) {
-				px += grabbingBootVX;
-				py += grabbingBootVY;
+				px += kickingVX;
+				py += kickingVY;
 			//player kicked without a boot, possibly putting on the boot
-			} else if (animationFrame == -1) {
+			} else if (animationFrame == 0) {
 				int lowmapx,
 					highmapx,
 					lowmapy,
@@ -480,10 +513,10 @@ super.paintComponent(g);
 					for (int itermapx = lowmapx; itermapx <= highmapx; itermapx++) {
 						if (tileIndices[itermapy][itermapx] == BOOT_TILE) {
 							grabbingBoot = true;
-							grabbingBootVX = ((itermapx * TILE_SIZE + 3.5) - px) / KICKING_FRAMES;
-							grabbingBootVY = ((itermapy * TILE_SIZE + 3.5) - (py + BOOT_CENTER_PLAYER_Y_OFFSET)) / KICKING_FRAMES;
-							px += grabbingBootVX;
-							py += grabbingBootVY;
+							kickingVX = ((itermapx * TILE_SIZE + 3.5) - px) / KICKING_FRAMES;
+							kickingVY = ((itermapy * TILE_SIZE + 3.5) - (py + BOOT_CENTER_PLAYER_Y_OFFSET)) / KICKING_FRAMES;
+							px += kickingVX;
+							py += kickingVY;
 							itermapy = highmapy;
 							break;
 						}
@@ -613,7 +646,8 @@ super.paintComponent(g);
 						heights[tiley][tilex] = STARTING_PLAYER_Z;
 						animationIndex = (idleAnimationIndex = 5);
 						grabbingBoot = false;
-					}
+					} else
+						climbing = false;
 				}
 			}
 		} else {
@@ -639,7 +673,7 @@ super.paintComponent(g);
 		} else if (code == bootKey) {
 			if (editor)
 				editorSpeeding = true;
-			else {
+			else if (!kicking) {
 				animationFrame = -1;
 				animationIndex = idleAnimationIndex + 4;
 				kicking = true;
