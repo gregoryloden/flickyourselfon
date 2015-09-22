@@ -47,8 +47,8 @@ public class flickyourselfon extends JPanel implements MouseListener, MouseMotio
 	public static final double HALF_SQRT2 = Math.sqrt(2) * 0.5;
 	public static final double SPEED = 0.625;
 	public static final double DIAGONAL_SPEED = SPEED * HALF_SQRT2;
-	public static final double STARTING_PLAYER_X = 173.5;
-	public static final double STARTING_PLAYER_Y = 160.5;
+	public static final double STARTING_PLAYER_X = 179.5;
+	public static final double STARTING_PLAYER_Y = 166.5;
 	public static final double SMALL_DISTANCE = 1.0 / 65536.0;
 	public static final double BOUNDING_BOX_RIGHT_OFFSET = SPRITE_WIDTH * 0.5;
 	public static final double BOUNDING_BOX_LEFT_OFFSET = -BOUNDING_BOX_RIGHT_OFFSET;
@@ -81,7 +81,6 @@ public class flickyourselfon extends JPanel implements MouseListener, MouseMotio
 	public int idleAnimationIndex = 0;
 	public int animationFrame = -1;
 	public int animationIndex = 0;
-	public boolean kicking = false;
 	public int mapWidth = 0;
 	public int mapHeight = 0;
 	public boolean painting = false;
@@ -97,10 +96,13 @@ public class flickyourselfon extends JPanel implements MouseListener, MouseMotio
 	public int leftKey = KeyEvent.VK_LEFT;
 	public int rightKey = KeyEvent.VK_RIGHT;
 	public int bootKey = KeyEvent.VK_SPACE;
-	public boolean grabbingBoot = false;
-	public double kickingVX = 0.0;
-	public double kickingVY = 0.0;
-	public boolean climbing = false;
+	public boolean kicking = false;
+	//1=grabbing boot 2=climbing 3=falling
+	public int kickingAction = 0;
+	public double[] kickingDX = null;
+	public double[] kickingDY = null;
+	//debug options
+	public boolean debugDrawBoundingBox = false;
 	//editor constants
 	public static final int EDITOR_MARGIN_RIGHT = 250;
 	public static final int EDITOR_MARGIN_BOTTOM = 100;
@@ -154,6 +156,8 @@ public class flickyourselfon extends JPanel implements MouseListener, MouseMotio
 			for (int i = 0; i < args.length; i++) {
 				if (args[i].equals("-editor"))
 					thepanel.editor = true;
+				else if (args[i].equals("-drawboundingbox"))
+					thepanel.debugDrawBoundingBox = true;
 /*
 else if (args[i].equals("-dothing")) {
 	BufferedImage image = ImageIO.read(floorImageFile);
@@ -278,9 +282,11 @@ super.paintComponent(g);
 		g.drawImage(currentPlayerSprites[ANIMATION_FRAME_SPRITE_INDICES[animationIndex]],
 			(BASE_WIDTH - SPRITE_WIDTH) / 2, (BASE_HEIGHT - SPRITE_HEIGHT) / 2, null);
 		//bounding box
-		// g.setColor(new Color(255, 255, 255, 192));
-		// g.fillRect((int)(BASE_WIDTH / 2.0 + BOUNDING_BOX_LEFT_OFFSET), (int)(BASE_HEIGHT / 2.0 + BOUNDING_BOX_TOP_OFFSET),
-			// (int)(BOUNDING_BOX_RIGHT_OFFSET - BOUNDING_BOX_LEFT_OFFSET), (int)(BOUNDING_BOX_BOTTOM_OFFSET - BOUNDING_BOX_TOP_OFFSET));
+		if (debugDrawBoundingBox) {
+			g.setColor(new Color(255, 255, 255, 192));
+			g.fillRect((int)(BASE_WIDTH / 2.0 + BOUNDING_BOX_LEFT_OFFSET), (int)(BASE_HEIGHT / 2.0 + BOUNDING_BOX_TOP_OFFSET),
+				(int)(BOUNDING_BOX_RIGHT_OFFSET - BOUNDING_BOX_LEFT_OFFSET), (int)(BOUNDING_BOX_BOTTOM_OFFSET - BOUNDING_BOX_TOP_OFFSET));
+		}
 //g.setColor(Color.WHITE);
 //g.setFont(new Font("Dialog", Font.BOLD, 8));
 //g.drawString("W: " + String.format("%.3f", pixelWidth), 30, 30);
@@ -452,76 +458,215 @@ super.paintComponent(g);
 	public void update() {
 		int newFacing = -1;
 		if (kicking) {
-			//player has the boot
-			if (idleAnimationIndex == 5) {
-				//don't kick or climb if we're already doing something
-				if (!climbing) {
+			//no current kicking action, let's try to find one
+			if (kickingAction == 0) {
+				//player has the boot
+				if (idleAnimationIndex == 5) {
 					if (animationFrame == 0 && animationIndex == 10) {
-						//kicking north means climbing or kicking a switch
+						//kicking north, climbing, jumping off, or kicking a switch
 						if (facing == 1) {
-							int checky = (int)(py + BOUNDING_BOX_TOP_OFFSET) / TILE_SIZE;
+							int checky = (int)(py + BOUNDING_BOX_BOTTOM_OFFSET) / TILE_SIZE;
 							int lowmapx = (int)(px + BOUNDING_BOX_LEFT_OFFSET) / TILE_SIZE;
 							int highmapx = (int)(px + BOUNDING_BOX_RIGHT_OFFSET) / TILE_SIZE;
 							boolean canclimb = true;
+							boolean canfall = false;
+							int fallheight = -1;
 							for (int offsety = 1; offsety <= 2; offsety++) {
-								int[] heightsY = heights[checky -= 1];
+								int[] heightsY = heights[checky - offsety];
 								for (int itermapx = lowmapx; itermapx <= highmapx; itermapx++) {
-									if (heightsY[itermapx] != pz + offsety) {
+									int height;
+									if ((height = heightsY[itermapx]) != pz + offsety)
 										canclimb = false;
-										offsety = 2;
-										break;
+									if (offsety == 1 && height < pz) {
+										if (fallheight == -1) {
+											fallheight = height;
+											canfall = true;
+										} else if (height != fallheight)
+											canfall = false;
 									}
 								}
 							}
 							if (canclimb) {
-								kickingVY = TILE_SIZE * -1.0 / KICKING_FRAMES;
+								kickingDX = new double[] {0.0};
+								double kf2 = KICKING_FRAMES * 2.0;
+								double mindist = TILE_SIZE * -2.0 / (kf2 * kf2 * kf2 * kf2);
+								//x^3:	1	-6	6
+								//x^4:	-1	14	-36	24
+								//(x^3+x^4)/2:	39/2	-226/2	204/2	24/2
+								kickingDY = new double[] {19.5 * mindist, -113.0 * mindist, 102.0 * mindist, 12.0 * mindist};
 								pz += 2;
-								py += kickingVY;
-								climbing = true;
+								kickingAction = 2;
+							} else if (canfall) {
+								kickingDX = new double[] {0.0};
+								double kf2 = KICKING_FRAMES * 2.0;
+								double mindist = -TILE_SIZE / (kf2 * kf2 * kf2);
+								//vy=c(x + d)(x - i)
+								//...
+								//y=cx(2x^2+(3d-3i)x-6id)
+								//(i, j) is chosen as the middle coordinate
+								//j=ci(2i^2+(3d-3i)i-6id)
+								//1=c(2+3d-3i-6id)
+								//...
+								//d=(2j-3ij+i^3)/(6ij-3i^2-3j)
+								//c=(i^2-2ij+j)/((2i^2)(i-1)^2)
+								//(0,0)+(2/3,1.5)+(1,1) curve:	51791/8,	-1146/8,	-54/8
+								//(0,0)+(2/3,2)+(1,1) curve:	50684/8,	1176/8,	-216/8
+								kickingDY = new double[] {6335.5 * mindist, 147.0 * mindist, -27.0 * mindist};
+								pz = fallheight;
+								kickingAction = 3;
 							}
-						//kicking in another direction could mean jumping off or kicking a switch
+						//kicking down, jumping off
+						} else if (facing == 3) {
+							int checky = (int)(py + BOUNDING_BOX_TOP_OFFSET) / TILE_SIZE;
+							int lowmapx = (int)(px + BOUNDING_BOX_LEFT_OFFSET) / TILE_SIZE;
+							int highmapx = (int)(px + BOUNDING_BOX_RIGHT_OFFSET) / TILE_SIZE;
+							boolean canfall = false;
+							boolean stillfalling = true;
+							int offset = 1;
+							int fallheight;
+							for (; true; offset++) {
+								fallheight = -1;
+								int[] heightsY = heights[checky + offset];
+								for (int itermapx = lowmapx; itermapx <= highmapx; itermapx++) {
+									int height;
+									//can't fall if it's not below
+									if ((height = heightsY[itermapx]) >= pz) {
+										stillfalling = false;
+										break;
+									//set the fall height
+									} else if (fallheight == -1)
+										fallheight = height;
+									//we already had a fall height but this one is different
+									else if (fallheight != height) {
+										stillfalling = false;
+										break;
+									}
+								}
+								if (!stillfalling)
+									break;
+								//we found a height on ground-plane tiles
+								else if ((fallheight & 1) == 0) {
+									canfall = true;
+									break;
+								}
+							}
+							if (canfall) {
+								kickingDX = new double[] {0.0};
+								double kf2 = KICKING_FRAMES * 2.0;
+								double mindist = (-TILE_SIZE * offset) / (kf2 * kf2);
+								//x-2x^2:	42,	-4
+								kickingDY = new double[] {42.0 * mindist, -4.0 * mindist};
+								pz = fallheight;
+								kickingAction = 3;
+							}
+						//kicking to the side, jumping off or kicking a switch
 						} else {
+							int checky = (int)(py + BOUNDING_BOX_BOTTOM_OFFSET) / TILE_SIZE;
+							int lowmapx = (int)(px + BOUNDING_BOX_LEFT_OFFSET) / TILE_SIZE;
+							int highmapx = (int)(px + BOUNDING_BOX_RIGHT_OFFSET) / TILE_SIZE;
+							int diff = highmapx - lowmapx + 1;
+							if (facing == 0) {
+								lowmapx += diff;
+								highmapx += diff;
+							} else {
+								lowmapx -= diff;
+								highmapx -= diff;
+							}
+							int useoffset = 0;
+							int fallheight = -1;
+							for (int offset = 0; true; offset++) {
+								boolean canfall = false;
+								int newfallheight = -1;
+								int[] heightsY = heights[checky + offset];
+								for (int itermapx = lowmapx; itermapx <= highmapx; itermapx++) {
+									int height;
+									if ((height = heightsY[itermapx]) <= pz - offset * 2 && height != pz) {
+										//has to be a ground-plane tile
+										if ((height & 1) == 0) {
+											if (newfallheight == -1) {
+												newfallheight = height;
+												canfall = true;
+											} else if (newfallheight != height)
+												canfall = false;
+										//slope tile, this row is not valid but lower rows might be
+										} else {
+											newfallheight = 0;
+											canfall = false;
+											break;
+										}
+									//it's too high- stop looking for fall heights
+									} else {
+										canfall = false;
+										newfallheight = -1;
+										break;
+									}
+								}
+								//we found tiles we can fall to- set the fall height
+								if (canfall) {
+									fallheight = newfallheight;
+									useoffset = offset;
+								//we reached a set of tiles that's too high, stop looking for fall heights
+								} else if (newfallheight == -1)
+									break;
+							}
+							//there is at least one valid row of tiles to fall to
+							if (fallheight != -1) {
+								kickingDX = new double[] {(double)(facing == 0 ? TILE_SIZE : -TILE_SIZE) / KICKING_FRAMES};
+								double kf2 = KICKING_FRAMES * 2.0;
+								double topy = py + BOUNDING_BOX_TOP_OFFSET;
+								double scalesize = ((int)(topy) / TILE_SIZE < checky) ?
+									useoffset + checky - (topy - SMALL_DISTANCE) / TILE_SIZE :
+									useoffset;
+								double mindist = (-TILE_SIZE * scalesize) / (kf2 * kf2);
+								//x-2x^2:	42,	-4
+								kickingDY = new double[] {42.0 * mindist, -4.0 * mindist};
+								pz = fallheight;
+								kickingAction = 3;
+							}
 						}
 					}
-				} else
-					py += kickingVY;
-			//player is in the process of putting on the boot
-			} else if (grabbingBoot) {
-				px += kickingVX;
-				py += kickingVY;
-			//player kicked without a boot, possibly putting on the boot
-			} else if (animationFrame == 0) {
-				int lowmapx,
-					highmapx,
-					lowmapy,
-					highmapy;
-				boolean foundboot = false;
-				if ((facing & 1) == 0) {
-					lowmapy = (int)(py + BOUNDING_BOX_TOP_OFFSET) / TILE_SIZE;
-					highmapy = (int)(py + BOUNDING_BOX_BOTTOM_OFFSET) / TILE_SIZE;
-					lowmapx = (highmapx = (facing == 2 ?
-						((int)(px + BOUNDING_BOX_LEFT_OFFSET) / TILE_SIZE - 1) :
-						((int)(px + BOUNDING_BOX_RIGHT_OFFSET) / TILE_SIZE + 1)));
-				} else {
-					lowmapx = (int)(px + BOUNDING_BOX_LEFT_OFFSET) / TILE_SIZE;
-					highmapx = (int)(px + BOUNDING_BOX_RIGHT_OFFSET) / TILE_SIZE;
-					lowmapy = (highmapy = (facing == 1 ?
-						((int)(py + BOUNDING_BOX_TOP_OFFSET) / TILE_SIZE - 1) :
-						((int)(py + BOUNDING_BOX_BOTTOM_OFFSET) / TILE_SIZE + 1)));
-				}
-				for (int itermapy = lowmapy; itermapy <= highmapy; itermapy++) {
-					for (int itermapx = lowmapx; itermapx <= highmapx; itermapx++) {
-						if (tileIndices[itermapy][itermapx] == BOOT_TILE) {
-							grabbingBoot = true;
-							kickingVX = ((itermapx * TILE_SIZE + 3.5) - px) / KICKING_FRAMES;
-							kickingVY = ((itermapy * TILE_SIZE + 3.5) - (py + BOOT_CENTER_PLAYER_Y_OFFSET)) / KICKING_FRAMES;
-							px += kickingVX;
-							py += kickingVY;
-							itermapy = highmapy;
-							break;
+				//player kicked without a boot, possibly putting on the boot
+				} else if (animationFrame == 0) {
+					int lowmapx,
+						highmapx,
+						lowmapy,
+						highmapy;
+					boolean foundboot = false;
+					if ((facing & 1) == 0) {
+						lowmapy = (int)(py + BOUNDING_BOX_TOP_OFFSET) / TILE_SIZE;
+						highmapy = (int)(py + BOUNDING_BOX_BOTTOM_OFFSET) / TILE_SIZE;
+						lowmapx = (highmapx = (facing == 2 ?
+							((int)(px + BOUNDING_BOX_LEFT_OFFSET) / TILE_SIZE - 1) :
+							((int)(px + BOUNDING_BOX_RIGHT_OFFSET) / TILE_SIZE + 1)));
+					} else {
+						lowmapx = (int)(px + BOUNDING_BOX_LEFT_OFFSET) / TILE_SIZE;
+						highmapx = (int)(px + BOUNDING_BOX_RIGHT_OFFSET) / TILE_SIZE;
+						lowmapy = (highmapy = (facing == 1 ?
+							((int)(py + BOUNDING_BOX_TOP_OFFSET) / TILE_SIZE - 1) :
+							((int)(py + BOUNDING_BOX_BOTTOM_OFFSET) / TILE_SIZE + 1)));
+					}
+					for (int itermapy = lowmapy; itermapy <= highmapy; itermapy++) {
+						for (int itermapx = lowmapx; itermapx <= highmapx; itermapx++) {
+							if (tileIndices[itermapy][itermapx] == BOOT_TILE) {
+								kickingAction = 1;
+								kickingDX = new double[] {((itermapx * TILE_SIZE + 3.5) - px) / KICKING_FRAMES};
+								kickingDY = new double[] {((itermapy * TILE_SIZE + 3.5) - (py + BOOT_CENTER_PLAYER_Y_OFFSET)) / KICKING_FRAMES};
+								itermapy = highmapy;
+								break;
+							}
 						}
 					}
 				}
+			}
+			//player is in the process of putting on the boot, climbing, or falling
+			//this may become true in the above if branch even if it wasn't before it
+			if (kickingAction != 0) {
+				for (int i = kickingDX.length - 1; i >= 1; i--)
+					kickingDX[i - 1] += kickingDX[i];
+				for (int i = kickingDY.length - 1; i >= 1; i--)
+					kickingDY[i - 1] += kickingDY[i];
+				px += kickingDX[0];
+				py += kickingDY[0];
 			}
 		} else {
 			//move sqrt2/2 in each direction if both directions are pressed
@@ -639,15 +784,14 @@ super.paintComponent(g);
 				animationIndex = ANIMATION_NEXT_FRAME_INDICES[animationIndex];
 				if (kicking && animationIndex == idleAnimationIndex) {
 					kicking = false;
-					if (grabbingBoot) {
+					if (kickingAction == 1) {
 						int tilex = (int)(px) / TILE_SIZE;
 						int tiley = (int)(py + BOOT_CENTER_PLAYER_Y_OFFSET) / TILE_SIZE;
 						tiles[tiley][tilex] = tileList[tileIndices[tiley][tilex] = 0];
 						heights[tiley][tilex] = STARTING_PLAYER_Z;
 						animationIndex = (idleAnimationIndex = 5);
-						grabbingBoot = false;
-					} else
-						climbing = false;
+					}
+					kickingAction = 0;
 				}
 			}
 		} else {
