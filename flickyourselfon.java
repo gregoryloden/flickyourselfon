@@ -43,6 +43,7 @@ public class flickyourselfon extends JPanel implements MouseListener, MouseMotio
 	public static final int STARTING_PLAYER_Z = 0;
 	public static final int[] ANIMATION_NEXT_FRAME_INDICES =   new int[] {1, 2, 3, 0, 0, 6, 7, 8, 5, 10, 11, 5};
 	public static final int[] ANIMATION_FRAME_SPRITE_INDICES = new int[] {0, 1, 0, 2, 3, 4, 5, 4, 6,  7,  8, 7};
+	public static final int[] PAUSE_MENU_OPTION_COUNTS = new int[] {3, 5, 8};
 	public static final int BOOT_TILE = 37;
 	public static final double HALF_SQRT2 = Math.sqrt(2) * 0.5;
 	public static final double SPEED = 0.625;
@@ -58,9 +59,12 @@ public class flickyourselfon extends JPanel implements MouseListener, MouseMotio
 	public static File playerImageFile = new File("images/player.png");
 	public static File tilesImageFile = new File("images/tiles.png");
 	public static File floorImageFile = new File("images/floor.png");
+	public static File fontImageFile = new File("images/font.png");
 	//function outputs
 	public static int mouseMapX = 0;
 	public static int mouseMapY = 0;
+	public static int pauseMenuCurrentOption = 0;
+	public static int pauseMenuDrawY = 0;
 	//screen setup
 	public double pixelWidth = 3.0;
 	public double pixelHeight = 3.0;
@@ -70,12 +74,17 @@ public class flickyourselfon extends JPanel implements MouseListener, MouseMotio
 	public BufferedImage playerImage = null;
 	public BufferedImage tilesImage = null;
 	public BufferedImage floorImage = null;
+	public BufferedImage fontImage = null;
 	public BufferedImage[] tileList = new BufferedImage[MAP_TILES];
 	public BufferedImage[][] tiles = null;
 	public int[][] tileIndices = null;
 	public int[][] heights = null;
 	public BufferedImage[][] playerSprites = new BufferedImage[4][SPRITE_FRAMES];
 	public BufferedImage[] currentPlayerSprites = null;
+	public BufferedImage[] charImages = new BufferedImage[256];
+	public int[] charWidths = new int[256];
+	public int charLineHeight = 0;
+	public BufferedImage keyBackground = null;
 	//0=right 1=up 2=left 3=down
 	public int facing = 3;
 	public int idleAnimationIndex = 0;
@@ -96,11 +105,21 @@ public class flickyourselfon extends JPanel implements MouseListener, MouseMotio
 	public int leftKey = KeyEvent.VK_LEFT;
 	public int rightKey = KeyEvent.VK_RIGHT;
 	public int bootKey = KeyEvent.VK_SPACE;
+	public String[] keyStrings = new String[] {
+		"\u0080",
+		"\u0081",
+		"\u0082",
+		"\u0083",
+		KeyEvent.getKeyText(KeyEvent.VK_SPACE),
+	};
 	public boolean kicking = false;
 	//1=grabbing boot 2=climbing 3=falling
 	public int kickingAction = 0;
 	public double[] kickingDX = null;
 	public double[] kickingDY = null;
+	//0-gameplay 1-pause
+	public int pauseOption = 0;
+	public int pauseMenuOption = -1;
 	//debug options
 	public boolean debugDrawBoundingBox = false;
 	//editor constants
@@ -226,6 +245,7 @@ setBackground(new Color(48, 0, 48));
 		playerImage = ImageIO.read(playerImageFile);
 		tilesImage = ImageIO.read(tilesImageFile);
 		floorImage = ImageIO.read(floorImageFile);
+		fontImage = ImageIO.read(fontImageFile);
 		//setup the level
 		//setup the player sprites
 		for (int y = 0; y < 4; y++) {
@@ -260,6 +280,71 @@ setBackground(new Color(48, 0, 48));
 					tilesY[x] = tileList[tileIndicesY[x] = ((pixel >> 8) & 255) / MAP_TILES_FACTOR];
 			}
 		}
+		//build font images
+		int fontimagewidth = fontImage.getWidth();
+		int toprow = 0;
+		int bottomrow = 0;
+		int nextchar = ' ';
+		while (true) {
+			for (; true; bottomrow++) {
+				boolean foundpixel = false;
+				for (int checkx = 0; checkx < fontimagewidth; checkx++) {
+					if (fontImage.getRGB(checkx, bottomrow) != 0) {
+						foundpixel = true;
+						break;
+					}
+				}
+				if (!foundpixel)
+					break;
+			}
+			//we hit the end, this row of characters is empty
+			if (bottomrow == toprow)
+				break;
+			int leftcol = 0, rightcol = 0;
+			while (true) {
+				boolean foundpixel = false;
+				for (int rowy = toprow; rowy < bottomrow; rowy++) {
+					if (fontImage.getRGB(rightcol, rowy) != 0) {
+						foundpixel = true;
+						break;
+					}
+				}
+				if (!foundpixel) {
+					//we hit the end, this character is empty
+					if (leftcol == rightcol)
+						break;
+					else {
+						BufferedImage c = fontImage.getSubimage(leftcol, toprow, rightcol - leftcol, bottomrow - toprow);
+						charImages[nextchar] = c;
+						rightcol++;
+						charWidths[nextchar] = rightcol - leftcol;
+						nextchar++;
+						leftcol = rightcol;
+					}
+				} else
+					rightcol++;
+			}
+			bottomrow++;
+			charLineHeight = Math.max(charLineHeight, bottomrow - toprow);
+			toprow = bottomrow;
+		}
+		//certain characters need adjustments
+		charImages[' '] = null;
+		charImages['"'].setRGB(1, 0, 0);
+		int fontimageheight = fontImage.getHeight();
+		int checkx = fontimagewidth - 1;
+		int checky = fontimageheight - 1;
+		int kbx = checkx;
+		int kby = checky;
+		while (fontImage.getRGB(checkx, kby) == 0)
+			checkx--;
+		while (fontImage.getRGB(kbx, checky) == 0)
+			checky--;
+		while (fontImage.getRGB(checkx, kby) != 0)
+			kby--;
+		while (fontImage.getRGB(kbx, checky) != 0)
+			kbx--;
+		keyBackground = fontImage.getSubimage(kbx, kby, fontimagewidth - kbx, fontimageheight - kby);
 		//setup game state
 		px = STARTING_PLAYER_X;
 		py = STARTING_PLAYER_Y;
@@ -275,9 +360,11 @@ setBackground(new Color(48, 0, 48));
 	////////////////////////////////Draw////////////////////////////////
 	public void paintComponent(Graphics g) {
 super.paintComponent(g);
+		//adjust the screenspace
 		Graphics2D g2 = (Graphics2D)(g);
 		AffineTransform oldTransform = g2.getTransform();
 		g2.transform(AffineTransform.getScaleInstance(pixelWidth, pixelHeight));
+		//start drawing
 		drawFloor(g);
 		g.drawImage(currentPlayerSprites[ANIMATION_FRAME_SPRITE_INDICES[animationIndex]],
 			(BASE_WIDTH - SPRITE_WIDTH) / 2, (BASE_HEIGHT - SPRITE_HEIGHT) / 2, null);
@@ -287,10 +374,49 @@ super.paintComponent(g);
 			g.fillRect((int)(BASE_WIDTH / 2.0 + BOUNDING_BOX_LEFT_OFFSET), (int)(BASE_HEIGHT / 2.0 + BOUNDING_BOX_TOP_OFFSET),
 				(int)(BOUNDING_BOX_RIGHT_OFFSET - BOUNDING_BOX_LEFT_OFFSET), (int)(BOUNDING_BOX_BOTTOM_OFFSET - BOUNDING_BOX_TOP_OFFSET));
 		}
-//g.setColor(Color.WHITE);
-//g.setFont(new Font("Dialog", Font.BOLD, 8));
-//g.drawString("W: " + String.format("%.3f", pixelWidth), 30, 30);
-//g.drawString("H: " + String.format("%.3f", pixelHeight), 30, 40);
+		//pause menu
+		if (pauseOption >= 1 && pauseOption <= 3) {
+			g.setColor(new Color(48, 0, 48, 160));
+			g.fillRect(0, 0, BASE_WIDTH, BASE_HEIGHT);
+			pauseMenuCurrentOption = 0;
+			String title;
+			int titleY;
+			//different pause menus, loop variables are global
+			if (pauseOption == 1) {
+				pauseMenuDrawY = 52;
+				titleY = 16;
+				renderNormalMenuOption(g, "display");
+				renderNormalMenuOption(g, "controls");
+				renderNormalMenuOption(g, "resume");
+				title = "Pause";
+			} else if (pauseOption == 2) {
+				pauseMenuDrawY = 44;
+				titleY = 12;
+				renderNormalMenuOption(g, String.format("pixel width: %.3f", pixelWidth));
+				renderNormalMenuOption(g, String.format("pixel height: %.3f", pixelHeight));
+				renderNormalMenuOption(g, "defaults");
+				renderNormalMenuOption(g, "accept");
+				renderNormalMenuOption(g, "cancel");
+				title = "Display";
+			} else {
+				pauseMenuDrawY = 28;
+				titleY = 4;
+				renderKeyControlMenuOption(g, "move up:");
+				renderKeyControlMenuOption(g, "move down:");
+				renderKeyControlMenuOption(g, "move left:");
+				renderKeyControlMenuOption(g, "move right:");
+				renderKeyControlMenuOption(g, "boot:");
+				pauseMenuDrawY += 2;
+				renderNormalMenuOption(g, "defaults");
+				renderNormalMenuOption(g, "accept");
+				renderNormalMenuOption(g, "cancel");
+				title = "Controls";
+			}
+			//draw title text big
+			g2.transform(AffineTransform.getScaleInstance(2, 2));
+			drawString(g, title, (BASE_WIDTH / 2 - textWidth(title)) / 2, titleY);
+		}
+		//editor UI
 		if (editor) {
 			//hover box
 			if (noisyTileSelection ? (noiseTileCount > 0) : (selectingTile || selectingHeight)) {
@@ -454,8 +580,78 @@ super.paintComponent(g);
 			}
 		}
 	}
+	public void renderNormalMenuOption(Graphics g, String s) {
+		if (pauseMenuCurrentOption == pauseMenuOption)
+			s = "< " + s + " >";
+		drawString(g, s, (BASE_WIDTH - textWidth(s)) / 2, pauseMenuDrawY);
+		pauseMenuDrawY += charLineHeight;
+		pauseMenuCurrentOption++;
+	}
+	public void drawString(Graphics g, String s, int leftx, int drawy) {
+		int slength = s.length();
+		int drawx = leftx;
+		for (int i = 0; i < slength; i++) {
+			char c = s.charAt(i);
+			if (c == '\n') {
+				drawx = leftx;
+				drawy += charLineHeight;
+			} else {
+				g.drawImage(charImages[c], drawx, drawy, null);
+				drawx += charWidths[c];
+			}
+		}
+	}
+	public void renderKeyControlMenuOption(Graphics g, String s) {
+		int kbh = keyBackground.getHeight();
+		int originalwidth = textWidth(s);
+		String letter = keyStrings[pauseMenuCurrentOption];
+		int lw = textWidth(letter);
+		int width, drawx;
+		//accounts for the key background offsets and the two spaces for a single letter
+		s += "      ";
+		int ll = letter.length();
+		if (ll > 1) {
+			//readjust the string and the x values
+			int spacewidth = charWidths[' '];
+			//pixel space = letter count + 3
+			int spacecount = (lw + (ll + 3) * 2 - spacewidth - 1) / spacewidth;
+			for (int j = spacecount; j > 2; j--)
+				s += " ";
+			width = textWidth(s);
+			drawx = (BASE_WIDTH - width) / 2 + originalwidth + 2;
+			//draw the left half
+			int kbw = keyBackground.getWidth();
+			int halfx = kbw / 2;
+			int halfx2 = kbw - halfx;
+			g.drawImage(keyBackground.getSubimage(0, 0, halfx, kbh), drawx, pauseMenuDrawY, null);
+			//draw the middle slices
+			BufferedImage slice = keyBackground.getSubimage(halfx, 0, 1, kbh);
+			int textwidth = (spacecount * spacewidth);
+			int maxx = drawx + (textwidth + 9) - halfx2;
+			for (int newdrawx = drawx + halfx; newdrawx < maxx; newdrawx++)
+				g.drawImage(slice, newdrawx, pauseMenuDrawY, null);
+			//draw the end half
+			g.drawImage(keyBackground.getSubimage(halfx, 0, halfx2, kbh), maxx, pauseMenuDrawY, null);
+			//fix lw
+			lw += 6 - textwidth;
+		} else {
+			width = textWidth(s);
+			drawx = (BASE_WIDTH - width) / 2 + originalwidth + 2;
+			g.drawImage(keyBackground, drawx, pauseMenuDrawY, null);
+		}
+		drawString(g, letter, drawx + (15 - lw) / 2, pauseMenuDrawY + 3);
+		if (pauseMenuCurrentOption == pauseMenuOption) {
+			s = "< " + s + " >";
+			width = textWidth(s);
+		}
+		drawString(g, s, (BASE_WIDTH - width) / 2, pauseMenuDrawY + 3);
+		pauseMenuDrawY += kbh + 1;
+		pauseMenuCurrentOption++;
+	}
 	////////////////////////////////Update////////////////////////////////
 	public void update() {
+		if (pauseOption != 0)
+			return;
 		int newFacing = -1;
 		if (kicking) {
 			//no current kicking action, let's try to find one
@@ -799,33 +995,81 @@ super.paintComponent(g);
 			animationIndex = idleAnimationIndex;
 		}
 	}
+	public int textWidth(String s) {
+		int slength = s.length();
+		int currentWidth = 0, maxWidth = 0;
+		for (int i = 0; i < slength; i++) {
+			char c = s.charAt(i);
+			if (c == '\n')
+				currentWidth = 0;
+			else {
+				currentWidth += charWidths[c];
+				maxWidth = Math.max(maxWidth, currentWidth);
+			}
+		}
+		return maxWidth;
+	}
 	////////////////////////////////Input////////////////////////////////
 	public void keyPressed(KeyEvent evt) {
 		int code = evt.getKeyCode();
 		if (code == upKey) {
 			vertKey = -1;
 			pressedVertLast = true;
+			if (pauseOption >= 1 && pauseOption <= 3) {
+				int menuOptionCount = PAUSE_MENU_OPTION_COUNTS[pauseOption - 1];
+				pauseMenuOption = (pauseMenuOption + menuOptionCount - 1) % menuOptionCount;
+			}
 		} else if (code == downKey) {
 			vertKey = 1;
 			pressedVertLast = true;
+			if (pauseOption >= 1 && pauseOption <= 3)
+				pauseMenuOption = (pauseMenuOption + 1) % PAUSE_MENU_OPTION_COUNTS[pauseOption - 1];
 		} else if (code == leftKey) {
 			horizKey = -1;
 			pressedVertLast = false;
 		} else if (code == rightKey) {
 			horizKey = 1;
 			pressedVertLast = false;
-		} else if (code == bootKey) {
-			if (editor)
+		//editor-only key presses
+		} else if (editor) {
+			if (code == bootKey)
 				editorSpeeding = true;
-			else if (!kicking) {
-				animationFrame = -1;
-				animationIndex = idleAnimationIndex + 4;
-				kicking = true;
+			else if (code == KeyEvent.VK_R) {
+				try {
+					resetGame();
+				} catch(Exception e) {
+				}
 			}
-		} else if (code == KeyEvent.VK_R) {
-			try {
-				resetGame();
-			} catch(Exception e) {
+		//in-game-only key presses
+		} else if (code == KeyEvent.VK_ESCAPE) {
+			//not paused, pause the game
+			if (pauseOption == 0) {
+				pauseOption = 1;
+				pauseMenuOption = 0;
+			//paused, unpause the game
+			} else if (pauseOption >= 1 && pauseOption <= 3)
+				pauseOption = 0;
+		} else if (code == KeyEvent.VK_ENTER) {
+			//pick options to enter
+			if (pauseOption == 1 && pauseMenuOption <= 1) {
+				pauseOption = pauseMenuOption + 2;
+				pauseMenuOption = 0;
+			//go back
+			} else if (pauseMenuOption + 1 == PAUSE_MENU_OPTION_COUNTS[pauseOption - 1]) {
+				if (pauseOption == 1)
+					pauseOption = 0;
+				else if (pauseOption >= 2 && pauseOption <= 3) {
+					pauseMenuOption = pauseOption - 2;
+					pauseOption = 1;
+				}
+			}
+		} else if (code == bootKey) {
+			if (pauseOption == 0) {
+				if (!kicking) {
+					animationFrame = -1;
+					animationIndex = idleAnimationIndex + 4;
+					kicking = true;
+				}
 			}
 		}
 	}
@@ -843,8 +1087,9 @@ super.paintComponent(g);
 		} else if (code == rightKey) {
 			if (horizKey == 1)
 				horizKey = 0;
-		} else if (code == bootKey) {
-			if (editor)
+		//editor-only key releases
+		} else if (editor) {
+			if (code == bootKey)
 				editorSpeeding = false;
 		}
 	}
