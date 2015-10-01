@@ -5,6 +5,7 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Insets;
+import java.awt.Rectangle;
 import java.awt.Toolkit;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
@@ -16,6 +17,7 @@ import java.awt.event.HierarchyEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.RandomAccessFile;
 import javax.imageio.ImageIO;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -41,10 +43,24 @@ public class flickyourselfon extends JPanel implements MouseListener, MouseMotio
 	public static final int WALKING_FRAMES = 15;
 	public static final int KICKING_FRAMES = 20;
 	public static final int STARTING_PLAYER_Z = 0;
+	public static final int BOOT_TILE = 37;
+	public static final int DEFAULT_UP_KEY = KeyEvent.VK_UP;
+	public static final int DEFAULT_DOWN_KEY = KeyEvent.VK_DOWN;
+	public static final int DEFAULT_LEFT_KEY = KeyEvent.VK_LEFT;
+	public static final int DEFAULT_RIGHT_KEY = KeyEvent.VK_RIGHT;
+	public static final int DEFAULT_BOOT_KEY = KeyEvent.VK_SPACE;
+	public static final int OPTIONS_BYTE_COUNT =
+		//version number, 1 int
+		4 +
+		//key bindings, 5 ints
+		5 * 4 +
+		//pixel width, 2 doubles
+		2 * 8;
+	public static final int SAVE_FILE_SIZE = OPTIONS_BYTE_COUNT;
+	public static final int SAVE_FILE_VERSION = 1;
 	public static final int[] ANIMATION_NEXT_FRAME_INDICES =   new int[] {1, 2, 3, 0, 0, 6, 7, 8, 5, 10, 11, 5};
 	public static final int[] ANIMATION_FRAME_SPRITE_INDICES = new int[] {0, 1, 0, 2, 3, 4, 5, 4, 6,  7,  8, 7};
 	public static final int[] PAUSE_MENU_OPTION_COUNTS = new int[] {3, 5, 8};
-	public static final int BOOT_TILE = 37;
 	public static final double HALF_SQRT2 = Math.sqrt(2) * 0.5;
 	public static final double SPEED = 0.625;
 	public static final double DIAGONAL_SPEED = SPEED * HALF_SQRT2;
@@ -56,20 +72,23 @@ public class flickyourselfon extends JPanel implements MouseListener, MouseMotio
 	public static final double BOUNDING_BOX_TOP_OFFSET = 4.5;
 	public static final double BOUNDING_BOX_BOTTOM_OFFSET = 9.5;
 	public static final double BOOT_CENTER_PLAYER_Y_OFFSET = 8.0;
+	public static final double DEFAULT_PIXEL_SIZE = 3.0;
 	public static File playerImageFile = new File("images/player.png");
 	public static File tilesImageFile = new File("images/tiles.png");
 	public static File floorImageFile = new File("images/floor.png");
 	public static File fontImageFile = new File("images/font.png");
+	public static RandomAccessFile saveFile = null;
 	//function outputs
 	public static int mouseMapX = 0;
 	public static int mouseMapY = 0;
 	public static int pauseMenuCurrentOption = 0;
 	public static int pauseMenuDrawY = 0;
 	//screen setup
-	public double pixelWidth = 3.0;
-	public double pixelHeight = 3.0;
-	public int width = (int)(BASE_WIDTH * pixelWidth);
-	public int height = (int)(BASE_HEIGHT * pixelHeight);
+	public JFrame window = new JFrame("Flick Yourself On");
+	public double pixelWidth = DEFAULT_PIXEL_SIZE;
+	public double pixelHeight = DEFAULT_PIXEL_SIZE;
+	public int windowWidth = 1;
+	public int windowHeight = 1;
 	//display
 	public BufferedImage playerImage = null;
 	public BufferedImage tilesImage = null;
@@ -100,11 +119,11 @@ public class flickyourselfon extends JPanel implements MouseListener, MouseMotio
 	public int vertKey = 0;
 	public int horizKey = 0;
 	public boolean pressedVertLast = true;
-	public int upKey = KeyEvent.VK_UP;
-	public int downKey = KeyEvent.VK_DOWN;
-	public int leftKey = KeyEvent.VK_LEFT;
-	public int rightKey = KeyEvent.VK_RIGHT;
-	public int bootKey = KeyEvent.VK_SPACE;
+	public int upKey = DEFAULT_UP_KEY;
+	public int downKey = DEFAULT_DOWN_KEY;
+	public int leftKey = DEFAULT_LEFT_KEY;
+	public int rightKey = DEFAULT_RIGHT_KEY;
+	public int bootKey = DEFAULT_BOOT_KEY;
 	public String[] keyStrings = new String[] {
 		"\u0080",
 		"\u0081",
@@ -117,9 +136,11 @@ public class flickyourselfon extends JPanel implements MouseListener, MouseMotio
 	public int kickingAction = 0;
 	public double[] kickingDX = null;
 	public double[] kickingDY = null;
+	//pause states
 	//0-gameplay 1-pause
 	public int pauseOption = 0;
 	public int pauseMenuOption = -1;
+	public boolean choosingKey = false;
 	//debug options
 	public boolean debugDrawBoundingBox = false;
 	//editor constants
@@ -197,22 +218,16 @@ if (tilenum >= 19 && tilenum < 27)
 }
 /**/
 			}
-			thepanel.resetGame();
 			//initialize display window
-			JFrame window = new JFrame("Flick Yourself On");
-			window.setContentPane(thepanel);
-			window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-			window.setVisible(true);
-			Insets insets = window.getInsets();
-			if (thepanel.editor) {
-				insets.right += EDITOR_MARGIN_RIGHT;
-				insets.bottom += EDITOR_MARGIN_BOTTOM;
-			}
-			window.setSize(thepanel.width + insets.left + insets.right, thepanel.height + insets.top + insets.bottom);
-			window.setLocation((screenwidth() - thepanel.width) / 2 - insets.left, (screenheight() - thepanel.height) / 2 - insets.top);
+			thepanel.window.setContentPane(thepanel);
+			thepanel.window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+			thepanel.window.setVisible(true);
+			thepanel.resizeWindow(1);
+			Insets insets = thepanel.window.getInsets();
+			thepanel.window.setMinimumSize(new Dimension(BASE_WIDTH + insets.left + insets.right, BASE_HEIGHT + insets.top + insets.bottom));
 			thepanel.setFocusable(true);
 			thepanel.requestFocus();
-			window.toFront();
+			thepanel.window.toFront();
 			thepanel.addHierarchyBoundsListener(thepanel);
 			//run the game!
 			long now = System.currentTimeMillis();
@@ -234,11 +249,17 @@ if (tilenum >= 19 && tilenum < 27)
 			e.printStackTrace();
 		}
 	}
-	public flickyourselfon() {
+	public flickyourselfon() throws Exception {
 		addKeyListener(this);
 		addMouseListener(this);
 		addMouseMotionListener(this);
 setBackground(new Color(48, 0, 48));
+		resetGame();
+		saveFile = new RandomAccessFile(new File("fyo.sav"), "rw");
+		if (saveFile.length() < SAVE_FILE_SIZE)
+			save(true, true);
+		else
+			load(true, true);
 	}
 	public void resetGame() throws Exception {
 		//load all sprites
@@ -387,7 +408,7 @@ super.paintComponent(g);
 				titleY = 16;
 				renderNormalMenuOption(g, "display");
 				renderNormalMenuOption(g, "controls");
-				renderNormalMenuOption(g, "resume");
+				renderNormalMenuOption(g, "exit game");
 				title = "Pause";
 			} else if (pauseOption == 2) {
 				pauseMenuDrawY = 44;
@@ -420,8 +441,8 @@ super.paintComponent(g);
 		if (editor) {
 			//hover box
 			if (noisyTileSelection ? (noiseTileCount > 0) : (selectingTile || selectingHeight)) {
-				int dx = BASE_WIDTH / 2 - (int)(px) + (mouseMapX - selectedBrushSize) * TILE_SIZE;
-				int dy = BASE_HEIGHT / 2 - (int)(py) + (mouseMapY - selectedBrushSize) * TILE_SIZE;
+				int dx = BASE_WIDTH / 2 - (int)(Math.floor(px)) + (mouseMapX - selectedBrushSize) * TILE_SIZE;
+				int dy = BASE_HEIGHT / 2 - (int)(Math.floor(py)) + (mouseMapY - selectedBrushSize) * TILE_SIZE;
 				int drawSize = ((selectedBrushSize << 1) + 1) * TILE_SIZE;
 				g2.translate(0.5, 0.5);
 				g.setColor(Color.BLACK);
@@ -432,10 +453,10 @@ super.paintComponent(g);
 			//blue backgrounds
 			g2.setTransform(oldTransform);
 			g.setColor(editorBlue);
-			g.fillRect(width, 0, EDITOR_MARGIN_RIGHT, height);
-			g.fillRect(0, height, width + EDITOR_MARGIN_RIGHT, EDITOR_MARGIN_BOTTOM);
+			g.fillRect(windowWidth, 0, EDITOR_MARGIN_RIGHT, windowHeight);
+			g.fillRect(0, windowHeight, windowWidth + EDITOR_MARGIN_RIGHT, EDITOR_MARGIN_BOTTOM);
 			//tile images
-			int leftX = width + 15;
+			int leftX = windowWidth + 15;
 			for (int y = 0; y < EDITOR_TILE_ROWS; y++) {
 				int dy = 15 + y * 28;
 				for (int x = 0; x < 8; x++) {
@@ -479,9 +500,9 @@ super.paintComponent(g);
 			//noise text
 			g.setFont(noiseFont);
 			g.setColor(editorYellow);
-			g.drawString("Noise", width + EDITOR_NOISE_BOX_X + 2, EDITOR_NOISE_BOX_Y + 12);
+			g.drawString("Noise", windowWidth + EDITOR_NOISE_BOX_X + 2, EDITOR_NOISE_BOX_Y + 12);
 			g.setColor(noisyTileSelection ? editorYellow : editorGray);
-			g.drawRect(width + EDITOR_NOISE_BOX_X, EDITOR_NOISE_BOX_Y, EDITOR_NOISE_BOX_W, EDITOR_NOISE_BOX_H);
+			g.drawRect(windowWidth + EDITOR_NOISE_BOX_X, EDITOR_NOISE_BOX_Y, EDITOR_NOISE_BOX_W, EDITOR_NOISE_BOX_H);
 			//noise boxes
 			g.setFont(noiseChanceFont);
 			for (int y = 0; y < EDITOR_NOISE_ROWS; y++) {
@@ -516,50 +537,50 @@ super.paintComponent(g);
 			}
 			//save button
 			g.setColor(editorSaveRed);
-			g.drawRect(20, height + 20, 149, 59);
-			g.drawRect(21, height + 21, 147, 57);
-			g.fillRect(24, height + 24, 142, 52);
+			g.drawRect(20, windowHeight + 20, 149, 59);
+			g.drawRect(21, windowHeight + 21, 147, 57);
+			g.fillRect(24, windowHeight + 24, 142, 52);
 			g.setColor(editorSaveGreen);
 			g.setFont(saveFont);
-			g.drawString("Save", 43, height + 63);
+			g.drawString("Save", 43, windowHeight + 63);
 			g.setColor(Color.WHITE);
-			g.fillRect(181, height + 31, 38, 38);
+			g.fillRect(181, windowHeight + 31, 38, 38);
 			g.setColor(editorGray);
-			g.drawRect(180, height + 30, 39, 39);
+			g.drawRect(180, windowHeight + 30, 39, 39);
 			if (saveSuccess == 1) {
 				g.setColor(editorSaveSuccessGreen);
-				g.drawString("\u2713", 182, height + 65);
+				g.drawString("\u2713", 182, windowHeight + 65);
 			} else if (saveSuccess == -1) {
 				g.setColor(editorSaveSuccessRed);
-				g.drawString("\u2715", 179, height + 65);
+				g.drawString("\u2715", 179, windowHeight + 65);
 			}
 			//export map button
 			g.setColor(editorExportGreen);
-			g.drawRect(240, height + 20, 149, 59);
-			g.drawRect(241, height + 21, 147, 57);
-			g.fillRect(244, height + 24, 142, 52);
+			g.drawRect(240, windowHeight + 20, 149, 59);
+			g.drawRect(241, windowHeight + 21, 147, 57);
+			g.fillRect(244, windowHeight + 24, 142, 52);
 			g.setColor(editorExportRed);
 			g.setFont(exportFont);
-			g.drawString("Export Map", 250, height + 56);
+			g.drawString("Export Map", 250, windowHeight + 56);
 			g.setColor(Color.WHITE);
-			g.fillRect(401, height + 31, 38, 38);
+			g.fillRect(401, windowHeight + 31, 38, 38);
 			g.setColor(editorGray);
-			g.drawRect(400, height + 30, 39, 39);
+			g.drawRect(400, windowHeight + 30, 39, 39);
 			if (exportSuccess == 1) {
 				g.setFont(saveFont);
 				g.setColor(editorSaveSuccessGreen);
-				g.drawString("\u2713", 402, height + 65);
+				g.drawString("\u2713", 402, windowHeight + 65);
 			} else if (exportSuccess == -1) {
 				g.setFont(saveFont);
 				g.setColor(editorSaveSuccessRed);
-				g.drawString("\u2715", 399, height + 65);
+				g.drawString("\u2715", 399, windowHeight + 65);
 			}
 		}
 		painting = false;
 	}
 	public void drawFloor(Graphics g) {
-		int addX = BASE_WIDTH / 2 - (int)(px);
-		int addY = BASE_HEIGHT / 2 - (int)(py);
+		int addX = BASE_WIDTH / 2 - (int)(Math.floor(px));
+		int addY = BASE_HEIGHT / 2 - (int)(Math.floor(py));
 		int tileMinY = Math.max(-addY / TILE_SIZE, 0);
 		int tileMaxY = Math.min((BASE_HEIGHT - addY - 1) / TILE_SIZE + 1, mapHeight);
 		int tileMinX = Math.max(-addX / TILE_SIZE, 0);
@@ -603,43 +624,49 @@ super.paintComponent(g);
 	}
 	public void renderKeyControlMenuOption(Graphics g, String s) {
 		int kbh = keyBackground.getHeight();
-		int originalwidth = textWidth(s);
-		String letter = keyStrings[pauseMenuCurrentOption];
-		int lw = textWidth(letter);
-		int width, drawx;
-		//accounts for the key background offsets and the two spaces for a single letter
-		s += "      ";
-		int ll = letter.length();
-		if (ll > 1) {
-			//readjust the string and the x values
-			int spacewidth = charWidths[' '];
-			//pixel space = letter count + 3
-			int spacecount = (lw + (ll + 3) * 2 - spacewidth - 1) / spacewidth;
-			for (int j = spacecount; j > 2; j--)
-				s += " ";
+		int width;
+		if (choosingKey && pauseMenuCurrentOption == pauseMenuOption) {
+			s += " [press any key]";
 			width = textWidth(s);
-			drawx = (BASE_WIDTH - width) / 2 + originalwidth + 2;
-			//draw the left half
-			int kbw = keyBackground.getWidth();
-			int halfx = kbw / 2;
-			int halfx2 = kbw - halfx;
-			g.drawImage(keyBackground.getSubimage(0, 0, halfx, kbh), drawx, pauseMenuDrawY, null);
-			//draw the middle slices
-			BufferedImage slice = keyBackground.getSubimage(halfx, 0, 1, kbh);
-			int textwidth = (spacecount * spacewidth);
-			int maxx = drawx + (textwidth + 9) - halfx2;
-			for (int newdrawx = drawx + halfx; newdrawx < maxx; newdrawx++)
-				g.drawImage(slice, newdrawx, pauseMenuDrawY, null);
-			//draw the end half
-			g.drawImage(keyBackground.getSubimage(halfx, 0, halfx2, kbh), maxx, pauseMenuDrawY, null);
-			//fix lw
-			lw += 6 - textwidth;
 		} else {
-			width = textWidth(s);
-			drawx = (BASE_WIDTH - width) / 2 + originalwidth + 2;
-			g.drawImage(keyBackground, drawx, pauseMenuDrawY, null);
+			int originalwidth = textWidth(s);
+			String letter = keyStrings[pauseMenuCurrentOption];
+			int lw = textWidth(letter);
+			int drawx;
+			//accounts for the key background offsets and the two spaces for a single letter
+			s += "      ";
+			int ll = letter.length();
+			if (ll > 1) {
+				//readjust the string and the x values
+				int spacewidth = charWidths[' '];
+				//pixel space = letter count + 3
+				int spacecount = (lw + (ll + 3) * 2 - spacewidth - 1) / spacewidth;
+				for (int j = spacecount; j > 2; j--)
+					s += " ";
+				width = textWidth(s);
+				drawx = (BASE_WIDTH - width) / 2 + originalwidth + 2;
+				//draw the left half
+				int kbw = keyBackground.getWidth();
+				int halfx = kbw / 2;
+				int halfx2 = kbw - halfx;
+				g.drawImage(keyBackground.getSubimage(0, 0, halfx, kbh), drawx, pauseMenuDrawY, null);
+				//draw the middle slices
+				BufferedImage slice = keyBackground.getSubimage(halfx, 0, 1, kbh);
+				int textwidth = (spacecount * spacewidth);
+				int maxx = drawx + (textwidth + 9) - halfx2;
+				for (int newdrawx = drawx + halfx; newdrawx < maxx; newdrawx++)
+					g.drawImage(slice, newdrawx, pauseMenuDrawY, null);
+				//draw the end half
+				g.drawImage(keyBackground.getSubimage(halfx, 0, halfx2, kbh), maxx, pauseMenuDrawY, null);
+				//fix lw
+				lw += 6 - textwidth;
+			} else {
+				width = textWidth(s);
+				drawx = (BASE_WIDTH - width) / 2 + originalwidth + 2;
+				g.drawImage(keyBackground, drawx, pauseMenuDrawY, null);
+			}
+			drawString(g, letter, drawx + (15 - lw) / 2, pauseMenuDrawY + 3);
 		}
-		drawString(g, letter, drawx + (15 - lw) / 2, pauseMenuDrawY + 3);
 		if (pauseMenuCurrentOption == pauseMenuOption) {
 			s = "< " + s + " >";
 			width = textWidth(s);
@@ -659,11 +686,11 @@ super.paintComponent(g);
 				//player has the boot
 				if (idleAnimationIndex == 5) {
 					if (animationFrame == 0 && animationIndex == 10) {
+						int lowmapx = (int)(px + BOUNDING_BOX_LEFT_OFFSET) / TILE_SIZE;
+						int highmapx = (int)(px + BOUNDING_BOX_RIGHT_OFFSET) / TILE_SIZE;
 						//kicking north, climbing, jumping off, or kicking a switch
 						if (facing == 1) {
 							int checky = (int)(py + BOUNDING_BOX_BOTTOM_OFFSET) / TILE_SIZE;
-							int lowmapx = (int)(px + BOUNDING_BOX_LEFT_OFFSET) / TILE_SIZE;
-							int highmapx = (int)(px + BOUNDING_BOX_RIGHT_OFFSET) / TILE_SIZE;
 							boolean canclimb = true;
 							boolean canfall = false;
 							int fallheight = -1;
@@ -714,8 +741,6 @@ super.paintComponent(g);
 						//kicking down, jumping off
 						} else if (facing == 3) {
 							int checky = (int)(py + BOUNDING_BOX_TOP_OFFSET) / TILE_SIZE;
-							int lowmapx = (int)(px + BOUNDING_BOX_LEFT_OFFSET) / TILE_SIZE;
-							int highmapx = (int)(px + BOUNDING_BOX_RIGHT_OFFSET) / TILE_SIZE;
 							boolean canfall = false;
 							boolean stillfalling = true;
 							int offset = 1;
@@ -758,8 +783,6 @@ super.paintComponent(g);
 						//kicking to the side, jumping off or kicking a switch
 						} else {
 							int checky = (int)(py + BOUNDING_BOX_BOTTOM_OFFSET) / TILE_SIZE;
-							int lowmapx = (int)(px + BOUNDING_BOX_LEFT_OFFSET) / TILE_SIZE;
-							int highmapx = (int)(px + BOUNDING_BOX_RIGHT_OFFSET) / TILE_SIZE;
 							int diff = highmapx - lowmapx + 1;
 							if (facing == 0) {
 								lowmapx += diff;
@@ -980,6 +1003,7 @@ super.paintComponent(g);
 				animationIndex = ANIMATION_NEXT_FRAME_INDICES[animationIndex];
 				if (kicking && animationIndex == idleAnimationIndex) {
 					kicking = false;
+					//boot has been put on
 					if (kickingAction == 1) {
 						int tilex = (int)(px) / TILE_SIZE;
 						int tiley = (int)(py + BOOT_CENTER_PLAYER_Y_OFFSET) / TILE_SIZE;
@@ -1012,7 +1036,34 @@ super.paintComponent(g);
 	////////////////////////////////Input////////////////////////////////
 	public void keyPressed(KeyEvent evt) {
 		int code = evt.getKeyCode();
-		if (code == upKey) {
+		//this takes all precedence, this keypress sets the key
+		if (choosingKey) {
+			if (pauseMenuOption == 0)
+				keyStrings[0] = keyToString(upKey = code);
+			else if (pauseMenuOption == 1)
+				keyStrings[1] = keyToString(downKey = code);
+			else if (pauseMenuOption == 2)
+				keyStrings[2] = keyToString(leftKey = code);
+			else if (pauseMenuOption == 3)
+				keyStrings[3] = keyToString(rightKey = code);
+			else if (pauseMenuOption == 4)
+				keyStrings[4] = keyToString(bootKey = code);
+			//if there was another key assigned to this, set that one to be chosen
+			if (upKey == code && pauseMenuOption != 0)
+				pauseMenuOption = 0;
+			else if (downKey == code && pauseMenuOption != 1)
+				pauseMenuOption = 1;
+			else if (leftKey == code && pauseMenuOption != 2)
+				pauseMenuOption = 2;
+			else if (rightKey == code && pauseMenuOption != 3)
+				pauseMenuOption = 3;
+			else if (bootKey == code && pauseMenuOption != 4)
+				pauseMenuOption = 4;
+			//all keys are different, no longer choosing key
+			else
+				choosingKey = false;
+		//arrow keys are always handled, editor or not
+		} else if (code == upKey) {
 			vertKey = -1;
 			pressedVertLast = true;
 			if (pauseOption >= 1 && pauseOption <= 3) {
@@ -1027,9 +1078,27 @@ super.paintComponent(g);
 		} else if (code == leftKey) {
 			horizKey = -1;
 			pressedVertLast = false;
+			if (pauseOption == 2) {
+				if (pauseMenuOption == 0) {
+					pixelWidth = (Math.round(pixelWidth * 8.0) - 1.0) * 0.125;
+					resizeWindow(2);
+				} else if (pauseMenuOption == 1) {
+					pixelHeight = (Math.round(pixelHeight * 8.0) - 1.0) * 0.125;
+					resizeWindow(2);
+				}
+			}
 		} else if (code == rightKey) {
 			horizKey = 1;
 			pressedVertLast = false;
+			if (pauseOption == 2) {
+				if (pauseMenuOption == 0) {
+					pixelWidth = (Math.round(pixelWidth * 8.0) + 1.0) * 0.125;
+					resizeWindow(2);
+				} else if (pauseMenuOption == 1) {
+					pixelHeight = (Math.round(pixelHeight * 8.0) + 1.0) * 0.125;
+					resizeWindow(2);
+				}
+			}
 		//editor-only key presses
 		} else if (editor) {
 			if (code == bootKey)
@@ -1038,6 +1107,8 @@ super.paintComponent(g);
 				try {
 					resetGame();
 				} catch(Exception e) {
+					e.printStackTrace();
+					System.exit(0);
 				}
 			}
 		//in-game-only key presses
@@ -1049,28 +1120,57 @@ super.paintComponent(g);
 			//paused, unpause the game
 			} else if (pauseOption >= 1 && pauseOption <= 3)
 				pauseOption = 0;
-		} else if (code == KeyEvent.VK_ENTER) {
-			//pick options to enter
-			if (pauseOption == 1 && pauseMenuOption <= 1) {
-				pauseOption = pauseMenuOption + 2;
-				pauseMenuOption = 0;
-			//go back
-			} else if (pauseMenuOption + 1 == PAUSE_MENU_OPTION_COUNTS[pauseOption - 1]) {
-				if (pauseOption == 1)
-					pauseOption = 0;
-				else if (pauseOption >= 2 && pauseOption <= 3) {
-					pauseMenuOption = pauseOption - 2;
-					pauseOption = 1;
-				}
-			}
 		} else if (code == bootKey) {
+			int pauseOptionCount;
+			//kicking during gameplay
 			if (pauseOption == 0) {
 				if (!kicking) {
 					animationFrame = -1;
 					animationIndex = idleAnimationIndex + 4;
 					kicking = true;
 				}
-			}
+			//enter sub-menu
+			} else if (pauseOption == 1 && pauseMenuOption <= 1) {
+				pauseOption = pauseMenuOption + 2;
+				pauseMenuOption = 0;
+			//exit game or revert options if in a sub-menu
+			} else if (pauseMenuOption + 1 == (pauseOptionCount = PAUSE_MENU_OPTION_COUNTS[pauseOption - 1])) {
+				if (pauseOption == 1)
+					System.exit(0);
+				else if (pauseOption >= 2 && pauseOption <= 3) {
+					load(true, false);
+					//window size was reverted, restore the old window size
+					if (pauseOption == 2)
+						resizeWindow(2);
+					pauseMenuOption = pauseOption - 2;
+					pauseOption = 1;
+				}
+			//accept, save options
+			//if this is true then we know we're in a sub-menu because the main menu would already have caught the event
+			} else if (pauseMenuOption + 2 == pauseOptionCount) {
+				save(true, false);
+				pauseMenuOption = pauseOption - 2;
+				pauseOption = 1;
+			//restore defaults
+			//same as above, we're in a sub-menu
+			} else if (pauseMenuOption + 3 == pauseOptionCount) {
+				//load pixel size defaults
+				if (pauseOption == 2) {
+					pixelWidth = DEFAULT_PIXEL_SIZE;
+					pixelHeight = DEFAULT_PIXEL_SIZE;
+					resizeWindow(2);
+				//load key binding defaults
+				} else if (pauseOption == 3) {
+					keyStrings[0] = keyToString(upKey = DEFAULT_UP_KEY);
+					keyStrings[1] = keyToString(downKey = DEFAULT_DOWN_KEY);
+					keyStrings[2] = keyToString(leftKey = DEFAULT_LEFT_KEY);
+					keyStrings[3] = keyToString(rightKey = DEFAULT_RIGHT_KEY);
+					keyStrings[4] = keyToString(bootKey = DEFAULT_BOOT_KEY);
+				}
+			//set a key
+			//if we get here, the pauseMenuOption is definitely on a key option
+			} else if (pauseOption == 3)
+				choosingKey = true;
 		}
 	}
 	public void keyReleased(KeyEvent evt) {
@@ -1098,7 +1198,7 @@ super.paintComponent(g);
 		int mouseY = evt.getY();
 		if (editor) {
 			//paint a tile
-			if (mouseX < width && mouseY < height) {
+			if (mouseX < windowWidth && mouseY < windowHeight) {
 				if (noisyTileSelection ? (noiseTileCount > 0) : (selectingTile || selectingHeight)) {
 					int[] randIndices = null;
 					int randCount = 0;
@@ -1139,7 +1239,7 @@ super.paintComponent(g);
 					exportSuccess = 0;
 				}
 			//save button
-			} else if (mouseX >= 20 && mouseX < 170 && mouseY >= height + 20 && mouseY < height + 80) {
+			} else if (mouseX >= 20 && mouseX < 170 && mouseY >= windowHeight + 20 && mouseY < windowHeight + 80) {
 				if (saveSuccess == 0) {
 					try {
 						floorImage = new BufferedImage(mapWidth, mapHeight, BufferedImage.TYPE_INT_ARGB);
@@ -1161,7 +1261,7 @@ super.paintComponent(g);
 					}
 				}
 			//export button
-			} else if (mouseX >= 240 && mouseX < 390 && mouseY >= height + 20 && mouseY < height + 80) {
+			} else if (mouseX >= 240 && mouseX < 390 && mouseY >= windowHeight + 20 && mouseY < windowHeight + 80) {
 				if (exportSuccess == 0) {
 					try {
 						BufferedImage mapImage = new BufferedImage(
@@ -1185,12 +1285,12 @@ super.paintComponent(g);
 						exportSuccess = -1;
 					}
 				}
-			} else if (mouseX >= width + EDITOR_NOISE_BOX_X && mouseX <= width + EDITOR_NOISE_BOX_X + EDITOR_NOISE_BOX_W &&
+			} else if (mouseX >= windowWidth + EDITOR_NOISE_BOX_X && mouseX <= windowWidth + EDITOR_NOISE_BOX_X + EDITOR_NOISE_BOX_W &&
 				mouseY >= EDITOR_NOISE_BOX_Y && mouseY <= EDITOR_NOISE_BOX_Y + EDITOR_NOISE_BOX_H)
 				noisyTileSelection = !noisyTileSelection;
 			//one of the grid selections
 			else {
-				int selectedX = mouseX - width - 15;
+				int selectedX = mouseX - windowWidth - 15;
 				int selectedY = mouseY - 15;
 				if (selectedX >= 0 && selectedX < 220 &&
 					selectedY >= 0 && selectedY < (EDITOR_NOISE_ROW_START + EDITOR_NOISE_ROWS) * 28 - 4 &&
@@ -1249,30 +1349,110 @@ super.paintComponent(g);
 		int mouseX = evt.getX();
 		int mouseY = evt.getY();
 		if (editor) {
-			if (mouseX < width && mouseY < height) {
+			if (mouseX < windowWidth && mouseY < windowHeight) {
 				produceMapCoordinates(mouseX, mouseY);
 			}
 		}
 	}
+	////////////////////////////////Saving + loading////////////////////////////////
+	public void save(boolean saveOptions, boolean saveGame) {
+		try {
+			if (saveOptions) {
+				saveFile.seek(0);
+				saveFile.writeInt(SAVE_FILE_VERSION);
+				saveFile.writeInt(upKey);
+				saveFile.writeInt(downKey);
+				saveFile.writeInt(leftKey);
+				saveFile.writeInt(rightKey);
+				saveFile.writeInt(bootKey);
+				saveFile.writeDouble(pixelWidth);
+				saveFile.writeDouble(pixelHeight);
+			}
+			saveFile.getFD().sync();
+		} catch(Exception e) {
+			e.printStackTrace();
+			System.exit(0);
+		}
+	}
+	public void load(boolean loadOptions, boolean loadGame) {
+		try {
+			if (loadOptions) {
+				saveFile.seek(0);
+				int version = saveFile.readInt();
+				keyStrings[0] = keyToString(upKey = saveFile.readInt());
+				keyStrings[1] = keyToString(downKey = saveFile.readInt());
+				keyStrings[2] = keyToString(leftKey = saveFile.readInt());
+				keyStrings[3] = keyToString(rightKey = saveFile.readInt());
+				keyStrings[4] = keyToString(bootKey = saveFile.readInt());
+				pixelWidth = saveFile.readDouble();
+				pixelHeight = saveFile.readDouble();
+			}
+		} catch(Exception e) {
+			e.printStackTrace();
+			System.exit(0);
+		}
+	}
 	////////////////////////////////Helpers////////////////////////////////
 	public void produceMapCoordinates(int mouseX, int mouseY) {
-		mouseMapX = ((int)(px - BASE_WIDTH / 2) + (int)(mouseX / pixelWidth)) / TILE_SIZE;
-		mouseMapY = ((int)(py - BASE_HEIGHT / 2) + (int)(mouseY / pixelHeight)) / TILE_SIZE;
+		mouseMapX = (int)(Math.floor((Math.floor(px) - BASE_WIDTH / 2 + mouseX / pixelWidth) / TILE_SIZE));
+		mouseMapY = (int)(Math.floor((Math.floor(py) - BASE_HEIGHT / 2 + mouseY / pixelHeight) / TILE_SIZE));
 	}
-	////////////////////////////////Other////////////////////////////////
+	public String keyToString(int key) {
+		if (key == KeyEvent.VK_UP)
+			return "\u0080";
+		else if (key == KeyEvent.VK_DOWN)
+			return "\u0081";
+		else if (key == KeyEvent.VK_LEFT)
+			return "\u0082";
+		else if (key == KeyEvent.VK_RIGHT)
+			return "\u0083";
+		else
+			return KeyEvent.getKeyText(key);
+	}
+	////////////////////////////////Window manipulation////////////////////////////////
+	public void resizeWindow(int setLocation) {
+		Insets insets = window.getInsets();
+		if (editor) {
+			insets.right += EDITOR_MARGIN_RIGHT;
+			insets.bottom += EDITOR_MARGIN_BOTTOM;
+		}
+		Rectangle oldBounds = window.getBounds();
+		if (pixelWidth < 1.0)
+			pixelWidth = 1.0;
+		if (pixelHeight < 1.0)
+			pixelHeight = 1.0;
+		int newwidth = (windowWidth = (int)(BASE_WIDTH * pixelWidth)) + insets.left + insets.right;
+		int newheight = (windowHeight = (int)(BASE_HEIGHT * pixelHeight)) + insets.top + insets.bottom;
+		//1: set it to the center of the screen
+		if (setLocation == 1)
+			window.setBounds(
+				(screenwidth() - windowWidth) / 2 - insets.left,
+				(screenheight() - windowHeight) / 2 - insets.top,
+				newwidth,
+				newheight);
+		//2: relocate according to where the window was previously, keep it centered
+		else if (setLocation == 2)
+			window.setBounds(
+				oldBounds.x + (oldBounds.width - newwidth) / 2,
+				oldBounds.y + (oldBounds.height - newheight) / 2,
+				newwidth,
+				newheight);
+		//0: no window relocating
+		else
+			window.setSize(newwidth, newheight);
+	}
 	public void ancestorResized(HierarchyEvent evt) {
 		if (evt.getID() != HierarchyEvent.ANCESTOR_RESIZED)
 			return;
-		JFrame window = (JFrame)(getTopLevelAncestor());
 		Insets insets = window.getInsets();
-		width = window.getWidth() - insets.left - insets.right;
-		height = window.getHeight() - insets.top - insets.bottom;
+		windowWidth = window.getWidth() - insets.left - insets.right;
+		windowHeight = window.getHeight() - insets.top - insets.bottom;
 		if (editor) {
-			width -= EDITOR_MARGIN_RIGHT;
-			height -= EDITOR_MARGIN_BOTTOM;
+			windowWidth -= EDITOR_MARGIN_RIGHT;
+			windowHeight -= EDITOR_MARGIN_BOTTOM;
 		}
-		pixelWidth = (double)(width) / BASE_WIDTH;
-		pixelHeight = (double)(height) / BASE_HEIGHT;
+		pixelWidth = (double)(windowWidth) / BASE_WIDTH;
+		pixelHeight = (double)(windowHeight) / BASE_HEIGHT;
 	}
 	////////////////////////////////Unused////////////////////////////////
 	public void mouseClicked(MouseEvent evt) {}
