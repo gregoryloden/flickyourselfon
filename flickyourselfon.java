@@ -77,6 +77,7 @@ public class flickyourselfon extends JPanel implements MouseListener, MouseMotio
 	public static File tilesImageFile = new File("images/tiles.png");
 	public static File floorImageFile = new File("images/floor.png");
 	public static File fontImageFile = new File("images/font.png");
+	public static File radiotowerImageFile = new File("images/radiotower.png");
 	public static RandomAccessFile saveFile = null;
 	//function outputs
 	public static int mouseMapX = 0;
@@ -94,6 +95,7 @@ public class flickyourselfon extends JPanel implements MouseListener, MouseMotio
 	public BufferedImage tilesImage = null;
 	public BufferedImage floorImage = null;
 	public BufferedImage fontImage = null;
+	public BufferedImage radiotowerImage = null;
 	public BufferedImage[] tileList = new BufferedImage[MAP_TILES];
 	public BufferedImage[][] tiles = null;
 	public int[][] tileIndices = null;
@@ -267,6 +269,7 @@ setBackground(new Color(48, 0, 48));
 		tilesImage = ImageIO.read(tilesImageFile);
 		floorImage = ImageIO.read(floorImageFile);
 		fontImage = ImageIO.read(fontImageFile);
+		radiotowerImage = ImageIO.read(radiotowerImageFile);
 		//setup the level
 		//setup the player sprites
 		for (int y = 0; y < 4; y++) {
@@ -387,6 +390,8 @@ super.paintComponent(g);
 		g2.transform(AffineTransform.getScaleInstance(pixelWidth, pixelHeight));
 		//start drawing
 		drawFloor(g);
+		if (!editor)
+			g.drawImage(radiotowerImage, 423 - (int)(Math.floor(px)), -32 - (int)(Math.floor(py)), null);
 		g.drawImage(currentPlayerSprites[ANIMATION_FRAME_SPRITE_INDICES[animationIndex]],
 			(BASE_WIDTH - SPRITE_WIDTH) / 2, (BASE_HEIGHT - SPRITE_HEIGHT) / 2, null);
 		//bounding box
@@ -422,10 +427,10 @@ super.paintComponent(g);
 			} else {
 				pauseMenuDrawY = 28;
 				titleY = 4;
-				renderKeyControlMenuOption(g, "move up:");
-				renderKeyControlMenuOption(g, "move down:");
-				renderKeyControlMenuOption(g, "move left:");
-				renderKeyControlMenuOption(g, "move right:");
+				renderKeyControlMenuOption(g, "up:");
+				renderKeyControlMenuOption(g, "down:");
+				renderKeyControlMenuOption(g, "left:");
+				renderKeyControlMenuOption(g, "right:");
 				renderKeyControlMenuOption(g, "boot:");
 				pauseMenuDrawY += 2;
 				renderNormalMenuOption(g, "defaults");
@@ -1225,7 +1230,7 @@ super.paintComponent(g);
 						int[] tileIndicesY = tileIndices[y];
 						int[] heightsY = heights[y];
 						for (int x = minX; x <= maxX; x++) {
-							if (heightsY[x] != -1 || ((noisyTileSelection || selectingTile) && selectingHeight)) {
+							if ((noisyTileSelection || selectingTile) && selectingHeight) {
 								if (noisyTileSelection)
 									tilesY[x] = tileList[tileIndicesY[x] = randIndices[(int)(Math.random() * randCount)]];
 								else if (selectingTile)
@@ -1247,7 +1252,9 @@ super.paintComponent(g);
 							int[] tileIndicesY = tileIndices[y];
 							int[] heightsY = heights[y];
 							for (int x = 0; x < mapWidth; x++) {
-								if (heightsY[x] != -1)
+								if (tileIndicesY[x] == -1)
+									floorImage.setRGB(x, y, 0xFFFFFFFF);
+								else
 									floorImage.setRGB(x, y,
 										(((tileIndicesY[x] + 1) * MAP_TILES_FACTOR - 1) << 8) |
 										((heightsY[x] + 1) * MAP_HEIGHTS_FACTOR - 1) |
