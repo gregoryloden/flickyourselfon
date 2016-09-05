@@ -1,0 +1,17 @@
+square wave switches are just toggle
+
+sine waves go up and down on a timer
+-once you are on, it stays in position until you cross
+
+multiple levels/heights of bars?
+multiple levels/heights per bar?
+
+first level:
+side left is down, left is down, right is down
+button 1 on bottom platform
+button 2 on right platform
+
+turning on square switch makes left go up
+press button 1 to make left go down and right go up
+press button 2 to make side left go up and right go down
+press button 1 to make left go up and right go up (all 3 are up)
