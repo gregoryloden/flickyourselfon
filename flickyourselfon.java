@@ -49,6 +49,13 @@ public class flickyourselfon extends JPanel implements MouseListener, MouseMotio
 	public static final int DEFAULT_LEFT_KEY = KeyEvent.VK_LEFT;
 	public static final int DEFAULT_RIGHT_KEY = KeyEvent.VK_RIGHT;
 	public static final int DEFAULT_BOOT_KEY = KeyEvent.VK_SPACE;
+	public static final int PAUSE_KEY = KeyEvent.VK_ESCAPE;
+	public static final int PAUSE_MENU_UP_KEY = KeyEvent.VK_UP;
+	public static final int PAUSE_MENU_DOWN_KEY = KeyEvent.VK_DOWN;
+	public static final int PAUSE_MENU_LEFT_KEY = KeyEvent.VK_LEFT;
+	public static final int PAUSE_MENU_RIGHT_KEY = KeyEvent.VK_RIGHT;
+	public static final int PAUSE_MENU_SELECT_KEY = KeyEvent.VK_ENTER;
+	public static final int PAUSE_MENU_SELECT_KEY2 = KeyEvent.VK_SPACE;
 	public static final int OPTIONS_BYTE_COUNT =
 		//version number, 1 int
 		4 +
@@ -356,19 +363,16 @@ setBackground(new Color(48, 0, 48));
 		charImages[' '] = null;
 		charImages['"'].setRGB(1, 0, 0);
 		int fontimageheight = fontImage.getHeight();
-		int checkx = fontimagewidth - 1;
-		int checky = fontimageheight - 1;
-		int kbx = checkx;
-		int kby = checky;
-		while (fontImage.getRGB(checkx, kby) == 0)
-			checkx--;
-		while (fontImage.getRGB(kbx, checky) == 0)
-			checky--;
+		int kbx = fontimagewidth - 1;
+		int kby = fontimageheight - 1;
+		//start 8 pixels in
+		int checkx = fontimagewidth - 9;
+		int checky = fontimageheight - 9;
 		while (fontImage.getRGB(checkx, kby) != 0)
 			kby--;
 		while (fontImage.getRGB(kbx, checky) != 0)
 			kbx--;
-		keyBackground = fontImage.getSubimage(kbx, kby, fontimagewidth - kbx, fontimageheight - kby);
+		keyBackground = fontImage.getSubimage(kbx + 1, kby + 1, fontimagewidth - kbx - 1, fontimageheight - kby - 1);
 		//setup game state
 		px = STARTING_PLAYER_X;
 		py = STARTING_PLAYER_Y;
@@ -407,7 +411,7 @@ super.paintComponent(g);
 			pauseMenuCurrentOption = 0;
 			String title;
 			int titleY;
-			//different pause menus, loop variables are global
+			//different pause menus, pauseMenuDrawY is global for repeat render calls
 			if (pauseOption == 1) {
 				pauseMenuDrawY = 52;
 				titleY = 16;
@@ -445,7 +449,7 @@ super.paintComponent(g);
 		//editor UI
 		if (editor) {
 			//hover box
-			if (noisyTileSelection ? (noiseTileCount > 0) : (selectingTile || selectingHeight)) {
+			if ((noisyTileSelection ? (noiseTileCount > 0) : selectingTile) || selectingHeight) {
 				int dx = BASE_WIDTH / 2 - (int)(Math.floor(px)) + (mouseMapX - selectedBrushSize) * TILE_SIZE;
 				int dy = BASE_HEIGHT / 2 - (int)(Math.floor(py)) + (mouseMapY - selectedBrushSize) * TILE_SIZE;
 				int drawSize = ((selectedBrushSize << 1) + 1) * TILE_SIZE;
@@ -468,7 +472,7 @@ super.paintComponent(g);
 					int index = x + y * 8;
 					int dx = leftX + x * 28;
 					g.drawImage(tileList[index], dx, dy, 24, 24, null);
-					g.setColor((selectingTile && index == selectedTileIndex && !noisyTileSelection) ? editorYellow : editorGray);
+					g.setColor((index == selectedTileIndex && selectingTile && !noisyTileSelection) ? editorYellow : editorGray);
 					g.drawRect(dx - 1, dy - 1, 25, 25);
 					g.drawRect(dx - 2, dy - 2, 27, 27);
 				}
@@ -485,7 +489,7 @@ super.paintComponent(g);
 					g.fillRect(dx, dy, 24, 24);
 					g.setColor(editorYellow);
 					g.drawString(String.valueOf(heightNum), dx + (heightNum < 10 ? 8 : 3), dy + 18);
-					g.setColor((selectingHeight && heightNum == selectedHeight) ? editorYellow : editorGray);
+					g.setColor((heightNum == selectedHeight && selectingHeight) ? editorYellow : editorGray);
 					g.drawRect(dx - 1, dy - 1, 25, 25);
 					g.drawRect(dx - 2, dy - 2, 27, 27);
 				}
@@ -1041,161 +1045,175 @@ super.paintComponent(g);
 	////////////////////////////////Input////////////////////////////////
 	public void keyPressed(KeyEvent evt) {
 		int code = evt.getKeyCode();
-		//this takes all precedence, this keypress sets the key
-		if (choosingKey) {
-			if (pauseMenuOption == 0)
-				keyStrings[0] = keyToString(upKey = code);
-			else if (pauseMenuOption == 1)
-				keyStrings[1] = keyToString(downKey = code);
-			else if (pauseMenuOption == 2)
-				keyStrings[2] = keyToString(leftKey = code);
-			else if (pauseMenuOption == 3)
-				keyStrings[3] = keyToString(rightKey = code);
-			else if (pauseMenuOption == 4)
-				keyStrings[4] = keyToString(bootKey = code);
-			//if there was another key assigned to this, set that one to be chosen
-			if (upKey == code && pauseMenuOption != 0)
-				pauseMenuOption = 0;
-			else if (downKey == code && pauseMenuOption != 1)
-				pauseMenuOption = 1;
-			else if (leftKey == code && pauseMenuOption != 2)
-				pauseMenuOption = 2;
-			else if (rightKey == code && pauseMenuOption != 3)
-				pauseMenuOption = 3;
-			else if (bootKey == code && pauseMenuOption != 4)
-				pauseMenuOption = 4;
-			//all keys are different, no longer choosing key
-			else
-				choosingKey = false;
-		//arrow keys are always handled, editor or not
-		} else if (code == upKey) {
-			vertKey = -1;
-			pressedVertLast = true;
-			if (pauseOption >= 1 && pauseOption <= 3) {
-				int menuOptionCount = PAUSE_MENU_OPTION_COUNTS[pauseOption - 1];
-				pauseMenuOption = (pauseMenuOption + menuOptionCount - 1) % menuOptionCount;
-			}
-		} else if (code == downKey) {
-			vertKey = 1;
-			pressedVertLast = true;
-			if (pauseOption >= 1 && pauseOption <= 3)
-				pauseMenuOption = (pauseMenuOption + 1) % PAUSE_MENU_OPTION_COUNTS[pauseOption - 1];
-		} else if (code == leftKey) {
-			horizKey = -1;
-			pressedVertLast = false;
-			if (pauseOption == 2) {
-				if (pauseMenuOption == 0) {
-					pixelWidth = (Math.round(pixelWidth * 8.0) - 1.0) * 0.125;
-					resizeWindow(2);
-				} else if (pauseMenuOption == 1) {
-					pixelHeight = (Math.round(pixelHeight * 8.0) - 1.0) * 0.125;
-					resizeWindow(2);
+		//main game
+		if (pauseOption == 0) {
+			//pause the game
+			if (code == PAUSE_KEY) {
+				//but not if we're in the editor
+				if (!editor) {
+					pauseOption = 1;
+					pauseMenuOption = 0;
+					//reset the movement to avoid movement-after-unpausing issues
+					vertKey = 0;
+					horizKey = 0;
 				}
-			}
-		} else if (code == rightKey) {
-			horizKey = 1;
-			pressedVertLast = false;
-			if (pauseOption == 2) {
-				if (pauseMenuOption == 0) {
-					pixelWidth = (Math.round(pixelWidth * 8.0) + 1.0) * 0.125;
-					resizeWindow(2);
-				} else if (pauseMenuOption == 1) {
-					pixelHeight = (Math.round(pixelHeight * 8.0) + 1.0) * 0.125;
-					resizeWindow(2);
+			} else if (code == upKey) {
+				vertKey = -1;
+				pressedVertLast = true;
+			} else if (code == downKey) {
+				vertKey = 1;
+				pressedVertLast = true;
+			} else if (code == leftKey) {
+				horizKey = -1;
+				pressedVertLast = false;
+			} else if (code == rightKey) {
+				horizKey = 1;
+				pressedVertLast = false;
+			//editor-only keypresses
+			} else if (editor) {
+				if (code == bootKey)
+					editorSpeeding = true;
+				else if (code == KeyEvent.VK_R) {
+					try {
+						resetGame();
+					} catch(Exception e) {
+						e.printStackTrace();
+						System.exit(0);
+					}
 				}
-			}
-		//editor-only key presses
-		} else if (editor) {
-			if (code == bootKey)
-				editorSpeeding = true;
-			else if (code == KeyEvent.VK_R) {
-				try {
-					resetGame();
-				} catch(Exception e) {
-					e.printStackTrace();
-					System.exit(0);
-				}
-			}
-		//in-game-only key presses
-		} else if (code == KeyEvent.VK_ESCAPE) {
-			//not paused, pause the game
-			if (pauseOption == 0) {
-				pauseOption = 1;
-				pauseMenuOption = 0;
-			//paused, unpause the game
-			} else if (pauseOption >= 1 && pauseOption <= 3)
-				pauseOption = 0;
-		} else if (code == bootKey) {
-			int pauseOptionCount;
-			//kicking during gameplay
-			if (pauseOption == 0) {
+			//non-editor-only keypresses
+			} else if (code == bootKey) {
 				if (!kicking) {
 					animationFrame = -1;
 					animationIndex = idleAnimationIndex + 4;
 					kicking = true;
 				}
-			//enter sub-menu
-			} else if (pauseOption == 1 && pauseMenuOption <= 1) {
-				pauseOption = pauseMenuOption + 2;
-				pauseMenuOption = 0;
-			//exit game or revert options if in a sub-menu
-			} else if (pauseMenuOption + 1 == (pauseOptionCount = PAUSE_MENU_OPTION_COUNTS[pauseOption - 1])) {
-				if (pauseOption == 1)
-					System.exit(0);
-				else if (pauseOption >= 2 && pauseOption <= 3) {
-					load(true, false);
-					//window size was reverted, restore the old window size
-					if (pauseOption == 2)
+			}
+		//game is paused
+		} else {
+			//unpause the game
+			if (code == PAUSE_KEY)
+				pauseOption = 0;
+			//choosing a key
+			else if (choosingKey) {
+				if (pauseMenuOption == 0)
+					keyStrings[0] = keyToString(upKey = code);
+				else if (pauseMenuOption == 1)
+					keyStrings[1] = keyToString(downKey = code);
+				else if (pauseMenuOption == 2)
+					keyStrings[2] = keyToString(leftKey = code);
+				else if (pauseMenuOption == 3)
+					keyStrings[3] = keyToString(rightKey = code);
+				else if (pauseMenuOption == 4)
+					keyStrings[4] = keyToString(bootKey = code);
+				//if there was another key assigned to this, set that one to be chosen
+				if (upKey == code && pauseMenuOption != 0)
+					pauseMenuOption = 0;
+				else if (downKey == code && pauseMenuOption != 1)
+					pauseMenuOption = 1;
+				else if (leftKey == code && pauseMenuOption != 2)
+					pauseMenuOption = 2;
+				else if (rightKey == code && pauseMenuOption != 3)
+					pauseMenuOption = 3;
+				else if (bootKey == code && pauseMenuOption != 4)
+					pauseMenuOption = 4;
+				//all keys are different, no longer choosing key
+				else
+					choosingKey = false;
+			} else if (code == PAUSE_MENU_UP_KEY) {
+				int menuOptionCount = PAUSE_MENU_OPTION_COUNTS[pauseOption - 1];
+				pauseMenuOption = (pauseMenuOption + menuOptionCount - 1) % menuOptionCount;
+			} else if (code == PAUSE_MENU_DOWN_KEY) {
+				pauseMenuOption = (pauseMenuOption + 1) % PAUSE_MENU_OPTION_COUNTS[pauseOption - 1];
+			} else if (code == PAUSE_MENU_LEFT_KEY) {
+				if (pauseOption == 2) {
+					if (pauseMenuOption == 0) {
+						pixelWidth = (Math.round(pixelWidth * 8.0) - 1.0) * 0.125;
 						resizeWindow(2);
+					} else if (pauseMenuOption == 1) {
+						pixelHeight = (Math.round(pixelHeight * 8.0) - 1.0) * 0.125;
+						resizeWindow(2);
+					}
+				}
+			} else if (code == PAUSE_MENU_RIGHT_KEY) {
+				if (pauseOption == 2) {
+					if (pauseMenuOption == 0) {
+						pixelWidth = (Math.round(pixelWidth * 8.0) + 1.0) * 0.125;
+						resizeWindow(2);
+					} else if (pauseMenuOption == 1) {
+						pixelHeight = (Math.round(pixelHeight * 8.0) + 1.0) * 0.125;
+						resizeWindow(2);
+					}
+				}
+			} else if (code == PAUSE_MENU_SELECT_KEY || code == PAUSE_MENU_SELECT_KEY2) {
+				int lastOption;
+				//enter sub-menu
+				if (pauseOption == 1 && pauseMenuOption <= 1) {
+					pauseOption = pauseMenuOption + 2;
+					pauseMenuOption = 0;
+				//exit game or revert options if in a sub-menu
+				} else if (pauseMenuOption == (lastOption = PAUSE_MENU_OPTION_COUNTS[pauseOption - 1] - 1)) {
+					if (pauseOption == 1)
+						System.exit(0);
+					else if (pauseOption >= 2 && pauseOption <= 3) {
+						load(true, false);
+						//window size was reverted, restore the old window size
+						if (pauseOption == 2)
+							resizeWindow(2);
+						//go back to the main pause menu at the position of this submenu
+						pauseMenuOption = pauseOption - 2;
+						pauseOption = 1;
+					}
+				//accept, save options
+				//if this is true then we know we're in a sub-menu because the main menu would already have caught the event
+				} else if (pauseMenuOption == lastOption - 1) {
+					save(true, false);
 					pauseMenuOption = pauseOption - 2;
 					pauseOption = 1;
-				}
-			//accept, save options
-			//if this is true then we know we're in a sub-menu because the main menu would already have caught the event
-			} else if (pauseMenuOption + 2 == pauseOptionCount) {
-				save(true, false);
-				pauseMenuOption = pauseOption - 2;
-				pauseOption = 1;
-			//restore defaults
-			//same as above, we're in a sub-menu
-			} else if (pauseMenuOption + 3 == pauseOptionCount) {
-				//load pixel size defaults
-				if (pauseOption == 2) {
-					pixelWidth = DEFAULT_PIXEL_SIZE;
-					pixelHeight = DEFAULT_PIXEL_SIZE;
-					resizeWindow(2);
-				//load key binding defaults
-				} else if (pauseOption == 3) {
-					keyStrings[0] = keyToString(upKey = DEFAULT_UP_KEY);
-					keyStrings[1] = keyToString(downKey = DEFAULT_DOWN_KEY);
-					keyStrings[2] = keyToString(leftKey = DEFAULT_LEFT_KEY);
-					keyStrings[3] = keyToString(rightKey = DEFAULT_RIGHT_KEY);
-					keyStrings[4] = keyToString(bootKey = DEFAULT_BOOT_KEY);
-				}
-			//set a key
-			//if we get here, the pauseMenuOption is definitely on a key option
-			} else if (pauseOption == 3)
-				choosingKey = true;
+				//restore defaults
+				//same as above, we're in a sub-menu
+				} else if (pauseMenuOption == lastOption - 2) {
+					//load pixel size defaults
+					if (pauseOption == 2) {
+						pixelWidth = DEFAULT_PIXEL_SIZE;
+						pixelHeight = DEFAULT_PIXEL_SIZE;
+						resizeWindow(2);
+					//load key binding defaults
+					} else if (pauseOption == 3) {
+						keyStrings[0] = keyToString(upKey = DEFAULT_UP_KEY);
+						keyStrings[1] = keyToString(downKey = DEFAULT_DOWN_KEY);
+						keyStrings[2] = keyToString(leftKey = DEFAULT_LEFT_KEY);
+						keyStrings[3] = keyToString(rightKey = DEFAULT_RIGHT_KEY);
+						keyStrings[4] = keyToString(bootKey = DEFAULT_BOOT_KEY);
+					}
+				//set a key
+				//if we get here, the pauseMenuOption is definitely on a key option
+				} else if (pauseOption == 3)
+					choosingKey = true;
+			}
 		}
 	}
 	public void keyReleased(KeyEvent evt) {
 		int code = evt.getKeyCode();
-		if (code == upKey) {
-			if (vertKey == -1)
-				vertKey = 0;
-		} else if (code == downKey) {
-			if (vertKey == 1)
-				vertKey = 0;
-		} else if (code == leftKey) {
-			if (horizKey == -1)
-				horizKey = 0;
-		} else if (code == rightKey) {
-			if (horizKey == 1)
-				horizKey = 0;
-		//editor-only key releases
-		} else if (editor) {
-			if (code == bootKey)
-				editorSpeeding = false;
+		//main game
+		if (pauseOption == 0) {
+			if (code == upKey) {
+				if (vertKey == -1)
+					vertKey = 0;
+			} else if (code == downKey) {
+				if (vertKey == 1)
+					vertKey = 0;
+			} else if (code == leftKey) {
+				if (horizKey == -1)
+					horizKey = 0;
+			} else if (code == rightKey) {
+				if (horizKey == 1)
+					horizKey = 0;
+			//editor-only key releases
+			} else if (editor) {
+				if (code == bootKey)
+					editorSpeeding = false;
+			}
 		}
 	}
 	public void mousePressed(MouseEvent evt) {
@@ -1204,11 +1222,13 @@ super.paintComponent(g);
 		if (editor) {
 			//paint a tile
 			if (mouseX < windowWidth && mouseY < windowHeight) {
-				if (noisyTileSelection ? (noiseTileCount > 0) : (selectingTile || selectingHeight)) {
+				boolean isDoingNoisyTileSelection = noisyTileSelection && noiseTileCount > 0;
+				if ((noisyTileSelection ? isDoingNoisyTileSelection : selectingTile) || selectingHeight) {
 					int[] randIndices = null;
 					int randCount = 0;
 					//prebuild a list for direct array access during the random index selection
-					if (noisyTileSelection) {
+					//this could get cached but it's not
+					if (isDoingNoisyTileSelection) {
 						for (int i = 0; i < noiseTileCount; i++)
 							randCount += noiseTileChances[i];
 						randIndices = new int[randCount];
@@ -1230,14 +1250,13 @@ super.paintComponent(g);
 						int[] tileIndicesY = tileIndices[y];
 						int[] heightsY = heights[y];
 						for (int x = minX; x <= maxX; x++) {
-							if ((noisyTileSelection || selectingTile) && selectingHeight) {
-								if (noisyTileSelection)
+							if (noisyTileSelection) {
+								if (isDoingNoisyTileSelection)
 									tilesY[x] = tileList[tileIndicesY[x] = randIndices[(int)(Math.random() * randCount)]];
-								else if (selectingTile)
-									tilesY[x] = tileList[tileIndicesY[x] = selectedTileIndex];
-								if (selectingHeight)
-									heightsY[x] = selectedHeight;
-							}
+							} else if (selectingTile)
+								tilesY[x] = tileList[tileIndicesY[x] = selectedTileIndex];
+							if (selectingHeight)
+								heightsY[x] = selectedHeight;
 						}
 					}
 					saveSuccess = 0;
