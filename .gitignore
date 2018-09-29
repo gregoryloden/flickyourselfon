@@ -1,1 +1,11 @@
-*.class
+*.db
+*.lnk
+Debug/*
+Release/*
+*.vs
+*.sln
+*.sdf
+*.suo
+*.vcxproj*
+*.dll
+*.LICENSE
