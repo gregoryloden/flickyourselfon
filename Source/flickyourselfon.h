@@ -1,1 +1,2 @@
 void renderLoop();
+void update();

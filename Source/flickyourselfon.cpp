@@ -6,11 +6,68 @@
 #include <thread>
 
 int refreshRate = 60;
-SDL_Rect drawRect {0, 0, 11, 19};
+int currentSpriteHorizontalIndex = 0;
+int currentSpriteVerticalIndex = 0;
+int currentAnimationFrame = 0;
 SDL_Window* window = nullptr;
 SDL_GLContext glContext = nullptr;
 int updatesPerSecond = 48;
+int gameScreenWidth = 200;
+int gameScreenHeight = 150;
+float initialPixelXScale = 3.0f;
+float initialPixelYScale = 3.0f;
 
+class SpriteSheet {
+public:
+	GLuint textureId;
+	int spriteWidth;
+	int spriteHeight;
+	float spriteSheetWidth;
+	float spriteSheetHeight;
+	SpriteSheet(const char* imagePath, int pSpriteWidth, int pSpriteHeight)
+	: textureId(0)
+	, spriteWidth(pSpriteWidth)
+	, spriteHeight(pSpriteHeight)
+	, spriteSheetWidth(1.0f)
+	, spriteSheetHeight(1.0f) {
+		glGenTextures(1, &textureId);
+
+		glBindTexture(GL_TEXTURE_2D, textureId);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+		SDL_Surface* surface = IMG_Load(imagePath);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surface->w, surface->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, surface->pixels);
+		spriteSheetWidth = (float)(surface->w);
+		spriteSheetHeight = (float)(surface->h);
+		SDL_FreeSurface(surface);
+	}
+	~SpriteSheet() {}
+	void render(int spriteHorizontalIndex, int spriteVerticalIndex) {
+		float minX = (float)(spriteHorizontalIndex * spriteWidth);
+		float minY = (float)(spriteVerticalIndex * spriteHeight);
+		float maxX = minX + (float)(spriteWidth);
+		float maxY = minY + (float)(spriteHeight);
+		float texMinX = minX / spriteSheetWidth;
+		float texMinY = minY / spriteSheetHeight;
+		float texMaxX = maxX / spriteSheetWidth;
+		float texMaxY = maxY / spriteSheetHeight;
+
+		glBindTexture(GL_TEXTURE_2D, textureId);
+        glBegin(GL_QUADS);
+        glTexCoord2f(texMinX, texMinY);
+        glVertex2f(minX, minY);
+        glTexCoord2f(texMaxX, texMinY);
+        glVertex2f(maxX, minY);
+        glTexCoord2f(texMaxX, texMaxY);
+        glVertex2f(maxX, maxY);
+        glTexCoord2f(texMinX, texMaxY);
+        glVertex2f(minX, maxY);
+        glEnd();
+	}
+};
 #ifdef __cplusplus
 extern "C"
 #endif
@@ -25,8 +82,8 @@ int main(int argc, char *argv[]) {
 		"Flick Yourself On",
 		SDL_WINDOWPOS_CENTERED,
 		SDL_WINDOWPOS_CENTERED,
-		200,
-		150,
+		(int)(gameScreenWidth * initialPixelXScale),
+		(int)(gameScreenHeight * initialPixelYScale),
 		SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_OPENGL);
 	SDL_DisplayMode displayMode;
 	SDL_GetCurrentDisplayMode(SDL_GetWindowDisplayIndex(window), &displayMode);
@@ -34,7 +91,6 @@ int main(int argc, char *argv[]) {
 		refreshRate = displayMode.refresh_rate;
 	std::thread renderLoopThread (renderLoop);
 
-	SDL_Event gameEvent;
 	int updateDelay = -1;
 	Uint32 startTime = 0;
 	int updateNum = 0;
@@ -45,23 +101,8 @@ int main(int argc, char *argv[]) {
 			startTime = SDL_GetTicks();
 		} else
 			SDL_Delay((Uint32)updateDelay);
-		if (SDL_PollEvent(&gameEvent) != 0) {
-			switch (gameEvent.type) {
-				case SDL_QUIT:
-					SDL_GL_DeleteContext(glContext);
-					SDL_DestroyWindow(window);
-					SDL_Quit();
-					std::exit(0);
-				case SDL_MOUSEBUTTONDOWN:
-					drawRect.x = (drawRect.x + drawRect.w) % 99;
-					break;
-				default:
-					break;
-			}
-		}
+		update();
 		updateNum++;
-		if (updateNum % (updatesPerSecond / 4) == 0)
-			drawRect.y = (drawRect.y + drawRect.h) % 76;
 		updateDelay = 1000 * updateNum / updatesPerSecond - (int)(SDL_GetTicks() - startTime);
 	}
 }
@@ -72,48 +113,27 @@ void renderLoop() {
 	glEnable(GL_TEXTURE_2D);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glOrtho(0, 200, 150, 0, -1, 1);
+	glOrtho(0, (GLdouble)gameScreenWidth, (GLdouble)gameScreenHeight, 0, -1, 1);
 
-	SDL_Surface* playerSurface = IMG_Load("images/player.png");
-	GLuint playerTexture;
-	glGenTextures(1, &playerTexture);
-	glBindTexture(GL_TEXTURE_2D, playerTexture);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexImage2D(
-		GL_TEXTURE_2D, 0, GL_RGBA, playerSurface->w, playerSurface->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, playerSurface->pixels);
-	SDL_FreeSurface(playerSurface);
+	SpriteSheet player ("images/player.png", 11, 19);
 
+	int lastWindowWidth = 0;
+	int lastWindowHeight = 0;
 	while (true) {
+		Uint32 preRenderTicks = SDL_GetTicks();
+
 		int windowWidth = 0;
 		int windowHeight = 0;
 		SDL_GetWindowSize(window, &windowWidth, &windowHeight);
-		Uint32 preRenderTicks = SDL_GetTicks();
+		if (windowWidth != lastWindowWidth || windowHeight != lastWindowHeight) {
+			glViewport(0, 0, windowWidth, windowHeight);
+			lastWindowWidth = windowWidth;
+			lastWindowHeight = windowHeight;
+		}
 
-		glViewport(0, 0, windowWidth, windowHeight);
 		glClearColor(0.25f, 0.25f, 0.25f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
-        glBindTexture(GL_TEXTURE_2D, playerTexture);
-        glBegin(GL_QUADS);
-		float minX = (float)(drawRect.x);
-		float minY = (float)(drawRect.y);
-		float maxX = (float)(drawRect.x + drawRect.w);
-		float maxY = (float)(drawRect.y + drawRect.h);
-		float texMinX = minX / 99.0f;
-		float texMinY = minY / 76.0f;
-		float texMaxX = maxX / 99.0f;
-		float texMaxY = maxY / 76.0f;
-        glTexCoord2f(texMinX, texMinY);
-        glVertex2f(minX, minY);
-        glTexCoord2f(texMaxX, texMinY);
-        glVertex2f(maxX, minY);
-        glTexCoord2f(texMaxX, texMaxY);
-        glVertex2f(maxX, maxY);
-        glTexCoord2f(texMinX, texMaxY);
-        glVertex2f(minX, maxY);
-        glEnd();
+		player.render(currentSpriteHorizontalIndex, currentSpriteVerticalIndex);
         glFlush();
 		SDL_GL_SwapWindow(window);
 
@@ -122,4 +142,26 @@ void renderLoop() {
 		if (remainingDelay >= 2)
 			SDL_Delay(remainingDelay);
 	}
+}
+void update() {
+	SDL_Event gameEvent;
+	while (SDL_PollEvent(&gameEvent) != 0) {
+		switch (gameEvent.type) {
+			case SDL_QUIT:
+				SDL_GL_DeleteContext(glContext);
+				SDL_DestroyWindow(window);
+				SDL_Quit();
+				std::exit(0);
+			case SDL_MOUSEBUTTONDOWN:
+				currentSpriteHorizontalIndex = (currentSpriteHorizontalIndex + 1) % 9;
+				break;
+			default:
+				break;
+		}
+	}
+	if (currentAnimationFrame == (updatesPerSecond / 4)) {
+		currentSpriteVerticalIndex = (currentSpriteVerticalIndex + 1) % 4;
+		currentAnimationFrame = 1;
+	} else
+		currentAnimationFrame++;
 }
