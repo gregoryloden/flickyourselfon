@@ -1,14 +1,11 @@
 #include "flickyourselfon.h"
-#include <SDL.h>
-#include <SDL_image.h>
-#include <SDL_opengl.h>
-#include <gl\GL.h>
+#include "CircularStateQueue.h"
+#include "GameState.h"
+#include "SpriteRegistry.h"
+#include "SpriteSheet.h"
 #include <thread>
 
 int refreshRate = 60;
-int currentSpriteHorizontalIndex = 0;
-int currentSpriteVerticalIndex = 0;
-int currentAnimationFrame = 0;
 SDL_Window* window = nullptr;
 SDL_GLContext glContext = nullptr;
 int updatesPerSecond = 48;
@@ -17,61 +14,14 @@ int gameScreenHeight = 150;
 float initialPixelXScale = 3.0f;
 float initialPixelYScale = 3.0f;
 
-class SpriteSheet {
-public:
-	GLuint textureId;
-	int spriteWidth;
-	int spriteHeight;
-	float spriteSheetWidth;
-	float spriteSheetHeight;
-	SpriteSheet(const char* imagePath, int pSpriteWidth, int pSpriteHeight)
-	: textureId(0)
-	, spriteWidth(pSpriteWidth)
-	, spriteHeight(pSpriteHeight)
-	, spriteSheetWidth(1.0f)
-	, spriteSheetHeight(1.0f) {
-		glGenTextures(1, &textureId);
-
-		glBindTexture(GL_TEXTURE_2D, textureId);
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-		SDL_Surface* surface = IMG_Load(imagePath);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surface->w, surface->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, surface->pixels);
-		spriteSheetWidth = (float)(surface->w);
-		spriteSheetHeight = (float)(surface->h);
-		SDL_FreeSurface(surface);
-	}
-	~SpriteSheet() {}
-	void render(int spriteHorizontalIndex, int spriteVerticalIndex) {
-		float minX = (float)(spriteHorizontalIndex * spriteWidth);
-		float minY = (float)(spriteVerticalIndex * spriteHeight);
-		float maxX = minX + (float)(spriteWidth);
-		float maxY = minY + (float)(spriteHeight);
-		float texMinX = minX / spriteSheetWidth;
-		float texMinY = minY / spriteSheetHeight;
-		float texMaxX = maxX / spriteSheetWidth;
-		float texMaxY = maxY / spriteSheetHeight;
-
-		glBindTexture(GL_TEXTURE_2D, textureId);
-        glBegin(GL_QUADS);
-        glTexCoord2f(texMinX, texMinY);
-        glVertex2f(minX, minY);
-        glTexCoord2f(texMaxX, texMinY);
-        glVertex2f(maxX, minY);
-        glTexCoord2f(texMaxX, texMaxY);
-        glVertex2f(maxX, maxY);
-        glTexCoord2f(texMinX, texMaxY);
-        glVertex2f(minX, maxY);
-        glEnd();
-	}
-};
 #ifdef __cplusplus
 extern "C"
 #endif
 int main(int argc, char *argv[]) {
+	#ifdef DEBUG
+		ObjCounter::start();
+	#endif
+
 	int initResult = SDL_Init(SDL_INIT_EVERYTHING);
 	if (initResult < 0)
 		return initResult;
@@ -89,7 +39,15 @@ int main(int argc, char *argv[]) {
 	SDL_GetCurrentDisplayMode(SDL_GetWindowDisplayIndex(window), &displayMode);
 	if (displayMode.refresh_rate > 0)
 		refreshRate = displayMode.refresh_rate;
-	std::thread renderLoopThread (renderLoop);
+
+	CircularStateQueue<GameState>* gameStateQueue =
+		newTracked(CircularStateQueue<GameState>, (newTracked(GameState, ()), newTracked(GameState, ())));
+	GameState* prevGameState = gameStateQueue->getNextReadableState();
+	std::thread renderLoopThread (renderLoop, gameStateQueue);
+
+	//wait for the render thread to catch up
+	while (gameStateQueue->getNextReadableState() != nullptr)
+		SDL_Delay(1);
 
 	int updateDelay = -1;
 	Uint32 startTime = 0;
@@ -101,12 +59,37 @@ int main(int argc, char *argv[]) {
 			startTime = SDL_GetTicks();
 		} else
 			SDL_Delay((Uint32)updateDelay);
-		update();
+
+		GameState* gameState = gameStateQueue->getNextWritableState();
+		if (gameState == nullptr) {
+			gameState = newTracked(GameState, ());
+			gameStateQueue->addWritableState(gameState);
+		}
+		gameState->updateWithPreviousGameState(prevGameState);
+		gameStateQueue->finishWritingToState();
+		prevGameState = gameState;
+		if (gameState->getShouldQuitGame())
+			break;
+
 		updateNum++;
 		updateDelay = 1000 * updateNum / updatesPerSecond - (int)(SDL_GetTicks() - startTime);
 	}
+
+	//the render thread will quit once it reaches the game state that signalled that we should quit
+	renderLoopThread.join();
+
+	#ifdef DEBUG
+		delete gameStateQueue;
+		delete SpriteRegistry::player;
+		SDL_GL_DeleteContext(glContext);
+		SDL_DestroyWindow(window);
+		SDL_Quit();
+		ObjCounter::end();
+	#endif
+
+	return 0;
 }
-void renderLoop() {
+void renderLoop(CircularStateQueue<GameState>* gameStateQueue) {
 	int minMsPerFrame = 1000 / refreshRate;
 	glContext = SDL_GL_CreateContext(window);
 	SDL_GL_SetSwapInterval(1);
@@ -115,12 +98,17 @@ void renderLoop() {
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glOrtho(0, (GLdouble)gameScreenWidth, (GLdouble)gameScreenHeight, 0, -1, 1);
 
-	SpriteSheet player ("images/player.png", 11, 19);
+	SpriteRegistry::player = newTracked(SpriteSheet, ("images/player.png", 11, 19));
 
 	int lastWindowWidth = 0;
 	int lastWindowHeight = 0;
 	while (true) {
 		Uint32 preRenderTicks = SDL_GetTicks();
+
+		//wait until our game state is ready to render
+		GameState* gameState;
+		while ((gameState = gameStateQueue->advanceToLastReadableState()) == nullptr)
+			SDL_Delay(1);
 
 		int windowWidth = 0;
 		int windowHeight = 0;
@@ -133,35 +121,16 @@ void renderLoop() {
 
 		glClearColor(0.25f, 0.25f, 0.25f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
-		player.render(currentSpriteHorizontalIndex, currentSpriteVerticalIndex);
+		gameState->render();
+		gameStateQueue->finishReadingFromState();
         glFlush();
 		SDL_GL_SwapWindow(window);
 
+		if (gameState->getShouldQuitGame())
+			return;
 		//sleep if we don't expect to render for at least 2 more milliseconds
 		int remainingDelay = minMsPerFrame - (int)(SDL_GetTicks() - preRenderTicks);
 		if (remainingDelay >= 2)
 			SDL_Delay(remainingDelay);
 	}
-}
-void update() {
-	SDL_Event gameEvent;
-	while (SDL_PollEvent(&gameEvent) != 0) {
-		switch (gameEvent.type) {
-			case SDL_QUIT:
-				SDL_GL_DeleteContext(glContext);
-				SDL_DestroyWindow(window);
-				SDL_Quit();
-				std::exit(0);
-			case SDL_MOUSEBUTTONDOWN:
-				currentSpriteHorizontalIndex = (currentSpriteHorizontalIndex + 1) % 9;
-				break;
-			default:
-				break;
-		}
-	}
-	if (currentAnimationFrame == (updatesPerSecond / 4)) {
-		currentSpriteVerticalIndex = (currentSpriteVerticalIndex + 1) % 4;
-		currentAnimationFrame = 1;
-	} else
-		currentAnimationFrame++;
 }
