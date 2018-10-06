@@ -6,7 +6,7 @@
 		#define onlyWhenTrackingIDs(x)
 	#endif
 	#define newTracked(className, parameters) \
-		(static_cast<className*>(ObjCounter::track(new className parameters, #className, __FILE__, __LINE__)))
+		((ObjCounter::prepareTracking(#className, __FILE__, __LINE__), new className parameters))
 
 	class ObjCounter {
 	private:
@@ -16,6 +16,9 @@
 		#ifdef TRACK_OBJ_IDS
 			static ObjCounter* headObjCounter;
 			static ObjCounter* tailObjCounter;
+			static const char* preparedObjType;
+			static const char* preparedObjFile;
+			static int preparedObjLine;
 
 			const char* objType;
 			const char* objFile;
@@ -31,7 +34,7 @@
 
 		static void start();
 		static void end();
-		static ObjCounter* track(ObjCounter* obj, const char* pObjType, const char* file, int line);
+		static void prepareTracking(const char* pObjType, const char* pObjFile, int pObjLine);
 	};
 #else
 	#define newTracked(className, parameters) (new className parameters)

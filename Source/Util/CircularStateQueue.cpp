@@ -1,7 +1,9 @@
 #include "CircularStateQueue.h"
 #include "GameState.h"
+#include "Logger.h"
 
 template class CircularStateQueue<GameState>;
+template class CircularStateQueue<Logger::Message>;
 
 template <class Type> CircularStateQueue<Type>::CircularStateQueue(Type* writeHeadState, Type* readHeadState)
 : onlyInDebug(ObjCounter() COMMA)

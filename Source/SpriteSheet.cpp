@@ -34,14 +34,14 @@ void SpriteSheet::render(int spriteHorizontalIndex, int spriteVerticalIndex) {
 	float texMaxY = maxY / spriteSheetHeight;
 
 	glBindTexture(GL_TEXTURE_2D, textureId);
-    glBegin(GL_QUADS);
-    glTexCoord2f(texMinX, texMinY);
-    glVertex2f(minX, minY);
-    glTexCoord2f(texMaxX, texMinY);
-    glVertex2f(maxX, minY);
-    glTexCoord2f(texMaxX, texMaxY);
-    glVertex2f(maxX, maxY);
-    glTexCoord2f(texMinX, texMaxY);
-    glVertex2f(minX, maxY);
-    glEnd();
+	glBegin(GL_QUADS);
+	glTexCoord2f(texMinX, texMinY);
+	glVertex2f(minX, minY);
+	glTexCoord2f(texMaxX, texMinY);
+	glVertex2f(maxX, minY);
+	glTexCoord2f(texMaxX, texMaxY);
+	glVertex2f(maxX, maxY);
+	glTexCoord2f(texMinX, texMaxY);
+	glVertex2f(minX, maxY);
+	glEnd();
 }

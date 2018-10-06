@@ -1,9 +1,9 @@
 #include "flickyourselfon.h"
 #include "CircularStateQueue.h"
 #include "GameState.h"
+#include "Logger.h"
 #include "SpriteRegistry.h"
 #include "SpriteSheet.h"
-#include <thread>
 
 int refreshRate = 60;
 SDL_Window* window = nullptr;
@@ -21,6 +21,7 @@ int main(int argc, char *argv[]) {
 	#ifdef DEBUG
 		ObjCounter::start();
 	#endif
+	Logger::beginLogging();
 
 	int initResult = SDL_Init(SDL_INIT_EVERYTHING);
 	if (initResult < 0)
@@ -40,10 +41,12 @@ int main(int argc, char *argv[]) {
 	if (displayMode.refresh_rate > 0)
 		refreshRate = displayMode.refresh_rate;
 
+	Logger::beginMultiThreadedLogging();
+
 	CircularStateQueue<GameState>* gameStateQueue =
 		newTracked(CircularStateQueue<GameState>, (newTracked(GameState, ()), newTracked(GameState, ())));
 	GameState* prevGameState = gameStateQueue->getNextReadableState();
-	std::thread renderLoopThread (renderLoop, gameStateQueue);
+	thread renderLoopThread (renderLoop, gameStateQueue);
 
 	//wait for the render thread to catch up
 	while (gameStateQueue->getNextReadableState() != nullptr)
@@ -53,7 +56,7 @@ int main(int argc, char *argv[]) {
 	Uint32 startTime = 0;
 	int updateNum = 0;
 	while (true) {
-		// If we missed an update or haven't begun the loop, reset the update number and time
+		//If we missed an update or haven't begun the loop, reset the update number and time
 		if (updateDelay <= 0) {
 			updateNum = 0;
 			startTime = SDL_GetTicks();
@@ -77,6 +80,8 @@ int main(int argc, char *argv[]) {
 
 	//the render thread will quit once it reaches the game state that signalled that we should quit
 	renderLoopThread.join();
+	//stop the logging thread but keep the file open
+	Logger::endMultiThreadedLogging();
 
 	#ifdef DEBUG
 		delete gameStateQueue;
@@ -87,9 +92,11 @@ int main(int argc, char *argv[]) {
 		ObjCounter::end();
 	#endif
 
+	Logger::endLogging();
 	return 0;
 }
 void renderLoop(CircularStateQueue<GameState>* gameStateQueue) {
+	Logger::setupLoggingForRenderThread();
 	int minMsPerFrame = 1000 / refreshRate;
 	glContext = SDL_GL_CreateContext(window);
 	SDL_GL_SetSwapInterval(1);
@@ -123,7 +130,7 @@ void renderLoop(CircularStateQueue<GameState>* gameStateQueue) {
 		glClear(GL_COLOR_BUFFER_BIT);
 		gameState->render();
 		gameStateQueue->finishReadingFromState();
-        glFlush();
+		glFlush();
 		SDL_GL_SwapWindow(window);
 
 		if (gameState->getShouldQuitGame())

@@ -16,7 +16,7 @@ private:
 	Node* writeHead;
 	//readHead always points to the most recently read state
 	Node* readHead;
-	//readHeadNext points to the next state to read unless a state was inserted before it
+	//readHeadNext points to the next state to read unless a state inserted before it is now readable
 	Node* readHeadNext;
 
 public:
