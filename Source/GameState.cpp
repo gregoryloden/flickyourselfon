@@ -2,8 +2,8 @@
 #include "SpriteRegistry.h"
 #include "SpriteSheet.h"
 
-GameState::GameState()
-: onlyInDebug(ObjCounter() COMMA)
+GameState::GameState(objCounterParameters())
+: onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
 currentSpriteHorizontalIndex(0)
 , currentSpriteVerticalIndex(0)
 , currentAnimationFrame(0)

@@ -1,14 +1,15 @@
 #include "Logger.h"
 #include "CircularStateQueue.h"
 
-Logger::Message::Message(string& pMessage)
-: message(pMessage)
-, timestamp(SDL_GetTicks()) {
+Logger::Message::Message(objCounterParameters())
+: onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
+message()
+, timestamp(0) {
 }
 Logger::Message::~Message() {}
 SDL_RWops* Logger::file = nullptr;
 bool Logger::queueLogMessages = false;
-thread_local Logger::Message* Logger::currentWritableMessage = nullptr;
+thread_local stringstream* Logger::currentMessageStringstream = nullptr;
 thread_local CircularStateQueue<Logger::Message>* Logger::currentThreadLogQueue = nullptr;
 CircularStateQueue<Logger::Message>* Logger::mainLogQueue = nullptr;
 CircularStateQueue<Logger::Message>* Logger::renderLogQueue = nullptr;
@@ -22,8 +23,8 @@ void Logger::beginLogging() {
 //build the log queues and start the logging thread
 //this should only be called on the main thread
 void Logger::beginMultiThreadedLogging() {
-	mainLogQueue = newTracked(CircularStateQueue<Message>, (new Message(), new Message()));
-	renderLogQueue = newTracked(CircularStateQueue<Message>, (new Message(), new Message()));
+	mainLogQueue = newWithArgs(CircularStateQueue<Message>, newWithoutArgs(Message), newWithoutArgs(Message));
+	renderLogQueue = newWithArgs(CircularStateQueue<Message>, newWithoutArgs(Message), newWithoutArgs(Message));
 	mainLogQueue->finishReadingFromState();
 	renderLogQueue->finishReadingFromState();
 	currentThreadLogQueue = mainLogQueue;
@@ -68,33 +69,43 @@ void Logger::log(const char* message) {
 }
 //log a message to the current thread's log queue
 void Logger::logString(string& message) {
+	Uint32 timestamp = SDL_GetTicks();
+	stringstream messageWithTimestamp;
+	messageWithTimestamp
+		<< setw(7) << setfill(' ') << (timestamp / 1000)
+		<< setw(1) << '.'
+		<< setw(3) << setfill('0') << (timestamp % 1000)
+		<< setw(1) << "  " << message << '\n';
+
 	//we might get logs before we've had time to set up our log queue
 	//if that happens, write directly to the file
 	//we don't have to worry about multithreading since this should only happen when only one thread is running
 	if (!queueLogMessages) {
-		SDL_RWwrite(file, message.c_str(), 1, message.length());
+		string messageWithTimestampString = messageWithTimestamp.str();
+		SDL_RWwrite(file, messageWithTimestampString.c_str(), 1, messageWithTimestampString.length());
 		return;
 	//if we're logging this in the middle of logging something else, append this to our other message
-	} else if (currentWritableMessage != nullptr) {
-		currentWritableMessage->message.append(message);
+	} else if (currentMessageStringstream != nullptr) {
+		*currentMessageStringstream << messageWithTimestamp.str();
 		return;
 	}
 
-	currentWritableMessage = currentThreadLogQueue->getNextWritableState();
-	if (currentWritableMessage == nullptr) {
-		currentWritableMessage = new Message(message);
-		currentThreadLogQueue->addWritableState(currentWritableMessage);
-	} else
-		currentWritableMessage->message.assign(message);
+	currentMessageStringstream = &messageWithTimestamp;
+	Message* writableMessage = currentThreadLogQueue->getNextWritableState();
+	if (writableMessage == nullptr) {
+		writableMessage = newWithoutArgs(Message);
+		currentThreadLogQueue->addWritableState(writableMessage);
+	}
+	writableMessage->message = messageWithTimestamp.str();
+	writableMessage->timestamp = timestamp;
 	currentThreadLogQueue->finishWritingToState();
-	currentWritableMessage = nullptr;
+	currentMessageStringstream = nullptr;
 }
 //stop the logging thread and delete the queues, but leave the file open for single threaded logging
 void Logger::endMultiThreadedLogging() {
 	threadRunning = false;
 	logThread->join();
 	delete logThread;
-	logThread = nullptr;
 	queueLogMessages = false;
 	//run the log loop once more to make sure all the queued messages are written
 	logLoop();

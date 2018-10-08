@@ -8,7 +8,7 @@ private:
 	bool shouldQuitGame;
 
 public:
-	GameState();
+	GameState(objCounterParameters());
 	~GameState();
 
 	void updateWithPreviousGameState(GameState* prev);

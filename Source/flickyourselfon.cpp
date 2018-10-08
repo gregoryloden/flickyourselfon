@@ -22,13 +22,16 @@ int main(int argc, char *argv[]) {
 		ObjCounter::start();
 	#endif
 	Logger::beginLogging();
+	Logger::beginMultiThreadedLogging();
 
+	//initialize SDL
 	int initResult = SDL_Init(SDL_INIT_EVERYTHING);
 	if (initResult < 0)
 		return initResult;
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 	SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl");
 
+	//create a window
 	window = SDL_CreateWindow(
 		"Flick Yourself On",
 		SDL_WINDOWPOS_CENTERED,
@@ -36,15 +39,16 @@ int main(int argc, char *argv[]) {
 		(int)(gameScreenWidth * initialPixelXScale),
 		(int)(gameScreenHeight * initialPixelYScale),
 		SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_OPENGL);
+
+	//get the refresh rate
 	SDL_DisplayMode displayMode;
 	SDL_GetCurrentDisplayMode(SDL_GetWindowDisplayIndex(window), &displayMode);
 	if (displayMode.refresh_rate > 0)
 		refreshRate = displayMode.refresh_rate;
 
-	Logger::beginMultiThreadedLogging();
-
+	//create our state queue and start the render thread
 	CircularStateQueue<GameState>* gameStateQueue =
-		newTracked(CircularStateQueue<GameState>, (newTracked(GameState, ()), newTracked(GameState, ())));
+		newWithArgs(CircularStateQueue<GameState>, newWithoutArgs(GameState), newWithoutArgs(GameState));
 	GameState* prevGameState = gameStateQueue->getNextReadableState();
 	thread renderLoopThread (renderLoop, gameStateQueue);
 
@@ -52,11 +56,12 @@ int main(int argc, char *argv[]) {
 	while (gameStateQueue->getNextReadableState() != nullptr)
 		SDL_Delay(1);
 
+	//begin the update loop
 	int updateDelay = -1;
 	Uint32 startTime = 0;
 	int updateNum = 0;
 	while (true) {
-		//If we missed an update or haven't begun the loop, reset the update number and time
+		//if we missed an update or haven't begun the loop, reset the update number and time
 		if (updateDelay <= 0) {
 			updateNum = 0;
 			startTime = SDL_GetTicks();
@@ -65,7 +70,8 @@ int main(int argc, char *argv[]) {
 
 		GameState* gameState = gameStateQueue->getNextWritableState();
 		if (gameState == nullptr) {
-			gameState = newTracked(GameState, ());
+			Logger::log("Adding additional GameState");
+			gameState = newWithoutArgs(GameState);
 			gameStateQueue->addWritableState(gameState);
 		}
 		gameState->updateWithPreviousGameState(prevGameState);
@@ -83,19 +89,23 @@ int main(int argc, char *argv[]) {
 	//stop the logging thread but keep the file open
 	Logger::endMultiThreadedLogging();
 
+	//cleanup
 	#ifdef DEBUG
 		delete gameStateQueue;
-		delete SpriteRegistry::player;
+		SpriteRegistry::unloadAll();
+		ObjCounter::end();
+	#endif
+	Logger::endLogging();
+	#ifdef DEBUG
 		SDL_GL_DeleteContext(glContext);
 		SDL_DestroyWindow(window);
 		SDL_Quit();
-		ObjCounter::end();
 	#endif
 
-	Logger::endLogging();
 	return 0;
 }
 void renderLoop(CircularStateQueue<GameState>* gameStateQueue) {
+	//setup opengl
 	Logger::setupLoggingForRenderThread();
 	int minMsPerFrame = 1000 / refreshRate;
 	glContext = SDL_GL_CreateContext(window);
@@ -105,8 +115,10 @@ void renderLoop(CircularStateQueue<GameState>* gameStateQueue) {
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glOrtho(0, (GLdouble)gameScreenWidth, (GLdouble)gameScreenHeight, 0, -1, 1);
 
-	SpriteRegistry::player = newTracked(SpriteSheet, ("images/player.png", 11, 19));
+	//load all the sprites now that our context has been created
+	SpriteRegistry::loadAll();
 
+	//begin the render loop
 	int lastWindowWidth = 0;
 	int lastWindowHeight = 0;
 	while (true) {
@@ -117,6 +129,7 @@ void renderLoop(CircularStateQueue<GameState>* gameStateQueue) {
 		while ((gameState = gameStateQueue->advanceToLastReadableState()) == nullptr)
 			SDL_Delay(1);
 
+		//adjust the viewport so that we scale the game window with the size of the screen
 		int windowWidth = 0;
 		int windowHeight = 0;
 		SDL_GetWindowSize(window, &windowWidth, &windowHeight);
@@ -135,6 +148,7 @@ void renderLoop(CircularStateQueue<GameState>* gameStateQueue) {
 
 		if (gameState->getShouldQuitGame())
 			return;
+
 		//sleep if we don't expect to render for at least 2 more milliseconds
 		int remainingDelay = minMsPerFrame - (int)(SDL_GetTicks() - preRenderTicks);
 		if (remainingDelay >= 2)

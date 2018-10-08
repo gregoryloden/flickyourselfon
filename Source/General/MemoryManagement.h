@@ -1,12 +1,14 @@
 #ifdef DEBUG
 	/**/#define TRACK_OBJ_IDS
 	#ifdef TRACK_OBJ_IDS
-		#define onlyWhenTrackingIDs(x) x
-	#else
-		#define onlyWhenTrackingIDs(x)
+		#define newWithArgs(className, ...) \
+			new className(#className, __FILE__, __LINE__, __VA_ARGS__)
+		#define newWithoutArgs(className) \
+			new className(#className, __FILE__, __LINE__)
+		#define objCounterParameters() const char* pObjType, const char* pObjFile, int pObjLine
+		#define objCounterParametersComma() objCounterParameters(),
+		#define objCounterArguments() pObjType, pObjFile, pObjLine
 	#endif
-	#define newTracked(className, parameters) \
-		((ObjCounter::prepareTracking(#className, __FILE__, __LINE__), new className parameters))
 
 	class ObjCounter {
 	private:
@@ -16,9 +18,6 @@
 		#ifdef TRACK_OBJ_IDS
 			static ObjCounter* headObjCounter;
 			static ObjCounter* tailObjCounter;
-			static const char* preparedObjType;
-			static const char* preparedObjFile;
-			static int preparedObjLine;
 
 			const char* objType;
 			const char* objFile;
@@ -29,13 +28,17 @@
 		#endif
 
 	public:
-		ObjCounter();
+		ObjCounter(objCounterParameters());
 		virtual ~ObjCounter();
 
 		static void start();
 		static void end();
-		static void prepareTracking(const char* pObjType, const char* pObjFile, int pObjLine);
 	};
-#else
-	#define newTracked(className, parameters) (new className parameters)
+#endif
+#ifndef newWithArgs
+	#define newWithArgs(className, ...) new className(__VA_ARGS__)
+	#define newWithoutArgs(className) new className()
+	#define objCounterParameters()
+	#define objCounterParametersComma()
+	#define objCounterArguments()
 #endif

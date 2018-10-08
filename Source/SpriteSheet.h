@@ -9,7 +9,7 @@ private:
 	float spriteSheetHeight;
 
 public:
-	SpriteSheet(const char* imagePath, int pSpriteWidth, int pSpriteHeight);
+	SpriteSheet(objCounterParametersComma() const char* imagePath, int pSpriteWidth, int pSpriteHeight);
 	~SpriteSheet();
 
 	void render(int spriteHorizontalIndex, int spriteVerticalIndex);

@@ -6,27 +6,27 @@ private:
 	public:
 		Node* next;
 		Type* state;
-		bool needsRead;
 
-		Node(Type* pState);
+		Node(objCounterParametersComma() Type* pState);
 		~Node();
 	};
 
 	//writeHead always points to the most recently written state
 	Node* writeHead;
-	//readHead always points to the most recently read state
+	//if lastStateWasRead is true, readHead points to the most recently read state
+	//if lastStateWasRead is false, readHead points to the next readable state
 	Node* readHead;
-	//readHeadNext points to the next state to read unless a state inserted before it is now readable
-	Node* readHeadNext;
+	//signals whether the read head has already been read
+	bool lastStateWasRead;
 
 public:
-	CircularStateQueue(Type* writeHeadState, Type* readHeadState);
+	CircularStateQueue(objCounterParametersComma() Type* writeHeadState, Type* readHeadState);
 	~CircularStateQueue();
 
 	Type* getNextWritableState();
 	void addWritableState(Type* state);
 	void finishWritingToState();
 	Type* getNextReadableState();
-	Type* advanceToLastReadableState();
 	void finishReadingFromState();
+	Type* advanceToLastReadableState();
 };

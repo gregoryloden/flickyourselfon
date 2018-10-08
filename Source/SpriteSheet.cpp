@@ -1,11 +1,11 @@
 #include "SpriteSheet.h"
 #include <SDL_opengl.h>
 
-SpriteSheet::SpriteSheet(const char* imagePath, int pSpriteWidth, int pSpriteHeight)
-: onlyInDebug(ObjCounter() COMMA)
+SpriteSheet::SpriteSheet(objCounterParametersComma() const char* imagePath, int horizontalSpriteCount, int verticalSpriteCount)
+: onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
 textureId(0)
-, spriteWidth(pSpriteWidth)
-, spriteHeight(pSpriteHeight)
+, spriteWidth(1)
+, spriteHeight(1)
 , spriteSheetWidth(1.0f)
 , spriteSheetHeight(1.0f) {
 	glGenTextures(1, &textureId);
@@ -20,6 +20,8 @@ textureId(0)
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surface->w, surface->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, surface->pixels);
 	spriteSheetWidth = (float)(surface->w);
 	spriteSheetHeight = (float)(surface->h);
+	spriteWidth = surface->w / horizontalSpriteCount;
+	spriteHeight = surface->h / verticalSpriteCount;
 	SDL_FreeSurface(surface);
 }
 SpriteSheet::~SpriteSheet() {}

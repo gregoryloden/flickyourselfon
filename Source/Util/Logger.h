@@ -5,19 +5,18 @@ template <class Type> class CircularStateQueue;
 
 class Logger {
 private:
-	class Message {
+	class Message onlyInDebug(: public ObjCounter) {
 	public:
 		string message;
 		Uint32 timestamp;
 
-		Message(string& pMessage);
-		Message(): Message(string()) {}
+		Message(objCounterParameters());
 		~Message();
 	};
 
 	static SDL_RWops* file;
 	static bool queueLogMessages;
-	static thread_local Message* currentWritableMessage;
+	static thread_local stringstream* currentMessageStringstream;
 	static thread_local CircularStateQueue<Message>* currentThreadLogQueue;
 	static CircularStateQueue<Message>* mainLogQueue;
 	static CircularStateQueue<Message>* renderLogQueue;
