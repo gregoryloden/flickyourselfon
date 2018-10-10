@@ -2,17 +2,12 @@
 #include "CircularStateQueue.h"
 #include "GameState.h"
 #include "Logger.h"
+#include "Map.h"
 #include "SpriteRegistry.h"
 #include "SpriteSheet.h"
 
-int refreshRate = 60;
 SDL_Window* window = nullptr;
 SDL_GLContext glContext = nullptr;
-int updatesPerSecond = 48;
-int gameScreenWidth = 200;
-int gameScreenHeight = 150;
-float initialPixelXScale = 3.0f;
-float initialPixelYScale = 3.0f;
 
 #ifdef __cplusplus
 extern "C"
@@ -36,15 +31,15 @@ int main(int argc, char *argv[]) {
 		"Flick Yourself On",
 		SDL_WINDOWPOS_CENTERED,
 		SDL_WINDOWPOS_CENTERED,
-		(int)(gameScreenWidth * initialPixelXScale),
-		(int)(gameScreenHeight * initialPixelYScale),
+		Config::gameScreenWidth * Config::defaultPixelWidth,
+		Config::gameScreenHeight * Config::defaultPixelHeight,
 		SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_OPENGL);
 
 	//get the refresh rate
 	SDL_DisplayMode displayMode;
 	SDL_GetCurrentDisplayMode(SDL_GetWindowDisplayIndex(window), &displayMode);
 	if (displayMode.refresh_rate > 0)
-		refreshRate = displayMode.refresh_rate;
+		Config::refreshRate = displayMode.refresh_rate;
 
 	//create our state queue and start the render thread
 	CircularStateQueue<GameState>* gameStateQueue =
@@ -81,7 +76,7 @@ int main(int argc, char *argv[]) {
 			break;
 
 		updateNum++;
-		updateDelay = 1000 * updateNum / updatesPerSecond - (int)(SDL_GetTicks() - startTime);
+		updateDelay = 1000 * updateNum / Config::updatesPerSecond - (int)(SDL_GetTicks() - startTime);
 	}
 
 	//the render thread will quit once it reaches the game state that signalled that we should quit
@@ -93,6 +88,7 @@ int main(int argc, char *argv[]) {
 	#ifdef DEBUG
 		delete gameStateQueue;
 		SpriteRegistry::unloadAll();
+		Map::deleteMap();
 		ObjCounter::end();
 	#endif
 	Logger::endLogging();
@@ -107,16 +103,16 @@ int main(int argc, char *argv[]) {
 void renderLoop(CircularStateQueue<GameState>* gameStateQueue) {
 	//setup opengl
 	Logger::setupLoggingForRenderThread();
-	int minMsPerFrame = 1000 / refreshRate;
+	int minMsPerFrame = 1000 / Config::refreshRate;
 	glContext = SDL_GL_CreateContext(window);
 	SDL_GL_SetSwapInterval(1);
 	glEnable(GL_TEXTURE_2D);
-	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glOrtho(0, (GLdouble)gameScreenWidth, (GLdouble)gameScreenHeight, 0, -1, 1);
+	glOrtho(0, (GLdouble)Config::gameScreenWidth, (GLdouble)Config::gameScreenHeight, 0, -1, 1);
 
 	//load all the sprites now that our context has been created
 	SpriteRegistry::loadAll();
+	Map::buildMap();
 
 	//begin the render loop
 	int lastWindowWidth = 0;

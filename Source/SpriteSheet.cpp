@@ -1,13 +1,41 @@
 #include "SpriteSheet.h"
 #include <SDL_opengl.h>
 
+SpriteSheet::SpriteSheet(
+	objCounterParametersComma() SDL_Surface* imageSurface, int horizontalSpriteCount, int verticalSpriteCount)
+: onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
+textureId(0)
+, spriteWidth(1)
+, spriteHeight(1)
+, spriteSheetWidth(1)
+, spriteSheetHeight(1)
+, spriteTexWidth(1.0f)
+, spriteTexHeight(1.0f) {
+	initializeWithSurface(imageSurface, horizontalSpriteCount, verticalSpriteCount);
+}
 SpriteSheet::SpriteSheet(objCounterParametersComma() const char* imagePath, int horizontalSpriteCount, int verticalSpriteCount)
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
 textureId(0)
 , spriteWidth(1)
 , spriteHeight(1)
-, spriteSheetWidth(1.0f)
-, spriteSheetHeight(1.0f) {
+, spriteSheetWidth(1)
+, spriteSheetHeight(1)
+, spriteTexWidth(1.0f)
+, spriteTexHeight(1.0f) {
+	SDL_Surface* surface = IMG_Load(imagePath);
+	initializeWithSurface(surface, horizontalSpriteCount, verticalSpriteCount);
+	SDL_FreeSurface(surface);
+}
+SpriteSheet::~SpriteSheet() {}
+//setup our variables and initialize opengl
+void SpriteSheet::initializeWithSurface(SDL_Surface* surface, int horizontalSpriteCount, int verticalSpriteCount) {
+	spriteWidth = surface->w / horizontalSpriteCount;
+	spriteHeight = surface->h / verticalSpriteCount;
+	spriteSheetWidth = surface->w;
+	spriteSheetHeight = surface->h;
+	spriteTexWidth = (float)spriteWidth / (float)spriteSheetWidth;
+	spriteTexHeight = (float)spriteHeight / (float)spriteSheetHeight;
+
 	glGenTextures(1, &textureId);
 
 	glBindTexture(GL_TEXTURE_2D, textureId);
@@ -16,34 +44,40 @@ textureId(0)
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-	SDL_Surface* surface = IMG_Load(imagePath);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surface->w, surface->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, surface->pixels);
-	spriteSheetWidth = (float)(surface->w);
-	spriteSheetHeight = (float)(surface->h);
-	spriteWidth = surface->w / horizontalSpriteCount;
-	spriteHeight = surface->h / verticalSpriteCount;
-	SDL_FreeSurface(surface);
 }
-SpriteSheet::~SpriteSheet() {}
-void SpriteSheet::render(int spriteHorizontalIndex, int spriteVerticalIndex) {
-	float minX = (float)(spriteHorizontalIndex * spriteWidth);
-	float minY = (float)(spriteVerticalIndex * spriteHeight);
-	float maxX = minX + (float)(spriteWidth);
-	float maxY = minY + (float)(spriteHeight);
-	float texMinX = minX / spriteSheetWidth;
-	float texMinY = minY / spriteSheetHeight;
-	float texMaxX = maxX / spriteSheetWidth;
-	float texMaxY = maxY / spriteSheetHeight;
+//the last row of pixels shouldn't get drawn as part of the sprite
+//TODO: make this correct/more general purpose if we ever use this for more than just the tiles sprite
+void SpriteSheet::clampSpriteRectForTilesSprite() {
+	spriteHeight--;
+	spriteTexHeight = (float)spriteHeight / (float)spriteSheetHeight;
+}
+//draw the specified sprite image at the specified coordinate
+void SpriteSheet::render(int spriteHorizontalIndex, int spriteVerticalIndex, GLint leftX, GLint topY) {
+	GLint rightX = leftX + spriteWidth;
+	GLint bottomY = topY + spriteHeight;
+	float texMinX = (float)spriteHorizontalIndex * spriteTexWidth;
+	float texMinY = (float)spriteVerticalIndex * spriteTexHeight;
+	float texMaxX = texMinX + spriteTexWidth;
+	float texMaxY = texMinY + spriteTexHeight;
 
 	glBindTexture(GL_TEXTURE_2D, textureId);
 	glBegin(GL_QUADS);
 	glTexCoord2f(texMinX, texMinY);
-	glVertex2f(minX, minY);
+	glVertex2i(leftX, topY);
 	glTexCoord2f(texMaxX, texMinY);
-	glVertex2f(maxX, minY);
+	glVertex2i(rightX, topY);
 	glTexCoord2f(texMaxX, texMaxY);
-	glVertex2f(maxX, maxY);
+	glVertex2i(rightX, bottomY);
 	glTexCoord2f(texMinX, texMaxY);
-	glVertex2f(minX, maxY);
+	glVertex2i(leftX, bottomY);
 	glEnd();
+}
+//draw the specified sprite image with its center at the specified coordinate
+void SpriteSheet::renderUsingCenter(int spriteHorizontalIndex, int spriteVerticalIndex, float centerX, float centerY) {
+	render(
+		spriteHorizontalIndex,
+		spriteVerticalIndex,
+		(GLint)(centerX - (float)spriteWidth / 2.0f),
+		(GLint)(centerY - (float)spriteHeight / 2.0f));
 }

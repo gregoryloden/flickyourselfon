@@ -5,9 +5,12 @@
 #include <SDL_opengl.h>
 #include <gl\GL.h>
 #include <iomanip>
+#include <math.h>
 #include <sstream>
 #include <string>
 #include <thread>
+#include "Config.h"
+#include "FYOMath.h"
 #include "MemoryManagement.h"
 using namespace std;
 

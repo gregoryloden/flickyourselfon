@@ -8,8 +8,19 @@
 		#define objCounterParameters() const char* pObjType, const char* pObjFile, int pObjLine
 		#define objCounterParametersComma() objCounterParameters(),
 		#define objCounterArguments() pObjType, pObjFile, pObjLine
+		#define objCounterArgumentsComma() objCounterArguments(),
 	#endif
+#endif
+#ifndef newWithArgs
+	#define newWithArgs(className, ...) new className(__VA_ARGS__)
+	#define newWithoutArgs(className) new className()
+	#define objCounterParameters()
+	#define objCounterParametersComma()
+	#define objCounterArguments()
+	#define objCounterArgumentsComma()
+#endif
 
+#ifdef DEBUG
 	class ObjCounter {
 	private:
 		static int objCount;
@@ -34,11 +45,4 @@
 		static void start();
 		static void end();
 	};
-#endif
-#ifndef newWithArgs
-	#define newWithArgs(className, ...) new className(__VA_ARGS__)
-	#define newWithoutArgs(className) new className()
-	#define objCounterParameters()
-	#define objCounterParametersComma()
-	#define objCounterArguments()
 #endif
