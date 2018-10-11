@@ -7,6 +7,7 @@ private:
 	int currentAnimationFrame;
 	float playerX;
 	float playerY;
+	bool showVerticalPlayerSprite;
 	bool shouldQuitGame;
 
 public:

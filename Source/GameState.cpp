@@ -31,11 +31,17 @@ void GameState::updateWithPreviousGameState(GameState* prev) {
 		}
 	}
 
-	//update state
+	//update player movement
 	const Uint8* keyboardState = SDL_GetKeyboardState(nullptr);
-	playerX = prev->playerX - keyboardState[SDL_SCANCODE_LEFT] + keyboardState[SDL_SCANCODE_RIGHT];
-	playerY = prev->playerY - keyboardState[SDL_SCANCODE_UP] + keyboardState[SDL_SCANCODE_DOWN];
+	char dX = (char)(keyboardState[SDL_SCANCODE_RIGHT] - keyboardState[SDL_SCANCODE_LEFT]);
+	char dY = (char)(keyboardState[SDL_SCANCODE_DOWN] - keyboardState[SDL_SCANCODE_UP]);
+	bool diagonal = (dX & dY) != 0;
+	showVerticalPlayerSprite = !diagonal && (dX | dY) != 0 ? dY != 0 : prev->showVerticalPlayerSprite;
+	float speed = diagonal ? Map::diagonalSpeed : Map::speed;
+	playerX = prev->playerX + speed * (float)dX;
+	playerY = prev->playerY + speed * (float)dY;
 
+	//update the player walking animation
 	currentSpriteHorizontalIndex = (prev->currentSpriteHorizontalIndex + clicks) % 9;
 	if (prev->currentAnimationFrame == 12) {
 		currentSpriteVerticalIndex = (prev->currentSpriteVerticalIndex + 1) % 4;

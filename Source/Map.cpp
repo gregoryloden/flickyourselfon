@@ -1,5 +1,7 @@
 #include "Map.h"
 
+const float Map::speed = 0.8f;
+const float Map::diagonalSpeed = Map::speed * sqrt(2.0f) * 0.5f;
 unsigned char* Map::tiles = nullptr;
 unsigned char* Map::heights = nullptr;
 int Map::width = 1;
