@@ -135,7 +135,8 @@ void renderLoop(CircularStateQueue<GameState>* gameStateQueue) {
 			lastWindowHeight = windowHeight;
 		}
 
-		glClearColor(0.25f, 0.25f, 0.25f, 1.0f);
+//TODO: settle on final background color
+glClearColor(0.1875f, 0.0f, 0.1875f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 		gameState->render();
 		gameStateQueue->finishReadingFromState();

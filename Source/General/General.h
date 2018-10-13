@@ -9,6 +9,7 @@
 #include <sstream>
 #include <string>
 #include <thread>
+#include <vector>
 #include "Config.h"
 #include "FYOMath.h"
 #include "MemoryManagement.h"
