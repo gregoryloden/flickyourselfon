@@ -20,7 +20,7 @@ private:
 	bool lastStateWasRead;
 
 public:
-	CircularStateQueue(objCounterParametersComma() Type* writeHeadState, Type* readHeadState);
+	CircularStateQueue(objCounterParametersComma() Type* writeHeadState, Type* nextState);
 	~CircularStateQueue();
 
 	Type* getNextWritableState();

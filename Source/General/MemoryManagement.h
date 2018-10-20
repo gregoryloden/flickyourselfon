@@ -1,7 +1,6 @@
 #ifdef DEBUG
 	/**/#define TRACK_OBJ_IDS
 	#ifdef TRACK_OBJ_IDS
-		//TODO: use default arguments to make the constructor do the work
 		#define newWithArgs(className, ...) \
 			new className(#className, __FILE__, __LINE__, __VA_ARGS__)
 		#define newWithoutArgs(className) \

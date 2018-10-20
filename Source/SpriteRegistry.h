@@ -11,7 +11,7 @@ enum class PlayerSpriteDirection: int {
 };
 class SpriteRegistry {
 public:
-	static const int playerWalkingAnimationUpdatesPerFrame = Config::updatesPerSecond / 4;
+	static const int playerWalkingAnimationTicksPerFrame = 250;
 
 	static SpriteSheet* player;
 	static Animation* playerWalkingAnimation;

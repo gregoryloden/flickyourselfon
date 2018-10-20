@@ -8,29 +8,29 @@ public:
 	private:
 		int spriteHorizontalIndex;
 		int spriteVerticalIndex;
-		int duration;
+		int ticksDuration;
 
 	public:
-		Frame(objCounterParametersComma() int pSpriteHorizontalIndex, int pSpriteVerticalIndex, int pDuration);
+		Frame(objCounterParametersComma() int pSpriteHorizontalIndex, int pSpriteVerticalIndex, int pTicksDuration);
 		~Frame();
 
 		int getSpriteHorizontalIndex() { return spriteHorizontalIndex; }
 		int getSpriteVerticalIndex() { return spriteVerticalIndex; }
-		int getDuration() { return duration; }
+		int getTicksDuration() { return ticksDuration; }
 	};
 
 private:
 	SpriteSheet* sprite;
 	vector<Frame*> frames;
-	int* frameSearchPredecingDurations;
-	int totalDuration;
+	int* frameSearchPredecingTicksDurations;
+	int totalTicksDuration;
 
 public:
 	Animation(objCounterParametersComma() SpriteSheet* pSprite, vector<Frame*> pFrames);
 	~Animation();
 
 private:
-	Frame* findFrame(int frameNum);
+	Frame* findFrame(int animationTicksDuration);
 public:
-	void renderUsingCenterWithVerticalIndex(int frameNum, int spriteVerticalIndex, float centerX, float centerY);
+	void renderUsingCenterWithVerticalIndex(int animationTicksDuration, int spriteVerticalIndex, float centerX, float centerY);
 };

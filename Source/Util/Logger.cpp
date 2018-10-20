@@ -25,8 +25,6 @@ void Logger::beginLogging() {
 void Logger::beginMultiThreadedLogging() {
 	mainLogQueue = newWithArgs(CircularStateQueue<Message>, newWithoutArgs(Message), newWithoutArgs(Message));
 	renderLogQueue = newWithArgs(CircularStateQueue<Message>, newWithoutArgs(Message), newWithoutArgs(Message));
-	mainLogQueue->finishReadingFromState();
-	renderLogQueue->finishReadingFromState();
 	currentThreadLogQueue = mainLogQueue;
 	queueLogMessages = true;
 	threadRunning = true;
@@ -69,7 +67,7 @@ void Logger::log(const char* message) {
 }
 //log a message to the current thread's log queue
 void Logger::logString(string& message) {
-	Uint32 timestamp = SDL_GetTicks();
+	int timestamp = (int)SDL_GetTicks();
 	stringstream messageWithTimestamp;
 	messageWithTimestamp
 		<< setw(7) << setfill(' ') << (timestamp / 1000)

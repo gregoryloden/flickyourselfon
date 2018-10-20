@@ -15,10 +15,10 @@ void SpriteRegistry::loadAll() {
 	playerWalkingAnimation = newWithArgs(Animation,
 		player,
 		{
-			newWithArgs(Animation::Frame, 0, 0, playerWalkingAnimationUpdatesPerFrame),
-			newWithArgs(Animation::Frame, 1, 0, playerWalkingAnimationUpdatesPerFrame),
-			newWithArgs(Animation::Frame, 0, 0, playerWalkingAnimationUpdatesPerFrame),
-			newWithArgs(Animation::Frame, 2, 0, playerWalkingAnimationUpdatesPerFrame)
+			newWithArgs(Animation::Frame, 0, 0, playerWalkingAnimationTicksPerFrame),
+			newWithArgs(Animation::Frame, 1, 0, playerWalkingAnimationTicksPerFrame),
+			newWithArgs(Animation::Frame, 0, 0, playerWalkingAnimationTicksPerFrame),
+			newWithArgs(Animation::Frame, 2, 0, playerWalkingAnimationTicksPerFrame)
 		});
 	tiles = newWithArgs(SpriteSheet, "images/tiles.png", Map::tileCount, 1);
 	tiles->clampSpriteRectForTilesSprite();

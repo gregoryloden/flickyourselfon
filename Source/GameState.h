@@ -2,11 +2,12 @@
 
 class Animation;
 class PlayerState;
+class PositionState;
 enum class PlayerSpriteDirection: int;
 
 class GameState onlyInDebug(: public ObjCounter) {
 private:
-	int frame;
+	int ticksTime;
 	PlayerState* playerState;
 	bool shouldQuitGame;
 
@@ -20,19 +21,36 @@ public:
 };
 class PlayerState onlyInDebug(: public ObjCounter) {
 private:
-	float x;
-	float y;
-	char dX;
-	char dY;
-	int walkingAnimationFrame;
+	PositionState* position;
+	int walkingAnimationStartTicksTime;
 	PlayerSpriteDirection spriteDirection;
 
 public:
 	PlayerState(objCounterParameters());
 	~PlayerState();
 
-	float getX() { return x; }
-	float getY() { return y; }
-	void updateWithPreviousPlayerState(PlayerState* prev, int frame);
+	PositionState* getPosition() { return position; }
+	void updateWithPreviousPlayerState(PlayerState* prev, int ticksTime);
 	void render();
+};
+class PositionState onlyInDebug(: public ObjCounter) {
+private:
+	float x;
+	float y;
+	char dX;
+	char dY;
+	float speed;
+	int lastUpdateTicksTime;
+
+public:
+	PositionState(objCounterParametersComma() float pX, float pY);
+	~PositionState();
+
+	char getDX() { return dX; }
+	char getDY() { return dY; }
+	float getX(int ticksTime);
+	float getY(int ticksTime);
+	bool isMoving();
+	bool updatedSameTimeAs(PositionState* other);
+	void updateWithPreviousPositionState(PositionState* prev, int ticksTime);
 };

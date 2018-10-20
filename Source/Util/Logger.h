@@ -8,7 +8,7 @@ private:
 	class Message onlyInDebug(: public ObjCounter) {
 	public:
 		string message;
-		Uint32 timestamp;
+		int timestamp;
 
 		Message(objCounterParameters());
 		~Message();

@@ -8,6 +8,7 @@
 
 SDL_Window* window = nullptr;
 SDL_GLContext glContext = nullptr;
+bool renderThreadBegan = false;
 
 #ifdef __cplusplus
 extern "C"
@@ -44,22 +45,24 @@ int main(int argc, char *argv[]) {
 	//create our state queue and start the render thread
 	CircularStateQueue<GameState>* gameStateQueue =
 		newWithArgs(CircularStateQueue<GameState>, newWithoutArgs(GameState), newWithoutArgs(GameState));
+	//our initial state is renderable
+	gameStateQueue->finishWritingToState();
 	GameState* prevGameState = gameStateQueue->getNextReadableState();
 	thread renderLoopThread (renderLoop, gameStateQueue);
 
-	//wait for the render thread to catch up
-	while (gameStateQueue->getNextReadableState() != nullptr)
+	//wait for the render thread to sync up
+	while (!renderThreadBegan)
 		SDL_Delay(1);
 
 	//begin the update loop
 	int updateDelay = -1;
-	Uint32 startTime = 0;
+	int startTime = 0;
 	int updateNum = 0;
 	while (true) {
 		//if we missed an update or haven't begun the loop, reset the update number and time
 		if (updateDelay <= 0) {
 			updateNum = 0;
-			startTime = SDL_GetTicks();
+			startTime = (int)SDL_GetTicks();
 		} else
 			SDL_Delay((Uint32)updateDelay);
 
@@ -76,7 +79,7 @@ int main(int argc, char *argv[]) {
 			break;
 
 		updateNum++;
-		updateDelay = 1000 * updateNum / Config::updatesPerSecond - (int)(SDL_GetTicks() - startTime);
+		updateDelay = 1000 * updateNum / Config::updatesPerSecond - ((int)SDL_GetTicks() - startTime);
 	}
 
 	//the render thread will quit once it reaches the game state that signalled that we should quit
@@ -115,15 +118,16 @@ void renderLoop(CircularStateQueue<GameState>* gameStateQueue) {
 	Map::buildMap();
 
 	//begin the render loop
+	renderThreadBegan = true;
 	int lastWindowWidth = 0;
 	int lastWindowHeight = 0;
 	while (true) {
-		Uint32 preRenderTicks = SDL_GetTicks();
+		int preRenderTicksTime = (int)SDL_GetTicks();
 
-		//wait until our game state is ready to render
-		GameState* gameState;
-		while ((gameState = gameStateQueue->advanceToLastReadableState()) == nullptr)
-			SDL_Delay(1);
+		//since we start this thread with a readable state and we always leave the most recent state as readable,
+		//	this will never be nullptr and we'll still always be looking at the newest readable state
+		//even if it's the same state as before, we just interpolate animations
+		GameState* gameState = gameStateQueue->advanceToLastReadableState();
 
 		//adjust the viewport so that we scale the game window with the size of the screen
 		int windowWidth = 0;
@@ -139,7 +143,6 @@ void renderLoop(CircularStateQueue<GameState>* gameStateQueue) {
 glClearColor(0.1875f, 0.0f, 0.1875f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 		gameState->render();
-		gameStateQueue->finishReadingFromState();
 		glFlush();
 		SDL_GL_SwapWindow(window);
 
@@ -147,7 +150,7 @@ glClearColor(0.1875f, 0.0f, 0.1875f, 1.0f);
 			return;
 
 		//sleep if we don't expect to render for at least 2 more milliseconds
-		int remainingDelay = minMsPerFrame - (int)(SDL_GetTicks() - preRenderTicks);
+		int remainingDelay = minMsPerFrame - ((int)SDL_GetTicks() - preRenderTicksTime);
 		if (remainingDelay >= 2)
 			SDL_Delay(remainingDelay);
 	}

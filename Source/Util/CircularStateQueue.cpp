@@ -15,14 +15,14 @@ template <class Type> CircularStateQueue<Type>::Node::~Node() {
 	delete state;
 }
 template <class Type> CircularStateQueue<Type>::CircularStateQueue(
-	objCounterParametersComma() Type* writeHeadState, Type* readHeadState)
+	objCounterParametersComma() Type* writeHeadState, Type* nextState)
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
 writeHead(newWithArgs(Node, writeHeadState))
 , readHead(nullptr)
-, lastStateWasRead(false) {
-	Node* other = newWithArgs(Node, readHeadState);
-	writeHead->next = other;
-	other->next = writeHead;
+, lastStateWasRead(true) {
+	Node* next = newWithArgs(Node, nextState);
+	writeHead->next = next;
+	next->next = writeHead;
 	readHead = writeHead;
 }
 template <class Type> CircularStateQueue<Type>::~CircularStateQueue() {
