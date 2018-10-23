@@ -1,7 +1,7 @@
 #include "SpriteRegistry.h"
-#include "Animation.h"
-#include "Map.h"
-#include "SpriteSheet.h"
+#include "GameState/MapState.h"
+#include "Sprites/Animation.h"
+#include "Sprites/SpriteSheet.h"
 
 SpriteSheet* SpriteRegistry::player = nullptr;
 Animation* SpriteRegistry::playerWalkingAnimation = nullptr;

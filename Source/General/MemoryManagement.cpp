@@ -1,5 +1,5 @@
 #include "General.h"
-#include "Logger.h"
+#include "Util/Logger.h"
 
 #ifdef DEBUG
 	#ifdef TRACK_OBJ_IDS

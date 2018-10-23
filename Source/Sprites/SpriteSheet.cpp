@@ -1,5 +1,4 @@
 #include "SpriteSheet.h"
-#include <SDL_opengl.h>
 
 SpriteSheet::SpriteSheet(
 	objCounterParametersComma() SDL_Surface* imageSurface, int horizontalSpriteCount, int verticalSpriteCount)

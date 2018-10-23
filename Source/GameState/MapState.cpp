@@ -1,4 +1,4 @@
-#include "Map.h"
+#include "MapState.h"
 
 const float Map::speed = 40.0f;
 const float Map::diagonalSpeed = Map::speed * sqrt(0.5f);

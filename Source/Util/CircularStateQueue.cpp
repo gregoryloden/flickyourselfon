@@ -1,6 +1,6 @@
 #include "CircularStateQueue.h"
-#include "GameState.h"
-#include "Logger.h"
+#include "GameState/GameState.h"
+#include "Util/Logger.h"
 
 template class CircularStateQueue<GameState>;
 template class CircularStateQueue<Logger::Message>;

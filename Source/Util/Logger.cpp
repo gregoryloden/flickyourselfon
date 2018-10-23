@@ -1,5 +1,5 @@
 #include "Logger.h"
-#include "CircularStateQueue.h"
+#include "Util/CircularStateQueue.h"
 
 Logger::Message::Message(objCounterParameters())
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)

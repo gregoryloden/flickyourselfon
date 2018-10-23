@@ -1,10 +1,10 @@
 #include "flickyourselfon.h"
-#include "CircularStateQueue.h"
-#include "GameState.h"
-#include "Logger.h"
-#include "Map.h"
-#include "SpriteRegistry.h"
-#include "SpriteSheet.h"
+#include "GameState\GameState.h"
+#include "GameState\MapState.h"
+#include "Util\CircularStateQueue.h"
+#include "Util\Logger.h"
+#include "Sprites\SpriteRegistry.h"
+#include "Sprites\SpriteSheet.h"
 
 SDL_Window* window = nullptr;
 SDL_GLContext glContext = nullptr;

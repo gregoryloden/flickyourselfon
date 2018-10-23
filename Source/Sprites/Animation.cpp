@@ -1,5 +1,5 @@
 #include "Animation.h"
-#include "SpriteSheet.h"
+#include "Sprites/SpriteSheet.h"
 
 Animation::Frame::Frame(objCounterParametersComma() int pSpriteHorizontalIndex, int pSpriteVerticalIndex, int pTicksDuration)
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
