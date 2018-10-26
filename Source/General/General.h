@@ -3,7 +3,7 @@
 #include <SDL.h>
 #include <SDL_image.h>
 #include <SDL_opengl.h>
-#include <gl\GL.h>
+#include <gl/GL.h>
 #include <iomanip>
 #include <math.h>
 #include <sstream>

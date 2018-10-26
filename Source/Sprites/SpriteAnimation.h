@@ -2,7 +2,7 @@
 
 class SpriteSheet;
 
-class Animation onlyInDebug(: public ObjCounter) {
+class SpriteAnimation onlyInDebug(: public ObjCounter) {
 public:
 	class Frame onlyInDebug(: public ObjCounter) {
 	private:
@@ -26,8 +26,8 @@ private:
 	int totalTicksDuration;
 
 public:
-	Animation(objCounterParametersComma() SpriteSheet* pSprite, vector<Frame*> pFrames);
-	~Animation();
+	SpriteAnimation(objCounterParametersComma() SpriteSheet* pSprite, vector<Frame*> pFrames);
+	~SpriteAnimation();
 
 private:
 	Frame* findFrame(int animationTicksDuration);

@@ -1,10 +1,10 @@
 #include "flickyourselfon.h"
-#include "GameState\GameState.h"
-#include "GameState\MapState.h"
-#include "Util\CircularStateQueue.h"
-#include "Util\Logger.h"
-#include "Sprites\SpriteRegistry.h"
-#include "Sprites\SpriteSheet.h"
+#include "GameState/GameState.h"
+#include "GameState/MapState.h"
+#include "Util/CircularStateQueue.h"
+#include "Util/Logger.h"
+#include "Sprites/SpriteRegistry.h"
+#include "Sprites/SpriteSheet.h"
 
 SDL_Window* window = nullptr;
 SDL_GLContext glContext = nullptr;
@@ -91,7 +91,7 @@ int main(int argc, char *argv[]) {
 	#ifdef DEBUG
 		delete gameStateQueue;
 		SpriteRegistry::unloadAll();
-		Map::deleteMap();
+		MapState::deleteMap();
 		ObjCounter::end();
 	#endif
 	Logger::endLogging();
@@ -115,7 +115,7 @@ void renderLoop(CircularStateQueue<GameState>* gameStateQueue) {
 
 	//load all the sprites now that our context has been created
 	SpriteRegistry::loadAll();
-	Map::buildMap();
+	MapState::buildMap();
 
 	//begin the render loop
 	renderThreadBegan = true;

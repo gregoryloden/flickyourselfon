@@ -1,6 +1,8 @@
 #include "General/General.h"
 
-class Map {
+class PlayerState;
+
+class MapState {
 public:
 	static const int tileCount = 64; // tile = green / 4
 	static const int tileDivisor = 256 / tileCount;
@@ -9,12 +11,17 @@ public:
 	static const int tileSize = 6;
 	static const float speed;
 	static const float diagonalSpeed;
-
-	static unsigned char* tiles;
-	static unsigned char* heights;
+	static const float smallDistance;
+private:
+	static char* tiles;
+	static char* heights;
 	static int width;
 	static int height;
 
+public:
 	static void buildMap();
 	static void deleteMap();
+	static char getTile(int x, int y);
+	static char getHeight(int x, int y);
+	static void render(PlayerState* playerState);
 };

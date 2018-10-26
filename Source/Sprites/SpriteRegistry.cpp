@@ -1,10 +1,10 @@
 #include "SpriteRegistry.h"
 #include "GameState/MapState.h"
-#include "Sprites/Animation.h"
+#include "Sprites/SpriteAnimation.h"
 #include "Sprites/SpriteSheet.h"
 
 SpriteSheet* SpriteRegistry::player = nullptr;
-Animation* SpriteRegistry::playerWalkingAnimation = nullptr;
+SpriteAnimation* SpriteRegistry::playerWalkingAnimation = nullptr;
 SpriteSheet* SpriteRegistry::tiles = nullptr;
 SpriteSheet* SpriteRegistry::radioTower = nullptr;
 SpriteSheet* SpriteRegistry::font = nullptr;
@@ -12,15 +12,15 @@ SpriteSheet* SpriteRegistry::font = nullptr;
 //this should only be called after the gl context has been created
 void SpriteRegistry::loadAll() {
 	player = newWithArgs(SpriteSheet, "images/player.png", 9, 4);
-	playerWalkingAnimation = newWithArgs(Animation,
+	playerWalkingAnimation = newWithArgs(SpriteAnimation,
 		player,
 		{
-			newWithArgs(Animation::Frame, 0, 0, playerWalkingAnimationTicksPerFrame),
-			newWithArgs(Animation::Frame, 1, 0, playerWalkingAnimationTicksPerFrame),
-			newWithArgs(Animation::Frame, 0, 0, playerWalkingAnimationTicksPerFrame),
-			newWithArgs(Animation::Frame, 2, 0, playerWalkingAnimationTicksPerFrame)
+			newWithArgs(SpriteAnimation::Frame, 0, 0, playerWalkingAnimationTicksPerFrame),
+			newWithArgs(SpriteAnimation::Frame, 1, 0, playerWalkingAnimationTicksPerFrame),
+			newWithArgs(SpriteAnimation::Frame, 0, 0, playerWalkingAnimationTicksPerFrame),
+			newWithArgs(SpriteAnimation::Frame, 2, 0, playerWalkingAnimationTicksPerFrame)
 		});
-	tiles = newWithArgs(SpriteSheet, "images/tiles.png", Map::tileCount, 1);
+	tiles = newWithArgs(SpriteSheet, "images/tiles.png", MapState::tileCount, 1);
 	tiles->clampSpriteRectForTilesSprite();
 	radioTower = newWithArgs(SpriteSheet, "images/radiotower.png", 1, 1);
 	SDL_Surface* fontSurface = IMG_Load("images/font.png");

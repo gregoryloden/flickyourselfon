@@ -1,7 +1,7 @@
 #include "General/General.h"
 
 class SpriteSheet;
-class Animation;
+class SpriteAnimation;
 
 enum class PlayerSpriteDirection: int {
 	Right = 0,
@@ -14,7 +14,7 @@ public:
 	static const int playerWalkingAnimationTicksPerFrame = 250;
 
 	static SpriteSheet* player;
-	static Animation* playerWalkingAnimation;
+	static SpriteAnimation* playerWalkingAnimation;
 	static SpriteSheet* tiles;
 	static SpriteSheet* radioTower;
 	static SpriteSheet* font;

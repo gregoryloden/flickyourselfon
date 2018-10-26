@@ -1,19 +1,23 @@
 #include "MapState.h"
+#include "GameState/PlayerState.h"
+#include "Sprites/SpriteRegistry.h"
+#include "Sprites/SpriteSheet.h"
 
-const float Map::speed = 40.0f;
-const float Map::diagonalSpeed = Map::speed * sqrt(0.5f);
-unsigned char* Map::tiles = nullptr;
-unsigned char* Map::heights = nullptr;
-int Map::width = 1;
-int Map::height = 1;
+const float MapState::speed = 40.0f;
+const float MapState::diagonalSpeed = MapState::speed * sqrt(0.5f);
+const float MapState::smallDistance = 1.0f / (float)0x100;
+char* MapState::tiles = nullptr;
+char* MapState::heights = nullptr;
+int MapState::width = 1;
+int MapState::height = 1;
 //load the map and extract all the map data from it
-void Map::buildMap() {
+void MapState::buildMap() {
 	SDL_Surface* floor = IMG_Load("images/floor.png");
 	width = floor->w;
 	height = floor->h;
 	int totalTiles = width * height;
-	tiles = new unsigned char[totalTiles];
-	heights = new unsigned char[totalTiles];
+	tiles = new char[totalTiles];
+	heights = new char[totalTiles];
 
 	int greenShift = floor->format->Gshift;
 	int greenMask = floor->format->Gmask;
@@ -22,14 +26,49 @@ void Map::buildMap() {
 	int* pixels = static_cast<int*>(floor->pixels);
 
 	for (int i = 0; i < totalTiles; i++) {
-		tiles[i] = (unsigned char)(((pixels[i] & greenMask) >> greenShift) / tileDivisor);
-		heights[i] = (unsigned char)(((pixels[i] & blueMask) >> blueShift) / heightDivisor);
+		tiles[i] = (char)(((pixels[i] & greenMask) >> greenShift) / tileDivisor);
+		heights[i] = (char)(((pixels[i] & blueMask) >> blueShift) / heightDivisor);
 	}
 
 	SDL_FreeSurface(floor);
 }
 //delete the resources used to handle the map
-void Map::deleteMap() {
+void MapState::deleteMap() {
 	delete[] tiles;
 	delete[] heights;
+}
+//get the tile at the given coordinates
+char MapState::getTile(int x, int y) {
+	return tiles[y * width + x];
+}
+//get the height at the given coordinates
+char MapState::getHeight(int x, int y) {
+	return heights[y * width + x];
+}
+//draw the map
+void MapState::render(PlayerState* playerState) {
+	glDisable(GL_BLEND);
+	//render the map
+	//these values are just right so that every tile rendered is at least partially in the window and no tiles are left out
+	int currentTicksTime = SDL_GetTicks();
+	int playerX = (int)(playerState->getRenderableX(currentTicksTime));
+	int playerY = (int)(playerState->getRenderableY(currentTicksTime));
+	int addX = Config::gameScreenWidth / 2 - playerX;
+	int addY = Config::gameScreenHeight / 2 - playerY;
+	int tileMinX = FYOMath::max(-addX / MapState::tileSize, 0);
+	int tileMinY = FYOMath::max(-addY / MapState::tileSize, 0);
+	int tileMaxX = FYOMath::min((Config::gameScreenWidth - addX - 1) / MapState::tileSize + 1, MapState::width);
+	int tileMaxY = FYOMath::min((Config::gameScreenHeight - addY - 1) / MapState::tileSize + 1, MapState::height);
+	for (int y = tileMinY; y < tileMaxY; y++) {
+		for (int x = tileMinX; x < tileMaxX; x++) {
+			//consider any tile at the max height to be filler
+			int mapIndex = y * MapState::width + x;
+			if (MapState::heights[mapIndex] != MapState::heightCount - 1)
+				SpriteRegistry::tiles->render(
+					(int)(MapState::tiles[mapIndex]), 0, x * MapState::tileSize + addX, y * MapState::tileSize + addY);
+		}
+	}
+
+	glEnable(GL_BLEND);
+	SpriteRegistry::radioTower->render(0, 0, 423 - playerX, -32 - playerY);
 }

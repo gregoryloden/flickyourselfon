@@ -1,14 +1,14 @@
-#include "Animation.h"
+#include "SpriteAnimation.h"
 #include "Sprites/SpriteSheet.h"
 
-Animation::Frame::Frame(objCounterParametersComma() int pSpriteHorizontalIndex, int pSpriteVerticalIndex, int pTicksDuration)
+SpriteAnimation::Frame::Frame(objCounterParametersComma() int pSpriteHorizontalIndex, int pSpriteVerticalIndex, int pTicksDuration)
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
 spriteHorizontalIndex(pSpriteHorizontalIndex)
 , spriteVerticalIndex(pSpriteVerticalIndex)
 , ticksDuration(pTicksDuration) {
 }
-Animation::Frame::~Frame() {}
-Animation::Animation(objCounterParametersComma() SpriteSheet* pSprite, vector<Frame*> pFrames)
+SpriteAnimation::Frame::~Frame() {}
+SpriteAnimation::SpriteAnimation(objCounterParametersComma() SpriteSheet* pSprite, vector<Frame*> pFrames)
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
 sprite(pSprite)
 , frames(pFrames)
@@ -22,14 +22,14 @@ sprite(pSprite)
 	}
 	totalTicksDuration = frameSearchPredecingTicksDuration;
 }
-Animation::~Animation() {
+SpriteAnimation::~SpriteAnimation() {
 	for (Frame* frame : frames) {
 		delete frame;
 	}
 	delete[] frameSearchPredecingTicksDurations;
 }
 //binary search for the referenced frame
-Animation::Frame* Animation::findFrame(int animationTicksDuration) {
+SpriteAnimation::Frame* SpriteAnimation::findFrame(int animationTicksDuration) {
 	animationTicksDuration %= totalTicksDuration;
 	int low = 0;
 	int high = frames.size();
@@ -43,7 +43,7 @@ Animation::Frame* Animation::findFrame(int animationTicksDuration) {
 	}
 	return frames[low];
 }
-void Animation::renderUsingCenterWithVerticalIndex(
+void SpriteAnimation::renderUsingCenterWithVerticalIndex(
 	int animationTicksDuration, int spriteVerticalIndex, float centerX, float centerY)
 {
 	sprite->renderUsingCenter(
