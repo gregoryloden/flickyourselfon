@@ -15,6 +15,7 @@ public:
 
 	static SpriteSheet* player;
 	static SpriteAnimation* playerWalkingAnimation;
+	static SpriteAnimation* playerBootWalkingAnimation;
 	static SpriteSheet* tiles;
 	static SpriteSheet* radioTower;
 	static SpriteSheet* font;

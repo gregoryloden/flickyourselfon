@@ -5,8 +5,8 @@
 #include "Sprites/SpriteSheet.h"
 
 PlayerState::PlayerState(objCounterParameters())
-: onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
-boundingBoxLeftOffset(-5.5f)
+: CameraAnchor(objCounterArguments())
+, boundingBoxLeftOffset(-5.5f)
 , boundingBoxRightOffset(5.5f)
 , boundingBoxTopOffset(4.5f)
 , boundingBoxBottomOffset(9.5)
@@ -20,16 +20,18 @@ boundingBoxLeftOffset(-5.5f)
 , renderInterpolatedYPosition(true)
 , z(0)
 , lastUpdateTicksTime(0)
-, walkingAnimationStartTicksTime(-1)
-, spriteDirection(PlayerSpriteDirection::Down) {
+, animation(nullptr)
+, animationStartTicksTime(-1)
+, spriteDirection(PlayerSpriteDirection::Down)
+, hasBoot(false) {
 }
 PlayerState::~PlayerState() {}
 //return the player's x coordinate at the given time that we should use for rendering things like the map
-float PlayerState::getRenderableX(int ticksTime) {
+float PlayerState::getCameraCenterX(int ticksTime) {
 	return renderInterpolatedXPosition ? getInterpolatedX(ticksTime) : xPosition;
 }
 //return the player's y coordinate at the given time that we should use for rendering things like the map
-float PlayerState::getRenderableY(int ticksTime) {
+float PlayerState::getCameraCenterY(int ticksTime) {
 	return renderInterpolatedYPosition ? getInterpolatedY(ticksTime) : yPosition;
 }
 //return the player's x coordinate at the given time after accounting for velocity
@@ -160,21 +162,29 @@ void PlayerState::updateSpriteWithPreviousPlayerState(PlayerState* prev, int tic
 		spriteDirection = yDirection < 0 ? PlayerSpriteDirection::Up : PlayerSpriteDirection::Down;
 
 	//update the animation
-	walkingAnimationStartTicksTime =
-		!moving ? -1 :
-		prev->walkingAnimationStartTicksTime >= 0 ? prev->walkingAnimationStartTicksTime :
-		ticksTime;
+	if (!moving)
+		animation = nullptr;
+	else if (prev->animation != nullptr) {
+		animation = prev->animation;
+		animationStartTicksTime = prev->animationStartTicksTime;
+	} else {
+		animation = hasBoot ? SpriteRegistry::playerBootWalkingAnimation : SpriteRegistry::playerWalkingAnimation;
+		animationStartTicksTime = ticksTime;
+	}
 }
 //render this player state, which was deemed to be the last state to need rendering
-void PlayerState::render() {
+void PlayerState::render(CameraAnchor* camera) {
+	int currentTicksTime = SDL_GetTicks();
+	float renderCenterX =
+		getCameraCenterX(currentTicksTime) - camera->getCameraCenterX(currentTicksTime) + (float)Config::gameScreenWidth * 0.5f;
+	float renderCenterY =
+		getCameraCenterY(currentTicksTime)
+			- camera->getCameraCenterY(currentTicksTime)
+			+ (float)Config::gameScreenHeight * 0.5f;
 	glEnable(GL_BLEND);
-	if (walkingAnimationStartTicksTime >= 0)
-		SpriteRegistry::playerWalkingAnimation->renderUsingCenterWithVerticalIndex(
-			SDL_GetTicks() - walkingAnimationStartTicksTime,
-			(int)(spriteDirection),
-			(float)(Config::gameScreenWidth) / 2.0f,
-			(float)(Config::gameScreenHeight) / 2.0f);
+	if (animation != nullptr)
+		animation->renderUsingCenterWithVerticalIndex(
+			currentTicksTime - animationStartTicksTime, (int)spriteDirection, renderCenterX, renderCenterY);
 	else
-		SpriteRegistry::player->renderUsingCenter(
-			0, (int)(spriteDirection), (float)(Config::gameScreenWidth) / 2.0f, (float)(Config::gameScreenHeight) / 2.0f);
+		SpriteRegistry::player->renderUsingCenter(hasBoot ? 4 : 0, (int)spriteDirection, renderCenterX, renderCenterY);
 }

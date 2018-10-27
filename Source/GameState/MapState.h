@@ -1,6 +1,6 @@
 #include "General/General.h"
 
-class PlayerState;
+class CameraAnchor;
 
 class MapState {
 public:
@@ -23,5 +23,5 @@ public:
 	static void deleteMap();
 	static char getTile(int x, int y);
 	static char getHeight(int x, int y);
-	static void render(PlayerState* playerState);
+	static void render(CameraAnchor* camera);
 };

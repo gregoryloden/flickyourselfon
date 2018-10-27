@@ -1,9 +1,11 @@
 #include "General/General.h"
+#include "GameState/CameraAnchor.h"
 
 class PositionState;
+class SpriteAnimation;
 enum class PlayerSpriteDirection: int;
 
-class PlayerState onlyInDebug(: public ObjCounter) {
+class PlayerState: public CameraAnchor {
 public:
 	const float boundingBoxLeftOffset;
 	const float boundingBoxRightOffset;
@@ -20,15 +22,17 @@ private:
 	bool renderInterpolatedYPosition;
 	char z;
 	int lastUpdateTicksTime;
-	int walkingAnimationStartTicksTime;
+	SpriteAnimation* animation;
+	int animationStartTicksTime;
 	PlayerSpriteDirection spriteDirection;
+	bool hasBoot;
 
 public:
 	PlayerState(objCounterParameters());
 	~PlayerState();
 
-	float getRenderableX(int ticksTime);
-	float getRenderableY(int ticksTime);
+	float getCameraCenterX(int ticksTime);
+	float getCameraCenterY(int ticksTime);
 private:
 	float getInterpolatedX(int ticksTime);
 	float getInterpolatedY(int ticksTime);
@@ -39,5 +43,5 @@ private:
 	void collideWithEnvironmentWithPreviousPlayerState(PlayerState* prev);
 	void updateSpriteWithPreviousPlayerState(PlayerState* prev, int ticksTime);
 public:
-	void render();
+	void render(CameraAnchor* camera);
 };

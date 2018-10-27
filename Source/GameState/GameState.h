@@ -4,7 +4,6 @@ class PlayerState;
 
 class GameState onlyInDebug(: public ObjCounter) {
 private:
-	int ticksTime;
 	PlayerState* playerState;
 	bool shouldQuitGame;
 

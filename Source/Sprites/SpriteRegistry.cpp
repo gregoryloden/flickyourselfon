@@ -5,6 +5,7 @@
 
 SpriteSheet* SpriteRegistry::player = nullptr;
 SpriteAnimation* SpriteRegistry::playerWalkingAnimation = nullptr;
+SpriteAnimation* SpriteRegistry::playerBootWalkingAnimation = nullptr;
 SpriteSheet* SpriteRegistry::tiles = nullptr;
 SpriteSheet* SpriteRegistry::radioTower = nullptr;
 SpriteSheet* SpriteRegistry::font = nullptr;
@@ -20,6 +21,14 @@ void SpriteRegistry::loadAll() {
 			newWithArgs(SpriteAnimation::Frame, 0, 0, playerWalkingAnimationTicksPerFrame),
 			newWithArgs(SpriteAnimation::Frame, 2, 0, playerWalkingAnimationTicksPerFrame)
 		});
+	playerBootWalkingAnimation = newWithArgs(SpriteAnimation,
+		player,
+		{
+			newWithArgs(SpriteAnimation::Frame, 4, 0, playerWalkingAnimationTicksPerFrame),
+			newWithArgs(SpriteAnimation::Frame, 5, 0, playerWalkingAnimationTicksPerFrame),
+			newWithArgs(SpriteAnimation::Frame, 4, 0, playerWalkingAnimationTicksPerFrame),
+			newWithArgs(SpriteAnimation::Frame, 6, 0, playerWalkingAnimationTicksPerFrame)
+		});
 	tiles = newWithArgs(SpriteSheet, "images/tiles.png", MapState::tileCount, 1);
 	tiles->clampSpriteRectForTilesSprite();
 	radioTower = newWithArgs(SpriteSheet, "images/radiotower.png", 1, 1);
@@ -31,6 +40,7 @@ void SpriteRegistry::loadAll() {
 void SpriteRegistry::unloadAll() {
 	delete player;
 	delete playerWalkingAnimation;
+	delete playerBootWalkingAnimation;
 	delete tiles;
 	delete radioTower;
 	delete font;

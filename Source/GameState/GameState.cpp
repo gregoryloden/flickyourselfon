@@ -7,8 +7,7 @@
 
 GameState::GameState(objCounterParameters())
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
-ticksTime(0)
-, playerState(newWithoutArgs(PlayerState))
+playerState(newWithoutArgs(PlayerState))
 , shouldQuitGame(false) {
 }
 GameState::~GameState() {
@@ -16,7 +15,7 @@ GameState::~GameState() {
 }
 //update this game state by reading from the previous state
 void GameState::updateWithPreviousGameState(GameState* prev) {
-	ticksTime = SDL_GetTicks();
+	int ticksTime = (int)SDL_GetTicks();
 
 	//handle events
 	int clicks = 0;
@@ -39,7 +38,7 @@ void GameState::updateWithPreviousGameState(GameState* prev) {
 //render this state, which was deemed to be the last state to need rendering
 void GameState::render() {
 	MapState::render(playerState);
-	playerState->render();
+	playerState->render(playerState);
 }
 //return whether updates and renders should stop
 bool GameState::getShouldQuitGame() {

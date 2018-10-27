@@ -77,6 +77,6 @@ void SpriteSheet::renderUsingCenter(int spriteHorizontalIndex, int spriteVertica
 	render(
 		spriteHorizontalIndex,
 		spriteVerticalIndex,
-		(GLint)(centerX - (float)spriteWidth / 2.0f),
-		(GLint)(centerY - (float)spriteHeight / 2.0f));
+		(GLint)(centerX - (float)spriteWidth * 0.5f),
+		(GLint)(centerY - (float)spriteHeight * 0.5f));
 }
