@@ -1,11 +1,11 @@
 #include "MapState.h"
-#include "GameState/CameraAnchor.h"
+#include "GameState/EntityState.h"
 #include "Sprites/SpriteRegistry.h"
 #include "Sprites/SpriteSheet.h"
 
 const float MapState::speed = 40.0f;
 const float MapState::diagonalSpeed = MapState::speed * sqrt(0.5f);
-const float MapState::smallDistance = 1.0f / (float)0x100;
+const float MapState::smallDistance = 1.0f / 256.0f;
 char* MapState::tiles = nullptr;
 char* MapState::heights = nullptr;
 int MapState::width = 1;
@@ -46,13 +46,12 @@ char MapState::getHeight(int x, int y) {
 	return heights[y * width + x];
 }
 //draw the map
-void MapState::render(CameraAnchor* camera) {
+void MapState::render(EntityState* camera, int ticksTime) {
 	glDisable(GL_BLEND);
 	//render the map
 	//these values are just right so that every tile rendered is at least partially in the window and no tiles are left out
-	int currentTicksTime = SDL_GetTicks();
-	int centerX = (int)(camera->getCameraCenterX(currentTicksTime));
-	int centerY = (int)(camera->getCameraCenterY(currentTicksTime));
+	int centerX = (int)(camera->getCameraCenterX(ticksTime));
+	int centerY = (int)(camera->getCameraCenterY(ticksTime));
 	int addX = Config::gameScreenWidth / 2 - centerX;
 	int addY = Config::gameScreenHeight / 2 - centerY;
 	int tileMinX = FYOMath::max(-addX / MapState::tileSize, 0);
@@ -65,10 +64,10 @@ void MapState::render(CameraAnchor* camera) {
 			int mapIndex = y * MapState::width + x;
 			if (MapState::heights[mapIndex] != MapState::heightCount - 1)
 				SpriteRegistry::tiles->render(
-					(int)(MapState::tiles[mapIndex]), 0, x * MapState::tileSize + addX, y * MapState::tileSize + addY);
+					x * MapState::tileSize + addX, y * MapState::tileSize + addY, (int)(MapState::tiles[mapIndex]), 0);
 		}
 	}
 
 	glEnable(GL_BLEND);
-	SpriteRegistry::radioTower->render(0, 0, 423 - centerX, -32 - centerY);
+	SpriteRegistry::radioTower->render(423 - centerX, -32 - centerY, 0, 0);
 }

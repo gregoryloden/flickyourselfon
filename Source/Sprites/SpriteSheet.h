@@ -19,6 +19,6 @@ private:
 	void initializeWithSurface(SDL_Surface* imageSurface, int horizontalSpriteCount, int verticalSpriteCount);
 public:
 	void clampSpriteRectForTilesSprite();
-	void render(int spriteHorizontalIndex, int spriteVerticalIndex, GLint leftX, GLint topY);
-	void renderUsingCenter(int spriteHorizontalIndex, int spriteVerticalIndex, float centerX, float centerY);
+	void render(GLint leftX, GLint topY, int spriteHorizontalIndex, int spriteVerticalIndex);
+	void renderUsingCenter(float centerX, float centerY, int spriteHorizontalIndex, int spriteVerticalIndex);
 };

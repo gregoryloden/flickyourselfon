@@ -5,7 +5,9 @@
 
 SpriteSheet* SpriteRegistry::player = nullptr;
 SpriteAnimation* SpriteRegistry::playerWalkingAnimation = nullptr;
+SpriteAnimation* SpriteRegistry::playerLegLiftAnimation = nullptr;
 SpriteAnimation* SpriteRegistry::playerBootWalkingAnimation = nullptr;
+SpriteAnimation* SpriteRegistry::playerKickingAnimation = nullptr;
 SpriteSheet* SpriteRegistry::tiles = nullptr;
 SpriteSheet* SpriteRegistry::radioTower = nullptr;
 SpriteSheet* SpriteRegistry::font = nullptr;
@@ -16,18 +18,30 @@ void SpriteRegistry::loadAll() {
 	playerWalkingAnimation = newWithArgs(SpriteAnimation,
 		player,
 		{
-			newWithArgs(SpriteAnimation::Frame, 0, 0, playerWalkingAnimationTicksPerFrame),
-			newWithArgs(SpriteAnimation::Frame, 1, 0, playerWalkingAnimationTicksPerFrame),
-			newWithArgs(SpriteAnimation::Frame, 0, 0, playerWalkingAnimationTicksPerFrame),
-			newWithArgs(SpriteAnimation::Frame, 2, 0, playerWalkingAnimationTicksPerFrame)
+			newWithArgs(SpriteAnimation::Frame, 0, -1, playerWalkingAnimationTicksPerFrame),
+			newWithArgs(SpriteAnimation::Frame, 1, -1, playerWalkingAnimationTicksPerFrame),
+			newWithArgs(SpriteAnimation::Frame, 0, -1, playerWalkingAnimationTicksPerFrame),
+			newWithArgs(SpriteAnimation::Frame, 2, -1, playerWalkingAnimationTicksPerFrame)
+		});
+	playerLegLiftAnimation = newWithArgs(SpriteAnimation,
+		player,
+		{
+			newWithArgs(SpriteAnimation::Frame, 3, -1, playerKickingAnimationTicksPerFrame)
 		});
 	playerBootWalkingAnimation = newWithArgs(SpriteAnimation,
 		player,
 		{
-			newWithArgs(SpriteAnimation::Frame, 4, 0, playerWalkingAnimationTicksPerFrame),
-			newWithArgs(SpriteAnimation::Frame, 5, 0, playerWalkingAnimationTicksPerFrame),
-			newWithArgs(SpriteAnimation::Frame, 4, 0, playerWalkingAnimationTicksPerFrame),
-			newWithArgs(SpriteAnimation::Frame, 6, 0, playerWalkingAnimationTicksPerFrame)
+			newWithArgs(SpriteAnimation::Frame, 4, -1, playerWalkingAnimationTicksPerFrame),
+			newWithArgs(SpriteAnimation::Frame, 5, -1, playerWalkingAnimationTicksPerFrame),
+			newWithArgs(SpriteAnimation::Frame, 4, -1, playerWalkingAnimationTicksPerFrame),
+			newWithArgs(SpriteAnimation::Frame, 6, -1, playerWalkingAnimationTicksPerFrame)
+		});
+	playerKickingAnimation = newWithArgs(SpriteAnimation,
+		player,
+		{
+			newWithArgs(SpriteAnimation::Frame, 7, -1, playerKickingAnimationTicksPerFrame),
+			newWithArgs(SpriteAnimation::Frame, 8, -1, playerKickingAnimationTicksPerFrame),
+			newWithArgs(SpriteAnimation::Frame, 7, -1, playerKickingAnimationTicksPerFrame)
 		});
 	tiles = newWithArgs(SpriteSheet, "images/tiles.png", MapState::tileCount, 1);
 	tiles->clampSpriteRectForTilesSprite();
@@ -40,7 +54,9 @@ void SpriteRegistry::loadAll() {
 void SpriteRegistry::unloadAll() {
 	delete player;
 	delete playerWalkingAnimation;
+	delete playerLegLiftAnimation;
 	delete playerBootWalkingAnimation;
+	delete playerKickingAnimation;
 	delete tiles;
 	delete radioTower;
 	delete font;

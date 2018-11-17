@@ -1,4 +1,5 @@
 #include "flickyourselfon.h"
+#include "GameState/EntityAnimation.h"
 #include "GameState/GameState.h"
 #include "GameState/MapState.h"
 #include "Util/CircularStateQueue.h"
@@ -92,6 +93,11 @@ int main(int argc, char *argv[]) {
 		delete gameStateQueue;
 		SpriteRegistry::unloadAll();
 		MapState::deleteMap();
+		ObjectPool<EntityAnimation>::clearPool();
+		ObjectPool<EntityAnimation::Delay>::clearPool();
+		ObjectPool<EntityAnimation::SetPosition>::clearPool();
+		ObjectPool<EntityAnimation::SetVelocity>::clearPool();
+		ObjectPool<EntityAnimation::SetSpriteAnimation>::clearPool();
 		ObjCounter::end();
 	#endif
 	Logger::endLogging();
@@ -118,7 +124,6 @@ void renderLoop(CircularStateQueue<GameState>* gameStateQueue) {
 	MapState::buildMap();
 
 	//begin the render loop
-	renderThreadBegan = true;
 	int lastWindowWidth = 0;
 	int lastWindowHeight = 0;
 	while (true) {
@@ -142,7 +147,8 @@ void renderLoop(CircularStateQueue<GameState>* gameStateQueue) {
 //TODO: settle on final background color
 glClearColor(0.1875f, 0.0f, 0.1875f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
-		gameState->render();
+		gameState->render(preRenderTicksTime);
+		renderThreadBegan = true;
 		glFlush();
 		SDL_GL_SwapWindow(window);
 

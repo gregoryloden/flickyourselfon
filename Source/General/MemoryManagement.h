@@ -9,6 +9,7 @@
 		#define objCounterParametersComma() objCounterParameters(),
 		#define objCounterArguments() pObjType, pObjFile, pObjLine
 		#define objCounterArgumentsComma() objCounterArguments(),
+		#define callNewFromPool(className) ObjectPool<className>::newFromPool(#className, __FILE__, __LINE__)
 	#endif
 #endif
 #ifndef newWithArgs
@@ -18,6 +19,7 @@
 	#define objCounterParametersComma()
 	#define objCounterArguments()
 	#define objCounterArgumentsComma()
+	#define callNewFromPool(className) ObjectPool<className>::newFromPool()
 #endif
 
 #ifdef DEBUG

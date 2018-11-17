@@ -29,23 +29,29 @@ SpriteAnimation::~SpriteAnimation() {
 	delete[] frameSearchPredecingTicksDurations;
 }
 //binary search for the referenced frame
-SpriteAnimation::Frame* SpriteAnimation::findFrame(int animationTicksDuration) {
-	animationTicksDuration %= totalTicksDuration;
+SpriteAnimation::Frame* SpriteAnimation::findFrame(int animationTicksElapsed) {
+	animationTicksElapsed %= totalTicksDuration;
 	int low = 0;
 	int high = frames.size();
 	while (low + 1 < high) {
 		int mid = (low + high) / 2;
 		//this frame hasn't happened yet
-		if (frameSearchPredecingTicksDurations[mid] > animationTicksDuration)
+		if (frameSearchPredecingTicksDurations[mid] > animationTicksElapsed)
 			high = mid;
 		else
 			low = mid;
 	}
 	return frames[low];
 }
-void SpriteAnimation::renderUsingCenterWithVerticalIndex(
-	int animationTicksDuration, int spriteVerticalIndex, float centerX, float centerY)
+void SpriteAnimation::renderUsingCenter(
+	float centerX, float centerY, int animationTicksElapsed, int fallbackSpriteHorizontalIndex, int fallbackSpriteVerticalIndex)
 {
-	sprite->renderUsingCenter(
-		findFrame(animationTicksDuration)->getSpriteHorizontalIndex(), spriteVerticalIndex, centerX, centerY);
+	Frame* frame = findFrame(animationTicksElapsed);
+	int spriteHoritontalIndex = frame->getSpriteHorizontalIndex();
+	int spriteVerticalIndex = frame->getSpriteVerticalIndex();
+	if (spriteHoritontalIndex == -1)
+		spriteHoritontalIndex = fallbackSpriteHorizontalIndex;
+	if (spriteVerticalIndex == -1)
+		spriteVerticalIndex = fallbackSpriteVerticalIndex;
+	sprite->renderUsingCenter(centerX, centerY, spriteHoritontalIndex, spriteVerticalIndex);
 }

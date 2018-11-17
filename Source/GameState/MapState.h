@@ -1,6 +1,6 @@
 #include "General/General.h"
 
-class CameraAnchor;
+class EntityState;
 
 class MapState {
 public:
@@ -23,5 +23,5 @@ public:
 	static void deleteMap();
 	static char getTile(int x, int y);
 	static char getHeight(int x, int y);
-	static void render(CameraAnchor* camera);
+	static void render(EntityState* camera, int ticksTime);
 };

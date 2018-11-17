@@ -1,49 +1,58 @@
 #include "PlayerState.h"
+#include "GameState/EntityAnimation.h"
 #include "GameState/MapState.h"
 #include "Sprites/SpriteAnimation.h"
 #include "Sprites/SpriteRegistry.h"
 #include "Sprites/SpriteSheet.h"
 
+const float PlayerState::boundingBoxLeftOffset = -5.5f;
+const float PlayerState::boundingBoxRightOffset = 5.5f;
+const float PlayerState::boundingBoxTopOffset = 4.5f;
+const float PlayerState::boundingBoxBottomOffset = 9.5;
 PlayerState::PlayerState(objCounterParameters())
-: CameraAnchor(objCounterArguments())
-, boundingBoxLeftOffset(-5.5f)
-, boundingBoxRightOffset(5.5f)
-, boundingBoxTopOffset(4.5f)
-, boundingBoxBottomOffset(9.5)
-, xPosition(179.5f)
+: EntityState(objCounterArgumentsComma() 179.5f, 166.5f)
 , xDirection(0)
-, xVelocityPerTick(0.0f)
-, renderInterpolatedXPosition(true)
-, yPosition(166.5f)
 , yDirection(0)
-, yVelocityPerTick(0.0f)
-, renderInterpolatedYPosition(true)
-, z(0)
-, lastUpdateTicksTime(0)
 , animation(nullptr)
 , animationStartTicksTime(-1)
 , spriteDirection(PlayerSpriteDirection::Down)
-, hasBoot(false) {
+, hasBoot(false)
+, kickingAnimation(nullptr) {
 }
-PlayerState::~PlayerState() {}
-//return the player's x coordinate at the given time that we should use for rendering things like the map
-float PlayerState::getCameraCenterX(int ticksTime) {
-	return renderInterpolatedXPosition ? getInterpolatedX(ticksTime) : xPosition;
+PlayerState::~PlayerState() {
+	if (kickingAnimation != nullptr)
+		kickingAnimation->release();
 }
-//return the player's y coordinate at the given time that we should use for rendering things like the map
-float PlayerState::getCameraCenterY(int ticksTime) {
-	return renderInterpolatedYPosition ? getInterpolatedY(ticksTime) : yPosition;
-}
-//return the player's x coordinate at the given time after accounting for velocity
-float PlayerState::getInterpolatedX(int ticksTime) {
-	return xPosition + (float)xVelocityPerTick * (float)(ticksTime - lastUpdateTicksTime);
-}
-//return the player's y coordinate at the given time after accounting for velocity
-float PlayerState::getInterpolatedY(int ticksTime) {
-	return yPosition + (float)yVelocityPerTick * (float)(ticksTime - lastUpdateTicksTime);
+//set the animation to the given animation at the given time
+void PlayerState::setSpriteAnimation(SpriteAnimation* pAnimation, int pAnimationStartTicksTime) {
+	animation = pAnimation;
+	animationStartTicksTime = pAnimationStartTicksTime;
 }
 //update this player state by reading from the previous state
 void PlayerState::updateWithPreviousPlayerState(PlayerState* prev, int ticksTime) {
+	hasBoot = prev->hasBoot;
+	if (kickingAnimation != nullptr)
+		kickingAnimation->release();
+	kickingAnimation = prev->kickingAnimation;
+
+	//if we have a kicking animation, update with that instead
+	if (kickingAnimation != nullptr) {
+		copyEntityState(prev);
+		xDirection = prev->xDirection;
+		yDirection = prev->yDirection;
+		animation = prev->animation;
+		animationStartTicksTime = prev->animationStartTicksTime;
+		spriteDirection = prev->spriteDirection;
+		if (kickingAnimation->update(this, ticksTime))
+			kickingAnimation->retain();
+		else {
+			kickingAnimation = nullptr;
+			animation = nullptr;
+		}
+		return;
+	}
+
+	//update this player state normally by reading from the last state
 	updatePositionWithPreviousPlayerState(prev, ticksTime);
 	collideWithEnvironmentWithPreviousPlayerState(prev);
 	updateSpriteWithPreviousPlayerState(prev, ticksTime);
@@ -53,14 +62,15 @@ void PlayerState::updatePositionWithPreviousPlayerState(PlayerState* prev, int t
 	const Uint8* keyboardState = SDL_GetKeyboardState(nullptr);
 	xPosition = prev->getInterpolatedX(ticksTime);
 	yPosition = prev->getInterpolatedY(ticksTime);
-	xDirection = (char)(keyboardState[SDL_SCANCODE_RIGHT] - keyboardState[SDL_SCANCODE_LEFT]);
-	yDirection = (char)(keyboardState[SDL_SCANCODE_DOWN] - keyboardState[SDL_SCANCODE_UP]);
+	xDirection = (char)(keyboardState[Config::rightKey] - keyboardState[Config::leftKey]);
+	yDirection = (char)(keyboardState[Config::downKey] - keyboardState[Config::upKey]);
 	float speedPerTick = ((xDirection & yDirection) != 0 ? MapState::diagonalSpeed : MapState::speed) / 1000.0f;
 	xVelocityPerTick = (float)xDirection * speedPerTick;
 	yVelocityPerTick = (float)yDirection * speedPerTick;
 	lastUpdateTicksTime = ticksTime;
 	renderInterpolatedXPosition = true;
 	renderInterpolatedYPosition = true;
+	z = prev->z;
 }
 //check if we moved onto map tiles of a different height
 //use the previous move direction to figure out where to look
@@ -172,19 +182,32 @@ void PlayerState::updateSpriteWithPreviousPlayerState(PlayerState* prev, int tic
 		animationStartTicksTime = ticksTime;
 	}
 }
+//if we don't have a kicking animation, start one
+void PlayerState::beginKickingAnimation(int ticksTime) {
+	if (kickingAnimation != nullptr)
+		return;
+
+	SpriteAnimation* kickingSpriteAnimation = hasBoot
+		? SpriteRegistry::playerKickingAnimation
+		: SpriteRegistry::playerLegLiftAnimation;
+	kickingAnimation = callNewFromPool(EntityAnimation)->set(
+		ticksTime,
+		{
+			callNewFromPool(EntityAnimation::SetVelocity)->set(0.0f, 0.0f),
+			callNewFromPool(EntityAnimation::SetSpriteAnimation)->set(kickingSpriteAnimation),
+			callNewFromPool(EntityAnimation::Delay)->set(kickingSpriteAnimation->getTotalTicksDuration())
+		});
+}
 //render this player state, which was deemed to be the last state to need rendering
-void PlayerState::render(CameraAnchor* camera) {
-	int currentTicksTime = SDL_GetTicks();
+void PlayerState::render(EntityState* camera, int ticksTime) {
 	float renderCenterX =
-		getCameraCenterX(currentTicksTime) - camera->getCameraCenterX(currentTicksTime) + (float)Config::gameScreenWidth * 0.5f;
+		getCameraCenterX(ticksTime) - camera->getCameraCenterX(ticksTime) + (float)Config::gameScreenWidth * 0.5f;
 	float renderCenterY =
-		getCameraCenterY(currentTicksTime)
-			- camera->getCameraCenterY(currentTicksTime)
-			+ (float)Config::gameScreenHeight * 0.5f;
+		getCameraCenterY(ticksTime) - camera->getCameraCenterY(ticksTime) + (float)Config::gameScreenHeight * 0.5f;
 	glEnable(GL_BLEND);
 	if (animation != nullptr)
-		animation->renderUsingCenterWithVerticalIndex(
-			currentTicksTime - animationStartTicksTime, (int)spriteDirection, renderCenterX, renderCenterY);
+		animation->renderUsingCenter(
+			renderCenterX, renderCenterY, ticksTime - animationStartTicksTime, 0, (int)spriteDirection);
 	else
-		SpriteRegistry::player->renderUsingCenter(hasBoot ? 4 : 0, (int)spriteDirection, renderCenterX, renderCenterY);
+		SpriteRegistry::player->renderUsingCenter(renderCenterX, renderCenterY, hasBoot ? 4 : 0, (int)spriteDirection);
 }

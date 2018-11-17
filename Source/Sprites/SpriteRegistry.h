@@ -12,10 +12,13 @@ enum class PlayerSpriteDirection: int {
 class SpriteRegistry {
 public:
 	static const int playerWalkingAnimationTicksPerFrame = 250;
+	static const int playerKickingAnimationTicksPerFrame = 300;
 
 	static SpriteSheet* player;
 	static SpriteAnimation* playerWalkingAnimation;
+	static SpriteAnimation* playerLegLiftAnimation;
 	static SpriteAnimation* playerBootWalkingAnimation;
+	static SpriteAnimation* playerKickingAnimation;
 	static SpriteSheet* tiles;
 	static SpriteSheet* radioTower;
 	static SpriteSheet* font;

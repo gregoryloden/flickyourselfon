@@ -52,7 +52,7 @@ void SpriteSheet::clampSpriteRectForTilesSprite() {
 	spriteTexHeight = (float)spriteHeight / (float)spriteSheetHeight;
 }
 //draw the specified sprite image at the specified coordinate
-void SpriteSheet::render(int spriteHorizontalIndex, int spriteVerticalIndex, GLint leftX, GLint topY) {
+void SpriteSheet::render(GLint leftX, GLint topY, int spriteHorizontalIndex, int spriteVerticalIndex) {
 	GLint rightX = leftX + spriteWidth;
 	GLint bottomY = topY + spriteHeight;
 	float texMinX = (float)spriteHorizontalIndex * spriteTexWidth;
@@ -73,10 +73,10 @@ void SpriteSheet::render(int spriteHorizontalIndex, int spriteVerticalIndex, GLi
 	glEnd();
 }
 //draw the specified sprite image with its center at the specified coordinate
-void SpriteSheet::renderUsingCenter(int spriteHorizontalIndex, int spriteVerticalIndex, float centerX, float centerY) {
+void SpriteSheet::renderUsingCenter(float centerX, float centerY, int spriteHorizontalIndex, int spriteVerticalIndex) {
 	render(
-		spriteHorizontalIndex,
-		spriteVerticalIndex,
 		(GLint)(centerX - (float)spriteWidth * 0.5f),
-		(GLint)(centerY - (float)spriteHeight * 0.5f));
+		(GLint)(centerY - (float)spriteHeight * 0.5f),
+		spriteHorizontalIndex,
+		spriteVerticalIndex);
 }

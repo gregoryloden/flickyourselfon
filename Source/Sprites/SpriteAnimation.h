@@ -29,8 +29,14 @@ public:
 	SpriteAnimation(objCounterParametersComma() SpriteSheet* pSprite, vector<Frame*> pFrames);
 	~SpriteAnimation();
 
+	int getTotalTicksDuration() { return totalTicksDuration; }
 private:
-	Frame* findFrame(int animationTicksDuration);
+	Frame* findFrame(int animationTicksElapsed);
 public:
-	void renderUsingCenterWithVerticalIndex(int animationTicksDuration, int spriteVerticalIndex, float centerX, float centerY);
+	void renderUsingCenter(
+		float centerX,
+		float centerY,
+		int animationTicksElapsed,
+		int fallbackSpriteHorizontalIndex,
+		int fallbackSpriteVerticalIndex);
 };
