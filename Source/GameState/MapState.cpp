@@ -50,8 +50,8 @@ void MapState::render(EntityState* camera, int ticksTime) {
 	glDisable(GL_BLEND);
 	//render the map
 	//these values are just right so that every tile rendered is at least partially in the window and no tiles are left out
-	int centerX = (int)(camera->getCameraCenterX(ticksTime));
-	int centerY = (int)(camera->getCameraCenterY(ticksTime));
+	int centerX = (int)(camera->getRenderCenterX(ticksTime));
+	int centerY = (int)(camera->getRenderCenterY(ticksTime));
 	int addX = Config::gameScreenWidth / 2 - centerX;
 	int addY = Config::gameScreenHeight / 2 - centerY;
 	int tileMinX = FYOMath::max(-addX / MapState::tileSize, 0);

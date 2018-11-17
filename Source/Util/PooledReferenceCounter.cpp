@@ -1,11 +1,13 @@
+#include "PooledReferenceCounter.h"
+#include "GameState/DynamicValue.h"
 #include "GameState/EntityAnimation.h"
 
 #define instantiatePooledReferenceCounter(className) \
 	template class ObjectPool<className>; vector<className*> ObjectPool<className>::pool;
 
+instantiatePooledReferenceCounter(CompositeLinearValue);
 instantiatePooledReferenceCounter(EntityAnimation);
 instantiatePooledReferenceCounter(EntityAnimation::Delay);
-instantiatePooledReferenceCounter(EntityAnimation::SetPosition);
 instantiatePooledReferenceCounter(EntityAnimation::SetVelocity);
 instantiatePooledReferenceCounter(EntityAnimation::SetSpriteAnimation);
 

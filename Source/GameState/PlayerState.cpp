@@ -1,4 +1,5 @@
 #include "PlayerState.h"
+#include "GameState/DynamicValue.h"
 #include "GameState/EntityAnimation.h"
 #include "GameState/MapState.h"
 #include "Sprites/SpriteAnimation.h"
@@ -60,16 +61,17 @@ void PlayerState::updateWithPreviousPlayerState(PlayerState* prev, int ticksTime
 //update the position of this player state by reading from the previous state
 void PlayerState::updatePositionWithPreviousPlayerState(PlayerState* prev, int ticksTime) {
 	const Uint8* keyboardState = SDL_GetKeyboardState(nullptr);
-	xPosition = prev->getInterpolatedX(ticksTime);
-	yPosition = prev->getInterpolatedY(ticksTime);
 	xDirection = (char)(keyboardState[Config::rightKey] - keyboardState[Config::leftKey]);
 	yDirection = (char)(keyboardState[Config::downKey] - keyboardState[Config::upKey]);
 	float speedPerTick = ((xDirection & yDirection) != 0 ? MapState::diagonalSpeed : MapState::speed) / 1000.0f;
-	xVelocityPerTick = (float)xDirection * speedPerTick;
-	yVelocityPerTick = (float)yDirection * speedPerTick;
+	int ticksSinceLastUpdate = ticksTime - prev->lastUpdateTicksTime;
+	x->release();
+	x = callNewFromPool(CompositeLinearValue)->set(prev->x->getValue(ticksSinceLastUpdate), (float)xDirection * speedPerTick);
+	y->release();
+	y = callNewFromPool(CompositeLinearValue)->set(prev->y->getValue(ticksSinceLastUpdate), (float)yDirection * speedPerTick);
 	lastUpdateTicksTime = ticksTime;
-	renderInterpolatedXPosition = true;
-	renderInterpolatedYPosition = true;
+	renderInterpolatedX = true;
+	renderInterpolatedY = true;
 	z = prev->z;
 }
 //check if we moved onto map tiles of a different height
@@ -77,6 +79,8 @@ void PlayerState::updatePositionWithPreviousPlayerState(PlayerState* prev, int t
 //if we did, move the player and don't render interpolated positions
 void PlayerState::collideWithEnvironmentWithPreviousPlayerState(PlayerState* prev) {
 	//find the row and column of tiles that we could collide with
+	float xPosition = x->getValue(0);
+	float yPosition = y->getValue(0);
 	float playerLeftEdge = xPosition + boundingBoxLeftOffset;
 	float playerRightEdge = xPosition + boundingBoxRightOffset;
 	float playerTopEdge = yPosition + boundingBoxTopOffset;
@@ -137,16 +141,18 @@ void PlayerState::collideWithEnvironmentWithPreviousPlayerState(PlayerState* pre
 
 	//adjust our position if we collided
 	if (hasXCollision) {
-		renderInterpolatedXPosition = false;
-		xPosition = prev->xDirection < 0
+		renderInterpolatedX = false;
+		x->release();
+		x = x->copyWithConstantValue(prev->xDirection < 0
 			? wallX + MapState::smallDistance - boundingBoxLeftOffset
-			: wallX - MapState::smallDistance - boundingBoxRightOffset;
+			: wallX - MapState::smallDistance - boundingBoxRightOffset);
 	}
 	if (hasYCollision) {
-		renderInterpolatedYPosition = false;
-		yPosition = prev->yDirection < 0
+		renderInterpolatedY = false;
+		y->release();
+		y = y->copyWithConstantValue(prev->yDirection < 0
 			? wallY + MapState::smallDistance - boundingBoxTopOffset
-			: wallY - MapState::smallDistance - boundingBoxBottomOffset;
+			: wallY - MapState::smallDistance - boundingBoxBottomOffset);
 	}
 }
 //update the sprite (and possibly the animation) of this player state by reading from the previous state
@@ -201,9 +207,9 @@ void PlayerState::beginKickingAnimation(int ticksTime) {
 //render this player state, which was deemed to be the last state to need rendering
 void PlayerState::render(EntityState* camera, int ticksTime) {
 	float renderCenterX =
-		getCameraCenterX(ticksTime) - camera->getCameraCenterX(ticksTime) + (float)Config::gameScreenWidth * 0.5f;
+		getRenderCenterX(ticksTime) - camera->getRenderCenterX(ticksTime) + (float)Config::gameScreenWidth * 0.5f;
 	float renderCenterY =
-		getCameraCenterY(ticksTime) - camera->getCameraCenterY(ticksTime) + (float)Config::gameScreenHeight * 0.5f;
+		getRenderCenterY(ticksTime) - camera->getRenderCenterY(ticksTime) + (float)Config::gameScreenHeight * 0.5f;
 	glEnable(GL_BLEND);
 	if (animation != nullptr)
 		animation->renderUsingCenter(

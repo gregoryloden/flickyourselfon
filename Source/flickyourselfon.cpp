@@ -1,4 +1,5 @@
 #include "flickyourselfon.h"
+#include "GameState/DynamicValue.h"
 #include "GameState/EntityAnimation.h"
 #include "GameState/GameState.h"
 #include "GameState/MapState.h"
@@ -93,9 +94,9 @@ int main(int argc, char *argv[]) {
 		delete gameStateQueue;
 		SpriteRegistry::unloadAll();
 		MapState::deleteMap();
+		ObjectPool<CompositeLinearValue>::clearPool();
 		ObjectPool<EntityAnimation>::clearPool();
 		ObjectPool<EntityAnimation::Delay>::clearPool();
-		ObjectPool<EntityAnimation::SetPosition>::clearPool();
 		ObjectPool<EntityAnimation::SetVelocity>::clearPool();
 		ObjectPool<EntityAnimation::SetSpriteAnimation>::clearPool();
 		ObjCounter::end();

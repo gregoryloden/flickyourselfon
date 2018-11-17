@@ -1,53 +1,45 @@
 #include "EntityState.h"
+#include "GameState/DynamicValue.h"
 
-EntityState::EntityState(objCounterParametersComma() float pXPosition, float pYPosition)
+EntityState::EntityState(objCounterParametersComma() float xPosition, float yPosition)
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
-xPosition(pXPosition)
-, xVelocityPerTick(0.0f)
-, renderInterpolatedXPosition(true)
-, yPosition(pYPosition)
-, yVelocityPerTick(0.0f)
-, renderInterpolatedYPosition(true)
+x(callNewFromPool(CompositeLinearValue)->set(xPosition, 0.0f))
+, renderInterpolatedX(true)
+, y(callNewFromPool(CompositeLinearValue)->set(xPosition, 0.0f))
+, renderInterpolatedY(true)
 , z(0)
 , lastUpdateTicksTime(0) {
 }
-EntityState::~EntityState() {}
+EntityState::~EntityState() {
+	x->release();
+	y->release();
+}
 //return the entity's x coordinate at the given time that we should use for rendering the world
-float EntityState::getCameraCenterX(int ticksTime) {
-	return renderInterpolatedXPosition ? getInterpolatedX(ticksTime) : xPosition;
+float EntityState::getRenderCenterX(int ticksTime) {
+	return x->getValue(renderInterpolatedX ? ticksTime - lastUpdateTicksTime : 0);
 }
 //return the entity's y coordinate at the given time that we should use for rendering the world
-float EntityState::getCameraCenterY(int ticksTime) {
-	return renderInterpolatedYPosition ? getInterpolatedY(ticksTime) : yPosition;
-}
-//return the entity's x coordinate at the given time after accounting for velocity
-float EntityState::getInterpolatedX(int ticksTime) {
-	return xPosition + (float)xVelocityPerTick * (float)(ticksTime - lastUpdateTicksTime);
-}
-//return the entity's y coordinate at the given time after accounting for velocity
-float EntityState::getInterpolatedY(int ticksTime) {
-	return yPosition + (float)yVelocityPerTick * (float)(ticksTime - lastUpdateTicksTime);
+float EntityState::getRenderCenterY(int ticksTime) {
+	return y->getValue(renderInterpolatedY ? ticksTime - lastUpdateTicksTime : 0);
 }
 //set the position to the given position at the given time
-void EntityState::setPosition(float pXPosition, float pYPosition, char pZ, int pLastUpdateTicksTime) {
-	xPosition = pXPosition;
-	yPosition = pYPosition;
-	z = pZ;
+void EntityState::setVelocity(float xVelocityPerTick, float yVelocityPerTick, int pLastUpdateTicksTime) {
+	x->release();
+	x = callNewFromPool(CompositeLinearValue)->set(x->getValue(0), xVelocityPerTick);
+	y->release();
+	y = callNewFromPool(CompositeLinearValue)->set(y->getValue(0), xVelocityPerTick);
 	lastUpdateTicksTime = pLastUpdateTicksTime;
-}
-//set the position to the given position at the given time
-void EntityState::setVelocity(float pXVelocityPerTick, float pYVelocityPerTick) {
-	xVelocityPerTick = pXVelocityPerTick;
-	yVelocityPerTick = pYVelocityPerTick;
 }
 //copy the state of the other entity
 void EntityState::copyEntityState(EntityState* other) {
-	xPosition = other->xPosition;
-	xVelocityPerTick = other->xVelocityPerTick;
-	renderInterpolatedXPosition = other->renderInterpolatedXPosition;
-	yPosition = other->yPosition;
-	yVelocityPerTick = other->yVelocityPerTick;
-	renderInterpolatedYPosition = other->renderInterpolatedYPosition;
+	x->release();
+	x = other->x;
+	x->retain();
+	renderInterpolatedX = other->renderInterpolatedX;
+	y->release();
+	y = other->y;
+	y->retain();
+	renderInterpolatedY = other->renderInterpolatedY;
 	z = other->z;
 	lastUpdateTicksTime = other->lastUpdateTicksTime;
 }

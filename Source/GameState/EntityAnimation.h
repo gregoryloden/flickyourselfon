@@ -27,20 +27,6 @@ public:
 		virtual bool handle(EntityState* entityState, int ticksTime);
 		virtual int getDelayTicksDuration();
 	};
-	class SetPosition: public Component {
-	private:
-		float x;
-		float y;
-		char z;
-
-	public:
-		SetPosition(objCounterParameters());
-		~SetPosition();
-
-		SetPosition* set(float pX, float pY, char pZ);
-		virtual void release();
-		virtual bool handle(EntityState* entityState, int ticksTime);
-	};
 	class SetVelocity: public Component {
 	private:
 		float vx;

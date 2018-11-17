@@ -29,26 +29,6 @@ bool EntityAnimation::Delay::handle(EntityState* entityState, int ticksTime) {
 int EntityAnimation::Delay::getDelayTicksDuration() {
 	return ticksDuration;
 }
-EntityAnimation::SetPosition::SetPosition(objCounterParameters())
-: Component(objCounterArguments())
-, x(0)
-, y(0)
-, z(0) {
-}
-EntityAnimation::SetPosition::~SetPosition() {}
-//initialize this SetPosition
-EntityAnimation::SetPosition* EntityAnimation::SetPosition::set(float pX, float pY, char pZ) {
-	x = pX;
-	y = pY;
-	z = pZ;
-	return this;
-}
-pooledReferenceCounterDefineRelease(EntityAnimation::SetPosition)
-//return that the animation should proceed after setting the position on the entity state
-bool EntityAnimation::SetPosition::handle(EntityState* entityState, int ticksTime) {
-	entityState->setPosition(x, y, z, ticksTime);
-	return true;
-}
 EntityAnimation::SetVelocity::SetVelocity(objCounterParameters())
 : Component(objCounterArguments())
 , vx(0.0f)
@@ -64,7 +44,7 @@ EntityAnimation::SetVelocity* EntityAnimation::SetVelocity::set(float pVx, float
 pooledReferenceCounterDefineRelease(EntityAnimation::SetVelocity)
 //return that the animation should proceed after setting the velocity on the entity state
 bool EntityAnimation::SetVelocity::handle(EntityState* entityState, int ticksTime) {
-	entityState->setVelocity(vx, vy);
+	entityState->setVelocity(vx, vy, ticksTime);
 	return true;
 }
 EntityAnimation::SetSpriteAnimation::SetSpriteAnimation(objCounterParameters())

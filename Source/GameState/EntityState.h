@@ -1,31 +1,24 @@
 #include "General/General.h"
 
+class DynamicValue;
 class SpriteAnimation;
 
 class EntityState onlyInDebug(: public ObjCounter) {
 protected:
-	//TODO: make position an object that can do more math than just linear interpolation
-	float xPosition;
-	float xVelocityPerTick;
-	bool renderInterpolatedXPosition;
-	float yPosition;
-	float yVelocityPerTick;
-	bool renderInterpolatedYPosition;
+	DynamicValue* x;
+	bool renderInterpolatedX;
+	DynamicValue* y;
+	bool renderInterpolatedY;
 	char z;
 	int lastUpdateTicksTime;
 
 public:
-	EntityState(objCounterParametersComma() float pXPosition, float pYPosition);
+	EntityState(objCounterParametersComma() float xPosition, float yPosition);
 	~EntityState();
 
-	float getCameraCenterX(int ticksTime);
-	float getCameraCenterY(int ticksTime);
-protected:
-	float getInterpolatedX(int ticksTime);
-	float getInterpolatedY(int ticksTime);
-public:
-	void setPosition(float pXPosition, float pYPosition, char pZ, int pLastUpdateTicksTime);
-	void setVelocity(float pXVelocityPerTick, float pYVelocityPerTick);
+	float getRenderCenterX(int ticksTime);
+	float getRenderCenterY(int ticksTime);
+	void setVelocity(float xVelocityPerTick, float yVelocityPerTick, int pLastUpdateTicksTime);
 	virtual void setSpriteAnimation(SpriteAnimation* spriteAnimation, int pAnimationStartTicksTime) = 0;
 	void copyEntityState(EntityState* other);
 };
