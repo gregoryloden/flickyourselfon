@@ -20,10 +20,7 @@ PlayerState::PlayerState(objCounterParameters())
 , hasBoot(false)
 , kickingAnimation(nullptr) {
 }
-PlayerState::~PlayerState() {
-	if (kickingAnimation != nullptr)
-		kickingAnimation->release();
-}
+PlayerState::~PlayerState() {}
 //set the animation to the given animation at the given time
 void PlayerState::setSpriteAnimation(SpriteAnimation* pAnimation, int pAnimationStartTicksTime) {
 	animation = pAnimation;
@@ -32,22 +29,18 @@ void PlayerState::setSpriteAnimation(SpriteAnimation* pAnimation, int pAnimation
 //update this player state by reading from the previous state
 void PlayerState::updateWithPreviousPlayerState(PlayerState* prev, int ticksTime) {
 	hasBoot = prev->hasBoot;
-	if (kickingAnimation != nullptr)
-		kickingAnimation->release();
-	kickingAnimation = prev->kickingAnimation;
+	kickingAnimation.set(prev->kickingAnimation.get());
 
 	//if we have a kicking animation, update with that instead
-	if (kickingAnimation != nullptr) {
+	if (kickingAnimation.get() != nullptr) {
 		copyEntityState(prev);
 		xDirection = prev->xDirection;
 		yDirection = prev->yDirection;
 		animation = prev->animation;
 		animationStartTicksTime = prev->animationStartTicksTime;
 		spriteDirection = prev->spriteDirection;
-		if (kickingAnimation->update(this, ticksTime))
-			kickingAnimation->retain();
-		else {
-			kickingAnimation = nullptr;
+		if (!kickingAnimation.get()->update(this, ticksTime)) {
+			kickingAnimation.set(nullptr);
 			animation = nullptr;
 		}
 		return;
@@ -65,22 +58,23 @@ void PlayerState::updatePositionWithPreviousPlayerState(PlayerState* prev, int t
 	yDirection = (char)(keyboardState[Config::downKey] - keyboardState[Config::upKey]);
 	float speedPerTick = ((xDirection & yDirection) != 0 ? MapState::diagonalSpeed : MapState::speed) / 1000.0f;
 	int ticksSinceLastUpdate = ticksTime - prev->lastUpdateTicksTime;
-	x->release();
-	x = callNewFromPool(CompositeLinearValue)->set(prev->x->getValue(ticksSinceLastUpdate), (float)xDirection * speedPerTick);
-	y->release();
-	y = callNewFromPool(CompositeLinearValue)->set(prev->y->getValue(ticksSinceLastUpdate), (float)yDirection * speedPerTick);
+	x.set(
+		callNewFromPool(CompositeQuarticValue)->set(
+			prev->x.get()->getValue(ticksSinceLastUpdate), (float)xDirection * speedPerTick, 0.0f, 0.0f, 0.0f));
+	y.set(
+		callNewFromPool(CompositeQuarticValue)->set(
+			prev->y.get()->getValue(ticksSinceLastUpdate), (float)yDirection * speedPerTick, 0.0f, 0.0f, 0.0f));
 	lastUpdateTicksTime = ticksTime;
 	renderInterpolatedX = true;
 	renderInterpolatedY = true;
 	z = prev->z;
 }
-//check if we moved onto map tiles of a different height
-//use the previous move direction to figure out where to look
+//check if we moved onto map tiles of a different height, using the previous move direction to figure out where to look
 //if we did, move the player and don't render interpolated positions
 void PlayerState::collideWithEnvironmentWithPreviousPlayerState(PlayerState* prev) {
 	//find the row and column of tiles that we could collide with
-	float xPosition = x->getValue(0);
-	float yPosition = y->getValue(0);
+	float xPosition = x.get()->getValue(0);
+	float yPosition = y.get()->getValue(0);
 	float playerLeftEdge = xPosition + boundingBoxLeftOffset;
 	float playerRightEdge = xPosition + boundingBoxRightOffset;
 	float playerTopEdge = yPosition + boundingBoxTopOffset;
@@ -142,17 +136,17 @@ void PlayerState::collideWithEnvironmentWithPreviousPlayerState(PlayerState* pre
 	//adjust our position if we collided
 	if (hasXCollision) {
 		renderInterpolatedX = false;
-		x->release();
-		x = x->copyWithConstantValue(prev->xDirection < 0
-			? wallX + MapState::smallDistance - boundingBoxLeftOffset
-			: wallX - MapState::smallDistance - boundingBoxRightOffset);
+		x.set(
+			x.get()->copyWithConstantValue(prev->xDirection < 0
+				? wallX + MapState::smallDistance - boundingBoxLeftOffset
+				: wallX - MapState::smallDistance - boundingBoxRightOffset));
 	}
 	if (hasYCollision) {
 		renderInterpolatedY = false;
-		y->release();
-		y = y->copyWithConstantValue(prev->yDirection < 0
-			? wallY + MapState::smallDistance - boundingBoxTopOffset
-			: wallY - MapState::smallDistance - boundingBoxBottomOffset);
+		y.set(
+			y.get()->copyWithConstantValue(prev->yDirection < 0
+				? wallY + MapState::smallDistance - boundingBoxTopOffset
+				: wallY - MapState::smallDistance - boundingBoxBottomOffset));
 	}
 }
 //update the sprite (and possibly the animation) of this player state by reading from the previous state
@@ -190,19 +184,22 @@ void PlayerState::updateSpriteWithPreviousPlayerState(PlayerState* prev, int tic
 }
 //if we don't have a kicking animation, start one
 void PlayerState::beginKickingAnimation(int ticksTime) {
-	if (kickingAnimation != nullptr)
+	if (kickingAnimation.get() != nullptr)
 		return;
 
 	SpriteAnimation* kickingSpriteAnimation = hasBoot
 		? SpriteRegistry::playerKickingAnimation
 		: SpriteRegistry::playerLegLiftAnimation;
-	kickingAnimation = callNewFromPool(EntityAnimation)->set(
-		ticksTime,
-		{
-			callNewFromPool(EntityAnimation::SetVelocity)->set(0.0f, 0.0f),
-			callNewFromPool(EntityAnimation::SetSpriteAnimation)->set(kickingSpriteAnimation),
-			callNewFromPool(EntityAnimation::Delay)->set(kickingSpriteAnimation->getTotalTicksDuration())
-		});
+	kickingAnimation.set(
+		callNewFromPool(EntityAnimation)->set(
+			ticksTime,
+			{
+				callNewFromPool(EntityAnimation::SetVelocity)->set(
+					callNewFromPool(CompositeQuarticValue)->set(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
+					callNewFromPool(CompositeQuarticValue)->set(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)),
+				callNewFromPool(EntityAnimation::SetSpriteAnimation)->set(kickingSpriteAnimation),
+				callNewFromPool(EntityAnimation::Delay)->set(kickingSpriteAnimation->getTotalTicksDuration())
+			}));
 }
 //render this player state, which was deemed to be the last state to need rendering
 void PlayerState::render(EntityState* camera, int ticksTime) {

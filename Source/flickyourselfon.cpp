@@ -94,7 +94,7 @@ int main(int argc, char *argv[]) {
 		delete gameStateQueue;
 		SpriteRegistry::unloadAll();
 		MapState::deleteMap();
-		ObjectPool<CompositeLinearValue>::clearPool();
+		ObjectPool<CompositeQuarticValue>::clearPool();
 		ObjectPool<EntityAnimation>::clearPool();
 		ObjectPool<EntityAnimation::Delay>::clearPool();
 		ObjectPool<EntityAnimation::SetVelocity>::clearPool();

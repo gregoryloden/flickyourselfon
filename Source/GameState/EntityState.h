@@ -1,13 +1,13 @@
-#include "General/General.h"
+#include "Util/PooledReferenceCounter.h"
 
 class DynamicValue;
 class SpriteAnimation;
 
 class EntityState onlyInDebug(: public ObjCounter) {
 protected:
-	DynamicValue* x;
+	ReferenceCounterHolder<DynamicValue> x;
 	bool renderInterpolatedX;
-	DynamicValue* y;
+	ReferenceCounterHolder<DynamicValue> y;
 	bool renderInterpolatedY;
 	char z;
 	int lastUpdateTicksTime;
@@ -18,7 +18,7 @@ public:
 
 	float getRenderCenterX(int ticksTime);
 	float getRenderCenterY(int ticksTime);
-	void setVelocity(float xVelocityPerTick, float yVelocityPerTick, int pLastUpdateTicksTime);
+	void setVelocity(DynamicValue* vx, DynamicValue* vy, int pLastUpdateTicksTime);
 	virtual void setSpriteAnimation(SpriteAnimation* spriteAnimation, int pAnimationStartTicksTime) = 0;
 	void copyEntityState(EntityState* other);
 };

@@ -1,5 +1,6 @@
 #include "Util/PooledReferenceCounter.h"
 
+class DynamicValue;
 class EntityState;
 class SpriteAnimation;
 
@@ -29,15 +30,16 @@ public:
 	};
 	class SetVelocity: public Component {
 	private:
-		float vx;
-		float vy;
+		ReferenceCounterHolder<DynamicValue> vx;
+		ReferenceCounterHolder<DynamicValue> vy;
 
 	public:
 		SetVelocity(objCounterParameters());
 		~SetVelocity();
 
-		SetVelocity* set(float pVx, float pVy);
+		SetVelocity* set(DynamicValue* pVx, DynamicValue* pVy);
 		virtual void release();
+		virtual void prepareReturnToPool();
 		virtual bool handle(EntityState* entityState, int ticksTime);
 	};
 	class SetSpriteAnimation: public Component {
@@ -54,13 +56,13 @@ public:
 	};
 
 	int startTicksTime;
-	vector<Component*> components;
+	vector<ReferenceCounterHolder<Component>> components;
 	int nextComponentIndex;
 
 	EntityAnimation(objCounterParameters());
 	~EntityAnimation();
 
-	EntityAnimation* set(int pStartTicksTime, vector<Component*> pComponents);
+	EntityAnimation* set(int pStartTicksTime, vector<ReferenceCounterHolder<Component>> pComponents);
 	virtual void release();
 	virtual void prepareReturnToPool();
 	bool update(EntityState* entityState, int ticksTime);

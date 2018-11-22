@@ -4,24 +4,41 @@ DynamicValue::DynamicValue(objCounterParameters())
 : PooledReferenceCounter(objCounterArguments()) {
 }
 DynamicValue::~DynamicValue() {}
-CompositeLinearValue::CompositeLinearValue(objCounterParameters())
+CompositeQuarticValue::CompositeQuarticValue(objCounterParameters())
 : DynamicValue(objCounterArguments())
 , constantValue(0.0f)
 , linearValuePerTick(0.0f) {
 }
-CompositeLinearValue::~CompositeLinearValue() {}
-//initialize this CompositeLinearValue
-CompositeLinearValue* CompositeLinearValue::set(float pConstantValue, float pLinearValuePerTick) {
+CompositeQuarticValue::~CompositeQuarticValue() {}
+//initialize this CompositeQuarticValue
+CompositeQuarticValue* CompositeQuarticValue::set(
+	float pConstantValue,
+	float pLinearValuePerTick,
+	float pQuadraticValuePerTick,
+	float pCubicValuePerTick,
+	float pQuarticValuePerTick)
+{
 	constantValue = pConstantValue;
 	linearValuePerTick = pLinearValuePerTick;
+	quadraticValuePerTick = pQuadraticValuePerTick;
+	cubicValuePerTick = pCubicValuePerTick;
+	quarticValuePerTick = pQuarticValuePerTick;
 	return this;
 }
-pooledReferenceCounterDefineRelease(CompositeLinearValue)
+pooledReferenceCounterDefineRelease(CompositeQuarticValue)
 //get the value at the given time
-float CompositeLinearValue::getValue(int ticksElapsed) {
-	return constantValue + linearValuePerTick * (float)ticksElapsed;
+float CompositeQuarticValue::getValue(int ticksElapsed) {
+	float floatTicksElapsed = (float)ticksElapsed;
+	float ticksElapsedSquared = floatTicksElapsed * floatTicksElapsed;
+	float ticksElapsedCubed = ticksElapsedSquared * floatTicksElapsed;
+	return constantValue
+		+ linearValuePerTick * floatTicksElapsed
+		+ quadraticValuePerTick * ticksElapsedSquared
+		+ cubicValuePerTick * ticksElapsedCubed
+		+ quarticValuePerTick * ticksElapsedCubed * floatTicksElapsed;
 }
-//copy this value and update its constant value
-DynamicValue* CompositeLinearValue::copyWithConstantValue(float pConstantValue) {
-	return callNewFromPool(CompositeLinearValue)->set(pConstantValue, linearValuePerTick);
+//set the constant value to the provided value
+DynamicValue* CompositeQuarticValue::copyWithConstantValue(float pConstantValue) {
+	return callNewFromPool(CompositeQuarticValue)->set(
+		pConstantValue, linearValuePerTick, quadraticValuePerTick, cubicValuePerTick, quarticValuePerTick);
 }

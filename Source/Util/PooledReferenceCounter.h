@@ -4,9 +4,8 @@
 
 #define pooledReferenceCounterDefineRelease(className) \
 	void className::release() {\
-		if (referenceCount > 1)\
-			referenceCount--;\
-		else {\
+		referenceCount--;\
+		if (referenceCount == 0) {\
 			prepareReturnToPool();\
 			ObjectPool<className>::returnToPool(this);\
 		}\
@@ -23,6 +22,24 @@ public:
 	void retain();
 	virtual void release() = 0;
 	virtual void prepareReturnToPool() {}
+};
+//Should only be allocated within an object or on the stack
+template <class ReferenceCountedObject> class ReferenceCounterHolder {
+private:
+	ReferenceCountedObject* object;
+
+public:
+	ReferenceCounterHolder(ReferenceCountedObject* pObject);
+	ReferenceCounterHolder(const ReferenceCounterHolder<ReferenceCountedObject>& other);
+	~ReferenceCounterHolder();
+
+	ReferenceCountedObject* get() { return object; }
+	void set(ReferenceCountedObject* pObject);
+
+	ReferenceCounterHolder<ReferenceCountedObject>& operator =(const ReferenceCounterHolder<ReferenceCountedObject>& other);
+
+	ReferenceCounterHolder(ReferenceCounterHolder<ReferenceCountedObject>&& other) = delete;
+	ReferenceCounterHolder<ReferenceCountedObject>& operator =(ReferenceCounterHolder<ReferenceCountedObject>&& other) = delete;
 };
 template <class PooledObject> class ObjectPool {
 private:

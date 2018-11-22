@@ -1,4 +1,5 @@
 #include "EntityAnimation.h"
+#include "GameState/DynamicValue.h"
 #include "GameState/EntityState.h"
 #include "Sprites/SpriteAnimation.h"
 
@@ -31,20 +32,25 @@ int EntityAnimation::Delay::getDelayTicksDuration() {
 }
 EntityAnimation::SetVelocity::SetVelocity(objCounterParameters())
 : Component(objCounterArguments())
-, vx(0.0f)
-, vy(0.0f) {
+, vx(nullptr)
+, vy(nullptr) {
 }
 EntityAnimation::SetVelocity::~SetVelocity() {}
 //initialize this SetVelocity
-EntityAnimation::SetVelocity* EntityAnimation::SetVelocity::set(float pVx, float pVy) {
-	vx = pVx;
-	vy = pVy;
+EntityAnimation::SetVelocity* EntityAnimation::SetVelocity::set(DynamicValue* pVx, DynamicValue* pVy) {
+	vx.set(pVx);
+	vy.set(pVy);
 	return this;
 }
 pooledReferenceCounterDefineRelease(EntityAnimation::SetVelocity)
+//release components before this is returned to the pool
+void EntityAnimation::SetVelocity::prepareReturnToPool() {
+	vx.set(nullptr);
+	vy.set(nullptr);
+}
 //return that the animation should proceed after setting the velocity on the entity state
 bool EntityAnimation::SetVelocity::handle(EntityState* entityState, int ticksTime) {
-	entityState->setVelocity(vx, vy, ticksTime);
+	entityState->setVelocity(vx.get(), vy.get(), ticksTime);
 	return true;
 }
 EntityAnimation::SetSpriteAnimation::SetSpriteAnimation(objCounterParameters())
@@ -71,16 +77,9 @@ EntityAnimation::EntityAnimation(objCounterParameters())
 , components()
 , nextComponentIndex(0) {
 }
-EntityAnimation::~EntityAnimation() {
-	for (Component* c : components) {
-		c->release();
-	}
-}
+EntityAnimation::~EntityAnimation() {}
 //initialize this EntityAnimation
-EntityAnimation* EntityAnimation::set(int pStartTicksTime, vector<Component*> pComponents) {
-	for (Component* c : components) {
-		c->release();
-	}
+EntityAnimation* EntityAnimation::set(int pStartTicksTime, vector<ReferenceCounterHolder<Component>> pComponents) {
 	startTicksTime = pStartTicksTime;
 	components = pComponents;
 	nextComponentIndex = 0;
@@ -89,16 +88,13 @@ EntityAnimation* EntityAnimation::set(int pStartTicksTime, vector<Component*> pC
 pooledReferenceCounterDefineRelease(EntityAnimation)
 //release components before this is returned to the pool
 void EntityAnimation::prepareReturnToPool() {
-	for (Component* c : components) {
-		c->release();
-	}
 	components.clear();
 }
 //update this animation, and process any components that happened since the last time this was updated
 //return whether there are more components to process in a future update
 bool EntityAnimation::update(EntityState* entityState, int ticksTime) {
 	while (nextComponentIndex < (int)components.size()) {
-		Component* c = components[nextComponentIndex];
+		Component* c = components[nextComponentIndex].get();
 		//if the component needs to do more than just handle the entity state, check how long it delays the animation
 		if (!c->handle(entityState, ticksTime)) {
 			int endTicksTime = startTicksTime + c->getDelayTicksDuration();

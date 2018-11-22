@@ -1,5 +1,5 @@
-#include "General/General.h"
 #include "GameState/EntityState.h"
+#include "Util/PooledReferenceCounter.h"
 
 class PositionState;
 class SpriteAnimation;
@@ -20,7 +20,7 @@ private:
 	int animationStartTicksTime;
 	PlayerSpriteDirection spriteDirection;
 	bool hasBoot;
-	EntityAnimation* kickingAnimation;
+	ReferenceCounterHolder<EntityAnimation> kickingAnimation;
 
 public:
 	PlayerState(objCounterParameters());
