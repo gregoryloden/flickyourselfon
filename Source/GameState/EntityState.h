@@ -18,9 +18,10 @@ public:
 
 	float getRenderCenterX(int ticksTime);
 	float getRenderCenterY(int ticksTime);
+	virtual EntityState* getNextCameraAnchor(int ticksTime) = 0;
+	void copyEntityState(EntityState* other);
 	void setVelocity(DynamicValue* vx, DynamicValue* vy, int pLastUpdateTicksTime);
 	virtual void setSpriteAnimation(SpriteAnimation* spriteAnimation, int pAnimationStartTicksTime) = 0;
-	void copyEntityState(EntityState* other);
 };
 class StaticCameraAnchor: public EntityState {
 public:

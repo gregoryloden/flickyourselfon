@@ -9,8 +9,9 @@ public:
 	static const int heightCount = 16; // height = blue / 16
 	static const int heightDivisor = 256 / heightCount;
 	static const int tileSize = 6;
-	static const float speed;
-	static const float diagonalSpeed;
+	static const char invalidHeight = -1;
+	static const float speedPerSecond;
+	static const float diagonalSpeedPerSecond;
 	static const float smallDistance;
 private:
 	static char* tiles;
@@ -19,9 +20,10 @@ private:
 	static int height;
 
 public:
+	static char getTile(int x, int y) { return tiles[y * width + x]; }
+	static char getHeight(int x, int y) { return heights[y * width + x]; }
 	static void buildMap();
 	static void deleteMap();
-	static char getTile(int x, int y);
-	static char getHeight(int x, int y);
+	static char horizontalTilesHeight(int lowMapX, int highMapX, int mapY);
 	static void render(EntityState* camera, int ticksTime);
 };

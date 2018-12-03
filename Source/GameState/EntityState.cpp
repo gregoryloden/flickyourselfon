@@ -3,9 +3,9 @@
 
 EntityState::EntityState(objCounterParametersComma() float xPosition, float yPosition)
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
-x(callNewFromPool(CompositeQuarticValue)->set(xPosition, 0.0f, 0.0f, 0.0f, 0.0f))
+x(newCompositeQuarticValue(xPosition, 0.0f, 0.0f, 0.0f, 0.0f))
 , renderInterpolatedX(true)
-, y(callNewFromPool(CompositeQuarticValue)->set(xPosition, 0.0f, 0.0f, 0.0f, 0.0f))
+, y(newCompositeQuarticValue(yPosition, 0.0f, 0.0f, 0.0f, 0.0f))
 , renderInterpolatedY(true)
 , z(0)
 , lastUpdateTicksTime(0) {
@@ -19,12 +19,6 @@ float EntityState::getRenderCenterX(int ticksTime) {
 float EntityState::getRenderCenterY(int ticksTime) {
 	return y.get()->getValue(renderInterpolatedY ? ticksTime - lastUpdateTicksTime : 0);
 }
-//set the position to the given position at the given time
-void EntityState::setVelocity(DynamicValue* vx, DynamicValue* vy, int pLastUpdateTicksTime) {
-	x.set(vx->copyWithConstantValue(x.get()->getValue(0)));
-	y.set(vy->copyWithConstantValue(y.get()->getValue(0)));
-	lastUpdateTicksTime = pLastUpdateTicksTime;
-}
 //copy the state of the other entity
 void EntityState::copyEntityState(EntityState* other) {
 	x.set(other->x.get());
@@ -33,6 +27,13 @@ void EntityState::copyEntityState(EntityState* other) {
 	renderInterpolatedY = other->renderInterpolatedY;
 	z = other->z;
 	lastUpdateTicksTime = other->lastUpdateTicksTime;
+}
+//set the position to the given position at the given time
+void EntityState::setVelocity(DynamicValue* vx, DynamicValue* vy, int pLastUpdateTicksTime) {
+	int timediff = pLastUpdateTicksTime - lastUpdateTicksTime;
+	x.set(vx->copyWithConstantValue(x.get()->getValue(timediff)));
+	y.set(vy->copyWithConstantValue(y.get()->getValue(timediff)));
+	lastUpdateTicksTime = pLastUpdateTicksTime;
 }
 StaticCameraAnchor::StaticCameraAnchor(objCounterParametersComma() float cameraX, float cameraY)
 : EntityState(objCounterArgumentsComma() cameraX, cameraY) {

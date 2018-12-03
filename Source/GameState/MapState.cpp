@@ -3,8 +3,8 @@
 #include "Sprites/SpriteRegistry.h"
 #include "Sprites/SpriteSheet.h"
 
-const float MapState::speed = 40.0f;
-const float MapState::diagonalSpeed = MapState::speed * sqrt(0.5f);
+const float MapState::speedPerSecond = 40.0f;
+const float MapState::diagonalSpeedPerSecond = MapState::speedPerSecond * sqrt(0.5f);
 const float MapState::smallDistance = 1.0f / 256.0f;
 char* MapState::tiles = nullptr;
 char* MapState::heights = nullptr;
@@ -37,13 +37,14 @@ void MapState::deleteMap() {
 	delete[] tiles;
 	delete[] heights;
 }
-//get the tile at the given coordinates
-char MapState::getTile(int x, int y) {
-	return tiles[y * width + x];
-}
-//get the height at the given coordinates
-char MapState::getHeight(int x, int y) {
-	return heights[y * width + x];
+//check the height of all the tiles in the row, and return it if they're all the same or -1 if they differ
+char MapState::horizontalTilesHeight(int lowMapX, int highMapX, int mapY) {
+	char foundHeight = getHeight(lowMapX, mapY);
+	for (int mapX = lowMapX + 1; mapX <= highMapX; mapX++) {
+		if (getHeight(mapX, mapY) != foundHeight)
+			return invalidHeight;
+	}
+	return foundHeight;
 }
 //draw the map
 void MapState::render(EntityState* camera, int ticksTime) {

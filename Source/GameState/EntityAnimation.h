@@ -1,5 +1,10 @@
 #include "Util/PooledReferenceCounter.h"
 
+#define newEntityAnimation(startTicksTime, components) callNewFromPool(EntityAnimation)->set(startTicksTime, components)
+#define newEntityAnimationDelay(ticksDuration) callNewFromPool(EntityAnimation::Delay)->set(ticksDuration)
+#define newEntityAnimationSetVelocity(vx, vy) callNewFromPool(EntityAnimation::SetVelocity)->set(vx, vy)
+#define newEntityAnimationSetSpriteAnimation(animation) callNewFromPool(EntityAnimation::SetSpriteAnimation)->set(animation)
+
 class DynamicValue;
 class EntityState;
 class SpriteAnimation;
@@ -55,7 +60,7 @@ public:
 		virtual bool handle(EntityState* entityState, int ticksTime);
 	};
 
-	int startTicksTime;
+	int lastUpdateTicksTime;
 	vector<ReferenceCounterHolder<Component>> components;
 	int nextComponentIndex;
 

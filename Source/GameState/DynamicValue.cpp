@@ -7,7 +7,10 @@ DynamicValue::~DynamicValue() {}
 CompositeQuarticValue::CompositeQuarticValue(objCounterParameters())
 : DynamicValue(objCounterArguments())
 , constantValue(0.0f)
-, linearValuePerTick(0.0f) {
+, linearValuePerTick(0.0f)
+, quadraticValuePerTick(0.0f)
+, cubicValuePerTick(0.0f)
+, quarticValuePerTick(0.0f) {
 }
 CompositeQuarticValue::~CompositeQuarticValue() {}
 //initialize this CompositeQuarticValue
@@ -39,6 +42,6 @@ float CompositeQuarticValue::getValue(int ticksElapsed) {
 }
 //set the constant value to the provided value
 DynamicValue* CompositeQuarticValue::copyWithConstantValue(float pConstantValue) {
-	return callNewFromPool(CompositeQuarticValue)->set(
+	return newCompositeQuarticValue(
 		pConstantValue, linearValuePerTick, quadraticValuePerTick, cubicValuePerTick, quarticValuePerTick);
 }

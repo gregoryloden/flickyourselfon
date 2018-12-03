@@ -70,9 +70,9 @@ void Logger::logString(string& message) {
 	int timestamp = (int)SDL_GetTicks();
 	stringstream messageWithTimestamp;
 	messageWithTimestamp
-		<< setw(7) << setfill(' ') << (timestamp / 1000)
+		<< setw(7) << setfill(' ') << (timestamp / Config::ticksPerSecond)
 		<< setw(1) << '.'
-		<< setw(3) << setfill('0') << (timestamp % 1000)
+		<< setw(3) << setfill('0') << (timestamp % Config::ticksPerSecond)
 		<< setw(1) << "  " << message << '\n';
 
 	//we might get logs before we've had time to set up our log queue

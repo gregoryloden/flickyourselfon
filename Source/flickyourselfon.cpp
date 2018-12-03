@@ -10,7 +10,7 @@
 
 SDL_Window* window = nullptr;
 SDL_GLContext glContext = nullptr;
-bool renderThreadBegan = false;
+bool renderThreadReadyForUpdates = false;
 
 #ifdef __cplusplus
 extern "C"
@@ -28,6 +28,7 @@ int main(int argc, char *argv[]) {
 		return initResult;
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 	SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl");
+	Logger::log("SDL set up /// Setting up window...");
 
 	//create a window
 	window = SDL_CreateWindow(
@@ -43,6 +44,7 @@ int main(int argc, char *argv[]) {
 	SDL_GetCurrentDisplayMode(SDL_GetWindowDisplayIndex(window), &displayMode);
 	if (displayMode.refresh_rate > 0)
 		Config::refreshRate = displayMode.refresh_rate;
+	Logger::log("Window set up");
 
 	//create our state queue and start the render thread
 	CircularStateQueue<GameState>* gameStateQueue =
@@ -53,7 +55,8 @@ int main(int argc, char *argv[]) {
 	thread renderLoopThread (renderLoop, gameStateQueue);
 
 	//wait for the render thread to sync up
-	while (!renderThreadBegan)
+	Logger::log("Waiting for render thread to be ready for updates...");
+	while (!renderThreadReadyForUpdates)
 		SDL_Delay(1);
 
 	//begin the update loop
@@ -74,14 +77,14 @@ int main(int argc, char *argv[]) {
 			gameState = newWithoutArgs(GameState);
 			gameStateQueue->addWritableState(gameState);
 		}
-		gameState->updateWithPreviousGameState(prevGameState);
+		gameState->updateWithPreviousGameState(prevGameState, (int)SDL_GetTicks());
 		gameStateQueue->finishWritingToState();
 		prevGameState = gameState;
 		if (gameState->getShouldQuitGame())
 			break;
 
 		updateNum++;
-		updateDelay = 1000 * updateNum / Config::updatesPerSecond - ((int)SDL_GetTicks() - startTime);
+		updateDelay = Config::ticksPerSecond * updateNum / Config::updatesPerSecond - ((int)SDL_GetTicks() - startTime);
 	}
 
 	//the render thread will quit once it reaches the game state that signalled that we should quit
@@ -101,7 +104,9 @@ int main(int argc, char *argv[]) {
 		ObjectPool<EntityAnimation::SetSpriteAnimation>::clearPool();
 		ObjCounter::end();
 	#endif
+	Logger::log("Game exit");
 	Logger::endLogging();
+	//end SDL after we end logging since we use SDL_GetTicks for logging
 	#ifdef DEBUG
 		SDL_GL_DeleteContext(glContext);
 		SDL_DestroyWindow(window);
@@ -111,9 +116,10 @@ int main(int argc, char *argv[]) {
 	return 0;
 }
 void renderLoop(CircularStateQueue<GameState>* gameStateQueue) {
-	//setup opengl
 	Logger::setupLoggingForRenderThread();
-	int minMsPerFrame = 1000 / Config::refreshRate;
+
+	//setup opengl
+	Logger::log("Render thread began /// Setting up OpenGL...");
 	glContext = SDL_GL_CreateContext(window);
 	SDL_GL_SetSwapInterval(1);
 	glEnable(GL_TEXTURE_2D);
@@ -121,12 +127,15 @@ void renderLoop(CircularStateQueue<GameState>* gameStateQueue) {
 	glOrtho(0, (GLdouble)Config::gameScreenWidth, (GLdouble)Config::gameScreenHeight, 0, -1, 1);
 
 	//load all the sprites now that our context has been created
+	Logger::log("OpenGL set up /// Loading sprites...");
 	SpriteRegistry::loadAll();
 	MapState::buildMap();
+	Logger::log("Sprites loaded");
 
 	//begin the render loop
 	int lastWindowWidth = 0;
 	int lastWindowHeight = 0;
+	const int minMsPerFrame = Config::ticksPerSecond / Config::refreshRate;
 	while (true) {
 		int preRenderTicksTime = (int)SDL_GetTicks();
 
@@ -149,16 +158,17 @@ void renderLoop(CircularStateQueue<GameState>* gameStateQueue) {
 glClearColor(0.1875f, 0.0f, 0.1875f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 		gameState->render(preRenderTicksTime);
-		renderThreadBegan = true;
+		renderThreadReadyForUpdates = true;
 		glFlush();
 		SDL_GL_SwapWindow(window);
 
 		if (gameState->getShouldQuitGame())
-			return;
+			break;
 
 		//sleep if we don't expect to render for at least 2 more milliseconds
 		int remainingDelay = minMsPerFrame - ((int)SDL_GetTicks() - preRenderTicksTime);
 		if (remainingDelay >= 2)
 			SDL_Delay(remainingDelay);
 	}
+	Logger::log("Render thread ended");
 }

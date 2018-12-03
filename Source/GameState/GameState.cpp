@@ -8,16 +8,15 @@
 GameState::GameState(objCounterParameters())
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
 playerState(newWithoutArgs(PlayerState))
-, currentCamera(nullptr)
+, camera(nullptr)
 , shouldQuitGame(false) {
-	currentCamera = playerState;
+	camera = playerState;
 }
 GameState::~GameState() {
 	delete playerState;
 }
 //update this game state by reading from the previous state
-void GameState::updateWithPreviousGameState(GameState* prev) {
-	int ticksTime = (int)SDL_GetTicks();
+void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 	playerState->updateWithPreviousPlayerState(prev->playerState, ticksTime);
 
 	//handle events
@@ -29,19 +28,18 @@ void GameState::updateWithPreviousGameState(GameState* prev) {
 				return;
 			case SDL_KEYDOWN:
 				if (gameEvent.key.keysym.scancode == Config::kickKey)
-					playerState->beginKickingAnimation(ticksTime);
+					playerState->beginKicking(ticksTime);
 				break;
 			default:
 				break;
 		}
 	}
+
+	//get our next camera anchor
+	camera = camera->getNextCameraAnchor(ticksTime);
 }
 //render this state, which was deemed to be the last state to need rendering
 void GameState::render(int ticksTime) {
-	MapState::render(currentCamera, ticksTime);
-	playerState->render(currentCamera, ticksTime);
-}
-//return whether updates and renders should stop
-bool GameState::getShouldQuitGame() {
-	return shouldQuitGame;
+	MapState::render(camera, ticksTime);
+	playerState->render(camera, ticksTime);
 }

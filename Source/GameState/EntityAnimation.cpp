@@ -73,14 +73,14 @@ bool EntityAnimation::SetSpriteAnimation::handle(EntityState* entityState, int t
 }
 EntityAnimation::EntityAnimation(objCounterParameters())
 : PooledReferenceCounter(objCounterArguments())
-, startTicksTime(0)
+, lastUpdateTicksTime(0)
 , components()
 , nextComponentIndex(0) {
 }
 EntityAnimation::~EntityAnimation() {}
 //initialize this EntityAnimation
 EntityAnimation* EntityAnimation::set(int pStartTicksTime, vector<ReferenceCounterHolder<Component>> pComponents) {
-	startTicksTime = pStartTicksTime;
+	lastUpdateTicksTime = pStartTicksTime;
 	components = pComponents;
 	nextComponentIndex = 0;
 	return this;
@@ -90,19 +90,23 @@ pooledReferenceCounterDefineRelease(EntityAnimation)
 void EntityAnimation::prepareReturnToPool() {
 	components.clear();
 }
-//update this animation, and process any components that happened since the last time this was updated
-//return whether there are more components to process in a future update
+//update this animation- process any components that happened since the last time this was updated
+//return whether the given state was updated (false means that the default update logic for the state should be used)
 bool EntityAnimation::update(EntityState* entityState, int ticksTime) {
+	bool updated = false;
 	while (nextComponentIndex < (int)components.size()) {
 		Component* c = components[nextComponentIndex].get();
+		if (c->handle(entityState, lastUpdateTicksTime))
+			updated = true;
 		//if the component needs to do more than just handle the entity state, check how long it delays the animation
-		if (!c->handle(entityState, ticksTime)) {
-			int endTicksTime = startTicksTime + c->getDelayTicksDuration();
+		else {
+			int endTicksTime = lastUpdateTicksTime + c->getDelayTicksDuration();
+			//we still have time left, return that we need to do a future update
 			if (ticksTime < endTicksTime)
 				return true;
-			startTicksTime = endTicksTime;
+			lastUpdateTicksTime = endTicksTime;
 		}
 		nextComponentIndex++;
 	}
-	return false;
+	return updated;
 }

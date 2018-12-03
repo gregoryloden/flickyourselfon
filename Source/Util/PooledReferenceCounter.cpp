@@ -5,11 +5,11 @@
 #define instantiatePooledReferenceCounter(className) \
 	template class ObjectPool<className>; vector<className*> ObjectPool<className>::pool;
 
-instantiatePooledReferenceCounter(CompositeQuarticValue);
-instantiatePooledReferenceCounter(EntityAnimation);
-instantiatePooledReferenceCounter(EntityAnimation::Delay);
-instantiatePooledReferenceCounter(EntityAnimation::SetVelocity);
-instantiatePooledReferenceCounter(EntityAnimation::SetSpriteAnimation);
+instantiatePooledReferenceCounter(CompositeQuarticValue)
+instantiatePooledReferenceCounter(EntityAnimation)
+instantiatePooledReferenceCounter(EntityAnimation::Delay)
+instantiatePooledReferenceCounter(EntityAnimation::SetVelocity)
+instantiatePooledReferenceCounter(EntityAnimation::SetSpriteAnimation)
 template class ReferenceCounterHolder<DynamicValue>;
 template class ReferenceCounterHolder<EntityAnimation>;
 template class ReferenceCounterHolder<EntityAnimation::Component>;
@@ -31,6 +31,12 @@ template <class ReferenceCountedObject> ReferenceCounterHolder<ReferenceCountedO
 }
 template <class ReferenceCountedObject> ReferenceCounterHolder<ReferenceCountedObject>::ReferenceCounterHolder(
 	const ReferenceCounterHolder<ReferenceCountedObject>& other)
+: object(other.object) {
+	if (object != nullptr)
+		object->retain();
+}
+template <class ReferenceCountedObject> ReferenceCounterHolder<ReferenceCountedObject>::ReferenceCounterHolder(
+	ReferenceCounterHolder<ReferenceCountedObject>&& other)
 : object(other.object) {
 	if (object != nullptr)
 		object->retain();

@@ -6,14 +6,15 @@ class PlayerState;
 class GameState onlyInDebug(: public ObjCounter) {
 private:
 	PlayerState* playerState;
-	EntityState* currentCamera;
+	EntityState* camera;
 	bool shouldQuitGame;
 
 public:
 	GameState(objCounterParameters());
 	~GameState();
 
-	void updateWithPreviousGameState(GameState* prev);
+	//return whether updates and renders should stop
+	bool getShouldQuitGame() { return shouldQuitGame; }
+	void updateWithPreviousGameState(GameState* prev, int ticksTime);
 	void render(int ticksTime);
-	bool getShouldQuitGame();
 };

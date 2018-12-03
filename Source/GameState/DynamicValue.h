@@ -1,5 +1,10 @@
 #include "Util/PooledReferenceCounter.h"
 
+#define newCompositeQuarticValue(\
+		constantValue, linearValuePerTick, quadraticValuePerTick, cubicValuePerTick, quarticValuePerTick) \
+	callNewFromPool(CompositeQuarticValue)->set(\
+		constantValue, linearValuePerTick, quadraticValuePerTick, cubicValuePerTick, quarticValuePerTick)
+
 class DynamicValue: public PooledReferenceCounter {
 public:
 	DynamicValue(objCounterParameters());

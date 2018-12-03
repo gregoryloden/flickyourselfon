@@ -31,6 +31,7 @@ private:
 public:
 	ReferenceCounterHolder(ReferenceCountedObject* pObject);
 	ReferenceCounterHolder(const ReferenceCounterHolder<ReferenceCountedObject>& other);
+	ReferenceCounterHolder(ReferenceCounterHolder<ReferenceCountedObject>&& other);
 	~ReferenceCounterHolder();
 
 	ReferenceCountedObject* get() { return object; }
@@ -38,7 +39,6 @@ public:
 
 	ReferenceCounterHolder<ReferenceCountedObject>& operator =(const ReferenceCounterHolder<ReferenceCountedObject>& other);
 
-	ReferenceCounterHolder(ReferenceCounterHolder<ReferenceCountedObject>&& other) = delete;
 	ReferenceCounterHolder<ReferenceCountedObject>& operator =(ReferenceCounterHolder<ReferenceCountedObject>&& other) = delete;
 };
 template <class PooledObject> class ObjectPool {

@@ -7,9 +7,9 @@
 #include "Sprites/SpriteSheet.h"
 
 const float PlayerState::boundingBoxLeftOffset = -5.5f;
-const float PlayerState::boundingBoxRightOffset = 5.5f;
+const float PlayerState::boundingBoxRightOffset = PlayerState::boundingBoxLeftOffset + 11.0f;
 const float PlayerState::boundingBoxTopOffset = 4.5f;
-const float PlayerState::boundingBoxBottomOffset = 9.5;
+const float PlayerState::boundingBoxBottomOffset = PlayerState::boundingBoxTopOffset + 5.0f;
 PlayerState::PlayerState(objCounterParameters())
 : EntityState(objCounterArgumentsComma() 179.5f, 166.5f)
 , xDirection(0)
@@ -21,6 +21,11 @@ PlayerState::PlayerState(objCounterParameters())
 , kickingAnimation(nullptr) {
 }
 PlayerState::~PlayerState() {}
+//use the player as the next camera anchor unless we're starting an animation with a new camera anchor
+EntityState* PlayerState::getNextCameraAnchor(int ticksTime) {
+	//TODO: return a different camera anchor for animations
+	return this;
+}
 //set the animation to the given animation at the given time
 void PlayerState::setSpriteAnimation(SpriteAnimation* pAnimation, int pAnimationStartTicksTime) {
 	animation = pAnimation;
@@ -29,40 +34,46 @@ void PlayerState::setSpriteAnimation(SpriteAnimation* pAnimation, int pAnimation
 //update this player state by reading from the previous state
 void PlayerState::updateWithPreviousPlayerState(PlayerState* prev, int ticksTime) {
 	hasBoot = prev->hasBoot;
+//TODO: put on the boot in-game
+hasBoot = true;
 	kickingAnimation.set(prev->kickingAnimation.get());
+	bool usePreviousSpriteAnimation = true;
 
 	//if we have a kicking animation, update with that instead
 	if (kickingAnimation.get() != nullptr) {
 		copyEntityState(prev);
-		xDirection = prev->xDirection;
-		yDirection = prev->yDirection;
+		xDirection = 0;
+		yDirection = 0;
 		animation = prev->animation;
 		animationStartTicksTime = prev->animationStartTicksTime;
 		spriteDirection = prev->spriteDirection;
-		if (!kickingAnimation.get()->update(this, ticksTime)) {
+		if (kickingAnimation.get()->update(this, ticksTime))
+			return;
+		else {
 			kickingAnimation.set(nullptr);
-			animation = nullptr;
+			usePreviousSpriteAnimation = false;
 		}
-		return;
 	}
 
 	//update this player state normally by reading from the last state
 	updatePositionWithPreviousPlayerState(prev, ticksTime);
 	collideWithEnvironmentWithPreviousPlayerState(prev);
-	updateSpriteWithPreviousPlayerState(prev, ticksTime);
+	updateSpriteWithPreviousPlayerState(prev, ticksTime, usePreviousSpriteAnimation);
 }
 //update the position of this player state by reading from the previous state
 void PlayerState::updatePositionWithPreviousPlayerState(PlayerState* prev, int ticksTime) {
 	const Uint8* keyboardState = SDL_GetKeyboardState(nullptr);
 	xDirection = (char)(keyboardState[Config::rightKey] - keyboardState[Config::leftKey]);
 	yDirection = (char)(keyboardState[Config::downKey] - keyboardState[Config::upKey]);
-	float speedPerTick = ((xDirection & yDirection) != 0 ? MapState::diagonalSpeed : MapState::speed) / 1000.0f;
+	float speedPerTick =
+		((xDirection & yDirection) != 0 ? MapState::diagonalSpeedPerSecond : MapState::speedPerSecond)
+			/ (float)Config::ticksPerSecond;
 	int ticksSinceLastUpdate = ticksTime - prev->lastUpdateTicksTime;
 	x.set(
-		callNewFromPool(CompositeQuarticValue)->set(
+		newCompositeQuarticValue(
 			prev->x.get()->getValue(ticksSinceLastUpdate), (float)xDirection * speedPerTick, 0.0f, 0.0f, 0.0f));
 	y.set(
-		callNewFromPool(CompositeQuarticValue)->set(
+		newCompositeQuarticValue(
 			prev->y.get()->getValue(ticksSinceLastUpdate), (float)yDirection * speedPerTick, 0.0f, 0.0f, 0.0f));
 	lastUpdateTicksTime = ticksTime;
 	renderInterpolatedX = true;
@@ -150,7 +161,7 @@ void PlayerState::collideWithEnvironmentWithPreviousPlayerState(PlayerState* pre
 	}
 }
 //update the sprite (and possibly the animation) of this player state by reading from the previous state
-void PlayerState::updateSpriteWithPreviousPlayerState(PlayerState* prev, int ticksTime) {
+void PlayerState::updateSpriteWithPreviousPlayerState(PlayerState* prev, int ticksTime, bool usePreviousSpriteAnimation) {
 	bool moving = (xDirection | yDirection) != 0;
 	//update the sprite direction
 	//if the player did not change direction or is not moving, use the last direction
@@ -174,7 +185,7 @@ void PlayerState::updateSpriteWithPreviousPlayerState(PlayerState* prev, int tic
 	//update the animation
 	if (!moving)
 		animation = nullptr;
-	else if (prev->animation != nullptr) {
+	else if (prev->animation != nullptr && usePreviousSpriteAnimation) {
 		animation = prev->animation;
 		animationStartTicksTime = prev->animationStartTicksTime;
 	} else {
@@ -183,23 +194,121 @@ void PlayerState::updateSpriteWithPreviousPlayerState(PlayerState* prev, int tic
 	}
 }
 //if we don't have a kicking animation, start one
-void PlayerState::beginKickingAnimation(int ticksTime) {
+//this should be called after the player has been updated
+void PlayerState::beginKicking(int ticksTime) {
 	if (kickingAnimation.get() != nullptr)
 		return;
 
+	renderInterpolatedX = true;
+	renderInterpolatedY = true;
 	SpriteAnimation* kickingSpriteAnimation = hasBoot
 		? SpriteRegistry::playerKickingAnimation
 		: SpriteRegistry::playerLegLiftAnimation;
-	kickingAnimation.set(
-		callNewFromPool(EntityAnimation)->set(
-			ticksTime,
-			{
-				callNewFromPool(EntityAnimation::SetVelocity)->set(
-					callNewFromPool(CompositeQuarticValue)->set(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
-					callNewFromPool(CompositeQuarticValue)->set(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)),
-				callNewFromPool(EntityAnimation::SetSpriteAnimation)->set(kickingSpriteAnimation),
-				callNewFromPool(EntityAnimation::Delay)->set(kickingSpriteAnimation->getTotalTicksDuration())
-			}));
+	int kickingDuration = kickingSpriteAnimation->getTotalTicksDuration();
+	vector<ReferenceCounterHolder<EntityAnimation::Component>> kickingAnimationComponents ({
+		newEntityAnimationSetVelocity(
+			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f), newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)),
+		newEntityAnimationSetSpriteAnimation(kickingSpriteAnimation)
+	});
+
+	//kicking doesn't do anything if you don't have the boot
+	//add the delay for the animation and then return
+	if (!hasBoot) {
+		kickingAnimationComponents.push_back(newEntityAnimationDelay(kickingDuration));
+		kickingAnimation.set(newEntityAnimation(ticksTime, kickingAnimationComponents));
+		kickingAnimation.get()->update(this, ticksTime);
+		return;
+	}
+
+	//we are kicking, start by delaying until the leg-sticking-out frame
+	kickingAnimationComponents.push_back(newEntityAnimationDelay(SpriteRegistry::playerKickingAnimationTicksPerFrame));
+	kickingDuration -= SpriteRegistry::playerKickingAnimationTicksPerFrame;
+
+	//check if we're climbing, falling, or kicking a switch
+	float xPosition = x.get()->getValue(0);
+	float yPosition = y.get()->getValue(0);
+	int lowMapX = (int)(xPosition + boundingBoxLeftOffset) / MapState::tileSize;
+	int highMapX = (int)(xPosition + boundingBoxRightOffset) / MapState::tileSize;
+
+	if (spriteDirection == PlayerSpriteDirection::Up) {
+		//use the bottom offset to ensure that we're far enough north
+		int topMapY = (int)(yPosition + boundingBoxBottomOffset) / MapState::tileSize;
+		int oneTileUpHeight = MapState::horizontalTilesHeight(lowMapX, highMapX, topMapY - 1);
+		if (oneTileUpHeight != MapState::invalidHeight) {
+			//we found a floor to fall to
+			if (oneTileUpHeight < z) {
+				//we want a cubic curve that goes through (0,0) and (1,1) and a chosen midpoint (i,j) where 0 < i < 1
+				//it also goes through (c,#) such that dy/dt has roots at c (trough) and i (crest)
+				//vy = d(t-c)(t-i) = d(t^2-(c+i)t+ci)   (d < 0)
+				//y = d(t^3/3-(c+i)t^2/2+cit) = dt^3/3-d(c+i)t^2/2+dcit
+				//1 = d(1^3/3-(c+i)1^2/2+ci1) = d(1/3-(c+i)/2+ci)
+				//	d = 1/(1/3-(c+i)/2+ci) = 6/(2-3c-3i+6ci)
+				//j = d(i^3/3-(c+i)i^2/2+cii) = d(i^3/3-ci^2/2-i^3/2+ci^2) = d(-i^3/6+ci^2/2)
+				//	d = j/(-i^3/6+ci^2/2) = 6j/(-i^3+3ci^2)
+				//solve for c:
+				//6/(2-3c-3i+6ci) = 6j/(-i^3+3ci^2)
+				//	6(-i^3+3ci^2) = 6j(2-3c-3i+6ci)
+				//	-i^3+3ci^2 = j(2-3c-3i+6ci) = 2j-3jc-3ji+6jci
+				//	2j-3ji+i^3 = 3ci^2+3jc-6jci = c(3i^2+3j-6ji)
+				//	c = (2j-3ji+i^3)/(3i^2+3j-6ji)
+				const float midpointX = 2.0f / 3.0f;
+				const float midpointY = 2.0f;
+				const float troughX =
+					(2.0f * midpointY - 3.0f * midpointY * midpointX + midpointX * midpointX * midpointX)
+						/ (3.0f * midpointX * midpointX + 3.0f * midpointY - 6.0f * midpointY * midpointX);
+				const float yMultiplier = 6.0f / (2.0f - 3.0f * troughX - 3.0f * midpointX + 6.0f * troughX * midpointX);
+				const float linearValuePerDuration = yMultiplier * troughX * midpointX * (float)-MapState::tileSize;
+				const float quadraticValuePerDuration =
+					-yMultiplier * (troughX + midpointX) / 2.0f * (float)-MapState::tileSize;
+				const float cubicValuePerDuration = yMultiplier / 3.0f * (float)-MapState::tileSize;
+				float floatKickingDuration = (float)kickingDuration;
+				float kickingDurationSquared = floatKickingDuration * floatKickingDuration;
+				kickingAnimationComponents.push_back(
+					newEntityAnimationSetVelocity(
+						newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
+						newCompositeQuarticValue(
+							0.0f,
+							linearValuePerDuration / floatKickingDuration,
+							quadraticValuePerDuration / kickingDurationSquared,
+							cubicValuePerDuration / (kickingDurationSquared * floatKickingDuration),
+							0.0f)));
+				z = oneTileUpHeight;
+			//we found a ledge to climb up
+			} else if (oneTileUpHeight == z + 1 && MapState::horizontalTilesHeight(lowMapX, highMapX, topMapY - 2) == z + 2) {
+				float floatKickingDuration = (float)kickingDuration;
+				float kickingDurationCubed = floatKickingDuration * floatKickingDuration * floatKickingDuration;
+				const float cubicValuePerDuration = (float)-MapState::tileSize;
+				const float quarticValuePerDuration = (float)-MapState::tileSize;
+				kickingAnimationComponents.push_back(
+					newEntityAnimationSetVelocity(
+						newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
+						newCompositeQuarticValue(
+							0.0f,
+							0.0f,
+							0.0f,
+							cubicValuePerDuration / kickingDurationCubed,
+							quarticValuePerDuration / (kickingDurationCubed * floatKickingDuration))));
+				z += 2;
+			}
+		}
+		//TODO: check if we're kicking a switch north
+	} else if (spriteDirection == PlayerSpriteDirection::Down) {
+		//use the bottom offset to ensure that we're far enough south
+		int bottomMapY = (int)(yPosition + boundingBoxBottomOffset) / MapState::tileSize;
+		//TODO: check if we're falling south
+	} else {
+		//TODO: check if we're falling to the side
+		//TODO: check if we're kicking a switch to the side
+	}
+
+	//delay for the rest of the animation and then stop the player
+	kickingAnimationComponents.push_back(newEntityAnimationDelay(SpriteRegistry::playerKickingAnimationTicksPerFrame * 2));
+	kickingAnimationComponents.push_back(
+		newEntityAnimationSetVelocity(
+			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f), newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)));
+	kickingAnimation.set(newEntityAnimation(ticksTime, kickingAnimationComponents));
+	//update it once to get it started
+	kickingAnimation.get()->update(this, ticksTime);
 }
 //render this player state, which was deemed to be the last state to need rendering
 void PlayerState::render(EntityState* camera, int ticksTime) {
