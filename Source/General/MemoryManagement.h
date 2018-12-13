@@ -1,26 +1,26 @@
 #ifdef DEBUG
 	/**/#define TRACK_OBJ_IDS
 	#ifdef TRACK_OBJ_IDS
-		#define newWithArgs(className, ...) \
-			new className(#className, __FILE__, __LINE__, __VA_ARGS__)
-		#define newWithoutArgs(className) \
-			new className(#className, __FILE__, __LINE__)
+		#define objCounterLocalArguments(className) #className, __FILE__, __LINE__
+		#define objCounterLocalArgumentsComma(className) objCounterLocalArguments(className),
 		#define objCounterParameters() const char* pObjType, const char* pObjFile, int pObjLine
 		#define objCounterParametersComma() objCounterParameters(),
 		#define objCounterArguments() pObjType, pObjFile, pObjLine
 		#define objCounterArgumentsComma() objCounterArguments(),
-		#define callNewFromPool(className) ObjectPool<className>::newFromPool(#className, __FILE__, __LINE__)
 	#endif
 #endif
-#ifndef newWithArgs
-	#define newWithArgs(className, ...) new className(__VA_ARGS__)
-	#define newWithoutArgs(className) new className()
+#ifndef objCounterLocalArguments
+	#define objCounterLocalArguments(className)
+	#define objCounterLocalArgumentsComma(className)
 	#define objCounterParameters()
 	#define objCounterParametersComma()
 	#define objCounterArguments()
 	#define objCounterArgumentsComma()
-	#define callNewFromPool(className) ObjectPool<className>::newFromPool()
 #endif
+#define newWithArgs(className, ...) new className(objCounterLocalArgumentsComma(className) __VA_ARGS__)
+#define newWithoutArgs(className) new className(objCounterLocalArguments(className))
+#define produceWithArgs(className, ...) className::produce(objCounterLocalArgumentsComma(className) __VA_ARGS__)
+#define produceWithoutArgs(className) className::produce(objCounterLocalArguments(className))
 
 #ifdef DEBUG
 	class ObjCounter {

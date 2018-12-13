@@ -1,5 +1,7 @@
 #include "General/General.h"
 
+#define newCircularStateQueue(type, writeHeadState, nextState) newWithArgs(CircularStateQueue<type>, writeHeadState, nextState)
+
 template <class Type> class CircularStateQueue onlyInDebug(: public ObjCounter) {
 private:
 	class Node onlyInDebug(: public ObjCounter) {

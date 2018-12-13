@@ -2,6 +2,8 @@
 #include "GameState/GameState.h"
 #include "Util/Logger.h"
 
+#define newNode(state) newWithArgs(Node, state)
+
 template class CircularStateQueue<GameState>;
 template class CircularStateQueue<Logger::Message>;
 
@@ -17,10 +19,10 @@ template <class Type> CircularStateQueue<Type>::Node::~Node() {
 template <class Type> CircularStateQueue<Type>::CircularStateQueue(
 	objCounterParametersComma() Type* writeHeadState, Type* nextState)
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
-writeHead(newWithArgs(Node, writeHeadState))
+writeHead(newNode(writeHeadState))
 , readHead(nullptr)
 , lastStateWasRead(true) {
-	Node* next = newWithArgs(Node, nextState);
+	Node* next = newNode(nextState);
 	writeHead->next = next;
 	next->next = writeHead;
 	readHead = writeHead;
@@ -40,7 +42,7 @@ template <class Type> Type* CircularStateQueue<Type>::getNextWritableState() {
 }
 //insert a writable state after the write head
 template <class Type> void CircularStateQueue<Type>::addWritableState(Type* state) {
-	Node* nextWritableNode = newWithArgs(Node, state);
+	Node* nextWritableNode = newNode(state);
 	nextWritableNode->next = writeHead->next;
 	writeHead->next = nextWritableNode;
 }

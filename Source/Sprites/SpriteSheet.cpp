@@ -10,28 +10,10 @@ textureId(0)
 , spriteSheetHeight(1)
 , spriteTexWidth(1.0f)
 , spriteTexHeight(1.0f) {
-	initializeWithSurface(imageSurface, horizontalSpriteCount, verticalSpriteCount);
-}
-SpriteSheet::SpriteSheet(objCounterParametersComma() const char* imagePath, int horizontalSpriteCount, int verticalSpriteCount)
-: onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
-textureId(0)
-, spriteWidth(1)
-, spriteHeight(1)
-, spriteSheetWidth(1)
-, spriteSheetHeight(1)
-, spriteTexWidth(1.0f)
-, spriteTexHeight(1.0f) {
-	SDL_Surface* surface = IMG_Load(imagePath);
-	initializeWithSurface(surface, horizontalSpriteCount, verticalSpriteCount);
-	SDL_FreeSurface(surface);
-}
-SpriteSheet::~SpriteSheet() {}
-//setup our variables and initialize opengl
-void SpriteSheet::initializeWithSurface(SDL_Surface* surface, int horizontalSpriteCount, int verticalSpriteCount) {
-	spriteWidth = surface->w / horizontalSpriteCount;
-	spriteHeight = surface->h / verticalSpriteCount;
-	spriteSheetWidth = surface->w;
-	spriteSheetHeight = surface->h;
+	spriteWidth = imageSurface->w / horizontalSpriteCount;
+	spriteHeight = imageSurface->h / verticalSpriteCount;
+	spriteSheetWidth = imageSurface->w;
+	spriteSheetHeight = imageSurface->h;
 	spriteTexWidth = (float)spriteWidth / (float)spriteSheetWidth;
 	spriteTexHeight = (float)spriteHeight / (float)spriteSheetHeight;
 
@@ -43,7 +25,16 @@ void SpriteSheet::initializeWithSurface(SDL_Surface* surface, int horizontalSpri
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surface->w, surface->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, surface->pixels);
+	glTexImage2D(
+		GL_TEXTURE_2D, 0, GL_RGBA, imageSurface->w, imageSurface->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, imageSurface->pixels);
+}
+SpriteSheet::~SpriteSheet() {}
+//load the surface at the image path and then build a SpriteSheet
+SpriteSheet* SpriteSheet::produce(objCounterParametersComma() const char* imagePath, int horizontalSpriteCount, int verticalSpriteCount) {
+	SDL_Surface* surface = IMG_Load(imagePath);
+	SpriteSheet* spriteSheet = newSpriteSheet(surface, horizontalSpriteCount, verticalSpriteCount);
+	SDL_FreeSurface(surface);
+	return spriteSheet;
 }
 //the last row of pixels shouldn't get drawn as part of the sprite
 //TODO: make this correct/more general purpose if we ever use this for more than just the tiles sprite

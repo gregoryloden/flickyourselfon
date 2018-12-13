@@ -2,6 +2,7 @@
 #define POOLED_REFERENCE_COUNTER_H
 #include "General/General.h"
 
+#define initializeWithNewFromPool(var, className) className* var = ObjectPool<className>::newFromPool(objCounterArguments());
 #define pooledReferenceCounterDefineRelease(className) \
 	void className::release() {\
 		referenceCount--;\

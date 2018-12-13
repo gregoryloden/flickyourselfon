@@ -1,5 +1,9 @@
 #include "General/General.h"
 
+#define newSpriteAnimation(sprite, frames) newWithArgs(SpriteAnimation, sprite, frames)
+#define newSpriteAnimationFrame(spriteHorizontalIndex, spriteVerticalIndex, ticksDuration) \
+	newWithArgs(SpriteAnimation::Frame, spriteHorizontalIndex, spriteVerticalIndex, ticksDuration)
+
 class SpriteSheet;
 
 class SpriteAnimation onlyInDebug(: public ObjCounter) {

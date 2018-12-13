@@ -7,7 +7,7 @@
 
 GameState::GameState(objCounterParameters())
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
-playerState(newWithoutArgs(PlayerState))
+playerState(newPlayerState())
 , camera(nullptr)
 , shouldQuitGame(false) {
 	camera = playerState;

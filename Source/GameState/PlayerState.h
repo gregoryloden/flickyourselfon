@@ -1,19 +1,24 @@
 #include "GameState/EntityState.h"
 #include "Util/PooledReferenceCounter.h"
 
+#define newPlayerState() newWithoutArgs(PlayerState)
+
 class PositionState;
 class SpriteAnimation;
 class EntityAnimation;
 enum class PlayerSpriteDirection: int;
 
 class PlayerState: public EntityState {
-public:
+private:
+	static const float playerStartingXPosition;
+	static const float playerStartingYPosition;
+	static const float playerWidth;
+	static const float playerHeight;
 	static const float boundingBoxLeftOffset;
 	static const float boundingBoxRightOffset;
 	static const float boundingBoxTopOffset;
 	static const float boundingBoxBottomOffset;
 
-private:
 	char xDirection;
 	char yDirection;
 	SpriteAnimation* animation;

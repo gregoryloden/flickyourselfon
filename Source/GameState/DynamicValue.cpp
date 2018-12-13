@@ -14,19 +14,21 @@ CompositeQuarticValue::CompositeQuarticValue(objCounterParameters())
 }
 CompositeQuarticValue::~CompositeQuarticValue() {}
 //initialize this CompositeQuarticValue
-CompositeQuarticValue* CompositeQuarticValue::set(
+CompositeQuarticValue* CompositeQuarticValue::produce(
+	objCounterParametersComma()
 	float pConstantValue,
 	float pLinearValuePerTick,
 	float pQuadraticValuePerTick,
 	float pCubicValuePerTick,
 	float pQuarticValuePerTick)
 {
-	constantValue = pConstantValue;
-	linearValuePerTick = pLinearValuePerTick;
-	quadraticValuePerTick = pQuadraticValuePerTick;
-	cubicValuePerTick = pCubicValuePerTick;
-	quarticValuePerTick = pQuarticValuePerTick;
-	return this;
+	initializeWithNewFromPool(c, CompositeQuarticValue)
+	c->constantValue = pConstantValue;
+	c->linearValuePerTick = pLinearValuePerTick;
+	c->quadraticValuePerTick = pQuadraticValuePerTick;
+	c->cubicValuePerTick = pCubicValuePerTick;
+	c->quarticValuePerTick = pQuarticValuePerTick;
+	return c;
 }
 pooledReferenceCounterDefineRelease(CompositeQuarticValue)
 //get the value at the given time

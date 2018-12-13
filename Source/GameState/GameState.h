@@ -3,6 +3,8 @@
 class EntityState;
 class PlayerState;
 
+#define newGameState() newWithoutArgs(GameState)
+
 class GameState onlyInDebug(: public ObjCounter) {
 private:
 	PlayerState* playerState;

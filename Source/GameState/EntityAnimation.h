@@ -1,9 +1,9 @@
 #include "Util/PooledReferenceCounter.h"
 
-#define newEntityAnimation(startTicksTime, components) callNewFromPool(EntityAnimation)->set(startTicksTime, components)
-#define newEntityAnimationDelay(ticksDuration) callNewFromPool(EntityAnimation::Delay)->set(ticksDuration)
-#define newEntityAnimationSetVelocity(vx, vy) callNewFromPool(EntityAnimation::SetVelocity)->set(vx, vy)
-#define newEntityAnimationSetSpriteAnimation(animation) callNewFromPool(EntityAnimation::SetSpriteAnimation)->set(animation)
+#define newEntityAnimation(startTicksTime, components) produceWithArgs(EntityAnimation, startTicksTime, components)
+#define newEntityAnimationDelay(ticksDuration) produceWithArgs(EntityAnimation::Delay, ticksDuration)
+#define newEntityAnimationSetVelocity(vx, vy) produceWithArgs(EntityAnimation::SetVelocity, vx, vy)
+#define newEntityAnimationSetSpriteAnimation(animation) produceWithArgs(EntityAnimation::SetSpriteAnimation, animation)
 
 class DynamicValue;
 class EntityState;
@@ -28,7 +28,7 @@ public:
 		Delay(objCounterParameters());
 		~Delay();
 
-		Delay* set(int pTicksDuration);
+		static Delay* produce(objCounterParametersComma() int pTicksDuration);
 		virtual void release();
 		virtual bool handle(EntityState* entityState, int ticksTime);
 		virtual int getDelayTicksDuration();
@@ -42,7 +42,7 @@ public:
 		SetVelocity(objCounterParameters());
 		~SetVelocity();
 
-		SetVelocity* set(DynamicValue* pVx, DynamicValue* pVy);
+		static SetVelocity* produce(objCounterParametersComma() DynamicValue* pVx, DynamicValue* pVy);
 		virtual void release();
 		virtual void prepareReturnToPool();
 		virtual bool handle(EntityState* entityState, int ticksTime);
@@ -55,7 +55,7 @@ public:
 		SetSpriteAnimation(objCounterParameters());
 		~SetSpriteAnimation();
 
-		SetSpriteAnimation* set(SpriteAnimation* pAnimation);
+		static SetSpriteAnimation* produce(objCounterParametersComma() SpriteAnimation* pAnimation);
 		virtual void release();
 		virtual bool handle(EntityState* entityState, int ticksTime);
 	};
@@ -67,7 +67,8 @@ public:
 	EntityAnimation(objCounterParameters());
 	~EntityAnimation();
 
-	EntityAnimation* set(int pStartTicksTime, vector<ReferenceCounterHolder<Component>> pComponents);
+	static EntityAnimation* produce(
+		objCounterParametersComma() int pStartTicksTime, vector<ReferenceCounterHolder<Component>> pComponents);
 	virtual void release();
 	virtual void prepareReturnToPool();
 	bool update(EntityState* entityState, int ticksTime);

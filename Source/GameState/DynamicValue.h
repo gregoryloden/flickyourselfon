@@ -2,8 +2,8 @@
 
 #define newCompositeQuarticValue(\
 		constantValue, linearValuePerTick, quadraticValuePerTick, cubicValuePerTick, quarticValuePerTick) \
-	callNewFromPool(CompositeQuarticValue)->set(\
-		constantValue, linearValuePerTick, quadraticValuePerTick, cubicValuePerTick, quarticValuePerTick)
+	produceWithArgs(\
+		CompositeQuarticValue, constantValue, linearValuePerTick, quadraticValuePerTick, cubicValuePerTick, quarticValuePerTick)
 
 class DynamicValue: public PooledReferenceCounter {
 public:
@@ -27,7 +27,8 @@ public:
 	CompositeQuarticValue(objCounterParameters());
 	~CompositeQuarticValue();
 
-	CompositeQuarticValue* set(
+	static CompositeQuarticValue* produce(
+		objCounterParametersComma()
 		float pConstantValue,
 		float pLinearValuePerTick,
 		float pQuadraticValuePerTick,

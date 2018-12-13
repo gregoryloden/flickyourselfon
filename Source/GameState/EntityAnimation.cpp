@@ -17,9 +17,10 @@ EntityAnimation::Delay::Delay(objCounterParameters())
 }
 EntityAnimation::Delay::~Delay() {}
 //initialize this Delay
-EntityAnimation::Delay* EntityAnimation::Delay::set(int pTicksDuration) {
-	ticksDuration = pTicksDuration;
-	return this;
+EntityAnimation::Delay* EntityAnimation::Delay::produce(objCounterParametersComma() int pTicksDuration) {
+	initializeWithNewFromPool(d, EntityAnimation::Delay)
+	d->ticksDuration = pTicksDuration;
+	return d;
 }
 pooledReferenceCounterDefineRelease(EntityAnimation::Delay)
 //return that the animation should not proceed without checking that the delay is finished
@@ -37,10 +38,13 @@ EntityAnimation::SetVelocity::SetVelocity(objCounterParameters())
 }
 EntityAnimation::SetVelocity::~SetVelocity() {}
 //initialize this SetVelocity
-EntityAnimation::SetVelocity* EntityAnimation::SetVelocity::set(DynamicValue* pVx, DynamicValue* pVy) {
-	vx.set(pVx);
-	vy.set(pVy);
-	return this;
+EntityAnimation::SetVelocity* EntityAnimation::SetVelocity::produce(
+	objCounterParametersComma() DynamicValue* pVx, DynamicValue* pVy)
+{
+	initializeWithNewFromPool(s, EntityAnimation::SetVelocity)
+	s->vx.set(pVx);
+	s->vy.set(pVy);
+	return s;
 }
 pooledReferenceCounterDefineRelease(EntityAnimation::SetVelocity)
 //release components before this is returned to the pool
@@ -61,9 +65,12 @@ EntityAnimation::SetSpriteAnimation::~SetSpriteAnimation() {
 	//don't delete the animation, something else owns it
 }
 //initialize this SetSpriteAnimation
-EntityAnimation::SetSpriteAnimation* EntityAnimation::SetSpriteAnimation::set(SpriteAnimation* pAnimation) {
-	animation = pAnimation;
-	return this;
+EntityAnimation::SetSpriteAnimation* EntityAnimation::SetSpriteAnimation::produce(
+	objCounterParametersComma() SpriteAnimation* pAnimation)
+{
+	initializeWithNewFromPool(s, EntityAnimation::SetSpriteAnimation)
+	s->animation = pAnimation;
+	return s;
 }
 pooledReferenceCounterDefineRelease(EntityAnimation::SetSpriteAnimation)
 //return that the animation should proceed after setting the sprite animation on the entity state
@@ -79,11 +86,14 @@ EntityAnimation::EntityAnimation(objCounterParameters())
 }
 EntityAnimation::~EntityAnimation() {}
 //initialize this EntityAnimation
-EntityAnimation* EntityAnimation::set(int pStartTicksTime, vector<ReferenceCounterHolder<Component>> pComponents) {
-	lastUpdateTicksTime = pStartTicksTime;
-	components = pComponents;
-	nextComponentIndex = 0;
-	return this;
+EntityAnimation* EntityAnimation::produce(
+	objCounterParametersComma() int pStartTicksTime, vector<ReferenceCounterHolder<Component>> pComponents)
+{
+	initializeWithNewFromPool(e, EntityAnimation)
+	e->lastUpdateTicksTime = pStartTicksTime;
+	e->components = pComponents;
+	e->nextComponentIndex = 0;
+	return e;
 }
 pooledReferenceCounterDefineRelease(EntityAnimation)
 //release components before this is returned to the pool

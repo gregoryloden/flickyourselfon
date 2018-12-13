@@ -1,5 +1,10 @@
 #include "General/General.h"
 
+#define newSpriteSheet(imageSurface, horizontalSpriteCount, verticalSpriteCount) \
+	newWithArgs(SpriteSheet, imageSurface, horizontalSpriteCount, verticalSpriteCount)
+#define newSpriteSheetWithImagePath(imagePath, horizontalSpriteCount, verticalSpriteCount) \
+	produceWithArgs(SpriteSheet, imagePath, horizontalSpriteCount, verticalSpriteCount)
+
 class SpriteSheet onlyInDebug(: public ObjCounter) {
 private:
 	GLuint textureId;
@@ -11,13 +16,11 @@ private:
 	float spriteTexHeight;
 
 public:
-	SpriteSheet(objCounterParametersComma() const char* imagePath, int horizontalSpriteCount, int verticalSpriteCount);
 	SpriteSheet(objCounterParametersComma() SDL_Surface* imageSurface, int horizontalSpriteCount, int verticalSpriteCount);
 	~SpriteSheet();
 
-private:
-	void initializeWithSurface(SDL_Surface* imageSurface, int horizontalSpriteCount, int verticalSpriteCount);
-public:
+	static SpriteSheet* produce(
+		objCounterParametersComma() const char* imagePath, int horizontalSpriteCount, int verticalSpriteCount);
 	void clampSpriteRectForTilesSprite();
 	void render(GLint leftX, GLint topY, int spriteHorizontalIndex, int spriteVerticalIndex);
 	void renderUsingCenter(float centerX, float centerY, int spriteHorizontalIndex, int spriteVerticalIndex);

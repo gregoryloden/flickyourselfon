@@ -16,21 +16,22 @@ bool renderThreadReadyForUpdates = false;
 extern "C"
 #endif
 int main(int argc, char *argv[]) {
+	//initialize SDL
+	int initResult = SDL_Init(SDL_INIT_EVERYTHING);
+	if (initResult < 0)
+		return initResult;
+
 	#ifdef DEBUG
 		ObjCounter::start();
 	#endif
 	Logger::beginLogging();
 	Logger::beginMultiThreadedLogging();
 
-	//initialize SDL
-	int initResult = SDL_Init(SDL_INIT_EVERYTHING);
-	if (initResult < 0)
-		return initResult;
-	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-	SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl");
 	Logger::log("SDL set up /// Setting up window...");
 
 	//create a window
+	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+	SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl");
 	window = SDL_CreateWindow(
 		"Flick Yourself On",
 		SDL_WINDOWPOS_CENTERED,
@@ -47,8 +48,7 @@ int main(int argc, char *argv[]) {
 	Logger::log("Window set up");
 
 	//create our state queue and start the render thread
-	CircularStateQueue<GameState>* gameStateQueue =
-		newWithArgs(CircularStateQueue<GameState>, newWithoutArgs(GameState), newWithoutArgs(GameState));
+	CircularStateQueue<GameState>* gameStateQueue = newCircularStateQueue(GameState, newGameState(), newGameState());
 	//our initial state is renderable
 	gameStateQueue->finishWritingToState();
 	GameState* prevGameState = gameStateQueue->getNextReadableState();
@@ -58,6 +58,7 @@ int main(int argc, char *argv[]) {
 	Logger::log("Waiting for render thread to be ready for updates...");
 	while (!renderThreadReadyForUpdates)
 		SDL_Delay(1);
+	Logger::log("Beginning update loop");
 
 	//begin the update loop
 	int updateDelay = -1;
@@ -74,7 +75,7 @@ int main(int argc, char *argv[]) {
 		GameState* gameState = gameStateQueue->getNextWritableState();
 		if (gameState == nullptr) {
 			Logger::log("Adding additional GameState");
-			gameState = newWithoutArgs(GameState);
+			gameState = newGameState();
 			gameStateQueue->addWritableState(gameState);
 		}
 		gameState->updateWithPreviousGameState(prevGameState, (int)SDL_GetTicks());
@@ -130,7 +131,7 @@ void renderLoop(CircularStateQueue<GameState>* gameStateQueue) {
 	Logger::log("OpenGL set up /// Loading sprites...");
 	SpriteRegistry::loadAll();
 	MapState::buildMap();
-	Logger::log("Sprites loaded");
+	Logger::log("Sprites loaded /// Beginning render loop");
 
 	//begin the render loop
 	int lastWindowWidth = 0;

@@ -6,12 +6,16 @@
 #include "Sprites/SpriteRegistry.h"
 #include "Sprites/SpriteSheet.h"
 
-const float PlayerState::boundingBoxLeftOffset = -5.5f;
-const float PlayerState::boundingBoxRightOffset = PlayerState::boundingBoxLeftOffset + 11.0f;
+const float PlayerState::playerStartingXPosition = 179.5f;
+const float PlayerState::playerStartingYPosition = 166.5f;
+const float PlayerState::playerWidth = 11.0f;
+const float PlayerState::playerHeight = 5.0f;
+const float PlayerState::boundingBoxLeftOffset = PlayerState::playerWidth * -0.5f;
+const float PlayerState::boundingBoxRightOffset = PlayerState::boundingBoxLeftOffset + PlayerState::playerWidth;
 const float PlayerState::boundingBoxTopOffset = 4.5f;
-const float PlayerState::boundingBoxBottomOffset = PlayerState::boundingBoxTopOffset + 5.0f;
+const float PlayerState::boundingBoxBottomOffset = PlayerState::boundingBoxTopOffset + PlayerState::playerHeight;
 PlayerState::PlayerState(objCounterParameters())
-: EntityState(objCounterArgumentsComma() 179.5f, 166.5f)
+: EntityState(objCounterArgumentsComma() playerStartingXPosition, playerStartingYPosition)
 , xDirection(0)
 , yDirection(0)
 , animation(nullptr)
@@ -220,6 +224,10 @@ void PlayerState::beginKicking(int ticksTime) {
 		return;
 	}
 
+	//only kick something if you're less than this distance from it
+	//visually, you have to be 1 pixel away or closer
+	const float kickingDistanceLimit = 1.5f;
+
 	//we are kicking, start by delaying until the leg-sticking-out frame
 	kickingAnimationComponents.push_back(newEntityAnimationDelay(SpriteRegistry::playerKickingAnimationTicksPerFrame));
 	kickingDuration -= SpriteRegistry::playerKickingAnimationTicksPerFrame;
@@ -231,12 +239,15 @@ void PlayerState::beginKicking(int ticksTime) {
 	int highMapX = (int)(xPosition + boundingBoxRightOffset) / MapState::tileSize;
 
 	if (spriteDirection == PlayerSpriteDirection::Up) {
-		//use the bottom offset to ensure that we're far enough north
-		int topMapY = (int)(yPosition + boundingBoxBottomOffset) / MapState::tileSize;
-		int oneTileUpHeight = MapState::horizontalTilesHeight(lowMapX, highMapX, topMapY - 1);
+		int oneTileUpMapY = (int)(yPosition + boundingBoxTopOffset - kickingDistanceLimit) / MapState::tileSize;
+		char oneTileUpHeight = MapState::horizontalTilesHeight(lowMapX, highMapX, oneTileUpMapY);
 		if (oneTileUpHeight != MapState::invalidHeight) {
 			//we found a floor to fall to
-			if (oneTileUpHeight < z) {
+			if (oneTileUpHeight < z && (oneTileUpHeight & 1) == 0) {
+				//move a distance such that the bottom of the player is slightly past the edge of the cliff
+				float targetYPosition =
+					(float)((oneTileUpMapY + 1) * MapState::tileSize) - boundingBoxBottomOffset - MapState::smallDistance;
+				float moveDistance = targetYPosition - yPosition;
 				//we want a cubic curve that goes through (0,0) and (1,1) and a chosen midpoint (i,j) where 0 < i < 1
 				//it also goes through (c,#) such that dy/dt has roots at c (trough) and i (crest)
 				//vy = d(t-c)(t-i) = d(t^2-(c+i)t+ci)   (d < 0)
@@ -256,11 +267,13 @@ void PlayerState::beginKicking(int ticksTime) {
 				const float troughX =
 					(2.0f * midpointY - 3.0f * midpointY * midpointX + midpointX * midpointX * midpointX)
 						/ (3.0f * midpointX * midpointX + 3.0f * midpointY - 6.0f * midpointY * midpointX);
-				const float yMultiplier = 6.0f / (2.0f - 3.0f * troughX - 3.0f * midpointX + 6.0f * troughX * midpointX);
-				const float linearValuePerDuration = yMultiplier * troughX * midpointX * (float)-MapState::tileSize;
-				const float quadraticValuePerDuration =
-					-yMultiplier * (troughX + midpointX) / 2.0f * (float)-MapState::tileSize;
-				const float cubicValuePerDuration = yMultiplier / 3.0f * (float)-MapState::tileSize;
+				float yMultiplier =
+					6.0f / (2.0f - 3.0f * troughX - 3.0f * midpointX + 6.0f * troughX * midpointX) * moveDistance;
+
+				float linearValuePerDuration = yMultiplier * troughX * midpointX;
+				float quadraticValuePerDuration = -yMultiplier * (troughX + midpointX) / 2.0f;
+				float cubicValuePerDuration = yMultiplier / 3.0f;
+
 				float floatKickingDuration = (float)kickingDuration;
 				float kickingDurationSquared = floatKickingDuration * floatKickingDuration;
 				kickingAnimationComponents.push_back(
@@ -274,11 +287,19 @@ void PlayerState::beginKicking(int ticksTime) {
 							0.0f)));
 				z = oneTileUpHeight;
 			//we found a ledge to climb up
-			} else if (oneTileUpHeight == z + 1 && MapState::horizontalTilesHeight(lowMapX, highMapX, topMapY - 2) == z + 2) {
+			} else if (oneTileUpHeight == z + 1
+				&& MapState::horizontalTilesHeight(lowMapX, highMapX, oneTileUpMapY - 1) == z + 2)
+			{
+				//move a distance such that the bottom of the player is slightly past the edge of the ledge
+				float targetYPosition =
+					(float)(oneTileUpMapY * MapState::tileSize) - boundingBoxBottomOffset - MapState::smallDistance;
+				float moveDistance = targetYPosition - yPosition;
+
+				float cubicValuePerDuration = moveDistance / 2.0f;
+				float quarticValuePerDuration = moveDistance / 2.0f;
+
 				float floatKickingDuration = (float)kickingDuration;
 				float kickingDurationCubed = floatKickingDuration * floatKickingDuration * floatKickingDuration;
-				const float cubicValuePerDuration = (float)-MapState::tileSize;
-				const float quarticValuePerDuration = (float)-MapState::tileSize;
 				kickingAnimationComponents.push_back(
 					newEntityAnimationSetVelocity(
 						newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
@@ -293,11 +314,110 @@ void PlayerState::beginKicking(int ticksTime) {
 		}
 		//TODO: check if we're kicking a switch north
 	} else if (spriteDirection == PlayerSpriteDirection::Down) {
-		//use the bottom offset to ensure that we're far enough south
-		int bottomMapY = (int)(yPosition + boundingBoxBottomOffset) / MapState::tileSize;
-		//TODO: check if we're falling south
+		int oneTileDownMapY = (int)(yPosition + boundingBoxBottomOffset + kickingDistanceLimit) / MapState::tileSize;
+		char fallHeight = MapState::invalidHeight;
+		int tileOffset = 0;
+		for (; true; tileOffset++) {
+			fallHeight = MapState::horizontalTilesHeight(lowMapX, highMapX, oneTileDownMapY + tileOffset);
+			//stop looking if the heights differ
+			if (fallHeight == MapState::invalidHeight)
+				break;
+			//cliff face, keep looking
+			else if (fallHeight == z - 1 - tileOffset * 2)
+				;
+			//this is a tile we can fall to
+			else if (fallHeight == z - tileOffset * 2 && tileOffset >= 1)
+				break;
+			//the row is higher than us so stop looking
+			else {
+				fallHeight = MapState::invalidHeight;
+				break;
+			}
+		}
+		//fall if we can
+		if (fallHeight != MapState::invalidHeight) {
+			//move a distance such that the bottom of the player is slightly past the edge of the cliff
+			float targetYPosition =
+				(float)((oneTileDownMapY + tileOffset) * MapState::tileSize) - boundingBoxTopOffset + MapState::smallDistance;
+			float moveDistance = targetYPosition - yPosition;
+
+			float linearValuePerDuration = -moveDistance;
+			float quadraticValuePerDuration = moveDistance * 2.0f;
+
+			float floatKickingDuration = (float)kickingDuration;
+			kickingAnimationComponents.push_back(
+				newEntityAnimationSetVelocity(
+					newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
+					newCompositeQuarticValue(
+						0.0f,
+						linearValuePerDuration / floatKickingDuration,
+						quadraticValuePerDuration / (floatKickingDuration * floatKickingDuration),
+						0.0f,
+						0.0f)));
+			z = fallHeight;
+		}
 	} else {
-		//TODO: check if we're falling to the side
+		int sideTilesLeftMapX;
+		int sideTilesRightMapX;
+		if (spriteDirection == PlayerSpriteDirection::Left) {
+			float sideTilesRightXPosition = xPosition + boundingBoxLeftOffset - kickingDistanceLimit;
+			sideTilesRightMapX = (int)sideTilesRightXPosition / MapState::tileSize;
+			sideTilesLeftMapX = (int)(sideTilesRightXPosition - playerWidth) / MapState::tileSize;
+		} else {
+			float sideTilesLeftXPosition = xPosition + boundingBoxRightOffset + kickingDistanceLimit;
+			sideTilesLeftMapX = (int)sideTilesLeftXPosition / MapState::tileSize;
+			sideTilesRightMapX = (int)(sideTilesLeftXPosition + playerWidth) / MapState::tileSize;
+		}
+		int bottomMapY = (int)(yPosition + boundingBoxBottomOffset) / MapState::tileSize;
+		int tileOffset = 1;
+		char fallHeight = MapState::invalidHeight;
+		for (; true; tileOffset++) {
+			fallHeight = MapState::getHeight(sideTilesLeftMapX, bottomMapY + tileOffset);
+			//this is the height we're trying to fall to
+			if (fallHeight == z - tileOffset * 2) {
+				//check that all tiles the player will land on are valid
+				int offsetTopMapY = (int)(yPosition + boundingBoxTopOffset) / MapState::tileSize + tileOffset;
+				for (int mapY = bottomMapY + tileOffset; mapY >= offsetTopMapY; mapY--) {
+					//even if we found a tile we can land on, if the rest of them don't match then we can't fall
+					if (MapState::horizontalTilesHeight(sideTilesLeftMapX, sideTilesRightMapX, mapY) != fallHeight) {
+						fallHeight = MapState::invalidHeight;
+						break;
+					}
+				}
+				break;
+			//this is part of a cliff or floor tile that's behind the player, keep going
+			//the tile might be near us or far back, either case is fine
+			} else if (fallHeight <= z - tileOffset * 2 + 1)
+				;
+			//anything else is invalid
+			else {
+				fallHeight = MapState::invalidHeight;
+				break;
+			}
+		}
+		//fall if we can
+		if (fallHeight != MapState::invalidHeight) {
+			float targetXPosition = spriteDirection == PlayerSpriteDirection::Left
+				? (float)((sideTilesRightMapX + 1) * MapState::tileSize) - boundingBoxRightOffset - MapState::smallDistance
+				: (float)(sideTilesLeftMapX * MapState::tileSize) - boundingBoxLeftOffset + MapState::smallDistance;
+			float xMoveDistance = targetXPosition - xPosition;
+			float yMoveDistance = (float)(tileOffset * MapState::tileSize);
+
+			const float yLinearValuePerDuration = -yMoveDistance;
+			const float yQuadraticValuePerDuration = yMoveDistance * 2.0f;
+
+			float floatKickingDuration = (float)kickingDuration;
+			kickingAnimationComponents.push_back(
+				newEntityAnimationSetVelocity(
+					newCompositeQuarticValue(0.0f, xMoveDistance / floatKickingDuration, 0.0f, 0.0f, 0.0f),
+					newCompositeQuarticValue(
+						0.0f,
+						yLinearValuePerDuration / floatKickingDuration,
+						yQuadraticValuePerDuration / (floatKickingDuration * floatKickingDuration),
+						0.0f,
+						0.0f)));
+			z = fallHeight;
+		}
 		//TODO: check if we're kicking a switch to the side
 	}
 

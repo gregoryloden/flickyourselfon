@@ -14,40 +14,40 @@ SpriteSheet* SpriteRegistry::font = nullptr;
 //load all the sprite sheets
 //this should only be called after the gl context has been created
 void SpriteRegistry::loadAll() {
-	player = newWithArgs(SpriteSheet, "images/player.png", 9, 4);
-	playerWalkingAnimation = newWithArgs(SpriteAnimation,
+	player = newSpriteSheetWithImagePath("images/player.png", 9, 4);
+	playerWalkingAnimation = newSpriteAnimation(
 		player,
 		{
-			newWithArgs(SpriteAnimation::Frame, 0, -1, playerWalkingAnimationTicksPerFrame),
-			newWithArgs(SpriteAnimation::Frame, 1, -1, playerWalkingAnimationTicksPerFrame),
-			newWithArgs(SpriteAnimation::Frame, 0, -1, playerWalkingAnimationTicksPerFrame),
-			newWithArgs(SpriteAnimation::Frame, 2, -1, playerWalkingAnimationTicksPerFrame)
+			newSpriteAnimationFrame(0, -1, playerWalkingAnimationTicksPerFrame) COMMA
+			newSpriteAnimationFrame(1, -1, playerWalkingAnimationTicksPerFrame) COMMA
+			newSpriteAnimationFrame(0, -1, playerWalkingAnimationTicksPerFrame) COMMA
+			newSpriteAnimationFrame(2, -1, playerWalkingAnimationTicksPerFrame)
 		});
-	playerLegLiftAnimation = newWithArgs(SpriteAnimation,
+	playerLegLiftAnimation = newSpriteAnimation(
 		player,
 		{
-			newWithArgs(SpriteAnimation::Frame, 3, -1, playerKickingAnimationTicksPerFrame)
+			newSpriteAnimationFrame(3, -1, playerKickingAnimationTicksPerFrame)
 		});
-	playerBootWalkingAnimation = newWithArgs(SpriteAnimation,
+	playerBootWalkingAnimation = newSpriteAnimation(
 		player,
 		{
-			newWithArgs(SpriteAnimation::Frame, 4, -1, playerWalkingAnimationTicksPerFrame),
-			newWithArgs(SpriteAnimation::Frame, 5, -1, playerWalkingAnimationTicksPerFrame),
-			newWithArgs(SpriteAnimation::Frame, 4, -1, playerWalkingAnimationTicksPerFrame),
-			newWithArgs(SpriteAnimation::Frame, 6, -1, playerWalkingAnimationTicksPerFrame)
+			newSpriteAnimationFrame(4, -1, playerWalkingAnimationTicksPerFrame) COMMA
+			newSpriteAnimationFrame(5, -1, playerWalkingAnimationTicksPerFrame) COMMA
+			newSpriteAnimationFrame(4, -1, playerWalkingAnimationTicksPerFrame) COMMA
+			newSpriteAnimationFrame(6, -1, playerWalkingAnimationTicksPerFrame)
 		});
-	playerKickingAnimation = newWithArgs(SpriteAnimation,
+	playerKickingAnimation = newSpriteAnimation(
 		player,
 		{
-			newWithArgs(SpriteAnimation::Frame, 7, -1, playerKickingAnimationTicksPerFrame),
-			newWithArgs(SpriteAnimation::Frame, 8, -1, playerKickingAnimationTicksPerFrame),
-			newWithArgs(SpriteAnimation::Frame, 7, -1, playerKickingAnimationTicksPerFrame)
+			newSpriteAnimationFrame(7, -1, playerKickingAnimationTicksPerFrame) COMMA
+			newSpriteAnimationFrame(8, -1, playerKickingAnimationTicksPerFrame) COMMA
+			newSpriteAnimationFrame(7, -1, playerKickingAnimationTicksPerFrame)
 		});
-	tiles = newWithArgs(SpriteSheet, "images/tiles.png", MapState::tileCount, 1);
+	tiles = newSpriteSheetWithImagePath("images/tiles.png", MapState::tileCount, 1);
 	tiles->clampSpriteRectForTilesSprite();
-	radioTower = newWithArgs(SpriteSheet, "images/radiotower.png", 1, 1);
+	radioTower = newSpriteSheetWithImagePath("images/radiotower.png", 1, 1);
 	SDL_Surface* fontSurface = IMG_Load("images/font.png");
-	font = newWithArgs(SpriteSheet, fontSurface, 1, 1);
+	font = newSpriteSheet(fontSurface, 1, 1);
 	SDL_FreeSurface(fontSurface);
 }
 //delete all the sprite sheets

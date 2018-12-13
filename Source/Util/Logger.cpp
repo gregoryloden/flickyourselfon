@@ -1,6 +1,8 @@
 #include "Logger.h"
 #include "Util/CircularStateQueue.h"
 
+#define newMessage() newWithoutArgs(Message)
+
 Logger::Message::Message(objCounterParameters())
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
 message()
@@ -23,8 +25,8 @@ void Logger::beginLogging() {
 //build the log queues and start the logging thread
 //this should only be called on the main thread
 void Logger::beginMultiThreadedLogging() {
-	mainLogQueue = newWithArgs(CircularStateQueue<Message>, newWithoutArgs(Message), newWithoutArgs(Message));
-	renderLogQueue = newWithArgs(CircularStateQueue<Message>, newWithoutArgs(Message), newWithoutArgs(Message));
+	mainLogQueue = newCircularStateQueue(Message, newMessage(), newMessage());
+	renderLogQueue = newCircularStateQueue(Message, newMessage(), newMessage());
 	currentThreadLogQueue = mainLogQueue;
 	queueLogMessages = true;
 	threadRunning = true;
@@ -91,7 +93,7 @@ void Logger::logString(string& message) {
 	currentMessageStringstream = &messageWithTimestamp;
 	Message* writableMessage = currentThreadLogQueue->getNextWritableState();
 	if (writableMessage == nullptr) {
-		writableMessage = newWithoutArgs(Message);
+		writableMessage = newMessage();
 		currentThreadLogQueue->addWritableState(writableMessage);
 	}
 	writableMessage->message = messageWithTimestamp.str();
