@@ -26,13 +26,12 @@ private:
 public:
 	static void beginLogging();
 	static void beginMultiThreadedLogging();
+	static void endMultiThreadedLogging();
+	static void endLogging();
 private:
 	static void logLoop();
 public:
 	static void setupLoggingForRenderThread();
 	static void log(const char* message);
 	static void logString(string& message);
-public:
-	static void endMultiThreadedLogging();
-	static void endLogging();
 };

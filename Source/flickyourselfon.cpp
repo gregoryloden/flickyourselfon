@@ -7,6 +7,7 @@
 #include "Util/Logger.h"
 #include "Sprites/SpriteRegistry.h"
 #include "Sprites/SpriteSheet.h"
+#include "Sprites/Text.h"
 
 SDL_Window* window = nullptr;
 SDL_GLContext glContext = nullptr;
@@ -97,6 +98,7 @@ int main(int argc, char *argv[]) {
 	#ifdef DEBUG
 		delete gameStateQueue;
 		SpriteRegistry::unloadAll();
+		Text::unloadFont();
 		MapState::deleteMap();
 		ObjectPool<CompositeQuarticValue>::clearPool();
 		ObjectPool<EntityAnimation>::clearPool();
@@ -130,6 +132,7 @@ void renderLoop(CircularStateQueue<GameState>* gameStateQueue) {
 	//load all the sprites now that our context has been created
 	Logger::log("OpenGL set up /// Loading sprites...");
 	SpriteRegistry::loadAll();
+	Text::loadFont();
 	MapState::buildMap();
 	Logger::log("Sprites loaded /// Beginning render loop");
 

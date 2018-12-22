@@ -4,17 +4,19 @@
 #include "Sprites/SpriteSheet.h"
 
 SpriteSheet* SpriteRegistry::player = nullptr;
+SpriteSheet* SpriteRegistry::tiles = nullptr;
+SpriteSheet* SpriteRegistry::radioTower = nullptr;
 SpriteAnimation* SpriteRegistry::playerWalkingAnimation = nullptr;
 SpriteAnimation* SpriteRegistry::playerLegLiftAnimation = nullptr;
 SpriteAnimation* SpriteRegistry::playerBootWalkingAnimation = nullptr;
 SpriteAnimation* SpriteRegistry::playerKickingAnimation = nullptr;
-SpriteSheet* SpriteRegistry::tiles = nullptr;
-SpriteSheet* SpriteRegistry::radioTower = nullptr;
-SpriteSheet* SpriteRegistry::font = nullptr;
 //load all the sprite sheets
 //this should only be called after the gl context has been created
 void SpriteRegistry::loadAll() {
 	player = newSpriteSheetWithImagePath("images/player.png", 9, 4);
+	tiles = newSpriteSheetWithImagePath("images/tiles.png", MapState::tileCount, 1);
+	tiles->clampSpriteRectForTilesSprite();
+	radioTower = newSpriteSheetWithImagePath("images/radiotower.png", 1, 1);
 	playerWalkingAnimation = newSpriteAnimation(
 		player,
 		{
@@ -43,21 +45,14 @@ void SpriteRegistry::loadAll() {
 			newSpriteAnimationFrame(8, -1, playerKickingAnimationTicksPerFrame) COMMA
 			newSpriteAnimationFrame(7, -1, playerKickingAnimationTicksPerFrame)
 		});
-	tiles = newSpriteSheetWithImagePath("images/tiles.png", MapState::tileCount, 1);
-	tiles->clampSpriteRectForTilesSprite();
-	radioTower = newSpriteSheetWithImagePath("images/radiotower.png", 1, 1);
-	SDL_Surface* fontSurface = IMG_Load("images/font.png");
-	font = newSpriteSheet(fontSurface, 1, 1);
-	SDL_FreeSurface(fontSurface);
 }
 //delete all the sprite sheets
 void SpriteRegistry::unloadAll() {
 	delete player;
+	delete tiles;
+	delete radioTower;
 	delete playerWalkingAnimation;
 	delete playerLegLiftAnimation;
 	delete playerBootWalkingAnimation;
 	delete playerKickingAnimation;
-	delete tiles;
-	delete radioTower;
-	delete font;
 }

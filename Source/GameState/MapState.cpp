@@ -19,10 +19,10 @@ void MapState::buildMap() {
 	tiles = new char[totalTiles];
 	heights = new char[totalTiles];
 
-	int greenShift = floor->format->Gshift;
-	int greenMask = floor->format->Gmask;
-	int blueShift = floor->format->Bshift;
-	int blueMask = floor->format->Bmask;
+	int greenShift = (int)floor->format->Gshift;
+	int greenMask = (int)floor->format->Gmask;
+	int blueShift = (int)floor->format->Bshift;
+	int blueMask = (int)floor->format->Bmask;
 	int* pixels = static_cast<int*>(floor->pixels);
 
 	for (int i = 0; i < totalTiles; i++) {

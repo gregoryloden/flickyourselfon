@@ -32,6 +32,21 @@ void Logger::beginMultiThreadedLogging() {
 	threadRunning = true;
 	logThread = new thread(logLoop);
 }
+//stop the logging thread and delete the queues, but leave the file open for single threaded logging
+void Logger::endMultiThreadedLogging() {
+	threadRunning = false;
+	logThread->join();
+	delete logThread;
+	queueLogMessages = false;
+	//run the log loop once more to make sure all the queued messages are written
+	logLoop();
+	delete mainLogQueue;
+	delete renderLogQueue;
+}
+//finally close the file
+void Logger::endLogging() {
+	SDL_RWclose(file);
+}
 //loop and process any log messages that were written in another thread
 void Logger::logLoop() {
 	while (true) {
@@ -100,19 +115,4 @@ void Logger::logString(string& message) {
 	writableMessage->timestamp = timestamp;
 	currentThreadLogQueue->finishWritingToState();
 	currentMessageStringstream = nullptr;
-}
-//stop the logging thread and delete the queues, but leave the file open for single threaded logging
-void Logger::endMultiThreadedLogging() {
-	threadRunning = false;
-	logThread->join();
-	delete logThread;
-	queueLogMessages = false;
-	//run the log loop once more to make sure all the queued messages are written
-	logLoop();
-	delete mainLogQueue;
-	delete renderLogQueue;
-}
-//finally close the file
-void Logger::endLogging() {
-	SDL_RWclose(file);
 }
