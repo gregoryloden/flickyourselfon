@@ -25,6 +25,17 @@ PlayerState::PlayerState(objCounterParameters())
 , kickingAnimation(nullptr) {
 }
 PlayerState::~PlayerState() {}
+//copy the other state
+void PlayerState::copyPlayerState(PlayerState* other) {
+	copyEntityState(other);
+	xDirection = other->xDirection;
+	yDirection = other->yDirection;
+	animation = other->animation;
+	animationStartTicksTime = other->animationStartTicksTime;
+	spriteDirection = other->spriteDirection;
+	hasBoot = other->hasBoot;
+	kickingAnimation.set(other->kickingAnimation.get());
+}
 //use the player as the next camera anchor unless we're starting an animation with a new camera anchor
 EntityState* PlayerState::getNextCameraAnchor(int ticksTime) {
 	//TODO: return a different camera anchor for animations
@@ -37,32 +48,24 @@ void PlayerState::setSpriteAnimation(SpriteAnimation* pAnimation, int pAnimation
 }
 //update this player state by reading from the previous state
 void PlayerState::updateWithPreviousPlayerState(PlayerState* prev, int ticksTime) {
-	hasBoot = prev->hasBoot;
-//TODO: put on the boot in-game
-hasBoot = true;
-	kickingAnimation.set(prev->kickingAnimation.get());
-	bool usePreviousSpriteAnimation = true;
+	bool previousStateHadKickingAnimation = prev->kickingAnimation.get() != nullptr;
 
 	//if we have a kicking animation, update with that instead
-	if (kickingAnimation.get() != nullptr) {
-		copyEntityState(prev);
-		xDirection = 0;
-		yDirection = 0;
-		animation = prev->animation;
-		animationStartTicksTime = prev->animationStartTicksTime;
-		spriteDirection = prev->spriteDirection;
+	if (previousStateHadKickingAnimation) {
+		copyPlayerState(prev);
 		if (kickingAnimation.get()->update(this, ticksTime))
 			return;
-		else {
-			kickingAnimation.set(nullptr);
-			usePreviousSpriteAnimation = false;
-		}
-	}
+	} else
+		hasBoot = prev->hasBoot;
+
+//TODO: put on the boot in-game
+hasBoot = true;
+	kickingAnimation.set(nullptr);
 
 	//update this player state normally by reading from the last state
 	updatePositionWithPreviousPlayerState(prev, ticksTime);
 	collideWithEnvironmentWithPreviousPlayerState(prev);
-	updateSpriteWithPreviousPlayerState(prev, ticksTime, usePreviousSpriteAnimation);
+	updateSpriteWithPreviousPlayerState(prev, ticksTime, !previousStateHadKickingAnimation);
 }
 //update the position of this player state by reading from the previous state
 void PlayerState::updatePositionWithPreviousPlayerState(PlayerState* prev, int ticksTime) {
@@ -165,7 +168,7 @@ void PlayerState::collideWithEnvironmentWithPreviousPlayerState(PlayerState* pre
 	}
 }
 //update the sprite (and possibly the animation) of this player state by reading from the previous state
-void PlayerState::updateSpriteWithPreviousPlayerState(PlayerState* prev, int ticksTime, bool usePreviousSpriteAnimation) {
+void PlayerState::updateSpriteWithPreviousPlayerState(PlayerState* prev, int ticksTime, bool usePreviousStateSpriteAnimation) {
 	bool moving = (xDirection | yDirection) != 0;
 	//update the sprite direction
 	//if the player did not change direction or is not moving, use the last direction
@@ -182,14 +185,14 @@ void PlayerState::updateSpriteWithPreviousPlayerState(PlayerState* prev, int tic
 						&& (prev->spriteDirection == PlayerSpriteDirection::Left
 							|| prev->spriteDirection == PlayerSpriteDirection::Right)))))
 		spriteDirection = xDirection < 0 ? PlayerSpriteDirection::Left : PlayerSpriteDirection::Right;
-	//use a vertical sprite
+	//use a vertical sprite if none of the above situations applied
 	else
 		spriteDirection = yDirection < 0 ? PlayerSpriteDirection::Up : PlayerSpriteDirection::Down;
 
 	//update the animation
 	if (!moving)
 		animation = nullptr;
-	else if (prev->animation != nullptr && usePreviousSpriteAnimation) {
+	else if (prev->animation != nullptr && usePreviousStateSpriteAnimation) {
 		animation = prev->animation;
 		animationStartTicksTime = prev->animationStartTicksTime;
 	} else {
@@ -203,8 +206,11 @@ void PlayerState::beginKicking(int ticksTime) {
 	if (kickingAnimation.get() != nullptr)
 		return;
 
+	xDirection = 0;
+	yDirection = 0;
 	renderInterpolatedX = true;
 	renderInterpolatedY = true;
+
 	SpriteAnimation* kickingSpriteAnimation = hasBoot
 		? SpriteRegistry::playerKickingAnimation
 		: SpriteRegistry::playerLegLiftAnimation;
@@ -441,5 +447,6 @@ void PlayerState::render(EntityState* camera, int ticksTime) {
 		animation->renderUsingCenter(
 			renderCenterX, renderCenterY, ticksTime - animationStartTicksTime, 0, (int)spriteDirection);
 	else
-		SpriteRegistry::player->renderUsingCenter(renderCenterX, renderCenterY, hasBoot ? 4 : 0, (int)spriteDirection);
+		SpriteRegistry::player->renderSpriteCenteredAtScreenPosition(
+			hasBoot ? 4 : 0, (int)spriteDirection, renderCenterX, renderCenterY);
 }

@@ -2,6 +2,7 @@
 #include "GameState/DynamicValue.h"
 #include "GameState/EntityAnimation.h"
 #include "GameState/GameState.h"
+#include "GameState/PauseState.h"
 #include "GameState/MapState.h"
 #include "Util/CircularStateQueue.h"
 #include "Util/Logger.h"
@@ -96,15 +97,17 @@ int main(int argc, char *argv[]) {
 
 	//cleanup
 	#ifdef DEBUG
-		delete gameStateQueue;
+		MapState::deleteMap();
+		PauseState::unloadMenu();
 		SpriteRegistry::unloadAll();
 		Text::unloadFont();
-		MapState::deleteMap();
+		delete gameStateQueue;
 		ObjectPool<CompositeQuarticValue>::clearPool();
 		ObjectPool<EntityAnimation>::clearPool();
 		ObjectPool<EntityAnimation::Delay>::clearPool();
 		ObjectPool<EntityAnimation::SetVelocity>::clearPool();
 		ObjectPool<EntityAnimation::SetSpriteAnimation>::clearPool();
+		ObjectPool<PauseState>::clearPool();
 		ObjCounter::end();
 	#endif
 	Logger::log("Game exit");
@@ -125,14 +128,14 @@ void renderLoop(CircularStateQueue<GameState>* gameStateQueue) {
 	Logger::log("Render thread began /// Setting up OpenGL...");
 	glContext = SDL_GL_CreateContext(window);
 	SDL_GL_SetSwapInterval(1);
-	glEnable(GL_TEXTURE_2D);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glOrtho(0, (GLdouble)Config::gameScreenWidth, (GLdouble)Config::gameScreenHeight, 0, -1, 1);
 
 	//load all the sprites now that our context has been created
 	Logger::log("OpenGL set up /// Loading sprites...");
-	SpriteRegistry::loadAll();
 	Text::loadFont();
+	SpriteRegistry::loadAll();
+	PauseState::loadMenu();
 	MapState::buildMap();
 	Logger::log("Sprites loaded /// Beginning render loop");
 
@@ -158,8 +161,7 @@ void renderLoop(CircularStateQueue<GameState>* gameStateQueue) {
 			lastWindowHeight = windowHeight;
 		}
 
-//TODO: settle on final background color
-glClearColor(0.1875f, 0.0f, 0.1875f, 1.0f);
+		glClearColor(Config::backgroundColorRed, Config::backgroundColorGreen, Config::backgroundColorBlue, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 		gameState->render(preRenderTicksTime);
 		renderThreadReadyForUpdates = true;

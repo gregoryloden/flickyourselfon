@@ -31,13 +31,14 @@ public:
 	PlayerState(objCounterParameters());
 	~PlayerState();
 
+	void copyPlayerState(PlayerState* other);
 	virtual EntityState* getNextCameraAnchor(int ticksTime);
 	virtual void setSpriteAnimation(SpriteAnimation* spriteAnimation, int pAnimationStartTicksTime);
 	void updateWithPreviousPlayerState(PlayerState* prev, int ticksTime);
 private:
 	void updatePositionWithPreviousPlayerState(PlayerState* prev, int ticksTime);
 	void collideWithEnvironmentWithPreviousPlayerState(PlayerState* prev);
-	void updateSpriteWithPreviousPlayerState(PlayerState* prev, int ticksTime, bool usePreviousSpriteAnimation);
+	void updateSpriteWithPreviousPlayerState(PlayerState* prev, int ticksTime, bool usePreviousStateSpriteAnimation);
 public:
 	void beginKicking(int ticksTime);
 	void render(EntityState* camera, int ticksTime);

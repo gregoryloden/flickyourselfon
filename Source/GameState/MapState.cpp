@@ -64,11 +64,14 @@ void MapState::render(EntityState* camera, int ticksTime) {
 			//consider any tile at the max height to be filler
 			int mapIndex = y * MapState::width + x;
 			if (MapState::heights[mapIndex] != MapState::heightCount - 1)
-				SpriteRegistry::tiles->render(
-					x * MapState::tileSize + addX, y * MapState::tileSize + addY, (int)(MapState::tiles[mapIndex]), 0);
+				SpriteRegistry::tiles->renderSpriteAtScreenPosition(
+					(int)(MapState::tiles[mapIndex]),
+					0,
+					(GLint)(x * MapState::tileSize + addX),
+					(GLint)(y * MapState::tileSize + addY));
 		}
 	}
 
 	glEnable(GL_BLEND);
-	SpriteRegistry::radioTower->render(423 - centerX, -32 - centerY, 0, 0);
+	SpriteRegistry::radioTower->renderSpriteAtScreenPosition(0, 0, (GLint)(423 - centerX), (GLint)(-32 - centerY));
 }

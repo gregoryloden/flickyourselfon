@@ -11,14 +11,6 @@ x(newCompositeQuarticValue(xPosition, 0.0f, 0.0f, 0.0f, 0.0f))
 , lastUpdateTicksTime(0) {
 }
 EntityState::~EntityState() {}
-//return the entity's x coordinate at the given time that we should use for rendering the world
-float EntityState::getRenderCenterX(int ticksTime) {
-	return x.get()->getValue(renderInterpolatedX ? ticksTime - lastUpdateTicksTime : 0);
-}
-//return the entity's y coordinate at the given time that we should use for rendering the world
-float EntityState::getRenderCenterY(int ticksTime) {
-	return y.get()->getValue(renderInterpolatedY ? ticksTime - lastUpdateTicksTime : 0);
-}
 //copy the state of the other entity
 void EntityState::copyEntityState(EntityState* other) {
 	x.set(other->x.get());
@@ -27,6 +19,14 @@ void EntityState::copyEntityState(EntityState* other) {
 	renderInterpolatedY = other->renderInterpolatedY;
 	z = other->z;
 	lastUpdateTicksTime = other->lastUpdateTicksTime;
+}
+//return the entity's x coordinate at the given time that we should use for rendering the world
+float EntityState::getRenderCenterX(int ticksTime) {
+	return x.get()->getValue(renderInterpolatedX ? ticksTime - lastUpdateTicksTime : 0);
+}
+//return the entity's y coordinate at the given time that we should use for rendering the world
+float EntityState::getRenderCenterY(int ticksTime) {
+	return y.get()->getValue(renderInterpolatedY ? ticksTime - lastUpdateTicksTime : 0);
 }
 //set the position to the given position at the given time
 void EntityState::setVelocity(DynamicValue* vx, DynamicValue* vy, int pLastUpdateTicksTime) {

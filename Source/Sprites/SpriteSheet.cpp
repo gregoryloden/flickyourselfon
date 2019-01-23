@@ -4,19 +4,12 @@ SpriteSheet::SpriteSheet(
 	objCounterParametersComma() SDL_Surface* imageSurface, int horizontalSpriteCount, int verticalSpriteCount)
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
 textureId(0)
-, spriteWidth(1)
-, spriteHeight(1)
-, spriteSheetWidth(1)
-, spriteSheetHeight(1)
-, spriteTexWidth(1.0f)
-, spriteTexHeight(1.0f) {
-	spriteWidth = imageSurface->w / horizontalSpriteCount;
-	spriteHeight = imageSurface->h / verticalSpriteCount;
-	spriteSheetWidth = imageSurface->w;
-	spriteSheetHeight = imageSurface->h;
-	spriteTexWidth = (float)spriteWidth / (float)spriteSheetWidth;
-	spriteTexHeight = (float)spriteHeight / (float)spriteSheetHeight;
-
+, spriteSheetWidth(imageSurface->w)
+, spriteSheetHeight(imageSurface->h)
+, spriteWidth(imageSurface->w / horizontalSpriteCount)
+, spriteHeight(imageSurface->h / verticalSpriteCount)
+, spriteTexPixelWidth(1.0f / (float)imageSurface->w)
+, spriteTexPixelHeight(1.0f / (float)imageSurface->h) {
 	glGenTextures(1, &textureId);
 
 	glBindTexture(GL_TEXTURE_2D, textureId);
@@ -30,9 +23,11 @@ textureId(0)
 }
 SpriteSheet::~SpriteSheet() {}
 //load the surface at the image path and then build a SpriteSheet
-SpriteSheet* SpriteSheet::produce(objCounterParametersComma() const char* imagePath, int horizontalSpriteCount, int verticalSpriteCount) {
+SpriteSheet* SpriteSheet::produce(
+	objCounterParametersComma() const char* imagePath, int horizontalSpriteCount, int verticalSpriteCount)
+{
 	SDL_Surface* surface = IMG_Load(imagePath);
-	SpriteSheet* spriteSheet = newSpriteSheet(surface, horizontalSpriteCount, verticalSpriteCount);
+	SpriteSheet* spriteSheet = new SpriteSheet(objCounterArgumentsComma() surface, horizontalSpriteCount, verticalSpriteCount);
 	SDL_FreeSurface(surface);
 	return spriteSheet;
 }
@@ -40,34 +35,59 @@ SpriteSheet* SpriteSheet::produce(objCounterParametersComma() const char* imageP
 //TODO: make this correct/more general purpose if we ever use this for more than just the tiles sprite
 void SpriteSheet::clampSpriteRectForTilesSprite() {
 	spriteHeight--;
-	spriteTexHeight = (float)spriteHeight / (float)spriteSheetHeight;
 }
-//draw the specified sprite image at the specified coordinate
-void SpriteSheet::render(GLint leftX, GLint topY, int spriteHorizontalIndex, int spriteVerticalIndex) {
-	GLint rightX = leftX + spriteWidth;
-	GLint bottomY = topY + spriteHeight;
-	float texMinX = (float)spriteHorizontalIndex * spriteTexWidth;
-	float texMinY = (float)spriteVerticalIndex * spriteTexHeight;
-	float texMaxX = texMinX + spriteTexWidth;
-	float texMaxY = texMinY + spriteTexHeight;
-
+//draw the specified region of the sprite sheet
+void SpriteSheet::renderSheetRegionAtScreenRegion(
+	int spriteLeftX,
+	int spriteTopY,
+	int spriteRightX,
+	int spriteBottomY,
+	GLint drawLeftX,
+	GLint drawTopY,
+	GLint drawRightX,
+	GLint drawBottomY)
+{
+	float texLeftX = spriteLeftX * spriteTexPixelWidth;
+	float texTopY = spriteTopY * spriteTexPixelHeight;
+	float texRightX = spriteRightX * spriteTexPixelWidth;
+	float texBottomY = spriteBottomY * spriteTexPixelHeight;
+	glEnable(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, textureId);
 	glBegin(GL_QUADS);
-	glTexCoord2f(texMinX, texMinY);
-	glVertex2i(leftX, topY);
-	glTexCoord2f(texMaxX, texMinY);
-	glVertex2i(rightX, topY);
-	glTexCoord2f(texMaxX, texMaxY);
-	glVertex2i(rightX, bottomY);
-	glTexCoord2f(texMinX, texMaxY);
-	glVertex2i(leftX, bottomY);
+	glTexCoord2f(texLeftX, texTopY);
+	glVertex2i(drawLeftX, drawTopY);
+	glTexCoord2f(texRightX, texTopY);
+	glVertex2i(drawRightX, drawTopY);
+	glTexCoord2f(texRightX, texBottomY);
+	glVertex2i(drawRightX, drawBottomY);
+	glTexCoord2f(texLeftX, texBottomY);
+	glVertex2i(drawLeftX, drawBottomY);
 	glEnd();
+	glDisable(GL_TEXTURE_2D);
+}
+//draw the specified sprite image with its top-left corner at the specified coordinate
+void SpriteSheet::renderSpriteAtScreenPosition(
+	int spriteHorizontalIndex, int spriteVerticalIndex, GLint drawLeftX, GLint drawTopY)
+{
+	int spriteLeftX = (GLint)(spriteHorizontalIndex * spriteWidth);
+	int spriteTopY = (GLint)(spriteVerticalIndex * spriteHeight);
+	renderSheetRegionAtScreenRegion(
+		spriteLeftX,
+		spriteTopY,
+		spriteLeftX + (GLint)spriteWidth,
+		spriteTopY + (GLint)spriteHeight,
+		drawLeftX,
+		drawTopY,
+		drawLeftX + spriteWidth,
+		drawTopY + spriteHeight);
 }
 //draw the specified sprite image with its center at the specified coordinate
-void SpriteSheet::renderUsingCenter(float centerX, float centerY, int spriteHorizontalIndex, int spriteVerticalIndex) {
-	render(
-		(GLint)(centerX - (float)spriteWidth * 0.5f),
-		(GLint)(centerY - (float)spriteHeight * 0.5f),
+void SpriteSheet::renderSpriteCenteredAtScreenPosition(
+	int spriteHorizontalIndex, int spriteVerticalIndex, float drawCenterX, float drawCenterY)
+{
+	renderSpriteAtScreenPosition(
 		spriteHorizontalIndex,
-		spriteVerticalIndex);
+		spriteVerticalIndex,
+		(GLint)(drawCenterX - (float)spriteWidth * 0.5f),
+		(GLint)(drawCenterY - (float)spriteHeight * 0.5f));
 }

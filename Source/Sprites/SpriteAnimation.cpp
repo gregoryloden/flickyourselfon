@@ -1,13 +1,17 @@
 #include "SpriteAnimation.h"
 #include "Sprites/SpriteSheet.h"
 
-SpriteAnimation::Frame::Frame(objCounterParametersComma() int pSpriteHorizontalIndex, int pSpriteVerticalIndex, int pTicksDuration)
+//////////////////////////////// SpriteAnimation::Frame ////////////////////////////////
+SpriteAnimation::Frame::Frame(
+	objCounterParametersComma() int pSpriteHorizontalIndex, int pSpriteVerticalIndex, int pTicksDuration)
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
 spriteHorizontalIndex(pSpriteHorizontalIndex)
 , spriteVerticalIndex(pSpriteVerticalIndex)
 , ticksDuration(pTicksDuration) {
 }
 SpriteAnimation::Frame::~Frame() {}
+
+//////////////////////////////// SpriteAnimation ////////////////////////////////
 SpriteAnimation::SpriteAnimation(objCounterParametersComma() SpriteSheet* pSprite, vector<Frame*> pFrames)
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
 sprite(pSprite)
@@ -53,5 +57,5 @@ void SpriteAnimation::renderUsingCenter(
 		spriteHoritontalIndex = fallbackSpriteHorizontalIndex;
 	if (spriteVerticalIndex == -1)
 		spriteVerticalIndex = fallbackSpriteVerticalIndex;
-	sprite->renderUsingCenter(centerX, centerY, spriteHoritontalIndex, spriteVerticalIndex);
+	sprite->renderSpriteCenteredAtScreenPosition(spriteHoritontalIndex, spriteVerticalIndex, centerX, centerY);
 }

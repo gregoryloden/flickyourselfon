@@ -1,9 +1,12 @@
 #include "DynamicValue.h"
 
+//////////////////////////////// DynamicValue ////////////////////////////////
 DynamicValue::DynamicValue(objCounterParameters())
 : PooledReferenceCounter(objCounterArguments()) {
 }
 DynamicValue::~DynamicValue() {}
+
+//////////////////////////////// CompositeQuarticValue ////////////////////////////////
 CompositeQuarticValue::CompositeQuarticValue(objCounterParameters())
 : DynamicValue(objCounterArguments())
 , constantValue(0.0f)
@@ -13,7 +16,7 @@ CompositeQuarticValue::CompositeQuarticValue(objCounterParameters())
 , quarticValuePerTick(0.0f) {
 }
 CompositeQuarticValue::~CompositeQuarticValue() {}
-//initialize this CompositeQuarticValue
+//initialize and return a CompositeQuarticValue
 CompositeQuarticValue* CompositeQuarticValue::produce(
 	objCounterParametersComma()
 	float pConstantValue,
@@ -31,6 +34,11 @@ CompositeQuarticValue* CompositeQuarticValue::produce(
 	return c;
 }
 pooledReferenceCounterDefineRelease(CompositeQuarticValue)
+//set the constant value to the provided value
+DynamicValue* CompositeQuarticValue::copyWithConstantValue(float pConstantValue) {
+	return newCompositeQuarticValue(
+		pConstantValue, linearValuePerTick, quadraticValuePerTick, cubicValuePerTick, quarticValuePerTick);
+}
 //get the value at the given time
 float CompositeQuarticValue::getValue(int ticksElapsed) {
 	float floatTicksElapsed = (float)ticksElapsed;
@@ -41,9 +49,4 @@ float CompositeQuarticValue::getValue(int ticksElapsed) {
 		+ quadraticValuePerTick * ticksElapsedSquared
 		+ cubicValuePerTick * ticksElapsedCubed
 		+ quarticValuePerTick * ticksElapsedCubed * floatTicksElapsed;
-}
-//set the constant value to the provided value
-DynamicValue* CompositeQuarticValue::copyWithConstantValue(float pConstantValue) {
-	return newCompositeQuarticValue(
-		pConstantValue, linearValuePerTick, quadraticValuePerTick, cubicValuePerTick, quarticValuePerTick);
 }

@@ -3,6 +3,7 @@
 #include "GameState/EntityState.h"
 #include "Sprites/SpriteAnimation.h"
 
+//////////////////////////////// EntityAnimation::Component ////////////////////////////////
 EntityAnimation::Component::Component(objCounterParameters())
 : PooledReferenceCounter(objCounterArguments()) {
 }
@@ -11,12 +12,14 @@ EntityAnimation::Component::~Component() {}
 int EntityAnimation::Component::getDelayTicksDuration() {
 	return 0;
 }
+
+//////////////////////////////// EntityAnimation::Delay ////////////////////////////////
 EntityAnimation::Delay::Delay(objCounterParameters())
 : Component(objCounterArguments())
 , ticksDuration(0) {
 }
 EntityAnimation::Delay::~Delay() {}
-//initialize this Delay
+//initialize and return a Delay
 EntityAnimation::Delay* EntityAnimation::Delay::produce(objCounterParametersComma() int pTicksDuration) {
 	initializeWithNewFromPool(d, EntityAnimation::Delay)
 	d->ticksDuration = pTicksDuration;
@@ -31,13 +34,15 @@ bool EntityAnimation::Delay::handle(EntityState* entityState, int ticksTime) {
 int EntityAnimation::Delay::getDelayTicksDuration() {
 	return ticksDuration;
 }
+
+//////////////////////////////// EntityAnimation::SetVelocity ////////////////////////////////
 EntityAnimation::SetVelocity::SetVelocity(objCounterParameters())
 : Component(objCounterArguments())
 , vx(nullptr)
 , vy(nullptr) {
 }
 EntityAnimation::SetVelocity::~SetVelocity() {}
-//initialize this SetVelocity
+//initialize and return a SetVelocity
 EntityAnimation::SetVelocity* EntityAnimation::SetVelocity::produce(
 	objCounterParametersComma() DynamicValue* pVx, DynamicValue* pVy)
 {
@@ -57,6 +62,8 @@ bool EntityAnimation::SetVelocity::handle(EntityState* entityState, int ticksTim
 	entityState->setVelocity(vx.get(), vy.get(), ticksTime);
 	return true;
 }
+
+//////////////////////////////// EntityAnimation::SetSpriteAnimation ////////////////////////////////
 EntityAnimation::SetSpriteAnimation::SetSpriteAnimation(objCounterParameters())
 : Component(objCounterArguments())
 , animation(nullptr) {
@@ -64,7 +71,7 @@ EntityAnimation::SetSpriteAnimation::SetSpriteAnimation(objCounterParameters())
 EntityAnimation::SetSpriteAnimation::~SetSpriteAnimation() {
 	//don't delete the animation, something else owns it
 }
-//initialize this SetSpriteAnimation
+//initialize and return a SetSpriteAnimation
 EntityAnimation::SetSpriteAnimation* EntityAnimation::SetSpriteAnimation::produce(
 	objCounterParametersComma() SpriteAnimation* pAnimation)
 {
@@ -78,6 +85,8 @@ bool EntityAnimation::SetSpriteAnimation::handle(EntityState* entityState, int t
 	entityState->setSpriteAnimation(animation, ticksTime);
 	return true;
 }
+
+//////////////////////////////// EntityAnimation ////////////////////////////////
 EntityAnimation::EntityAnimation(objCounterParameters())
 : PooledReferenceCounter(objCounterArguments())
 , lastUpdateTicksTime(0)
@@ -85,7 +94,7 @@ EntityAnimation::EntityAnimation(objCounterParameters())
 , nextComponentIndex(0) {
 }
 EntityAnimation::~EntityAnimation() {}
-//initialize this EntityAnimation
+//initialize and return an EntityAnimation
 EntityAnimation* EntityAnimation::produce(
 	objCounterParametersComma() int pStartTicksTime, vector<ReferenceCounterHolder<Component>> pComponents)
 {

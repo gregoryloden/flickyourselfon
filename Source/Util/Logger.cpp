@@ -1,14 +1,17 @@
 #include "Logger.h"
 #include "Util/CircularStateQueue.h"
 
-#define newMessage() newWithoutArgs(Message)
+#define newMessage() newWithoutArgs(Logger::Message)
 
+//////////////////////////////// Logger::Message ////////////////////////////////
 Logger::Message::Message(objCounterParameters())
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
 message()
 , timestamp(0) {
 }
 Logger::Message::~Message() {}
+
+//////////////////////////////// Logger ////////////////////////////////
 SDL_RWops* Logger::file = nullptr;
 bool Logger::queueLogMessages = false;
 thread_local stringstream* Logger::currentMessageStringstream = nullptr;

@@ -1,19 +1,23 @@
 #include "PooledReferenceCounter.h"
 #include "GameState/DynamicValue.h"
 #include "GameState/EntityAnimation.h"
+#include "GameState/PauseState.h"
 
 #define instantiatePooledReferenceCounter(className) \
 	template class ObjectPool<className>; vector<className*> ObjectPool<className>::pool;
+#define instantiatePooledReferenceCounterAndHolder(className) \
+	instantiatePooledReferenceCounter(className) template class ReferenceCounterHolder<className>;
 
 instantiatePooledReferenceCounter(CompositeQuarticValue)
-instantiatePooledReferenceCounter(EntityAnimation)
 instantiatePooledReferenceCounter(EntityAnimation::Delay)
 instantiatePooledReferenceCounter(EntityAnimation::SetVelocity)
 instantiatePooledReferenceCounter(EntityAnimation::SetSpriteAnimation)
+instantiatePooledReferenceCounterAndHolder(EntityAnimation)
+instantiatePooledReferenceCounterAndHolder(PauseState)
 template class ReferenceCounterHolder<DynamicValue>;
-template class ReferenceCounterHolder<EntityAnimation>;
 template class ReferenceCounterHolder<EntityAnimation::Component>;
 
+//////////////////////////////// PooledReferenceCounter ////////////////////////////////
 PooledReferenceCounter::PooledReferenceCounter(objCounterParameters())
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
 referenceCount(0) {
@@ -23,6 +27,8 @@ PooledReferenceCounter::~PooledReferenceCounter() {}
 void PooledReferenceCounter::retain() {
 	referenceCount++;
 }
+
+//////////////////////////////// ReferenceCounterHolder ////////////////////////////////
 template <class ReferenceCountedObject> ReferenceCounterHolder<ReferenceCountedObject>::ReferenceCounterHolder(
 	ReferenceCountedObject* pObject)
 : object(pObject) {
@@ -62,6 +68,8 @@ ReferenceCounterHolder<ReferenceCountedObject>& ReferenceCounterHolder<Reference
 	set(other.object);
 	return *this;
 }
+
+//////////////////////////////// ObjectPool ////////////////////////////////
 //if we have objects in the pool then remove one and return it, otherwise make a new object
 template <class PooledObject> PooledObject* ObjectPool<PooledObject>::newFromPool(objCounterParameters()) {
 	if (pool.size() > 0) {

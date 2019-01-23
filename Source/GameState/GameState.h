@@ -1,6 +1,7 @@
-#include "General/General.h"
+#include "Util/PooledReferenceCounter.h"
 
 class EntityState;
+class PauseState;
 class PlayerState;
 
 #define newGameState() newWithoutArgs(GameState)
@@ -9,6 +10,9 @@ class GameState onlyInDebug(: public ObjCounter) {
 private:
 	PlayerState* playerState;
 	EntityState* camera;
+	ReferenceCounterHolder<PauseState> pauseState;
+	int pauseStartTicksTime;
+	int gameTimeOffsetTicksDuration;
 	bool shouldQuitGame;
 
 public:

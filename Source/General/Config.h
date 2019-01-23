@@ -4,6 +4,9 @@ public:
 	static const int gameScreenHeight = 149;
 	static const int defaultPixelWidth = 3;
 	static const int defaultPixelHeight = 3;
+	static const float backgroundColorRed;
+	static const float backgroundColorGreen;
+	static const float backgroundColorBlue;
 	static const int ticksPerSecond = 1000;
 	static const int updatesPerSecond = 48;
 

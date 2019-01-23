@@ -2,11 +2,12 @@
 #include "GameState/GameState.h"
 #include "Util/Logger.h"
 
-#define newNode(state) newWithArgs(Node, state)
+#define newNode(state) newWithArgs(CircularStateQueue::Node, state)
 
 template class CircularStateQueue<GameState>;
 template class CircularStateQueue<Logger::Message>;
 
+//////////////////////////////// CircularStateQueue::Node ////////////////////////////////
 template <class Type> CircularStateQueue<Type>::Node::Node(objCounterParametersComma() Type* pState)
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
 next(nullptr)
@@ -16,6 +17,8 @@ template <class Type> CircularStateQueue<Type>::Node::~Node() {
 	//don't delete next, let the owning queue handle it
 	delete state;
 }
+
+//////////////////////////////// CircularStateQueue ////////////////////////////////
 template <class Type> CircularStateQueue<Type>::CircularStateQueue(
 	objCounterParametersComma() Type* writeHeadState, Type* nextState)
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)

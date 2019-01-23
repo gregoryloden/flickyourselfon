@@ -1,3 +1,5 @@
+#ifndef TEXT_H
+#define TEXT_H
 #include "General/General.h"
 
 class SpriteSheet;
@@ -15,6 +17,12 @@ private:
 	public:
 		Glyph(objCounterParametersComma() int pSpriteX, int pSpriteY, int pSpriteWidth, int pSpriteHeight, int pBaselineOffset);
 		~Glyph();
+
+		int getWidth() { return spriteWidth; }
+		int getHeight() { return spriteHeight; }
+		int getBaselineOffset() { return baselineOffset; }
+		int getSpriteX() { return spriteX; }
+		int getSpriteY() { return spriteY; }
 	};
 	class GlyphRow onlyInDebug(: public ObjCounter) {
 	private:
@@ -28,12 +36,36 @@ private:
 
 		void addGlyph(Glyph* glyph);
 		bool endsAfter(int unicodeValue);
+		Glyph* getGlyph(int unicodeValue);
+	};
+public:
+	//Should only be allocated within an object or on the stack
+	class Metrics {
+	public:
+		float charactersWidth;
+		float aboveBaseline;
+		float belowBaseline;
+		float topPadding;
+		float bottomPadding;
+
+		Metrics();
+		~Metrics();
 	};
 
-	static vector<GlyphRow*> glyphRows;
+private:
+	static const int defaultTopPadding = 1;
+	static const int defaultBottomPadding = 1;
+	static const int defaultInterCharacterSpacing = 1;
+
 	static SpriteSheet* font;
+	static SpriteSheet* keyBackground;
+	static vector<GlyphRow*> glyphRows;
 
 public:
 	static void loadFont();
 	static void unloadFont();
+	static Glyph* getNextGlyph(const char* text, int* charIndexPointer);
+	static Metrics getMetrics(const char* text, float fontScale);
+	static void render(const char* text, float leftX, float baselineY, float fontScale);
 };
+#endif

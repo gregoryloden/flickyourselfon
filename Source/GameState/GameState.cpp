@@ -1,5 +1,6 @@
 #include "GameState.h"
 #include "GameState/MapState.h"
+#include "GameState/PauseState.h"
 #include "GameState/PlayerState.h"
 #include "Sprites/SpriteAnimation.h"
 #include "Sprites/SpriteRegistry.h"
@@ -9,6 +10,9 @@ GameState::GameState(objCounterParameters())
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
 playerState(newPlayerState())
 , camera(nullptr)
+, pauseState(nullptr)
+, pauseStartTicksTime(-1)
+, gameTimeOffsetTicksDuration(0)
 , shouldQuitGame(false) {
 	camera = playerState;
 }
@@ -17,7 +21,22 @@ GameState::~GameState() {
 }
 //update this game state by reading from the previous state
 void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
-	playerState->updateWithPreviousPlayerState(prev->playerState, ticksTime);
+	if (prev->pauseState.get() != nullptr) {
+		PauseState* nextPauseState = prev->pauseState.get()->getNextPauseState();
+		pauseState.set(nextPauseState);
+		gameTimeOffsetTicksDuration = prev->gameTimeOffsetTicksDuration + ticksTime - prev->pauseStartTicksTime;
+		pauseStartTicksTime = ticksTime;
+		playerState->copyPlayerState(prev->playerState);
+		if (nextPauseState != nullptr && nextPauseState->getShouldQuitGame())
+			shouldQuitGame = true;
+		return;
+	}
+
+	pauseState.set(nullptr);
+	gameTimeOffsetTicksDuration = prev->gameTimeOffsetTicksDuration;
+	int gameTicksTime = ticksTime - gameTimeOffsetTicksDuration;
+
+	playerState->updateWithPreviousPlayerState(prev->playerState, gameTicksTime);
 
 	//handle events
 	SDL_Event gameEvent;
@@ -28,7 +47,11 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 				return;
 			case SDL_KEYDOWN:
 				if (gameEvent.key.keysym.scancode == Config::kickKey)
-					playerState->beginKicking(ticksTime);
+					playerState->beginKicking(gameTicksTime);
+				else if (gameEvent.key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
+					pauseState.set(newBasePauseState());
+					pauseStartTicksTime = ticksTime;
+				}
 				break;
 			default:
 				break;
@@ -36,10 +59,13 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 	}
 
 	//get our next camera anchor
-	camera = camera->getNextCameraAnchor(ticksTime);
+	camera = camera->getNextCameraAnchor(gameTicksTime);
 }
 //render this state, which was deemed to be the last state to need rendering
 void GameState::render(int ticksTime) {
-	MapState::render(camera, ticksTime);
-	playerState->render(camera, ticksTime);
+	int gameTicksTime = (pauseState.get() != nullptr ? pauseStartTicksTime : ticksTime) - gameTimeOffsetTicksDuration;
+	MapState::render(camera, gameTicksTime);
+	playerState->render(camera, gameTicksTime);
+	if (pauseState.get() != nullptr)
+		pauseState.get()->render();
 }

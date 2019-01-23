@@ -9,8 +9,11 @@ class DynamicValue;
 class EntityState;
 class SpriteAnimation;
 
+//a single EntityAnimation instance is shared across multiple game states
+//it gets mutated but does not mutate a game state unless it's in the middle of updating
 class EntityAnimation: public PooledReferenceCounter {
 public:
+	//components are exclusively held by EntityAnimations
 	class Component: public PooledReferenceCounter {
 	public:
 		Component(objCounterParameters());
