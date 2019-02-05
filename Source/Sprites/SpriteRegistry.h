@@ -3,12 +3,6 @@
 class SpriteSheet;
 class SpriteAnimation;
 
-enum class PlayerSpriteDirection: int {
-	Right = 0,
-	Up = 1,
-	Left = 2,
-	Down = 3
-};
 class SpriteRegistry {
 public:
 	static const int playerWalkingAnimationTicksPerFrame = 250;

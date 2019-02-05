@@ -157,7 +157,7 @@ Text::Glyph* Text::getNextGlyph(const char* text, int* charIndexPointer) {
 	//3-byte utf-8
 	} else if ((c & 0xF0) == 0xE0) {
 		unicodeValue =
-			(((int)c & 0xF) << 12) | (((int)text[charIndex + 1] & 0x3F) << 6) | ((int)text[charIndex + 1] & 0x3F);
+			(((int)c & 0xF) << 12) | (((int)text[charIndex + 1] & 0x3F) << 6) | ((int)text[charIndex + 2] & 0x3F);
 		*charIndexPointer = charIndex + 3;
 	//skip 4-byte utf-8 and any utf-8 continuation bytes
 	} else {
@@ -207,6 +207,23 @@ Text::Metrics Text::getMetrics(const char* text, float fontScale) {
 	metrics.belowBaseline = (float)belowBaseline * fontScale;
 	metrics.topPadding = (float)defaultTopPadding * fontScale;
 	metrics.bottomPadding = (float)defaultBottomPadding * fontScale;
+	metrics.fontScale = fontScale;
+	return metrics;
+}
+//get the metrics of the key background for text of the given width
+Text::Metrics Text::getKeyBackgroundMetrics(Metrics* textMetrics) {
+	const int belowBaselineSpacing = 5;
+
+	int textOriginalWidth = (int)(textMetrics->charactersWidth / textMetrics->fontScale);
+	int targetKeyBackgroundWidth = textOriginalWidth / 4 * 2 + textOriginalWidth + 6;
+
+	Metrics metrics;
+	metrics.fontScale = textMetrics->fontScale;
+	metrics.charactersWidth = FYOMath::max(targetKeyBackgroundWidth, keyBackground->getSpriteSheetWidth()) * metrics.fontScale;
+	metrics.aboveBaseline = (float)(keyBackground->getSpriteSheetHeight() - belowBaselineSpacing) * metrics.fontScale;
+	metrics.belowBaseline = (float)belowBaselineSpacing * metrics.fontScale;
+	metrics.topPadding = metrics.fontScale;
+	metrics.bottomPadding = 0.0f;
 	return metrics;
 }
 //render the given text, scaling it as specified
@@ -220,7 +237,7 @@ void Text::render(const char* text, float leftX, float baselineY, float fontScal
 		int glyphHeight = glyph->getHeight();
 		float topY = baselineY - (float)(glyphHeight - glyph->getBaselineOffset()) * fontScale;
 
-		font->renderSheetRegionAtScreenRegion(
+		font->renderSpriteSheetRegionAtScreenRegion(
 			glyphSpriteX,
 			glyphSpriteY,
 			glyphSpriteX + glyphWidth,
@@ -232,4 +249,40 @@ void Text::render(const char* text, float leftX, float baselineY, float fontScal
 
 		leftX += (float)(glyphWidth + defaultInterCharacterSpacing) * fontScale;
 	}
+}
+void Text::renderKeyBackground(float leftX, float baselineY, Metrics* keyBackgroundMetrics) {
+	int originalBackgroundWidth = (int)(keyBackgroundMetrics->charactersWidth / keyBackgroundMetrics->fontScale);
+	int leftHalfSpriteWidth = keyBackground->getSpriteSheetWidth() / 2;
+	int rightHalfSpriteWidth = keyBackground->getSpriteSheetWidth() - leftHalfSpriteWidth - 1;
+
+	GLint drawLeftMiddleX = (GLint)(leftX + (float)leftHalfSpriteWidth * keyBackgroundMetrics->fontScale);
+	GLint drawRightMiddleX =
+		(GLint)(leftX + (float)(originalBackgroundWidth - rightHalfSpriteWidth) * keyBackgroundMetrics->fontScale);
+
+	GLint topY = (GLint)(baselineY - keyBackgroundMetrics->aboveBaseline);
+	GLint bottomY = (GLint)(baselineY + keyBackgroundMetrics->belowBaseline);
+
+	//draw the left side
+	keyBackground->renderSpriteSheetRegionAtScreenRegion(
+		0, 0, leftHalfSpriteWidth, keyBackground->getSpriteSheetHeight(), (GLint)leftX, topY, drawLeftMiddleX, bottomY);
+	//draw the middle section
+	keyBackground->renderSpriteSheetRegionAtScreenRegion(
+		leftHalfSpriteWidth,
+		0,
+		leftHalfSpriteWidth + 1,
+		keyBackground->getSpriteSheetHeight(),
+		drawLeftMiddleX,
+		topY,
+		drawRightMiddleX,
+		bottomY);
+	//draw the right side
+	keyBackground->renderSpriteSheetRegionAtScreenRegion(
+		leftHalfSpriteWidth + 1,
+		0,
+		keyBackground->getSpriteSheetWidth(),
+		keyBackground->getSpriteSheetHeight(),
+		drawRightMiddleX,
+		topY,
+		(GLint)(leftX + keyBackgroundMetrics->charactersWidth),
+		bottomY);
 }

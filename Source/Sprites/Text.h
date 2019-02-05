@@ -47,6 +47,7 @@ public:
 		float belowBaseline;
 		float topPadding;
 		float bottomPadding;
+		float fontScale;
 
 		Metrics();
 		~Metrics();
@@ -66,6 +67,8 @@ public:
 	static void unloadFont();
 	static Glyph* getNextGlyph(const char* text, int* charIndexPointer);
 	static Metrics getMetrics(const char* text, float fontScale);
+	static Metrics getKeyBackgroundMetrics(Metrics* textMetrics);
 	static void render(const char* text, float leftX, float baselineY, float fontScale);
+	static void renderKeyBackground(float leftX, float baselineY, Metrics* keyBackgroundMetrics);
 };
 #endif

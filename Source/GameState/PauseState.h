@@ -23,32 +23,93 @@ private:
 		~PauseMenu();
 
 		int getOptionsCount() { return options.size(); }
+		PauseOption* getOption(int optionIndex) { return options[optionIndex]; }
 		void render(int selectedOption);
 	};
 	class PauseOption onlyInDebug(: public ObjCounter) {
-	public:
-		static const float displayTextFontScale;
-
-		PauseOption(objCounterParameters());
-		~PauseOption();
-
-		virtual Text::Metrics getDisplayTextMetrics() = 0;
-		virtual PauseState* handle(PauseState* currentState) = 0;
-		virtual void render(float leftX, float baselineY) = 0;
-	};
-	class NavigationOption: public PauseOption {
 	private:
 		string displayText;
 		Text::Metrics displayTextMetrics;
+	public:
+		static const float displayTextFontScale;
+
+		PauseOption(objCounterParametersComma() string pDisplayText);
+		~PauseOption();
+
+		//get the metrics of the text that this option will render
+		//PauseOption caches the metrics of the regular display text and will return it, subclasses can override this and return
+		//	a different value if they draw something else
+		virtual Text::Metrics getDisplayTextMetrics() { return displayTextMetrics; }
+		//handle this option being selected, return the pause state to use as a result
+		virtual PauseState* handle(PauseState* currentState) = 0;
+		virtual void render(float leftX, float baselineY);
+	};
+	class NavigationOption: public PauseOption {
+	private:
 		PauseMenu* subMenu;
 
 	public:
 		NavigationOption(objCounterParametersComma() string pDisplayText, PauseMenu* pSubMenu);
 		~NavigationOption();
 
-		virtual Text::Metrics getDisplayTextMetrics() { return displayTextMetrics; }
+		virtual PauseState* handle(PauseState* currentState);
+	};
+	class ControlsNavigationOption: public NavigationOption {
+	public:
+		ControlsNavigationOption(objCounterParametersComma() PauseMenu* pSubMenu);
+		~ControlsNavigationOption();
+
+		virtual PauseState* handle(PauseState* currentState);
+	};
+	class KeyBindingOption: public PauseOption {
+	public:
+		enum class BoundKey: int {
+			Up,
+			Right,
+			Down,
+			Left,
+			Kick
+		};
+
+		static const int interKeyActionAndKeyBackgroundSpacing = 4;
+
+		BoundKey boundKey;
+		SDL_Scancode cachedKeyScancode;
+		string cachedKeyName;
+		Text::Metrics cachedKeyTextMetrics;
+		Text::Metrics cachedKeyBackgroundMetrics;
+
+		KeyBindingOption(objCounterParametersComma() BoundKey pBoundKey);
+		~KeyBindingOption();
+
+		virtual Text::Metrics getDisplayTextMetrics();
 		virtual PauseState* handle(PauseState* currentState);
 		virtual void render(float leftX, float baselineY);
+	private:
+		void ensureCachedKeyMetrics();
+		static string getBoundKeyActionText(BoundKey pBoundKey);
+		SDL_Scancode getBoundKeyScancode();
+	};
+	class DefaultKeyBindingsOption: public PauseOption {
+	public:
+		DefaultKeyBindingsOption(objCounterParameters());
+		~DefaultKeyBindingsOption();
+
+		virtual PauseState* handle(PauseState* currentState);
+	};
+	class AcceptKeyBindingsOption: public PauseOption {
+	public:
+		AcceptKeyBindingsOption(objCounterParameters());
+		~AcceptKeyBindingsOption();
+
+		virtual PauseState* handle(PauseState* currentState);
+	};
+	class QuitGameOption: public PauseOption {
+	public:
+		QuitGameOption(objCounterParameters());
+		~QuitGameOption();
+
+		virtual PauseState* handle(PauseState* currentState);
 	};
 
 	static PauseMenu* baseMenu;
@@ -56,6 +117,7 @@ private:
 	ReferenceCounterHolder<PauseState> parentState;
 	PauseMenu* pauseMenu;
 	int pauseOption;
+	bool selectingKey;
 	bool shouldQuitGame;
 
 public:
@@ -63,7 +125,8 @@ public:
 	~PauseState();
 
 private:
-	static PauseState* produce(objCounterParametersComma() PauseState* pParentState, PauseMenu* pPauseMenu, int pPauseOption);
+	static PauseState* produce(
+		objCounterParametersComma() PauseState* pParentState, PauseMenu* pPauseMenu, int pPauseOption, bool pSelectingKey);
 public:
 	static PauseState* produce(objCounterParameters());
 	virtual void release();
@@ -73,6 +136,11 @@ public:
 	static void loadMenu();
 	static void unloadMenu();
 	PauseState* getNextPauseState();
+private:
+	PauseState* handleKeyPress(SDL_Scancode keyScancode);
+public:
 	PauseState* navigateToMenu(PauseMenu* menu);
+	PauseState* beginKeySelection();
+	PauseState* produceQuitGameState();
 	void render();
 };

@@ -20,7 +20,7 @@ PlayerState::PlayerState(objCounterParameters())
 , yDirection(0)
 , animation(nullptr)
 , animationStartTicksTime(-1)
-, spriteDirection(PlayerSpriteDirection::Down)
+, spriteDirection(SpriteDirection::Down)
 , hasBoot(false)
 , kickingAnimation(nullptr) {
 }
@@ -70,8 +70,8 @@ hasBoot = true;
 //update the position of this player state by reading from the previous state
 void PlayerState::updatePositionWithPreviousPlayerState(PlayerState* prev, int ticksTime) {
 	const Uint8* keyboardState = SDL_GetKeyboardState(nullptr);
-	xDirection = (char)(keyboardState[Config::rightKey] - keyboardState[Config::leftKey]);
-	yDirection = (char)(keyboardState[Config::downKey] - keyboardState[Config::upKey]);
+	xDirection = (char)(keyboardState[Config::keyBindings.rightKey] - keyboardState[Config::keyBindings.leftKey]);
+	yDirection = (char)(keyboardState[Config::keyBindings.downKey] - keyboardState[Config::keyBindings.upKey]);
 	float speedPerTick =
 		((xDirection & yDirection) != 0 ? MapState::diagonalSpeedPerSecond : MapState::speedPerSecond)
 			/ (float)Config::ticksPerSecond;
@@ -182,12 +182,12 @@ void PlayerState::updateSpriteWithPreviousPlayerState(PlayerState* prev, int tic
 				&& (yDirection == prev->yDirection
 					//use a horizontal sprite if we changed both directions and we were facing horizontally before
 					|| (xDirection != prev->xDirection
-						&& (prev->spriteDirection == PlayerSpriteDirection::Left
-							|| prev->spriteDirection == PlayerSpriteDirection::Right)))))
-		spriteDirection = xDirection < 0 ? PlayerSpriteDirection::Left : PlayerSpriteDirection::Right;
+						&& (prev->spriteDirection == SpriteDirection::Left
+							|| prev->spriteDirection == SpriteDirection::Right)))))
+		spriteDirection = xDirection < 0 ? SpriteDirection::Left : SpriteDirection::Right;
 	//use a vertical sprite if none of the above situations applied
 	else
-		spriteDirection = yDirection < 0 ? PlayerSpriteDirection::Up : PlayerSpriteDirection::Down;
+		spriteDirection = yDirection < 0 ? SpriteDirection::Up : SpriteDirection::Down;
 
 	//update the animation
 	if (!moving)
@@ -244,7 +244,7 @@ void PlayerState::beginKicking(int ticksTime) {
 	int lowMapX = (int)(xPosition + boundingBoxLeftOffset) / MapState::tileSize;
 	int highMapX = (int)(xPosition + boundingBoxRightOffset) / MapState::tileSize;
 
-	if (spriteDirection == PlayerSpriteDirection::Up) {
+	if (spriteDirection == SpriteDirection::Up) {
 		int oneTileUpMapY = (int)(yPosition + boundingBoxTopOffset - kickingDistanceLimit) / MapState::tileSize;
 		char oneTileUpHeight = MapState::horizontalTilesHeight(lowMapX, highMapX, oneTileUpMapY);
 		if (oneTileUpHeight != MapState::invalidHeight) {
@@ -319,7 +319,7 @@ void PlayerState::beginKicking(int ticksTime) {
 			}
 		}
 		//TODO: check if we're kicking a switch north
-	} else if (spriteDirection == PlayerSpriteDirection::Down) {
+	} else if (spriteDirection == SpriteDirection::Down) {
 		int oneTileDownMapY = (int)(yPosition + boundingBoxBottomOffset + kickingDistanceLimit) / MapState::tileSize;
 		char fallHeight = MapState::invalidHeight;
 		int tileOffset = 0;
@@ -365,7 +365,7 @@ void PlayerState::beginKicking(int ticksTime) {
 	} else {
 		int sideTilesLeftMapX;
 		int sideTilesRightMapX;
-		if (spriteDirection == PlayerSpriteDirection::Left) {
+		if (spriteDirection == SpriteDirection::Left) {
 			float sideTilesRightXPosition = xPosition + boundingBoxLeftOffset - kickingDistanceLimit;
 			sideTilesRightMapX = (int)sideTilesRightXPosition / MapState::tileSize;
 			sideTilesLeftMapX = (int)(sideTilesRightXPosition - playerWidth) / MapState::tileSize;
@@ -403,7 +403,7 @@ void PlayerState::beginKicking(int ticksTime) {
 		}
 		//fall if we can
 		if (fallHeight != MapState::invalidHeight) {
-			float targetXPosition = spriteDirection == PlayerSpriteDirection::Left
+			float targetXPosition = spriteDirection == SpriteDirection::Left
 				? (float)((sideTilesRightMapX + 1) * MapState::tileSize) - boundingBoxRightOffset - MapState::smallDistance
 				: (float)(sideTilesLeftMapX * MapState::tileSize) - boundingBoxLeftOffset + MapState::smallDistance;
 			float xMoveDistance = targetXPosition - xPosition;

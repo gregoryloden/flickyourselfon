@@ -37,7 +37,7 @@ void SpriteSheet::clampSpriteRectForTilesSprite() {
 	spriteHeight--;
 }
 //draw the specified region of the sprite sheet
-void SpriteSheet::renderSheetRegionAtScreenRegion(
+void SpriteSheet::renderSpriteSheetRegionAtScreenRegion(
 	int spriteLeftX,
 	int spriteTopY,
 	int spriteRightX,
@@ -71,7 +71,7 @@ void SpriteSheet::renderSpriteAtScreenPosition(
 {
 	int spriteLeftX = (GLint)(spriteHorizontalIndex * spriteWidth);
 	int spriteTopY = (GLint)(spriteVerticalIndex * spriteHeight);
-	renderSheetRegionAtScreenRegion(
+	renderSpriteSheetRegionAtScreenRegion(
 		spriteLeftX,
 		spriteTopY,
 		spriteLeftX + (GLint)spriteWidth,

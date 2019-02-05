@@ -24,7 +24,7 @@ public:
 	virtual void release() = 0;
 	virtual void prepareReturnToPool() {}
 };
-//Should only be allocated within an object or on the stack
+//Should only be allocated within an object, or on the stack if its internal object will not be returned
 template <class ReferenceCountedObject> class ReferenceCounterHolder {
 private:
 	ReferenceCountedObject* object;

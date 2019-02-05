@@ -46,7 +46,7 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 				shouldQuitGame = true;
 				return;
 			case SDL_KEYDOWN:
-				if (gameEvent.key.keysym.scancode == Config::kickKey)
+				if (gameEvent.key.keysym.scancode == Config::keyBindings.kickKey)
 					playerState->beginKicking(gameTicksTime);
 				else if (gameEvent.key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
 					pauseState.set(newBasePauseState());

@@ -21,8 +21,10 @@ public:
 
 	static SpriteSheet* produce(
 		objCounterParametersComma() const char* imagePath, int horizontalSpriteCount, int verticalSpriteCount);
+	int getSpriteSheetWidth() { return spriteSheetWidth; }
+	int getSpriteSheetHeight() { return spriteSheetHeight; }
 	void clampSpriteRectForTilesSprite();
-	void renderSheetRegionAtScreenRegion(
+	void renderSpriteSheetRegionAtScreenRegion(
 		int spriteLeftX,
 		int spriteTopY,
 		int spriteRightX,

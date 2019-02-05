@@ -4,9 +4,24 @@
 const float Config::backgroundColorRed = 3.0f / 16.0f;
 const float Config::backgroundColorGreen = 0.0f;
 const float Config::backgroundColorBlue = 3.0f / 16.0f;
+const Config::KeyBindings Config::defaultKeyBindings;
 int Config::refreshRate = 60;
-SDL_Scancode Config::kickKey = SDL_SCANCODE_SPACE;
-SDL_Scancode Config::leftKey = SDL_SCANCODE_LEFT;
-SDL_Scancode Config::rightKey = SDL_SCANCODE_RIGHT;
-SDL_Scancode Config::upKey = SDL_SCANCODE_UP;
-SDL_Scancode Config::downKey = SDL_SCANCODE_DOWN;
+Config::KeyBindings Config::keyBindings;
+Config::KeyBindings Config::editingKeyBindings;
+
+Config::KeyBindings::KeyBindings()
+: upKey(SDL_SCANCODE_UP)
+, rightKey(SDL_SCANCODE_RIGHT)
+, downKey(SDL_SCANCODE_DOWN)
+, leftKey(SDL_SCANCODE_LEFT)
+, kickKey(SDL_SCANCODE_SPACE) {
+}
+Config::KeyBindings::~KeyBindings() {}
+//copy the key bindings from the other KeyBindings
+void Config::KeyBindings::set(const KeyBindings* other) {
+	upKey = other->upKey;
+	rightKey = other->rightKey;
+	downKey = other->downKey;
+	leftKey = other->leftKey;
+	kickKey = other->kickKey;
+}

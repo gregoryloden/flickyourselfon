@@ -6,10 +6,16 @@
 class PositionState;
 class SpriteAnimation;
 class EntityAnimation;
-enum class PlayerSpriteDirection: int;
 
 class PlayerState: public EntityState {
 private:
+	enum class SpriteDirection: int {
+		Right = 0,
+		Up = 1,
+		Left = 2,
+		Down = 3
+	};
+
 	static const float playerStartingXPosition;
 	static const float playerStartingYPosition;
 	static const float playerWidth;
@@ -23,7 +29,7 @@ private:
 	char yDirection;
 	SpriteAnimation* animation;
 	int animationStartTicksTime;
-	PlayerSpriteDirection spriteDirection;
+	SpriteDirection spriteDirection;
 	bool hasBoot;
 	ReferenceCounterHolder<EntityAnimation> kickingAnimation;
 
