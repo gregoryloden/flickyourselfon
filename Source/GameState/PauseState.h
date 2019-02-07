@@ -8,6 +8,7 @@
 class PauseState: public PooledReferenceCounter {
 private:
 	class PauseOption;
+	class KeyBindingOption;
 
 	class PauseMenu onlyInDebug(: public ObjCounter) {
 	private:
@@ -24,7 +25,7 @@ private:
 
 		int getOptionsCount() { return options.size(); }
 		PauseOption* getOption(int optionIndex) { return options[optionIndex]; }
-		void render(int selectedOption);
+		void render(int selectedOption, KeyBindingOption* selectingKeyBindingOption);
 	};
 	class PauseOption onlyInDebug(: public ObjCounter) {
 	private:
@@ -71,7 +72,12 @@ private:
 			Kick
 		};
 
+	private:
 		static const int interKeyActionAndKeyBackgroundSpacing = 4;
+		static const char* keySelectingText;
+
+		static float cachedKeySelectingTextWidth;
+		static float cachedKeySelectingTextFontScale;
 
 		BoundKey boundKey;
 		SDL_Scancode cachedKeyScancode;
@@ -79,16 +85,21 @@ private:
 		Text::Metrics cachedKeyTextMetrics;
 		Text::Metrics cachedKeyBackgroundMetrics;
 
+	public:
 		KeyBindingOption(objCounterParametersComma() BoundKey pBoundKey);
 		~KeyBindingOption();
 
 		virtual Text::Metrics getDisplayTextMetrics();
+		Text::Metrics getSelectingDisplayTextMetrics(bool selecting);
 		virtual PauseState* handle(PauseState* currentState);
 		virtual void render(float leftX, float baselineY);
+		void renderSelecting(float leftX, float baselineY, bool selecting);
 	private:
-		void ensureCachedKeyMetrics();
+		void ensureCachedKeyMetrics(bool selecting);
 		static string getBoundKeyActionText(BoundKey pBoundKey);
 		SDL_Scancode getBoundKeyScancode();
+	public:
+		void setBoundKeyScancode(SDL_Scancode keyScancode);
 	};
 	class DefaultKeyBindingsOption: public PauseOption {
 	public:
@@ -117,7 +128,7 @@ private:
 	ReferenceCounterHolder<PauseState> parentState;
 	PauseMenu* pauseMenu;
 	int pauseOption;
-	bool selectingKey;
+	KeyBindingOption* selectingKeyBindingOption;
 	bool shouldQuitGame;
 
 public:
@@ -126,7 +137,11 @@ public:
 
 private:
 	static PauseState* produce(
-		objCounterParametersComma() PauseState* pParentState, PauseMenu* pPauseMenu, int pPauseOption, bool pSelectingKey);
+		objCounterParametersComma()
+		PauseState* pParentState,
+		PauseMenu* pPauseMenu,
+		int pPauseOption,
+		KeyBindingOption* pSelectingKeyBindingOption);
 public:
 	static PauseState* produce(objCounterParameters());
 	virtual void release();
@@ -140,7 +155,7 @@ private:
 	PauseState* handleKeyPress(SDL_Scancode keyScancode);
 public:
 	PauseState* navigateToMenu(PauseMenu* menu);
-	PauseState* beginKeySelection();
+	PauseState* beginKeySelection(KeyBindingOption* pSelectingKeyBindingOption);
 	PauseState* produceQuitGameState();
 	void render();
 };

@@ -24,7 +24,7 @@ PauseState::PauseMenu::~PauseMenu() {
 		delete option;
 }
 //render this menu
-void PauseState::PauseMenu::render(int selectedOption) {
+void PauseState::PauseMenu::render(int selectedOption, KeyBindingOption* selectingKeyBindingOption) {
 	glEnable(GL_BLEND);
 	glColor4f(Config::backgroundColorRed, Config::backgroundColorGreen, Config::backgroundColorBlue, 5.0f / 8.0f);
 	glBegin(GL_QUADS);
@@ -41,7 +41,10 @@ void PauseState::PauseMenu::render(int selectedOption) {
 	float lastBottomPadding = 0;
 	vector<Text::Metrics> optionsMetrics;
 	for (PauseOption* option : options) {
-		Text::Metrics optionMetrics = option->getDisplayTextMetrics();
+		Text::Metrics optionMetrics =
+			option == selectingKeyBindingOption
+				? selectingKeyBindingOption->getSelectingDisplayTextMetrics(true)
+				: option->getDisplayTextMetrics();
 		lastBottomPadding = optionMetrics.bottomPadding;
 		totalHeight += optionMetrics.topPadding + optionMetrics.aboveBaseline + optionMetrics.belowBaseline + lastBottomPadding;
 		optionsMetrics.push_back(optionMetrics);
@@ -57,10 +60,14 @@ void PauseState::PauseMenu::render(int selectedOption) {
 
 	int optionsCount = options.size();
 	for (int i = 0; i < optionsCount; i++) {
+		PauseOption* option = options[i];
 		Text::Metrics& optionMetrics = optionsMetrics[i];
 		optionsBaseline += optionMetrics.topPadding + optionMetrics.aboveBaseline;
 		float leftX = screenCenterX - optionMetrics.charactersWidth * 0.5f;
-		options[i]->render(leftX, optionsBaseline);
+		if (option == selectingKeyBindingOption)
+			selectingKeyBindingOption->renderSelecting(leftX, optionsBaseline, true);
+		else
+			option->render(leftX, optionsBaseline);
 
 		if (i == selectedOption) {
 			Text::Metrics angleBracketMetrics = Text::getMetrics("<", PauseOption::displayTextFontScale);
@@ -118,6 +125,9 @@ PauseState* PauseState::ControlsNavigationOption::handle(PauseState* currentStat
 }
 
 //////////////////////////////// PauseState::KeyBindingOption ////////////////////////////////
+const char* PauseState::KeyBindingOption::keySelectingText = "[press any key]";
+float PauseState::KeyBindingOption::cachedKeySelectingTextWidth = 0.0f;
+float PauseState::KeyBindingOption::cachedKeySelectingTextFontScale = 0.0f;
 PauseState::KeyBindingOption::KeyBindingOption(objCounterParametersComma() BoundKey pBoundKey)
 : PauseOption(objCounterArgumentsComma() getBoundKeyActionText(pBoundKey))
 , boundKey(pBoundKey)
@@ -129,10 +139,16 @@ PauseState::KeyBindingOption::KeyBindingOption(objCounterParametersComma() Bound
 PauseState::KeyBindingOption::~KeyBindingOption() {}
 //return metrics that include the key name and background
 Text::Metrics PauseState::KeyBindingOption::getDisplayTextMetrics() {
+	return getSelectingDisplayTextMetrics(false);
+}
+//return metrics that include either the key-selecting text or the key name and background
+Text::Metrics PauseState::KeyBindingOption::getSelectingDisplayTextMetrics(bool selecting) {
 	Text::Metrics metrics = PauseOption::getDisplayTextMetrics();
-	ensureCachedKeyMetrics();
+	ensureCachedKeyMetrics(selecting);
 
-	metrics.charactersWidth += (float)interKeyActionAndKeyBackgroundSpacing + cachedKeyBackgroundMetrics.charactersWidth;
+	metrics.charactersWidth +=
+		(float)interKeyActionAndKeyBackgroundSpacing
+			+ (selecting ? cachedKeySelectingTextWidth : cachedKeyBackgroundMetrics.charactersWidth);
 	metrics.aboveBaseline = cachedKeyBackgroundMetrics.aboveBaseline;
 	metrics.belowBaseline = cachedKeyBackgroundMetrics.belowBaseline;
 	metrics.topPadding = cachedKeyBackgroundMetrics.topPadding;
@@ -141,41 +157,41 @@ Text::Metrics PauseState::KeyBindingOption::getDisplayTextMetrics() {
 }
 //start selecting a key for this option
 PauseState* PauseState::KeyBindingOption::handle(PauseState* currentState) {
-	return currentState->beginKeySelection();
+	return currentState->beginKeySelection(this);
 }
 //render the text, the key name, and the key background
 void PauseState::KeyBindingOption::render(float leftX, float baselineY) {
+	renderSelecting(leftX, baselineY, false);
+}
+//render the text and either the key-selecting text or the key name and background
+void PauseState::KeyBindingOption::renderSelecting(float leftX, float baselineY, bool selecting) {
 	//render the action
 	PauseOption::render(leftX, baselineY);
 
-	//render the key background
-	ensureCachedKeyMetrics();
+	ensureCachedKeyMetrics(selecting);
 	leftX += PauseOption::getDisplayTextMetrics().charactersWidth + (float)interKeyActionAndKeyBackgroundSpacing;
-	Text::renderKeyBackground(leftX, baselineY, &cachedKeyBackgroundMetrics);
 
-	//render the key name
-	//the key background has 1 pixel on the left border and 3 on the right, render text 1 font pixel to the left
-	leftX += (cachedKeyBackgroundMetrics.charactersWidth - cachedKeyTextMetrics.charactersWidth) * 0.5f;
-	Text::render(cachedKeyName.c_str(), leftX - cachedKeyTextMetrics.fontScale, baselineY, cachedKeyTextMetrics.fontScale);
+	//render the key-selecting text
+	if (selecting)
+		Text::render(keySelectingText, leftX, baselineY, cachedKeySelectingTextFontScale);
+	//render the key background and name
+	else {
+		Text::renderKeyBackground(leftX, baselineY, &cachedKeyBackgroundMetrics);
+		leftX += (cachedKeyBackgroundMetrics.charactersWidth - cachedKeyTextMetrics.charactersWidth) * 0.5f;
+		//the key background has 1 pixel on the left border and 3 on the right, render text 1 font pixel to the left
+		Text::render(cachedKeyName.c_str(), leftX - cachedKeyTextMetrics.fontScale, baselineY, cachedKeyTextMetrics.fontScale);
+	}
 }
 //if we have a new bound key, cache its metrics
-void PauseState::KeyBindingOption::ensureCachedKeyMetrics() {
+void PauseState::KeyBindingOption::ensureCachedKeyMetrics(bool selecting) {
 	SDL_Scancode currentBoundKeyScancode = getBoundKeyScancode();
 	if (currentBoundKeyScancode != cachedKeyScancode) {
 		cachedKeyScancode = currentBoundKeyScancode;
 		switch (currentBoundKeyScancode) {
-			case SDL_SCANCODE_LEFT:
-				cachedKeyName = u8"←";
-				break;
-			case SDL_SCANCODE_UP:
-				cachedKeyName = u8"↑";
-				break;
-			case SDL_SCANCODE_RIGHT:
-				cachedKeyName = u8"→";
-				break;
-			case SDL_SCANCODE_DOWN:
-				cachedKeyName = u8"↓";
-				break;
+			case SDL_SCANCODE_LEFT: cachedKeyName = u8"←"; break;
+			case SDL_SCANCODE_UP: cachedKeyName = u8"↑"; break;
+			case SDL_SCANCODE_RIGHT: cachedKeyName = u8"→"; break;
+			case SDL_SCANCODE_DOWN: cachedKeyName = u8"↓"; break;
 			default:
 				cachedKeyName = SDL_GetKeyName(SDL_GetKeyFromScancode(currentBoundKeyScancode));
 				break;
@@ -183,40 +199,45 @@ void PauseState::KeyBindingOption::ensureCachedKeyMetrics() {
 		cachedKeyTextMetrics = Text::getMetrics(cachedKeyName.c_str(), PauseOption::getDisplayTextMetrics().fontScale);
 		cachedKeyBackgroundMetrics = Text::getKeyBackgroundMetrics(&cachedKeyTextMetrics);
 	}
+	if (cachedKeySelectingTextFontScale != cachedKeyTextMetrics.fontScale) {
+		cachedKeySelectingTextFontScale = cachedKeyTextMetrics.fontScale;
+		cachedKeySelectingTextWidth = Text::getMetrics(keySelectingText, cachedKeySelectingTextFontScale).charactersWidth;
+	}
 }
 //get the name of the action we're binding a key to
 //static so that we can use it in the option's constructor
 string PauseState::KeyBindingOption::getBoundKeyActionText(BoundKey pBoundKey) {
 	switch (pBoundKey) {
-		case BoundKey::Up:
-			return "up:";
-		case BoundKey::Right:
-			return "right:";
-		case BoundKey::Down:
-			return "down:";
-		case BoundKey::Left:
-			return "left:";
-		case BoundKey::Kick:
-			return "kick:";
-		default:
-			return "";
+		case BoundKey::Up: return "up:";
+		case BoundKey::Right: return "right:";
+		case BoundKey::Down: return "down:";
+		case BoundKey::Left: return "left:";
+		case BoundKey::Kick: return "kick:";
+		default: return "";
 	}
 }
 //get the currently-editing scancode for our bound key
 SDL_Scancode PauseState::KeyBindingOption::getBoundKeyScancode() {
 	switch (boundKey) {
-		case BoundKey::Up:
-			return Config::editingKeyBindings.upKey;
-		case BoundKey::Right:
-			return Config::editingKeyBindings.rightKey;
-		case BoundKey::Down:
-			return Config::editingKeyBindings.downKey;
-		case BoundKey::Left:
-			return Config::editingKeyBindings.leftKey;
-		case BoundKey::Kick:
-			return Config::editingKeyBindings.kickKey;
-		default:
-			return SDL_SCANCODE_UNKNOWN;
+		case BoundKey::Up: return Config::editingKeyBindings.upKey;
+		case BoundKey::Right: return Config::editingKeyBindings.rightKey;
+		case BoundKey::Down: return Config::editingKeyBindings.downKey;
+		case BoundKey::Left: return Config::editingKeyBindings.leftKey;
+		case BoundKey::Kick: return Config::editingKeyBindings.kickKey;
+		default: return SDL_SCANCODE_UNKNOWN;
+	}
+}
+//update the scancode for this option's bound key
+//this also changes the scancode for past states, but since this is atomic and scancodes are retrieved only once per frame,
+//	this shouldn't be a problem
+void PauseState::KeyBindingOption::setBoundKeyScancode(SDL_Scancode keyScancode) {
+	switch (boundKey) {
+		case BoundKey::Up: Config::editingKeyBindings.upKey = keyScancode; break;
+		case BoundKey::Right: Config::editingKeyBindings.rightKey = keyScancode; break;
+		case BoundKey::Down: Config::editingKeyBindings.downKey = keyScancode; break;
+		case BoundKey::Left: Config::editingKeyBindings.leftKey = keyScancode; break;
+		case BoundKey::Kick: Config::editingKeyBindings.kickKey = keyScancode; break;
+		default: break;
 	}
 }
 
@@ -259,19 +280,23 @@ PauseState::PauseState(objCounterParameters())
 , parentState(nullptr)
 , pauseMenu(nullptr)
 , pauseOption(0)
-, selectingKey(false)
+, selectingKeyBindingOption(nullptr)
 , shouldQuitGame(false) {
 }
 PauseState::~PauseState() {}
 //initialize and return a PauseState
 PauseState* PauseState::produce(
-	objCounterParametersComma() PauseState* pParentState, PauseMenu* pCurrentPauseMenu, int pPauseOption, bool pSelectingKey)
+	objCounterParametersComma()
+	PauseState* pParentState,
+	PauseMenu* pCurrentPauseMenu,
+	int pPauseOption,
+	KeyBindingOption* pSelectingKeyBindingOption)
 {
 	initializeWithNewFromPool(p, PauseState)
 	p->parentState.set(pParentState);
 	p->pauseMenu = pCurrentPauseMenu;
 	p->pauseOption = pPauseOption;
-	p->selectingKey = pSelectingKey;
+	p->selectingKeyBindingOption = pSelectingKeyBindingOption;
 	return p;
 }
 //return a new pause state at the base menu
@@ -335,8 +360,11 @@ PauseState* PauseState::getNextPauseState() {
 }
 //handle the keypress and return the resulting new pause state
 PauseState* PauseState::handleKeyPress(SDL_Scancode keyScancode) {
-	if (selectingKey) {
-		// TODO: set a key binding
+	if (selectingKeyBindingOption != nullptr) {
+		if (keyScancode == SDL_SCANCODE_ESCAPE)
+			return this;
+		selectingKeyBindingOption->setBoundKeyScancode(keyScancode);
+		return newPauseState(parentState.get(), pauseMenu, pauseOption, nullptr);
 	}
 
 	int optionsCount = pauseMenu->getOptionsCount();
@@ -344,9 +372,9 @@ PauseState* PauseState::handleKeyPress(SDL_Scancode keyScancode) {
 		case SDL_SCANCODE_ESCAPE:
 			return nullptr;
 		case SDL_SCANCODE_UP:
-			return newPauseState(parentState.get(), pauseMenu, (pauseOption + optionsCount - 1) % optionsCount, false);
+			return newPauseState(parentState.get(), pauseMenu, (pauseOption + optionsCount - 1) % optionsCount, nullptr);
 		case SDL_SCANCODE_DOWN:
-			return newPauseState(parentState.get(), pauseMenu, (pauseOption + 1) % optionsCount, false);
+			return newPauseState(parentState.get(), pauseMenu, (pauseOption + 1) % optionsCount, nullptr);
 		case SDL_SCANCODE_SPACE:
 		case SDL_SCANCODE_RETURN:
 			return pauseMenu->getOption(pauseOption)->handle(this);
@@ -356,19 +384,19 @@ PauseState* PauseState::handleKeyPress(SDL_Scancode keyScancode) {
 }
 //if we were given a menu, return a pause state with that pause menu, otherwise go up a level
 PauseState* PauseState::navigateToMenu(PauseMenu* menu) {
-	return menu != nullptr ? newPauseState(this, menu, 0, false) : parentState.get();
+	return menu != nullptr ? newPauseState(this, menu, 0, nullptr) : parentState.get();
 }
 //return a copy of this pause state set to listen for a key selection
-PauseState* PauseState::beginKeySelection() {
-	return newPauseState(parentState.get(), pauseMenu, pauseOption, true);
+PauseState* PauseState::beginKeySelection(KeyBindingOption* pSelectingKeyBindingOption) {
+	return newPauseState(parentState.get(), pauseMenu, pauseOption, pSelectingKeyBindingOption);
 }
 //we're quitting the game, return a clone of this state that quits the game
 PauseState* PauseState::produceQuitGameState() {
-	PauseState* p = newPauseState(parentState.get(), pauseMenu, pauseOption, selectingKey);
+	PauseState* p = newPauseState(parentState.get(), pauseMenu, pauseOption, selectingKeyBindingOption);
 	p->shouldQuitGame = true;
 	return p;
 }
 //render the pause menu over the screen
 void PauseState::render() {
-	pauseMenu->render(pauseOption);
+	pauseMenu->render(pauseOption, selectingKeyBindingOption);
 }
