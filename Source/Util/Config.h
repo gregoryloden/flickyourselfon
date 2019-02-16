@@ -1,3 +1,5 @@
+#include "General/General.h"
+
 class Config {
 public:
 	//Should only be allocated within an object, on the stack, or as a static class member
@@ -25,8 +27,17 @@ public:
 	static const int ticksPerSecond = 1000;
 	static const int updatesPerSecond = 48;
 	static const KeyBindings defaultKeyBindings;
+	static const char* optionsFileName;
+	static const string upKeyBindingFilePrefix;
+	static const string rightKeyBindingFilePrefix;
+	static const string downKeyBindingFilePrefix;
+	static const string leftKeyBindingFilePrefix;
+	static const string kickKeyBindingFilePrefix;
 
 	static int refreshRate;
 	static KeyBindings keyBindings;
 	static KeyBindings editingKeyBindings;
+
+	static void saveSettings();
+	static void loadSettings();
 };

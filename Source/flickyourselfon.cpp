@@ -5,6 +5,7 @@
 #include "GameState/PauseState.h"
 #include "GameState/MapState.h"
 #include "Util/CircularStateQueue.h"
+#include "Util/Config.h"
 #include "Util/Logger.h"
 #include "Sprites/SpriteRegistry.h"
 #include "Sprites/SpriteSheet.h"
@@ -49,15 +50,22 @@ int main(int argc, char *argv[]) {
 		Config::refreshRate = displayMode.refresh_rate;
 	Logger::log("Window set up");
 
-	//create our state queue and start the render thread
+	//create our state queue
 	CircularStateQueue<GameState>* gameStateQueue = newCircularStateQueue(GameState, newGameState(), newGameState());
 	//our initial state is renderable
 	gameStateQueue->finishWritingToState();
 	GameState* prevGameState = gameStateQueue->getNextReadableState();
+
+	Logger::log("Loading settings and game state...");
+	Config::loadSettings();
+	prevGameState->loadSavedState();
+	Logger::log("Settings loaded");
+
+	//now that our initial state is ready, start the render thread
 	thread renderLoopThread (renderLoop, gameStateQueue);
 
 	//wait for the render thread to sync up
-	Logger::log("Waiting for render thread to be ready for updates...");
+	Logger::log("Render thread started, waiting for it to be ready for updates...");
 	while (!renderThreadReadyForUpdates)
 		SDL_Delay(1);
 	Logger::log("Beginning update loop");

@@ -194,8 +194,8 @@ Text::Metrics Text::getMetrics(const char* text, float fontScale) {
 		int glyphBaselineOffset = glyph->getBaselineOffset();
 
 		charactersWidth += glyph->getWidth() + defaultInterCharacterSpacing;
-		aboveBaseline = FYOMath::max(aboveBaseline, glyph->getHeight() - glyphBaselineOffset);
-		belowBaseline = FYOMath::max(belowBaseline, glyphBaselineOffset);
+		aboveBaseline = MathUtils::max(aboveBaseline, glyph->getHeight() - glyphBaselineOffset);
+		belowBaseline = MathUtils::max(belowBaseline, glyphBaselineOffset);
 	}
 
 	if (charactersWidth > 0)
@@ -219,7 +219,7 @@ Text::Metrics Text::getKeyBackgroundMetrics(Metrics* textMetrics) {
 
 	Metrics metrics;
 	metrics.fontScale = textMetrics->fontScale;
-	metrics.charactersWidth = FYOMath::max(targetKeyBackgroundWidth, keyBackground->getSpriteSheetWidth()) * metrics.fontScale;
+	metrics.charactersWidth = MathUtils::max(targetKeyBackgroundWidth, keyBackground->getSpriteSheetWidth()) * metrics.fontScale;
 	metrics.aboveBaseline = (float)(keyBackground->getSpriteSheetHeight() - belowBaselineSpacing) * metrics.fontScale;
 	metrics.belowBaseline = (float)belowBaselineSpacing * metrics.fontScale;
 	metrics.topPadding = metrics.fontScale;

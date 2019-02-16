@@ -5,7 +5,9 @@
 #include "Sprites/SpriteAnimation.h"
 #include "Sprites/SpriteRegistry.h"
 #include "Sprites/SpriteSheet.h"
+#include "Util/Config.h"
 
+const char* GameState::savedGameFileName = "fyo.sav";
 GameState::GameState(objCounterParameters())
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
 playerState(newPlayerState())
@@ -27,8 +29,16 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 		gameTimeOffsetTicksDuration = prev->gameTimeOffsetTicksDuration + ticksTime - prev->pauseStartTicksTime;
 		pauseStartTicksTime = ticksTime;
 		playerState->copyPlayerState(prev->playerState);
-		if (nextPauseState != nullptr && nextPauseState->getShouldQuitGame())
-			shouldQuitGame = true;
+
+		if (nextPauseState != nullptr) {
+			int endPauseDecision = nextPauseState->getEndPauseDecision();
+			if ((endPauseDecision & (int)PauseState::EndPauseDecision::Save) != 0)
+				saveState();
+			if ((endPauseDecision & (int)PauseState::EndPauseDecision::Exit) != 0)
+				shouldQuitGame = true;
+			else if (endPauseDecision != 0)
+				pauseState.set(nullptr);
+		}
 		return;
 	}
 
@@ -68,4 +78,21 @@ void GameState::render(int ticksTime) {
 	playerState->render(camera, gameTicksTime);
 	if (pauseState.get() != nullptr)
 		pauseState.get()->render();
+}
+//save the state to a file
+void GameState::saveState() {
+	ofstream file;
+	file.open(savedGameFileName);
+	playerState->saveState(file);
+	file.close();
+}
+//load the state from the save file if there is one
+void GameState::loadSavedState() {
+	ifstream file;
+	file.open(savedGameFileName);
+	string line;
+	while (getline(file, line)) {
+		playerState->loadState(line);
+	}
+	file.close();
 }

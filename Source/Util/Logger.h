@@ -14,7 +14,7 @@ private:
 		~Message();
 	};
 
-	static SDL_RWops* file;
+	static ofstream* file;
 	static bool queueLogMessages;
 	static thread_local stringstream* currentMessageStringstream;
 	static thread_local CircularStateQueue<Message>* currentThreadLogQueue;

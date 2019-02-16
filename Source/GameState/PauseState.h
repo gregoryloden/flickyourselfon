@@ -10,6 +10,12 @@ private:
 	class PauseOption;
 	class KeyBindingOption;
 
+public:
+	enum class EndPauseDecision: int {
+		Save = 0x1,
+		Exit = 0x2
+	};
+private:
 	class PauseMenu onlyInDebug(: public ObjCounter) {
 	private:
 		static const float titleFontScale;
@@ -115,12 +121,16 @@ private:
 
 		virtual PauseState* handle(PauseState* currentState);
 	};
-	class QuitGameOption: public PauseOption {
+	class EndPauseOption: public PauseOption {
+	private:
+		int endPauseDecision;
+
 	public:
-		QuitGameOption(objCounterParameters());
-		~QuitGameOption();
+		EndPauseOption(objCounterParametersComma() int pEndPauseDecision);
+		~EndPauseOption();
 
 		virtual PauseState* handle(PauseState* currentState);
+		int getEndPauseDecision() { return endPauseDecision; }
 	};
 
 	static PauseMenu* baseMenu;
@@ -129,7 +139,7 @@ private:
 	PauseMenu* pauseMenu;
 	int pauseOption;
 	KeyBindingOption* selectingKeyBindingOption;
-	bool shouldQuitGame;
+	int endPauseDecision;
 
 public:
 	PauseState(objCounterParameters());
@@ -141,13 +151,14 @@ private:
 		PauseState* pParentState,
 		PauseMenu* pPauseMenu,
 		int pPauseOption,
-		KeyBindingOption* pSelectingKeyBindingOption);
+		KeyBindingOption* pSelectingKeyBindingOption,
+		int pEndPauseDecision);
 public:
 	static PauseState* produce(objCounterParameters());
 	virtual void release();
 	virtual void prepareReturnToPool();
-	//return whether updates and renders should stop, to pass on to the GameState
-	bool getShouldQuitGame() { return shouldQuitGame; }
+	//return a bit field of EndPauseDecision specifying whether we should save, quit
+	int getEndPauseDecision() { return endPauseDecision; }
 	static void loadMenu();
 	static void unloadMenu();
 	PauseState* getNextPauseState();
@@ -156,6 +167,6 @@ private:
 public:
 	PauseState* navigateToMenu(PauseMenu* menu);
 	PauseState* beginKeySelection(KeyBindingOption* pSelectingKeyBindingOption);
-	PauseState* produceQuitGameState();
+	PauseState* produceEndPauseState(int pEndPauseDecision);
 	void render();
 };

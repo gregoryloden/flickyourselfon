@@ -2,6 +2,7 @@
 #include "GameState/EntityState.h"
 #include "Sprites/SpriteRegistry.h"
 #include "Sprites/SpriteSheet.h"
+#include "Util/Config.h"
 
 const float MapState::speedPerSecond = 40.0f;
 const float MapState::diagonalSpeedPerSecond = MapState::speedPerSecond * sqrt(0.5f);
@@ -55,10 +56,10 @@ void MapState::render(EntityState* camera, int ticksTime) {
 	int centerY = (int)(camera->getRenderCenterY(ticksTime));
 	int addX = Config::gameScreenWidth / 2 - centerX;
 	int addY = Config::gameScreenHeight / 2 - centerY;
-	int tileMinX = FYOMath::max(-addX / MapState::tileSize, 0);
-	int tileMinY = FYOMath::max(-addY / MapState::tileSize, 0);
-	int tileMaxX = FYOMath::min((Config::gameScreenWidth - addX - 1) / MapState::tileSize + 1, MapState::width);
-	int tileMaxY = FYOMath::min((Config::gameScreenHeight - addY - 1) / MapState::tileSize + 1, MapState::height);
+	int tileMinX = MathUtils::max(-addX / MapState::tileSize, 0);
+	int tileMinY = MathUtils::max(-addY / MapState::tileSize, 0);
+	int tileMaxX = MathUtils::min((Config::gameScreenWidth - addX - 1) / MapState::tileSize + 1, MapState::width);
+	int tileMaxY = MathUtils::min((Config::gameScreenHeight - addY - 1) / MapState::tileSize + 1, MapState::height);
 	for (int y = tileMinY; y < tileMaxY; y++) {
 		for (int x = tileMinX; x < tileMaxX; x++) {
 			//consider any tile at the max height to be filler

@@ -5,6 +5,8 @@
 #include "Sprites/SpriteAnimation.h"
 #include "Sprites/SpriteRegistry.h"
 #include "Sprites/SpriteSheet.h"
+#include "Util/Config.h"
+#include "Util/StringUtils.h"
 
 const float PlayerState::playerStartingXPosition = 179.5f;
 const float PlayerState::playerStartingYPosition = 166.5f;
@@ -14,6 +16,9 @@ const float PlayerState::boundingBoxLeftOffset = PlayerState::playerWidth * -0.5
 const float PlayerState::boundingBoxRightOffset = PlayerState::boundingBoxLeftOffset + PlayerState::playerWidth;
 const float PlayerState::boundingBoxTopOffset = 4.5f;
 const float PlayerState::boundingBoxBottomOffset = PlayerState::boundingBoxTopOffset + PlayerState::playerHeight;
+const string PlayerState::playerXFilePrefix = "playerX ";
+const string PlayerState::playerYFilePrefix = "playerY ";
+const string PlayerState::playerZFilePrefix = "playerZ ";
 PlayerState::PlayerState(objCounterParameters())
 : EntityState(objCounterArgumentsComma() playerStartingXPosition, playerStartingYPosition)
 , xDirection(0)
@@ -22,7 +27,13 @@ PlayerState::PlayerState(objCounterParameters())
 , animationStartTicksTime(-1)
 , spriteDirection(SpriteDirection::Down)
 , hasBoot(false)
-, kickingAnimation(nullptr) {
+, kickingAnimation(nullptr)
+, lastControlledX(0.0f)
+, lastControlledY(0.0f)
+, lastControlledZ(0) {
+	lastControlledX = x.get()->getValue(0);
+	lastControlledY = y.get()->getValue(0);
+	lastControlledZ = z;
 }
 PlayerState::~PlayerState() {}
 //copy the other state
@@ -66,6 +77,11 @@ hasBoot = true;
 	updatePositionWithPreviousPlayerState(prev, ticksTime);
 	collideWithEnvironmentWithPreviousPlayerState(prev);
 	updateSpriteWithPreviousPlayerState(prev, ticksTime, !previousStateHadKickingAnimation);
+
+	//copy the position to the save values
+	lastControlledX = x.get()->getValue(0);
+	lastControlledY = y.get()->getValue(0);
+	lastControlledZ = z;
 }
 //update the position of this player state by reading from the previous state
 void PlayerState::updatePositionWithPreviousPlayerState(PlayerState* prev, int ticksTime) {
@@ -449,4 +465,25 @@ void PlayerState::render(EntityState* camera, int ticksTime) {
 	else
 		SpriteRegistry::player->renderSpriteCenteredAtScreenPosition(
 			hasBoot ? 4 : 0, (int)spriteDirection, renderCenterX, renderCenterY);
+}
+//save this player state to the file
+void PlayerState::saveState(ofstream& file) {
+	file << playerXFilePrefix << lastControlledX << "\n";
+	file << playerYFilePrefix << lastControlledY << "\n";
+	file << playerZFilePrefix << (int)lastControlledZ << "\n";
+}
+//try to load state from the line of the file, return whether state was loaded
+bool PlayerState::loadState(string& line) {
+	if (StringUtils::startsWith(line, playerXFilePrefix)) {
+		lastControlledX = (float)atof(line.c_str() + playerXFilePrefix.size());
+		x.set(newCompositeQuarticValue(lastControlledX, 0.0f, 0.0f, 0.0f, 0.0f));
+	} else if (StringUtils::startsWith(line, playerYFilePrefix)) {
+		lastControlledY = (float)atof(line.c_str() + playerYFilePrefix.size());
+		y.set(newCompositeQuarticValue(lastControlledY, 0.0f, 0.0f, 0.0f, 0.0f));
+	} else if (StringUtils::startsWith(line, playerZFilePrefix)) {
+		lastControlledZ = (char)atoi(line.c_str() + playerZFilePrefix.size());
+		z = lastControlledZ;
+	} else
+		return false;
+	return true;
 }

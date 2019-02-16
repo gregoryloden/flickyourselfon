@@ -4,14 +4,14 @@
 #include <SDL_image.h>
 #include <SDL_opengl.h>
 #include <gl/GL.h>
+#include <fstream>
 #include <iomanip>
 #include <math.h>
 #include <sstream>
 #include <string>
 #include <thread>
 #include <vector>
-#include "Config.h"
-#include "FYOMath.h"
+#include "MathUtils.h"
 #include "MemoryManagement.h"
 using namespace std;
 

@@ -8,6 +8,8 @@ class PlayerState;
 
 class GameState onlyInDebug(: public ObjCounter) {
 private:
+	static const char* savedGameFileName;
+
 	PlayerState* playerState;
 	EntityState* camera;
 	ReferenceCounterHolder<PauseState> pauseState;
@@ -23,4 +25,6 @@ public:
 	bool getShouldQuitGame() { return shouldQuitGame; }
 	void updateWithPreviousGameState(GameState* prev, int ticksTime);
 	void render(int ticksTime);
+	void saveState();
+	void loadSavedState();
 };

@@ -24,6 +24,9 @@ private:
 	static const float boundingBoxRightOffset;
 	static const float boundingBoxTopOffset;
 	static const float boundingBoxBottomOffset;
+	static const string playerXFilePrefix;
+	static const string playerYFilePrefix;
+	static const string playerZFilePrefix;
 
 	char xDirection;
 	char yDirection;
@@ -32,6 +35,9 @@ private:
 	SpriteDirection spriteDirection;
 	bool hasBoot;
 	ReferenceCounterHolder<EntityAnimation> kickingAnimation;
+	float lastControlledX;
+	float lastControlledY;
+	char lastControlledZ;
 
 public:
 	PlayerState(objCounterParameters());
@@ -48,4 +54,6 @@ private:
 public:
 	void beginKicking(int ticksTime);
 	void render(EntityState* camera, int ticksTime);
+	void saveState(ofstream& file);
+	bool loadState(string& line);
 };

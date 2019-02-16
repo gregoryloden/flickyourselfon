@@ -1,5 +1,6 @@
 #include "Logger.h"
 #include "Util/CircularStateQueue.h"
+#include "Util/Config.h"
 
 #define newMessage() newWithoutArgs(Logger::Message)
 
@@ -12,7 +13,7 @@ message()
 Logger::Message::~Message() {}
 
 //////////////////////////////// Logger ////////////////////////////////
-SDL_RWops* Logger::file = nullptr;
+ofstream* Logger::file = nullptr;
 bool Logger::queueLogMessages = false;
 thread_local stringstream* Logger::currentMessageStringstream = nullptr;
 thread_local CircularStateQueue<Logger::Message>* Logger::currentThreadLogQueue = nullptr;
@@ -22,7 +23,8 @@ bool Logger::threadRunning = false;
 thread* Logger::logThread = nullptr;
 //open the file for writing on a single thread
 void Logger::beginLogging() {
-	file = SDL_RWFromFile("fyo_log.txt", "w");
+	file = new ofstream();
+	file->open("fyo_log.txt", ios::out | ios::trunc);
 	queueLogMessages = false;
 }
 //build the log queues and start the logging thread
@@ -48,7 +50,8 @@ void Logger::endMultiThreadedLogging() {
 }
 //finally close the file
 void Logger::endLogging() {
-	SDL_RWclose(file);
+	file->close();
+	delete file;
 }
 //loop and process any log messages that were written in another thread
 void Logger::logLoop() {
@@ -59,12 +62,12 @@ void Logger::logLoop() {
 			if (mainLogMessage != nullptr
 				&& (renderLogMessage == nullptr || mainLogMessage->timestamp <= renderLogMessage->timestamp))
 			{
-				SDL_RWwrite(file, mainLogMessage->message.c_str(), 1, mainLogMessage->message.length());
+				*file << mainLogMessage->message;
 				mainLogMessage->message.clear();
 				mainLogQueue->finishReadingFromState();
 				mainLogMessage = mainLogQueue->getNextReadableState();
 			} else if (renderLogMessage != nullptr) {
-				SDL_RWwrite(file, renderLogMessage->message.c_str(), 1, renderLogMessage->message.length());
+				*file << renderLogMessage->message;
 				renderLogMessage->message.clear();
 				renderLogQueue->finishReadingFromState();
 				renderLogMessage = renderLogQueue->getNextReadableState();
@@ -99,8 +102,7 @@ void Logger::logString(string& message) {
 	//if that happens, write directly to the file
 	//we don't have to worry about multithreading since this should only happen when only one thread is running
 	if (!queueLogMessages) {
-		string messageWithTimestampString = messageWithTimestamp.str();
-		SDL_RWwrite(file, messageWithTimestampString.c_str(), 1, messageWithTimestampString.length());
+		*file << messageWithTimestamp.str();
 		return;
 	//if we're logging this in the middle of logging something else, append this to our other message
 	} else if (currentMessageStringstream != nullptr) {

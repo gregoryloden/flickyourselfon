@@ -1,14 +1,15 @@
 ﻿#include "PauseState.h"
+#include "Util/Config.h"
 
-#define newPauseState(parentState, pauseMenu, pauseOption, selectingKey) \
-	produceWithArgs(PauseState, parentState, pauseMenu, pauseOption, selectingKey)
+#define newPauseState(parentState, pauseMenu, pauseOption, selectingKey, endPauseDecision) \
+	produceWithArgs(PauseState, parentState, pauseMenu, pauseOption, selectingKey, endPauseDecision)
 #define newPauseMenu(title, options) newWithArgs(PauseState::PauseMenu, title, options)
 #define newNavigationOption(displayText, subMenu) newWithArgs(PauseState::NavigationOption, displayText, subMenu)
 #define newControlsNavigationOption(subMenu) newWithArgs(PauseState::ControlsNavigationOption, subMenu)
 #define newKeyBindingOption(boundKey) newWithArgs(PauseState::KeyBindingOption, boundKey)
 #define newDefaultKeyBindingsOption() newWithoutArgs(PauseState::DefaultKeyBindingsOption)
 #define newAcceptKeyBindingsOption() newWithoutArgs(PauseState::AcceptKeyBindingsOption)
-#define newQuitGameOption() newWithoutArgs(PauseState::QuitGameOption)
+#define newEndPauseOption(endPauseDecision) newWithArgs(PauseState::EndPauseOption, endPauseDecision)
 
 //////////////////////////////// PauseState::PauseMenu ////////////////////////////////
 const float PauseState::PauseMenu::titleFontScale = 2.0f;
@@ -25,6 +26,7 @@ PauseState::PauseMenu::~PauseMenu() {
 }
 //render this menu
 void PauseState::PauseMenu::render(int selectedOption, KeyBindingOption* selectingKeyBindingOption) {
+	//render a translucent rectangle the same color as the background color
 	glEnable(GL_BLEND);
 	glColor4f(Config::backgroundColorRed, Config::backgroundColorGreen, Config::backgroundColorBlue, 5.0f / 8.0f);
 	glBegin(GL_QUADS);
@@ -260,17 +262,24 @@ PauseState::AcceptKeyBindingsOption::~AcceptKeyBindingsOption() {}
 //reset the currently editing keys to the defaults
 PauseState* PauseState::AcceptKeyBindingsOption::handle(PauseState* currentState) {
 	Config::keyBindings.set(&Config::editingKeyBindings);
+	Config::saveSettings();
 	return currentState->navigateToMenu(nullptr);
 }
 
-//////////////////////////////// PauseState::QuitGameOption ////////////////////////////////
-PauseState::QuitGameOption::QuitGameOption(objCounterParameters())
-: PauseOption(objCounterArgumentsComma() "exit") {
+//////////////////////////////// PauseState::EndPauseOption ////////////////////////////////
+PauseState::EndPauseOption::EndPauseOption(objCounterParametersComma() int pEndPauseDecision)
+: PauseOption(
+	objCounterArgumentsComma()
+		pEndPauseDecision == (int)EndPauseDecision::Save ? string("save + resume") :
+		pEndPauseDecision == (int)EndPauseDecision::Exit ? string("exit") :
+		pEndPauseDecision == ((int)EndPauseDecision::Save | (int)EndPauseDecision::Exit) ? string("save + exit") :
+		string("-"))
+, endPauseDecision(pEndPauseDecision) {
 }
-PauseState::QuitGameOption::~QuitGameOption() {}
+PauseState::EndPauseOption::~EndPauseOption() {}
 //return a pause state to quit the game
-PauseState* PauseState::QuitGameOption::handle(PauseState* currentState) {
-	return currentState->produceQuitGameState();
+PauseState* PauseState::EndPauseOption::handle(PauseState* currentState) {
+	return currentState->produceEndPauseState(endPauseDecision);
 }
 
 //////////////////////////////// PauseState ////////////////////////////////
@@ -281,7 +290,7 @@ PauseState::PauseState(objCounterParameters())
 , pauseMenu(nullptr)
 , pauseOption(0)
 , selectingKeyBindingOption(nullptr)
-, shouldQuitGame(false) {
+, endPauseDecision(0) {
 }
 PauseState::~PauseState() {}
 //initialize and return a PauseState
@@ -290,18 +299,20 @@ PauseState* PauseState::produce(
 	PauseState* pParentState,
 	PauseMenu* pCurrentPauseMenu,
 	int pPauseOption,
-	KeyBindingOption* pSelectingKeyBindingOption)
+	KeyBindingOption* pSelectingKeyBindingOption,
+	int pEndPauseDecision)
 {
 	initializeWithNewFromPool(p, PauseState)
 	p->parentState.set(pParentState);
 	p->pauseMenu = pCurrentPauseMenu;
 	p->pauseOption = pPauseOption;
 	p->selectingKeyBindingOption = pSelectingKeyBindingOption;
+	p->endPauseDecision = pEndPauseDecision;
 	return p;
 }
 //return a new pause state at the base menu
 PauseState* PauseState::produce(objCounterParameters()) {
-	return produce(objCounterArgumentsComma() nullptr, baseMenu, 0, false);
+	return produce(objCounterArgumentsComma() nullptr, baseMenu, 0, false, 0);
 }
 pooledReferenceCounterDefineRelease(PauseState)
 //release the parent state before this is returned to the pool
@@ -327,7 +338,9 @@ void PauseState::loadMenu() {
 						newAcceptKeyBindingsOption() COMMA
 						newNavigationOption("back", nullptr)
 					})) COMMA
-			newQuitGameOption()
+			newEndPauseOption((int)EndPauseDecision::Save) COMMA
+			newEndPauseOption((int)EndPauseDecision::Save | (int)EndPauseDecision::Exit) COMMA
+			newEndPauseOption((int)EndPauseDecision::Exit)
 		});
 }
 //delete the base menu
@@ -344,7 +357,7 @@ PauseState* PauseState::getNextPauseState() {
 		PauseState* lastPauseState = nextPauseState;
 
 		if (gameEvent.type == SDL_QUIT)
-			nextPauseState = nextPauseState->produceQuitGameState();
+			nextPauseState = nextPauseState->produceEndPauseState((int)EndPauseDecision::Exit);
 		else if (gameEvent.type == SDL_KEYDOWN)
 			nextPauseState = nextPauseState->handleKeyPress(gameEvent.key.keysym.scancode);
 
@@ -353,7 +366,7 @@ PauseState* PauseState::getNextPauseState() {
 			lastPauseState->retain();
 			lastPauseState->release();
 		}
-		if (nextPauseState == nullptr || nextPauseState->shouldQuitGame)
+		if (nextPauseState == nullptr || (nextPauseState->endPauseDecision & (int)EndPauseDecision::Exit) != 0)
 			return nextPauseState;
 	}
 	return nextPauseState;
@@ -361,21 +374,21 @@ PauseState* PauseState::getNextPauseState() {
 //handle the keypress and return the resulting new pause state
 PauseState* PauseState::handleKeyPress(SDL_Scancode keyScancode) {
 	if (selectingKeyBindingOption != nullptr) {
-		if (keyScancode == SDL_SCANCODE_ESCAPE)
-			return this;
-		selectingKeyBindingOption->setBoundKeyScancode(keyScancode);
-		return newPauseState(parentState.get(), pauseMenu, pauseOption, nullptr);
+		if (keyScancode != SDL_SCANCODE_ESCAPE)
+			selectingKeyBindingOption->setBoundKeyScancode(keyScancode);
+		return newPauseState(parentState.get(), pauseMenu, pauseOption, nullptr, 0);
 	}
 
 	int optionsCount = pauseMenu->getOptionsCount();
 	switch (keyScancode) {
 		case SDL_SCANCODE_ESCAPE:
 			return nullptr;
+		case SDL_SCANCODE_BACKSPACE:
+			return navigateToMenu(nullptr);
 		case SDL_SCANCODE_UP:
-			return newPauseState(parentState.get(), pauseMenu, (pauseOption + optionsCount - 1) % optionsCount, nullptr);
+			return newPauseState(parentState.get(), pauseMenu, (pauseOption + optionsCount - 1) % optionsCount, nullptr, 0);
 		case SDL_SCANCODE_DOWN:
-			return newPauseState(parentState.get(), pauseMenu, (pauseOption + 1) % optionsCount, nullptr);
-		case SDL_SCANCODE_SPACE:
+			return newPauseState(parentState.get(), pauseMenu, (pauseOption + 1) % optionsCount, nullptr, 0);
 		case SDL_SCANCODE_RETURN:
 			return pauseMenu->getOption(pauseOption)->handle(this);
 		default:
@@ -384,17 +397,15 @@ PauseState* PauseState::handleKeyPress(SDL_Scancode keyScancode) {
 }
 //if we were given a menu, return a pause state with that pause menu, otherwise go up a level
 PauseState* PauseState::navigateToMenu(PauseMenu* menu) {
-	return menu != nullptr ? newPauseState(this, menu, 0, nullptr) : parentState.get();
+	return menu != nullptr ? newPauseState(this, menu, 0, nullptr, 0) : parentState.get();
 }
 //return a copy of this pause state set to listen for a key selection
 PauseState* PauseState::beginKeySelection(KeyBindingOption* pSelectingKeyBindingOption) {
-	return newPauseState(parentState.get(), pauseMenu, pauseOption, pSelectingKeyBindingOption);
+	return newPauseState(parentState.get(), pauseMenu, pauseOption, pSelectingKeyBindingOption, 0);
 }
-//we're quitting the game, return a clone of this state that quits the game
-PauseState* PauseState::produceQuitGameState() {
-	PauseState* p = newPauseState(parentState.get(), pauseMenu, pauseOption, selectingKeyBindingOption);
-	p->shouldQuitGame = true;
-	return p;
+//return a clone of this state that specifies that we should resume the game or exit
+PauseState* PauseState::produceEndPauseState(int pEndPauseDecision) {
+	return newPauseState(parentState.get(), pauseMenu, pauseOption, selectingKeyBindingOption, pEndPauseDecision);
 }
 //render the pause menu over the screen
 void PauseState::render() {
