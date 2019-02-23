@@ -91,3 +91,22 @@ void SpriteSheet::renderSpriteCenteredAtScreenPosition(
 		(GLint)(drawCenterX - (float)spriteWidth * 0.5f),
 		(GLint)(drawCenterY - (float)spriteHeight * 0.5f));
 }
+//render a rectangle of the specified color at the specified region of the screen
+void SpriteSheet::renderRectangle(
+	GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha, GLint leftX, GLint topY, GLint rightX, GLint bottomY)
+{
+	if (alpha >= 1.0f) {
+		glDisable(GL_BLEND);
+		glColor3f(red, green, blue);
+	} else {
+		glEnable(GL_BLEND);
+		glColor4f(red, green, blue, alpha);
+	}
+	glBegin(GL_QUADS);
+	glVertex2i(leftX, topY);
+	glVertex2i(rightX, topY);
+	glVertex2i(rightX, bottomY);
+	glVertex2i(leftX, bottomY);
+	glEnd();
+	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+}

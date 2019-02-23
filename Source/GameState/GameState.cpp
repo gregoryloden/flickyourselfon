@@ -1,4 +1,7 @@
 #include "GameState.h"
+#ifdef EDITOR
+	#include "Editor/Editor.h"
+#endif
 #include "GameState/MapState.h"
 #include "GameState/PauseState.h"
 #include "GameState/PlayerState.h"
@@ -78,6 +81,9 @@ void GameState::render(int ticksTime) {
 	playerState->render(camera, gameTicksTime);
 	if (pauseState.get() != nullptr)
 		pauseState.get()->render();
+	#ifdef EDITOR
+		Editor::render();
+	#endif
 }
 //save the state to a file
 void GameState::saveState() {

@@ -1,4 +1,7 @@
 #include "flickyourselfon.h"
+#ifdef EDITOR
+	#include "Editor/Editor.h"
+#endif
 #include "GameState/DynamicValue.h"
 #include "GameState/EntityAnimation.h"
 #include "GameState/GameState.h"
@@ -39,8 +42,13 @@ int main(int argc, char *argv[]) {
 		"Flick Yourself On",
 		SDL_WINDOWPOS_CENTERED,
 		SDL_WINDOWPOS_CENTERED,
-		Config::gameScreenWidth * Config::defaultPixelWidth,
-		Config::gameScreenHeight * Config::defaultPixelHeight,
+		#ifdef EDITOR
+			Config::gameAndEditorScreenWidth * Config::defaultPixelWidth,
+			Config::gameAndEditorScreenHeight * Config::defaultPixelHeight,
+		#else
+			Config::gameScreenWidth * Config::defaultPixelWidth,
+			Config::gameScreenHeight * Config::defaultPixelHeight,
+		#endif
 		SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_OPENGL);
 
 	//get the refresh rate
@@ -65,7 +73,7 @@ int main(int argc, char *argv[]) {
 	thread renderLoopThread (renderLoop, gameStateQueue);
 
 	//wait for the render thread to sync up
-	Logger::log("Render thread started, waiting for it to be ready for updates...");
+	Logger::log("Render thread created, waiting for it to be ready for updates...");
 	while (!renderThreadReadyForUpdates)
 		SDL_Delay(1);
 	Logger::log("Beginning update loop");
@@ -105,6 +113,9 @@ int main(int argc, char *argv[]) {
 
 	//cleanup
 	#ifdef DEBUG
+		#ifdef EDITOR
+			Editor::unloadButtons();
+		#endif
 		MapState::deleteMap();
 		PauseState::unloadMenu();
 		SpriteRegistry::unloadAll();
@@ -137,7 +148,11 @@ void renderLoop(CircularStateQueue<GameState>* gameStateQueue) {
 	glContext = SDL_GL_CreateContext(window);
 	SDL_GL_SetSwapInterval(1);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glOrtho(0, (GLdouble)Config::gameScreenWidth, (GLdouble)Config::gameScreenHeight, 0, -1, 1);
+	#ifdef EDITOR
+		glOrtho(0, (GLdouble)Config::gameAndEditorScreenWidth, (GLdouble)Config::gameAndEditorScreenHeight, 0, -1, 1);
+	#else
+		glOrtho(0, (GLdouble)Config::gameScreenWidth, (GLdouble)Config::gameScreenHeight, 0, -1, 1);
+	#endif
 
 	//load all the sprites now that our context has been created
 	Logger::log("OpenGL set up /// Loading sprites...");
@@ -145,6 +160,9 @@ void renderLoop(CircularStateQueue<GameState>* gameStateQueue) {
 	SpriteRegistry::loadAll();
 	PauseState::loadMenu();
 	MapState::buildMap();
+	#ifdef EDITOR
+		Editor::loadButtons();
+	#endif
 	Logger::log("Sprites loaded /// Beginning render loop");
 
 	//begin the render loop

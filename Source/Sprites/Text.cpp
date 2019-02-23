@@ -219,7 +219,8 @@ Text::Metrics Text::getKeyBackgroundMetrics(Metrics* textMetrics) {
 
 	Metrics metrics;
 	metrics.fontScale = textMetrics->fontScale;
-	metrics.charactersWidth = MathUtils::max(targetKeyBackgroundWidth, keyBackground->getSpriteSheetWidth()) * metrics.fontScale;
+	metrics.charactersWidth =
+		MathUtils::max(targetKeyBackgroundWidth, keyBackground->getSpriteSheetWidth()) * metrics.fontScale;
 	metrics.aboveBaseline = (float)(keyBackground->getSpriteSheetHeight() - belowBaselineSpacing) * metrics.fontScale;
 	metrics.belowBaseline = (float)belowBaselineSpacing * metrics.fontScale;
 	metrics.topPadding = metrics.fontScale;
@@ -228,6 +229,7 @@ Text::Metrics Text::getKeyBackgroundMetrics(Metrics* textMetrics) {
 }
 //render the given text, scaling it as specified
 void Text::render(const char* text, float leftX, float baselineY, float fontScale) {
+	glEnable(GL_BLEND);
 	int charIndex = 0;
 	while (text[charIndex] != 0) {
 		Glyph* glyph = getNextGlyph(text, &charIndex);
@@ -263,6 +265,7 @@ void Text::renderKeyBackground(float leftX, float baselineY, Metrics* keyBackgro
 	GLint bottomY = (GLint)(baselineY + keyBackgroundMetrics->belowBaseline);
 
 	//draw the left side
+	glEnable(GL_BLEND);
 	keyBackground->renderSpriteSheetRegionAtScreenRegion(
 		0, 0, leftHalfSpriteWidth, keyBackground->getSpriteSheetHeight(), (GLint)leftX, topY, drawLeftMiddleX, bottomY);
 	//draw the middle section

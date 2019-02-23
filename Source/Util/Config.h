@@ -19,6 +19,10 @@ public:
 
 	static const int gameScreenWidth = 199;
 	static const int gameScreenHeight = 149;
+#ifdef EDITOR
+	static const int gameAndEditorScreenWidth = gameScreenWidth + 150;
+	static const int gameAndEditorScreenHeight = gameScreenHeight + 60;
+#endif
 	static const int defaultPixelWidth = 3;
 	static const int defaultPixelHeight = 3;
 	static const float backgroundColorRed;

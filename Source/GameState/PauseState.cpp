@@ -1,4 +1,5 @@
 ﻿#include "PauseState.h"
+#include "Sprites/SpriteSheet.h"
 #include "Util/Config.h"
 
 #define newPauseState(parentState, pauseMenu, pauseOption, selectingKey, endPauseDecision) \
@@ -27,15 +28,15 @@ PauseState::PauseMenu::~PauseMenu() {
 //render this menu
 void PauseState::PauseMenu::render(int selectedOption, KeyBindingOption* selectingKeyBindingOption) {
 	//render a translucent rectangle the same color as the background color
-	glEnable(GL_BLEND);
-	glColor4f(Config::backgroundColorRed, Config::backgroundColorGreen, Config::backgroundColorBlue, 5.0f / 8.0f);
-	glBegin(GL_QUADS);
-	glVertex2i(0, 0);
-	glVertex2i(Config::gameScreenWidth, 0);
-	glVertex2i(Config::gameScreenWidth, Config::gameScreenHeight);
-	glVertex2i(0, Config::gameScreenHeight);
-	glEnd();
-	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+	SpriteSheet::renderRectangle(
+		(GLfloat)Config::backgroundColorRed,
+		(GLfloat)Config::backgroundColorGreen,
+		(GLfloat)Config::backgroundColorBlue,
+		5.0f / 8.0f,
+		0,
+		0,
+		(GLint)Config::gameScreenWidth,
+		(GLint)Config::gameScreenHeight);
 
 	//first find the height of the pause options so that we can vertically center them
 	Text::Metrics titleMetrics = Text::getMetrics(title.c_str(), titleFontScale);
