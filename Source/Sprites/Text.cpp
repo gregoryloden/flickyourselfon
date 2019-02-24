@@ -78,6 +78,7 @@ void Text::loadFont() {
 	int solidBlack = alphaMask;
 
 	//the font file consists of multiple rows of glyphs
+	//assumes rows are laid only in increasing order
 	int lastUnicodeValue = -1;
 	int headerRow = 0;
 	GlyphRow* lastGlyphRow = nullptr;

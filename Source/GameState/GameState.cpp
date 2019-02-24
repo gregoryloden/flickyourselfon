@@ -66,6 +66,11 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 					pauseStartTicksTime = ticksTime;
 				}
 				break;
+			#ifdef EDITOR
+				case SDL_MOUSEBUTTONDOWN:
+					Editor::handleClick(gameEvent.button);
+					break;
+			#endif
 			default:
 				break;
 		}

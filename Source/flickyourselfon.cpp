@@ -42,13 +42,8 @@ int main(int argc, char *argv[]) {
 		"Flick Yourself On",
 		SDL_WINDOWPOS_CENTERED,
 		SDL_WINDOWPOS_CENTERED,
-		#ifdef EDITOR
-			Config::gameAndEditorScreenWidth * Config::defaultPixelWidth,
-			Config::gameAndEditorScreenHeight * Config::defaultPixelHeight,
-		#else
-			Config::gameScreenWidth * Config::defaultPixelWidth,
-			Config::gameScreenHeight * Config::defaultPixelHeight,
-		#endif
+		(int)((float)Config::windowScreenWidth * Config::defaultPixelWidth),
+		(int)((float)Config::windowScreenHeight * Config::defaultPixelHeight),
 		SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_OPENGL);
 
 	//get the refresh rate
@@ -148,11 +143,7 @@ void renderLoop(CircularStateQueue<GameState>* gameStateQueue) {
 	glContext = SDL_GL_CreateContext(window);
 	SDL_GL_SetSwapInterval(1);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	#ifdef EDITOR
-		glOrtho(0, (GLdouble)Config::gameAndEditorScreenWidth, (GLdouble)Config::gameAndEditorScreenHeight, 0, -1, 1);
-	#else
-		glOrtho(0, (GLdouble)Config::gameScreenWidth, (GLdouble)Config::gameScreenHeight, 0, -1, 1);
-	#endif
+	glOrtho(0, (GLdouble)Config::windowScreenWidth, (GLdouble)Config::windowScreenHeight, 0, -1, 1);
 
 	//load all the sprites now that our context has been created
 	Logger::log("OpenGL set up /// Loading sprites...");
@@ -185,6 +176,8 @@ void renderLoop(CircularStateQueue<GameState>* gameStateQueue) {
 			glViewport(0, 0, windowWidth, windowHeight);
 			lastWindowWidth = windowWidth;
 			lastWindowHeight = windowHeight;
+			Config::currentPixelWidth = (float)lastWindowWidth / (float)Config::windowScreenWidth;
+			Config::currentPixelHeight = (float)lastWindowHeight / (float)Config::windowScreenHeight;
 		}
 
 		glClearColor(Config::backgroundColorRed, Config::backgroundColorGreen, Config::backgroundColorBlue, 1.0f);

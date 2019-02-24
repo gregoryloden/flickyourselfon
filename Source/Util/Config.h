@@ -19,17 +19,22 @@ public:
 
 	static const int gameScreenWidth = 199;
 	static const int gameScreenHeight = 149;
-#ifdef EDITOR
-	static const int gameAndEditorScreenWidth = gameScreenWidth + 150;
-	static const int gameAndEditorScreenHeight = gameScreenHeight + 60;
-#endif
-	static const int defaultPixelWidth = 3;
-	static const int defaultPixelHeight = 3;
+	#ifdef EDITOR
+		static const int editorMarginRight = 150;
+		static const int editorMarginBottom = 60;
+		static const int windowScreenWidth = gameScreenWidth + editorMarginRight;
+		static const int windowScreenHeight = gameScreenHeight + editorMarginBottom;
+	#else
+		static const int windowScreenWidth = gameScreenWidth;
+		static const int windowScreenHeight = gameScreenHeight;
+	#endif
+	static const int ticksPerSecond = 1000;
+	static const int updatesPerSecond = 48;
+	static const float defaultPixelWidth;
+	static const float defaultPixelHeight;
 	static const float backgroundColorRed;
 	static const float backgroundColorGreen;
 	static const float backgroundColorBlue;
-	static const int ticksPerSecond = 1000;
-	static const int updatesPerSecond = 48;
 	static const KeyBindings defaultKeyBindings;
 	static const char* optionsFileName;
 	static const string upKeyBindingFilePrefix;
@@ -38,6 +43,8 @@ public:
 	static const string leftKeyBindingFilePrefix;
 	static const string kickKeyBindingFilePrefix;
 
+	static float currentPixelWidth;
+	static float currentPixelHeight;
 	static int refreshRate;
 	static KeyBindings keyBindings;
 	static KeyBindings editingKeyBindings;

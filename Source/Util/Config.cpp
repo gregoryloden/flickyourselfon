@@ -21,6 +21,8 @@ void Config::KeyBindings::set(const KeyBindings* other) {
 
 //////////////////////////////// Config ////////////////////////////////
 //TODO: settle on final background color
+const float Config::defaultPixelWidth = 3.0f;
+const float Config::defaultPixelHeight = 3.0f;
 const float Config::backgroundColorRed = 3.0f / 16.0f;
 const float Config::backgroundColorGreen = 0.0f;
 const float Config::backgroundColorBlue = 3.0f / 16.0f;
@@ -31,6 +33,8 @@ const string Config::rightKeyBindingFilePrefix = "rightKey ";
 const string Config::downKeyBindingFilePrefix = "downKey ";
 const string Config::leftKeyBindingFilePrefix = "leftKey ";
 const string Config::kickKeyBindingFilePrefix = "kickKey ";
+float Config::currentPixelWidth = Config::defaultPixelWidth;
+float Config::currentPixelHeight = Config::defaultPixelHeight;
 int Config::refreshRate = 60;
 Config::KeyBindings Config::keyBindings;
 Config::KeyBindings Config::editingKeyBindings;

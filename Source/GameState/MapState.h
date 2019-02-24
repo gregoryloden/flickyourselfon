@@ -10,6 +10,7 @@ public:
 	static const int heightDivisor = 256 / heightCount;
 	static const int tileSize = 6;
 	static const char invalidHeight = -1;
+	static const char* floorFileName;
 	static const float speedPerSecond;
 	static const float diagonalSpeedPerSecond;
 	static const float smallDistance;

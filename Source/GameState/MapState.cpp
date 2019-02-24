@@ -4,6 +4,7 @@
 #include "Sprites/SpriteSheet.h"
 #include "Util/Config.h"
 
+const char* MapState::floorFileName = "images/floor.png";
 const float MapState::speedPerSecond = 40.0f;
 const float MapState::diagonalSpeedPerSecond = MapState::speedPerSecond * sqrt(0.5f);
 const float MapState::smallDistance = 1.0f / 256.0f;
@@ -13,7 +14,7 @@ int MapState::width = 1;
 int MapState::height = 1;
 //load the map and extract all the map data from it
 void MapState::buildMap() {
-	SDL_Surface* floor = IMG_Load("images/floor.png");
+	SDL_Surface* floor = IMG_Load(floorFileName);
 	width = floor->w;
 	height = floor->h;
 	int totalTiles = width * height;
