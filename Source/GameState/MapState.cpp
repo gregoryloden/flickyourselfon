@@ -65,7 +65,7 @@ void MapState::render(EntityState* camera, int ticksTime) {
 		for (int x = tileMinX; x < tileMaxX; x++) {
 			//consider any tile at the max height to be filler
 			int mapIndex = y * MapState::width + x;
-			if (MapState::heights[mapIndex] != MapState::heightCount - 1)
+			if (MapState::heights[mapIndex] != MapState::emptySpaceHeight)
 				SpriteRegistry::tiles->renderSpriteAtScreenPosition(
 					(int)(MapState::tiles[mapIndex]),
 					0,

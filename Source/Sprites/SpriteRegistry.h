@@ -7,6 +7,9 @@ class SpriteRegistry {
 public:
 	static const int playerWalkingAnimationTicksPerFrame = 250;
 	static const int playerKickingAnimationTicksPerFrame = 300;
+	static const char* playerFileName;
+	static const char* tilesFileName;
+	static const char* radioTowerFileName;
 
 	static SpriteSheet* player;
 	static SpriteSheet* tiles;

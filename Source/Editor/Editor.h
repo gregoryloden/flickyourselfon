@@ -40,6 +40,9 @@ private:
 		virtual void doAction();
 	};
 	class ExportMapButton: public Button {
+	private:
+		static const char* mapFileName;
+
 	public:
 		ExportMapButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY);
 		~ExportMapButton();

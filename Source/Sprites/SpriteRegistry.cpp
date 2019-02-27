@@ -3,6 +3,9 @@
 #include "Sprites/SpriteAnimation.h"
 #include "Sprites/SpriteSheet.h"
 
+const char* SpriteRegistry::playerFileName = "images/player.png";
+const char* SpriteRegistry::tilesFileName = "images/tiles.png";
+const char* SpriteRegistry::radioTowerFileName = "images/radiotower.png";
 SpriteSheet* SpriteRegistry::player = nullptr;
 SpriteSheet* SpriteRegistry::tiles = nullptr;
 SpriteSheet* SpriteRegistry::radioTower = nullptr;
@@ -13,10 +16,10 @@ SpriteAnimation* SpriteRegistry::playerKickingAnimation = nullptr;
 //load all the sprite sheets
 //this should only be called after the gl context has been created
 void SpriteRegistry::loadAll() {
-	player = newSpriteSheetWithImagePath("images/player.png", 9, 4);
-	tiles = newSpriteSheetWithImagePath("images/tiles.png", MapState::tileCount, 1);
+	player = newSpriteSheetWithImagePath(playerFileName, 9, 4);
+	tiles = newSpriteSheetWithImagePath(tilesFileName, MapState::tileCount, 1);
 	tiles->clampSpriteRectForTilesSprite();
-	radioTower = newSpriteSheetWithImagePath("images/radiotower.png", 1, 1);
+	radioTower = newSpriteSheetWithImagePath(radioTowerFileName, 1, 1);
 	playerWalkingAnimation = newSpriteAnimation(
 		player,
 		{

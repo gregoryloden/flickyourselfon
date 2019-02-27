@@ -1,4 +1,6 @@
 #include "Editor.h"
+#include "GameState/MapState.h"
+#include "Sprites/SpriteRegistry.h"
 #include "Sprites/SpriteSheet.h"
 #include "Util/Config.h"
 
@@ -47,17 +49,90 @@
 	: Button(objCounterArgumentsComma() "Save", zone, zoneLeftX, zoneTopY) {
 	}
 	Editor::SaveButton::~SaveButton() {}
-	//save the game
+	//save the floor image
 	void Editor::SaveButton::doAction() {
+		int mapWidth = MapState::mapWidth();
+		int mapHeight = MapState::mapHeight();
+
+		SDL_Surface* floorSurface =
+			SDL_CreateRGBSurface(
+				0,
+				mapWidth,
+				mapHeight,
+				32,
+				0xFF0000,
+				0xFF00,
+				0xFF,
+				0xFF000000);
+		SDL_Renderer* floorRenderer = SDL_CreateSoftwareRenderer(floorSurface);
+
+		for (int mapY = 0; mapY < mapHeight; mapY++) {
+			for (int mapX = 0; mapX < mapWidth; mapX++) {
+				char height = MapState::getHeight(mapX, mapY);
+				if (height == MapState::emptySpaceHeight)
+					SDL_SetRenderDrawColor(floorRenderer, 255, 255, 255, 255);
+				else {
+					char tile = MapState::getTile(mapX, mapY);
+					SDL_SetRenderDrawColor(
+						floorRenderer,
+						0,
+						(Uint8)(((int)tile + 1) * MapState::tileDivisor - 1),
+						(Uint8)(((int)height + 1) * MapState::heightDivisor - 1),
+						255);
+				}
+				SDL_RenderDrawPoint(floorRenderer, mapX, mapY);
+			}
+		}
+
+		IMG_SavePNG(floorSurface, MapState::floorFileName);
+		SDL_DestroyRenderer(floorRenderer);
+		SDL_FreeSurface(floorSurface);
 	}
 
 	//////////////////////////////// Editor::ExportMapButton ////////////////////////////////
+	const char* Editor::ExportMapButton::mapFileName = "images/map.png";
 	Editor::ExportMapButton::ExportMapButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY)
 	: Button(objCounterArgumentsComma() "Export Map", zone, zoneLeftX, zoneTopY) {
 	}
 	Editor::ExportMapButton::~ExportMapButton() {}
 	//export the map
 	void Editor::ExportMapButton::doAction() {
+		int mapWidth = MapState::mapWidth();
+		int mapHeight = MapState::mapHeight();
+
+		SDL_Surface* tilesSurface = IMG_Load(SpriteRegistry::tilesFileName);
+		SDL_Surface* mapSurface =
+			SDL_CreateRGBSurface(
+				0,
+				mapWidth * MapState::tileSize,
+				mapHeight * MapState::tileSize,
+				tilesSurface->format->BitsPerPixel,
+				tilesSurface->format->Rmask,
+				tilesSurface->format->Gmask,
+				tilesSurface->format->Bmask,
+				tilesSurface->format->Amask);
+		SDL_Renderer* mapRenderer = SDL_CreateSoftwareRenderer(mapSurface);
+		SDL_Texture* tilesTexture = SDL_CreateTextureFromSurface(mapRenderer, tilesSurface);
+
+		for (int mapY = 0; mapY < mapHeight; mapY++) {
+			for (int mapX = 0; mapX < mapWidth; mapX++) {
+				if (MapState::getHeight(mapX, mapY) == MapState::emptySpaceHeight)
+					continue;
+
+				int destinationX = mapX * MapState::tileSize;
+				int destinationY = mapY * MapState::tileSize;
+				int tileX = (int)MapState::getTile(mapX, mapY) * MapState::tileSize;
+				SDL_Rect source { tileX, 0, MapState::tileSize, MapState::tileSize };
+				SDL_Rect destination { destinationX, destinationY, MapState::tileSize, MapState::tileSize };
+				SDL_RenderCopy(mapRenderer, tilesTexture, &source, &destination);
+			}
+		}
+
+		IMG_SavePNG(mapSurface, mapFileName);
+		SDL_DestroyTexture(tilesTexture);
+		SDL_DestroyRenderer(mapRenderer);
+		SDL_FreeSurface(mapSurface);
+		SDL_FreeSurface(tilesSurface);
 	}
 
 	//////////////////////////////// Editor ////////////////////////////////
