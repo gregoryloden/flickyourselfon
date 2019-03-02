@@ -1,4 +1,5 @@
 #include "Editor.h"
+#include "GameState/EntityState.h"
 #include "GameState/MapState.h"
 #include "Sprites/SpriteRegistry.h"
 #include "Sprites/SpriteSheet.h"
@@ -31,7 +32,7 @@
 	Editor::Button::~Button() {}
 	//render this button
 	void Editor::Button::render() {
-		SpriteSheet::renderRectangle(
+		SpriteSheet::renderFilledRectangle(
 			buttonGrayRGB, buttonGrayRGB, buttonGrayRGB, 1.0f, (GLint)leftX, (GLint)topY, (GLint)rightX, (GLint)bottomY);
 		Text::render(text.c_str(), textLeftX, textBaselineY, textMetrics.fontScale);
 	}
@@ -159,10 +160,27 @@
 			return;
 	}
 	//draw the editor interface
-	void Editor::render() {
+	void Editor::render(EntityState* camera, int ticksTime) {
+		//draw a mouse selection box
+		int mouseX;
+		int mouseY;
+		SDL_GetMouseState(&mouseX, &mouseY);
+		mouseX = (int)((float)mouseX / Config::currentPixelWidth);
+		mouseY = (int)((float)mouseY / Config::currentPixelWidth);
+
+		int screenLeftWorldX = MapState::getScreenLeftWorldX(camera, ticksTime);
+		int screenTopWorldY = MapState::getScreenTopWorldY(camera, ticksTime);
+		int mouseMapX = (mouseX + screenLeftWorldX) / MapState::tileSize;
+		int mouseMapY = (mouseY + screenTopWorldY) / MapState::tileSize;
+		GLint boxLeftX = (GLint)(mouseMapX * MapState::tileSize - screenLeftWorldX);
+		GLint boxTopY = (GLint)(mouseMapY * MapState::tileSize - screenTopWorldY);
+		GLint boxRightX = boxLeftX + (GLint)MapState::tileSize;
+		GLint boxBottomY = boxTopY + (GLint)MapState::tileSize;
+		SpriteSheet::renderRectangleOutline(1.0f, 1.0f, 1.0f, 1.0f, boxLeftX, boxTopY, boxRightX, boxBottomY);
+
 		//draw the 2 background rectangles around the game view
 		//right zone
-		SpriteSheet::renderRectangle(
+		SpriteSheet::renderFilledRectangle(
 			backgroundRed,
 			backgroundGreen,
 			backgroundBlue,
@@ -172,7 +190,7 @@
 			(GLint)Config::windowScreenWidth,
 			(GLint)Config::windowScreenHeight);
 		//bottom zone
-		SpriteSheet::renderRectangle(
+		SpriteSheet::renderFilledRectangle(
 			backgroundRed,
 			backgroundGreen,
 			backgroundBlue,

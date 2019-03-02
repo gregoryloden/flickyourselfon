@@ -455,9 +455,9 @@ void PlayerState::beginKicking(int ticksTime) {
 //render this player state, which was deemed to be the last state to need rendering
 void PlayerState::render(EntityState* camera, int ticksTime) {
 	float renderCenterX =
-		getRenderCenterX(ticksTime) - camera->getRenderCenterX(ticksTime) + (float)Config::gameScreenWidth * 0.5f;
+		getRenderCenterWorldX(ticksTime) - camera->getRenderCenterWorldX(ticksTime) + (float)Config::gameScreenWidth * 0.5f;
 	float renderCenterY =
-		getRenderCenterY(ticksTime) - camera->getRenderCenterY(ticksTime) + (float)Config::gameScreenHeight * 0.5f;
+		getRenderCenterWorldY(ticksTime) - camera->getRenderCenterWorldY(ticksTime) + (float)Config::gameScreenHeight * 0.5f;
 	glEnable(GL_BLEND);
 	if (animation != nullptr)
 		animation->renderUsingCenter(

@@ -17,8 +17,8 @@ public:
 	~EntityState();
 
 	void copyEntityState(EntityState* other);
-	float getRenderCenterX(int ticksTime);
-	float getRenderCenterY(int ticksTime);
+	float getRenderCenterWorldX(int ticksTime);
+	float getRenderCenterWorldY(int ticksTime);
 	//if an animation changes the camera anchor, return it here
 	virtual EntityState* getNextCameraAnchor(int ticksTime) = 0;
 	void setVelocity(DynamicValue* vx, DynamicValue* vy, int pLastUpdateTicksTime);

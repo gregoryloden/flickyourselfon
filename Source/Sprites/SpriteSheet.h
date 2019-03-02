@@ -36,6 +36,10 @@ public:
 	void renderSpriteAtScreenPosition(int spriteHorizontalIndex, int spriteVerticalIndex, GLint drawLeftX, GLint drawTopY);
 	void renderSpriteCenteredAtScreenPosition(
 		int spriteHorizontalIndex, int spriteVerticalIndex, float drawCenterX, float drawCenterY);
-	static void renderRectangle(
+	static void renderFilledRectangle(
 		GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha, GLint leftX, GLint topY, GLint rightX, GLint bottomY);
+	static void renderRectangleOutline(
+		GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha, GLint leftX, GLint topY, GLint rightX, GLint bottomY);
+private:
+	static void setColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
 };

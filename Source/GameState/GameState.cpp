@@ -87,7 +87,7 @@ void GameState::render(int ticksTime) {
 	if (pauseState.get() != nullptr)
 		pauseState.get()->render();
 	#ifdef EDITOR
-		Editor::render();
+		Editor::render(camera, gameTicksTime);
 	#endif
 }
 //save the state to a file

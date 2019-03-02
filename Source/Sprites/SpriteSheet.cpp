@@ -91,17 +91,11 @@ void SpriteSheet::renderSpriteCenteredAtScreenPosition(
 		(GLint)(drawCenterX - (float)spriteWidth * 0.5f),
 		(GLint)(drawCenterY - (float)spriteHeight * 0.5f));
 }
-//render a rectangle of the specified color at the specified region of the screen
-void SpriteSheet::renderRectangle(
+//render a rectangle filled with the specified color at the specified region of the screen
+void SpriteSheet::renderFilledRectangle(
 	GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha, GLint leftX, GLint topY, GLint rightX, GLint bottomY)
 {
-	if (alpha >= 1.0f) {
-		glDisable(GL_BLEND);
-		glColor3f(red, green, blue);
-	} else {
-		glEnable(GL_BLEND);
-		glColor4f(red, green, blue, alpha);
-	}
+	setColor(red, green, blue, alpha);
 	glBegin(GL_QUADS);
 	glVertex2i(leftX, topY);
 	glVertex2i(rightX, topY);
@@ -109,4 +103,29 @@ void SpriteSheet::renderRectangle(
 	glVertex2i(leftX, bottomY);
 	glEnd();
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+}
+//render a rectangle outline using the specified color at the specified region of the screen
+//TODO: this doesn't draw it pixellated, do something different so that its pixel grid matches the game screen pixel grid
+void SpriteSheet::renderRectangleOutline(
+	GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha, GLint leftX, GLint topY, GLint rightX, GLint bottomY)
+{
+	setColor(red, green, blue, alpha);
+	//glLineWidth(3.0f);
+	glBegin(GL_LINE_LOOP);
+	glVertex2i(leftX, topY);
+	glVertex2i(rightX, topY);
+	glVertex2i(rightX, bottomY);
+	glVertex2i(leftX, bottomY);
+	glEnd();
+	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+}
+//set the color and enable blending as determined by the alpha
+void SpriteSheet::setColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha) {
+	if (alpha >= 1.0f) {
+		glDisable(GL_BLEND);
+		glColor3f(red, green, blue);
+	} else {
+		glEnable(GL_BLEND);
+		glColor4f(red, green, blue, alpha);
+	}
 }

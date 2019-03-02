@@ -1,6 +1,8 @@
 #include "General/General.h"
 #include "Sprites/Text.h"
 
+class EntityState;
+
 class Editor {
 private:
 	enum class Zone: unsigned char {
@@ -61,5 +63,5 @@ public:
 	static void loadButtons();
 	static void unloadButtons();
 	static void handleClick(SDL_MouseButtonEvent& clickEvent);
-	static void render();
+	static void render(EntityState* camera, int ticksTime);
 };

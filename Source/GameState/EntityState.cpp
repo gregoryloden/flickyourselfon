@@ -21,11 +21,11 @@ void EntityState::copyEntityState(EntityState* other) {
 	lastUpdateTicksTime = other->lastUpdateTicksTime;
 }
 //return the entity's x coordinate at the given time that we should use for rendering the world
-float EntityState::getRenderCenterX(int ticksTime) {
+float EntityState::getRenderCenterWorldX(int ticksTime) {
 	return x.get()->getValue(renderInterpolatedX ? ticksTime - lastUpdateTicksTime : 0);
 }
 //return the entity's y coordinate at the given time that we should use for rendering the world
-float EntityState::getRenderCenterY(int ticksTime) {
+float EntityState::getRenderCenterWorldY(int ticksTime) {
 	return y.get()->getValue(renderInterpolatedY ? ticksTime - lastUpdateTicksTime : 0);
 }
 //set the position to the given position at the given time

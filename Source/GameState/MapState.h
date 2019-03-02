@@ -11,6 +11,8 @@ public:
 	static const int emptySpaceHeight = heightCount - 1;
 	static const int tileSize = 6;
 	static const char invalidHeight = -1;
+	static const int radioTowerLeftXOffset = 324;
+	static const int radioTowerTopYOffset = -106;
 	static const char* floorFileName;
 	static const float speedPerSecond;
 	static const float diagonalSpeedPerSecond;
@@ -28,6 +30,8 @@ public:
 	static int mapHeight() { return height; }
 	static void buildMap();
 	static void deleteMap();
+	static int getScreenLeftWorldX(EntityState* camera, int ticksTime);
+	static int getScreenTopWorldY(EntityState* camera, int ticksTime);
 	static char horizontalTilesHeight(int lowMapX, int highMapX, int mapY);
 	static void render(EntityState* camera, int ticksTime);
 };

@@ -28,7 +28,7 @@ PauseState::PauseMenu::~PauseMenu() {
 //render this menu
 void PauseState::PauseMenu::render(int selectedOption, KeyBindingOption* selectingKeyBindingOption) {
 	//render a translucent rectangle the same color as the background color
-	SpriteSheet::renderRectangle(
+	SpriteSheet::renderFilledRectangle(
 		(GLfloat)Config::backgroundColorRed,
 		(GLfloat)Config::backgroundColorGreen,
 		(GLfloat)Config::backgroundColorBlue,
