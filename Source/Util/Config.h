@@ -2,7 +2,7 @@
 
 class Config {
 public:
-	//Should only be allocated within an object, on the stack, or as a static class member
+	//Should only be allocated within an object, on the stack, or as a static object
 	class KeyBindings {
 	public:
 		SDL_Scancode upKey;

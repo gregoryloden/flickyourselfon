@@ -47,10 +47,10 @@ void SpriteSheet::renderSpriteSheetRegionAtScreenRegion(
 	GLint drawRightX,
 	GLint drawBottomY)
 {
-	float texLeftX = spriteLeftX * spriteTexPixelWidth;
-	float texTopY = spriteTopY * spriteTexPixelHeight;
-	float texRightX = spriteRightX * spriteTexPixelWidth;
-	float texBottomY = spriteBottomY * spriteTexPixelHeight;
+	GLfloat texLeftX = (GLfloat)(spriteLeftX * spriteTexPixelWidth);
+	GLfloat texTopY = (GLfloat)(spriteTopY * spriteTexPixelHeight);
+	GLfloat texRightX = (GLfloat)(spriteRightX * spriteTexPixelWidth);
+	GLfloat texBottomY = (GLfloat)(spriteBottomY * spriteTexPixelHeight);
 	glEnable(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, textureId);
 	glBegin(GL_QUADS);

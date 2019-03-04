@@ -15,6 +15,8 @@
 #include "MemoryManagement.h"
 using namespace std;
 
+#undef RGB
+
 #define COMMA ,
 #ifdef DEBUG
 	#define onlyInDebug(x) x

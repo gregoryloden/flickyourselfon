@@ -9,39 +9,61 @@ private:
 		Right,
 		Bottom
 	};
+	//Should only be allocated within an object, on the stack, or as a static object
+	class RGB {
+	public:
+		float red;
+		float green;
+		float blue;
+
+		RGB(float pRed, float pGreen, float pBlue);
+		~RGB();
+	};
 	class Button onlyInDebug(: public ObjCounter) {
 	private:
-		static const int buttonMaxLeftRightPadding = 4;
-		static const int buttonTopBottomPadding = 2;
-		static const float buttonFontScale;
 		static const float buttonGrayRGB;
 
-		string text;
-		Text::Metrics textMetrics;
+	protected:
 		int leftX;
 		int topY;
 		int rightX;
 		int bottomY;
+
+	public:
+		Button(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY);
+		~Button();
+
+		void setWidthAndHeight(int width, int height);
+		bool tryHandleClick(int x, int y);
+		virtual void render();
+		//this button was clicked, do its associated action
+		virtual void doAction() = 0;
+	};
+	class TextButton: public Button {
+	private:
+		static const int buttonMaxLeftRightPadding = 4;
+		static const int buttonTopBottomPadding = 2;
+		static const float buttonFontScale;
+
+		string text;
+		Text::Metrics textMetrics;
 		float textLeftX;
 		float textBaselineY;
 
 	public:
-		Button(objCounterParametersComma() string pText, Zone zone, int zoneLeftX, int zoneTopY);
-		~Button();
+		TextButton(objCounterParametersComma() string pText, Zone zone, int zoneLeftX, int zoneTopY);
+		~TextButton();
 
-		void render();
-		bool tryHandleClick(int x, int y);
-		//this button was clicked, do its associated action
-		virtual void doAction() = 0;
+		virtual void render();
 	};
-	class SaveButton: public Button {
+	class SaveButton: public TextButton {
 	public:
 		SaveButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY);
 		~SaveButton();
 
 		virtual void doAction();
 	};
-	class ExportMapButton: public Button {
+	class ExportMapButton: public TextButton {
 	private:
 		static const char* mapFileName;
 
@@ -51,13 +73,44 @@ private:
 
 		virtual void doAction();
 	};
+	class TileButton: public Button {
+	public:
+		static const int buttonSize;
 
-	static const float backgroundRed;
-	static const float backgroundGreen;
-	static const float backgroundBlue;
+	private:
+		char tile;
+
+	public:
+		TileButton(objCounterParametersComma() char pTile, Zone zone, int zoneLeftX, int zoneTopY);
+		~TileButton();
+
+		virtual void render();
+		virtual void doAction();
+	};
+	class HeightButton: public Button {
+	public:
+		static const int buttonWidth;
+		static const int buttonHeight;
+
+	private:
+		char height;
+
+	public:
+		HeightButton(objCounterParametersComma() char pHeight, Zone zone, int zoneLeftX, int zoneTopY);
+		~HeightButton();
+
+		virtual void render();
+		virtual void doAction();
+	};
+
+	static const RGB backgroundRGB;
+	static const RGB heightFloorRGB;
+	static const RGB heightWallRGB;
 
 	static SaveButton* saveButton;
 	static ExportMapButton* exportMapButton;
+	static TileButton** tileButtons;
+	static HeightButton** heightButtons;
 
 public:
 	static void loadButtons();
