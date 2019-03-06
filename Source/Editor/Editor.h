@@ -91,8 +91,10 @@ private:
 	public:
 		static const int buttonWidth;
 		static const int buttonHeight;
-
 	private:
+		static const RGB heightFloorRGB;
+		static const RGB heightWallRGB;
+
 		char height;
 
 	public:
@@ -102,15 +104,30 @@ private:
 		virtual void render();
 		virtual void doAction();
 	};
+	class PaintBoxRadiusButton: public Button {
+	public:
+		static const int buttonSize;
+	private:
+		static const RGB boxRGB;
 
+		char radius;
+
+	public:
+		PaintBoxRadiusButton(objCounterParametersComma() char pRadius, Zone zone, int zoneLeftX, int zoneTopY);
+		~PaintBoxRadiusButton();
+
+		virtual void render();
+		virtual void doAction();
+	};
+
+	static const int paintBoxMaxRadius = 7;
 	static const RGB backgroundRGB;
-	static const RGB heightFloorRGB;
-	static const RGB heightWallRGB;
 
 	static SaveButton* saveButton;
 	static ExportMapButton* exportMapButton;
 	static TileButton** tileButtons;
 	static HeightButton** heightButtons;
+	static PaintBoxRadiusButton** paintBoxRadiusButtons;
 
 public:
 	static void loadButtons();

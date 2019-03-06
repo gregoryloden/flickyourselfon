@@ -10,6 +10,8 @@
 	#define newExportMapButton(zone, leftX, topY) newWithArgs(Editor::ExportMapButton, zone, leftX, topY)
 	#define newTileButton(tile, zone, leftX, topY) newWithArgs(Editor::TileButton, tile, zone, leftX, topY)
 	#define newHeightButton(height, zone, leftX, topY) newWithArgs(Editor::HeightButton, height, zone, leftX, topY)
+	#define newPaintBoxRadiusButton(radius, zone, leftX, topY) \
+		newWithArgs(Editor::PaintBoxRadiusButton, radius, zone, leftX, topY)
 
 	//////////////////////////////// Editor::RGB ////////////////////////////////
 	Editor::RGB::RGB(float pRed, float pGreen, float pBlue)
@@ -187,6 +189,8 @@
 	//////////////////////////////// Editor::HeightButton ////////////////////////////////
 	const int Editor::HeightButton::buttonWidth = MapState::tileSize + 2;
 	const int Editor::HeightButton::buttonHeight = 10;
+	const Editor::RGB Editor::HeightButton::heightFloorRGB (0.0f, 0.75f, 9.0f / 16.0f);
+	const Editor::RGB Editor::HeightButton::heightWallRGB (5.0f / 8.0f, 3.0f / 8.0f, 0.25f);
 	Editor::HeightButton::HeightButton(objCounterParametersComma() char pHeight, Zone zone, int zoneLeftX, int zoneTopY)
 	: Button(objCounterArgumentsComma() zone, zoneLeftX, zoneTopY)
 	, height(pHeight) {
@@ -220,14 +224,38 @@
 		//TODO: handle clicks appropriately
 	}
 
+	//////////////////////////////// Editor::PaintBoxRadiusButton ////////////////////////////////
+	const int Editor::PaintBoxRadiusButton::buttonSize = paintBoxMaxRadius + 2;
+	const Editor::RGB Editor::PaintBoxRadiusButton::boxRGB (9.0f / 16.0f, 3.0f / 8.0f, 5.0f / 8.0f);
+	Editor::PaintBoxRadiusButton::PaintBoxRadiusButton(
+		objCounterParametersComma() char pRadius, Zone zone, int zoneLeftX, int zoneTopY)
+	: Button(objCounterArgumentsComma() zone, zoneLeftX, zoneTopY)
+	, radius(pRadius) {
+		setWidthAndHeight(buttonSize, buttonSize);
+	}
+	Editor::PaintBoxRadiusButton::~PaintBoxRadiusButton() {}
+	//render the box radius above the button
+	void Editor::PaintBoxRadiusButton::render() {
+		Button::render();
+		SpriteSheet::renderFilledRectangle(
+			0.0f, 0.0f, 0.0f, 1.0f, (GLint)leftX + 1, (GLint)topY + 1, (GLint)rightX - 1, (GLint)bottomY - 1);
+		GLint boxLeftX = (GLint)leftX + 1;
+		GLint boxTopY = (GLint)topY + 1;
+		SpriteSheet::renderFilledRectangle(
+			boxRGB.red, boxRGB.green, boxRGB.blue, 1.0f, boxLeftX, boxTopY, boxLeftX + (GLint)radius, boxTopY + (GLint)radius);
+	}
+	//select a radius to use when painting
+	void Editor::PaintBoxRadiusButton::doAction() {
+		//TODO: handle clicks appropriately
+	}
+
 	//////////////////////////////// Editor ////////////////////////////////
 	const Editor::RGB Editor::backgroundRGB (0.25f, 0.75f, 0.75f);
-	const Editor::RGB Editor::heightFloorRGB (0.0f, 0.75f, 9.0f / 16.0f);
-	const Editor::RGB Editor::heightWallRGB (5.0f / 8.0f, 3.0f / 8.0f, 0.25f);
 	Editor::SaveButton* Editor::saveButton = nullptr;
 	Editor::ExportMapButton* Editor::exportMapButton = nullptr;
 	Editor::TileButton** Editor::tileButtons = nullptr;
 	Editor::HeightButton** Editor::heightButtons = nullptr;
+	Editor::PaintBoxRadiusButton** Editor::paintBoxRadiusButtons = nullptr;
 	//build all the editor buttons
 	void Editor::loadButtons() {
 		saveButton = newSaveButton(Zone::Right, 5, 5);
@@ -240,6 +268,10 @@
 		for (char i = 0; i < (char)MapState::heightCount; i++)
 			heightButtons[i] = newHeightButton(
 				i, Zone::Right, 5 + HeightButton::buttonWidth * (i / 2), 60 + HeightButton::buttonHeight * (i % 2));
+		paintBoxRadiusButtons = new PaintBoxRadiusButton*[paintBoxMaxRadius];
+		for (char i = 0; i < (char)paintBoxMaxRadius; i++)
+			paintBoxRadiusButtons[i] =
+				newPaintBoxRadiusButton(i + 1, Zone::Right, 75 + PaintBoxRadiusButton::buttonSize * i, 60);
 	}
 	//delete all the editor buttons
 	void Editor::unloadButtons() {
@@ -251,6 +283,9 @@
 		for (char i = 0; i < (char)MapState::heightCount; i++)
 			delete heightButtons[i];
 		delete[] heightButtons;
+		for (char i = 0; i < paintBoxMaxRadius; i++)
+			delete paintBoxRadiusButtons[i];
+		delete[] paintBoxRadiusButtons;
 	}
 	//see if we clicked on any buttons
 	void Editor::handleClick(SDL_MouseButtonEvent& clickEvent) {
@@ -311,5 +346,9 @@
 		//draw the heights
 		for (int i = 0; i < MapState::heightCount; i++)
 			heightButtons[i]->render();
+
+		//draw the paint box radii
+		for (int i = 0; i < paintBoxMaxRadius; i++)
+			paintBoxRadiusButtons[i]->render();
 	}
 #endif
