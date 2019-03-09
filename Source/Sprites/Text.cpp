@@ -144,25 +144,25 @@ void Text::unloadFont() {
 	glyphRows.clear();
 }
 //return the glyph as indicated by the character at the given index, and increment the index to the following character
-Text::Glyph* Text::getNextGlyph(const char* text, int* charIndexPointer) {
-	int charIndex = *charIndexPointer;
+Text::Glyph* Text::getNextGlyph(const char* text, int* inOutCharIndexPointer) {
+	int charIndex = *inOutCharIndexPointer;
 	char c = text[charIndex];
 	int unicodeValue;
 	if ((c & 0x80) == 0) {
 		unicodeValue = (int)c;
-		*charIndexPointer = charIndex + 1;
+		*inOutCharIndexPointer = charIndex + 1;
 	//2-byte utf-8
 	} else if ((c & 0xE0) == 0xC0) {
 		unicodeValue = (((int)c & 0x1F) << 6) | ((int)text[charIndex + 1] & 0x3F);
-		*charIndexPointer = charIndex + 2;
+		*inOutCharIndexPointer = charIndex + 2;
 	//3-byte utf-8
 	} else if ((c & 0xF0) == 0xE0) {
 		unicodeValue =
 			(((int)c & 0xF) << 12) | (((int)text[charIndex + 1] & 0x3F) << 6) | ((int)text[charIndex + 2] & 0x3F);
-		*charIndexPointer = charIndex + 3;
+		*inOutCharIndexPointer = charIndex + 3;
 	//skip 4-byte utf-8 and any utf-8 continuation bytes
 	} else {
-		*charIndexPointer = charIndex + 1;
+		*inOutCharIndexPointer = charIndex + 1;
 		return nullptr;
 	}
 

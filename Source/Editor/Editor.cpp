@@ -12,6 +12,8 @@
 	#define newHeightButton(height, zone, leftX, topY) newWithArgs(Editor::HeightButton, height, zone, leftX, topY)
 	#define newPaintBoxRadiusButton(radius, zone, leftX, topY) \
 		newWithArgs(Editor::PaintBoxRadiusButton, radius, zone, leftX, topY)
+	#define newNoiseButton(zone, leftX, topY) newWithArgs(Editor::NoiseButton, zone, leftX, topY)
+	#define newNoiseTileButton(zone, leftX, topY) newWithArgs(Editor::NoiseTileButton, zone, leftX, topY)
 
 	//////////////////////////////// Editor::RGB ////////////////////////////////
 	Editor::RGB::RGB(float pRed, float pGreen, float pBlue)
@@ -249,6 +251,49 @@
 		//TODO: handle clicks appropriately
 	}
 
+	//////////////////////////////// Editor::NoiseButton ////////////////////////////////
+	Editor::NoiseButton::NoiseButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY)
+	: TextButton(objCounterArgumentsComma() "Noise", zone, zoneLeftX, zoneTopY) {
+	}
+	Editor::NoiseButton::~NoiseButton() {}
+	//toggle noisy tile selection
+	void Editor::NoiseButton::doAction() {
+		//TODO: handle clicks appropriately
+	}
+
+	//////////////////////////////// Editor::NoiseTileButton ////////////////////////////////
+	const int Editor::NoiseTileButton::buttonWidth = MapState::tileSize + 2;
+	const int Editor::NoiseTileButton::buttonHeight = MapState::tileSize + 3;
+	Editor::NoiseTileButton::NoiseTileButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY)
+	: Button(objCounterArgumentsComma() zone, zoneLeftX, zoneTopY)
+	, tile(-1)
+	, count(0) {
+		setWidthAndHeight(buttonWidth, buttonHeight);
+	}
+	Editor::NoiseTileButton::~NoiseTileButton() {}
+	//render the tile above the button, as well as the count below it in base 4
+	void Editor::NoiseTileButton::render() {
+		Button::render();
+		if (count > 0) {
+			SpriteRegistry::tiles->renderSpriteAtScreenPosition((int)tile, 0, (GLint)leftX + 1, (GLint)topY + 1);
+			short drawCount = count;
+			for (int i = 0; i < MapState::tileSize; i++) {
+				float digitRGB = (float)(drawCount % 4) / 3.0f;
+				drawCount /= 4;
+				GLint dotLeft = (GLint)(leftX + i + 1);
+				GLint dotTop = (GLint)(topY + MapState::tileSize + 1);
+				SpriteSheet::renderFilledRectangle(
+					digitRGB, digitRGB, digitRGB, 1.0f, dotLeft, dotTop, dotLeft + 1, dotTop + 1);
+			}
+		} else
+			SpriteSheet::renderFilledRectangle(
+				0.0f, 0.0f, 0.0f, 1.0f, (GLint)leftX + 1, (GLint)topY + 1, (GLint)rightX - 1, (GLint)bottomY - 1);
+	}
+	//remove a count from this button
+	void Editor::NoiseTileButton::doAction() {
+		//TODO: handle clicks appropriately
+	}
+
 	//////////////////////////////// Editor ////////////////////////////////
 	const Editor::RGB Editor::backgroundRGB (0.25f, 0.75f, 0.75f);
 	Editor::SaveButton* Editor::saveButton = nullptr;
@@ -256,6 +301,8 @@
 	Editor::TileButton** Editor::tileButtons = nullptr;
 	Editor::HeightButton** Editor::heightButtons = nullptr;
 	Editor::PaintBoxRadiusButton** Editor::paintBoxRadiusButtons = nullptr;
+	Editor::NoiseButton* Editor::noiseButton = nullptr;
+	Editor::NoiseTileButton** Editor::noiseTileButtons = nullptr;
 	//build all the editor buttons
 	void Editor::loadButtons() {
 		saveButton = newSaveButton(Zone::Right, 5, 5);
@@ -263,15 +310,19 @@
 		tileButtons = new TileButton*[MapState::tileCount];
 		for (char i = 0; i < (char)MapState::tileCount; i++)
 			tileButtons[i] = newTileButton(
-				i, Zone::Right, 5 + TileButton::buttonSize * (i % 16), 25 + TileButton::buttonSize * (i / 16));
+				i, Zone::Right, 5 + TileButton::buttonSize * (i % 16), 23 + TileButton::buttonSize * (i / 16));
 		heightButtons = new HeightButton*[MapState::heightCount];
 		for (char i = 0; i < (char)MapState::heightCount; i++)
 			heightButtons[i] = newHeightButton(
-				i, Zone::Right, 5 + HeightButton::buttonWidth * (i / 2), 60 + HeightButton::buttonHeight * (i % 2));
+				i, Zone::Right, 5 + HeightButton::buttonWidth * (i / 2), 58 + HeightButton::buttonHeight * (i % 2));
 		paintBoxRadiusButtons = new PaintBoxRadiusButton*[paintBoxMaxRadius];
 		for (char i = 0; i < (char)paintBoxMaxRadius; i++)
 			paintBoxRadiusButtons[i] =
-				newPaintBoxRadiusButton(i + 1, Zone::Right, 75 + PaintBoxRadiusButton::buttonSize * i, 60);
+				newPaintBoxRadiusButton(i + 1, Zone::Right, 75 + PaintBoxRadiusButton::buttonSize * i, 58);
+		noiseButton = newNoiseButton(Zone::Right, 75, 70);
+		noiseTileButtons = new NoiseTileButton*[noiseTileButtonMaxCount];
+		for (char i = 0; i < noiseTileButtonMaxCount; i++)
+			noiseTileButtons[i] = newNoiseTileButton(Zone::Right, 5 + NoiseTileButton::buttonWidth * i, 86);
 	}
 	//delete all the editor buttons
 	void Editor::unloadButtons() {
@@ -286,6 +337,20 @@
 		for (char i = 0; i < paintBoxMaxRadius; i++)
 			delete paintBoxRadiusButtons[i];
 		delete[] paintBoxRadiusButtons;
+		delete noiseButton;
+		for (char i = 0; i < noiseTileButtonMaxCount; i++)
+			delete noiseTileButtons[i];
+		delete[] noiseTileButtons;
+	}
+	//convert the mouse position to map coordinates
+	void Editor::getMouseMapXY(int screenLeftWorldX, int screenTopWorldY, int* outMapX, int* outMapY) {
+		int mouseX;
+		int mouseY;
+		SDL_GetMouseState(&mouseX, &mouseY);
+		int scaledMouseX = (int)((float)mouseX / Config::currentPixelWidth);
+		int scaledMouseY = (int)((float)mouseY / Config::currentPixelHeight);
+		*outMapX = (scaledMouseX + screenLeftWorldX) / MapState::tileSize;
+		*outMapY = (scaledMouseY + screenTopWorldY) / MapState::tileSize;
 	}
 	//see if we clicked on any buttons
 	void Editor::handleClick(SDL_MouseButtonEvent& clickEvent) {
@@ -296,17 +361,14 @@
 	}
 	//draw the editor interface
 	void Editor::render(EntityState* camera, int ticksTime) {
-		//draw a mouse selection box
-		int mouseX;
-		int mouseY;
-		SDL_GetMouseState(&mouseX, &mouseY);
-		mouseX = (int)((float)mouseX / Config::currentPixelWidth);
-		mouseY = (int)((float)mouseY / Config::currentPixelHeight);
-
+		//get the map coordinate of the mouse
 		int screenLeftWorldX = MapState::getScreenLeftWorldX(camera, ticksTime);
 		int screenTopWorldY = MapState::getScreenTopWorldY(camera, ticksTime);
-		int mouseMapX = (mouseX + screenLeftWorldX) / MapState::tileSize;
-		int mouseMapY = (mouseY + screenTopWorldY) / MapState::tileSize;
+		int mouseMapX;
+		int mouseMapY;
+		getMouseMapXY(screenLeftWorldX, screenTopWorldY, &mouseMapX, &mouseMapY);
+
+		//draw a mouse selection box
 		GLint boxLeftX = (GLint)(mouseMapX * MapState::tileSize - screenLeftWorldX);
 		GLint boxTopY = (GLint)(mouseMapY * MapState::tileSize - screenTopWorldY);
 		GLint boxRightX = boxLeftX + (GLint)MapState::tileSize;
@@ -338,17 +400,14 @@
 		//draw the buttons
 		saveButton->render();
 		exportMapButton->render();
-
-		//draw the tiles
 		for (int i = 0; i < MapState::tileCount; i++)
 			tileButtons[i]->render();
-
-		//draw the heights
 		for (int i = 0; i < MapState::heightCount; i++)
 			heightButtons[i]->render();
-
-		//draw the paint box radii
 		for (int i = 0; i < paintBoxMaxRadius; i++)
 			paintBoxRadiusButtons[i]->render();
+		noiseButton->render();
+		for (char i = 0; i < noiseTileButtonMaxCount; i++)
+			noiseTileButtons[i]->render();
 	}
 #endif

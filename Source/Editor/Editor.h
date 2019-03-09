@@ -119,8 +119,32 @@ private:
 		virtual void render();
 		virtual void doAction();
 	};
+	class NoiseButton: public TextButton {
+	public:
+		NoiseButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY);
+		~NoiseButton();
+
+		virtual void doAction();
+	};
+	class NoiseTileButton: public Button {
+	public:
+		static const int buttonWidth;
+		static const int buttonHeight;
+
+	private:
+		char tile;
+		short count;
+
+	public:
+		NoiseTileButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY);
+		~NoiseTileButton();
+
+		virtual void render();
+		virtual void doAction();
+	};
 
 	static const int paintBoxMaxRadius = 7;
+	static const int noiseTileButtonMaxCount = 16;
 	static const RGB backgroundRGB;
 
 	static SaveButton* saveButton;
@@ -128,10 +152,15 @@ private:
 	static TileButton** tileButtons;
 	static HeightButton** heightButtons;
 	static PaintBoxRadiusButton** paintBoxRadiusButtons;
+	static NoiseButton* noiseButton;
+	static NoiseTileButton** noiseTileButtons;
 
 public:
 	static void loadButtons();
 	static void unloadButtons();
+private:
+	static void getMouseMapXY(int screenLeftWorldX, int screenTopWorldY, int* outMapX, int* outMapY);
+public:
 	static void handleClick(SDL_MouseButtonEvent& clickEvent);
 	static void render(EntityState* camera, int ticksTime);
 };

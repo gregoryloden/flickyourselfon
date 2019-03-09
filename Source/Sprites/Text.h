@@ -65,7 +65,7 @@ private:
 public:
 	static void loadFont();
 	static void unloadFont();
-	static Glyph* getNextGlyph(const char* text, int* charIndexPointer);
+	static Glyph* getNextGlyph(const char* text, int* inOutCharIndexPointer);
 	static Metrics getMetrics(const char* text, float fontScale);
 	static Metrics getKeyBackgroundMetrics(Metrics* textMetrics);
 	static void render(const char* text, float leftX, float baselineY, float fontScale);
