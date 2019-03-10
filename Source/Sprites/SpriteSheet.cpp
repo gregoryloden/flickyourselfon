@@ -109,13 +109,18 @@ void SpriteSheet::renderFilledRectangle(
 void SpriteSheet::renderRectangleOutline(
 	GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha, GLint leftX, GLint topY, GLint rightX, GLint bottomY)
 {
+	GLfloat lineLeftX = (GLfloat)leftX - 0.5f;
+	GLfloat lineTopY = (GLfloat)topY - 0.5f;
+	GLfloat lineRightX = (GLfloat)rightX + 0.5f;
+	GLfloat lineBottomY = (GLfloat)bottomY + 0.5f;
 	setColor(red, green, blue, alpha);
-	//glLineWidth(3.0f);
+	//TODO: make this correct
+	glLineWidth(3.0f);
 	glBegin(GL_LINE_LOOP);
-	glVertex2i(leftX, topY);
-	glVertex2i(rightX, topY);
-	glVertex2i(rightX, bottomY);
-	glVertex2i(leftX, bottomY);
+	glVertex2f(lineLeftX, lineTopY);
+	glVertex2f(lineRightX, lineTopY);
+	glVertex2f(lineRightX, lineBottomY);
+	glVertex2f(lineLeftX, lineBottomY);
 	glEnd();
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 }

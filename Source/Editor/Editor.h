@@ -36,6 +36,8 @@ private:
 		void setWidthAndHeight(int width, int height);
 		bool tryHandleClick(int x, int y);
 		virtual void render();
+		void renderFadedOverlay();
+		void renderHighlightOutline();
 		//this button was clicked, do its associated action
 		virtual void doAction() = 0;
 	};
@@ -61,6 +63,7 @@ private:
 		SaveButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY);
 		~SaveButton();
 
+		virtual void render();
 		virtual void doAction();
 	};
 	class ExportMapButton: public TextButton {
@@ -71,6 +74,7 @@ private:
 		ExportMapButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY);
 		~ExportMapButton();
 
+		virtual void render();
 		virtual void doAction();
 	};
 	class TileButton: public Button {
@@ -147,13 +151,12 @@ private:
 	static const int noiseTileButtonMaxCount = 16;
 	static const RGB backgroundRGB;
 
-	static SaveButton* saveButton;
-	static ExportMapButton* exportMapButton;
-	static TileButton** tileButtons;
-	static HeightButton** heightButtons;
-	static PaintBoxRadiusButton** paintBoxRadiusButtons;
+	static vector<Button*> buttons;
 	static NoiseButton* noiseButton;
-	static NoiseTileButton** noiseTileButtons;
+	static Button* selectedButton;
+	static PaintBoxRadiusButton* selectedPaintBoxRadiusButton;
+	static bool saveButtonDisabled;
+	static bool exportMapButtonDisabled;
 
 public:
 	static void loadButtons();
