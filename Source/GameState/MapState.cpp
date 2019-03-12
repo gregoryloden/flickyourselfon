@@ -1,4 +1,5 @@
 #include "MapState.h"
+#include "Editor/Editor.h"
 #include "GameState/EntityState.h"
 #include "Sprites/SpriteRegistry.h"
 #include "Sprites/SpriteSheet.h"
@@ -66,20 +67,29 @@ void MapState::render(EntityState* camera, int ticksTime) {
 	//these values are just right so that every tile rendered is at least partially in the window and no tiles are left out
 	int screenLeftWorldX = getScreenLeftWorldX(camera, ticksTime);
 	int screenTopWorldY = getScreenTopWorldY(camera, ticksTime);
-	int tileMinX = MathUtils::max(screenLeftWorldX / MapState::tileSize, 0);
-	int tileMinY = MathUtils::max(screenTopWorldY / MapState::tileSize, 0);
-	int tileMaxX = MathUtils::min((Config::gameScreenWidth + screenLeftWorldX - 1) / MapState::tileSize + 1, MapState::width);
-	int tileMaxY = MathUtils::min((Config::gameScreenHeight + screenTopWorldY - 1) / MapState::tileSize + 1, MapState::height);
+	int tileMinX = MathUtils::max(screenLeftWorldX / tileSize, 0);
+	int tileMinY = MathUtils::max(screenTopWorldY / tileSize, 0);
+	int tileMaxX = MathUtils::min((Config::gameScreenWidth + screenLeftWorldX - 1) / tileSize + 1, width);
+	int tileMaxY = MathUtils::min((Config::gameScreenHeight + screenTopWorldY - 1) / tileSize + 1, height);
+	#ifdef EDITOR
+		char editorSelectedHeight = Editor::getSelectedHeight();
+	#endif
 	for (int y = tileMinY; y < tileMaxY; y++) {
 		for (int x = tileMinX; x < tileMaxX; x++) {
 			//consider any tile at the max height to be filler
-			int mapIndex = y * MapState::width + x;
-			if (MapState::heights[mapIndex] != MapState::emptySpaceHeight)
-				SpriteRegistry::tiles->renderSpriteAtScreenPosition(
-					(int)(MapState::tiles[mapIndex]),
-					0,
-					(GLint)(x * MapState::tileSize - screenLeftWorldX),
-					(GLint)(y * MapState::tileSize - screenTopWorldY));
+			int mapIndex = y * width + x;
+			char mapHeight = heights[mapIndex];
+			if (mapHeight == emptySpaceHeight)
+				continue;
+
+			GLint leftX = (GLint)(x * tileSize - screenLeftWorldX);
+			GLint topY = (GLint)(y * tileSize - screenTopWorldY);
+			SpriteRegistry::tiles->renderSpriteAtScreenPosition((int)(tiles[mapIndex]), 0, leftX, topY);
+			#ifdef EDITOR
+				if (editorSelectedHeight != -1 && editorSelectedHeight != mapHeight)
+					SpriteSheet::renderFilledRectangle(
+						0.0f, 0.0f, 0.0f, 0.5f, leftX, topY, leftX + (GLint)tileSize, topY + (GLint)tileSize);
+			#endif
 		}
 	}
 

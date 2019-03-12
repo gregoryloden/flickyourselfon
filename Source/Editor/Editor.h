@@ -1,4 +1,5 @@
 #include "General/General.h"
+#include <random>
 #include "Sprites/Text.h"
 
 class EntityState;
@@ -40,6 +41,7 @@ private:
 		void renderHighlightOutline();
 		//this button was clicked, do its associated action
 		virtual void doAction() = 0;
+		virtual void paintMap(int x, int y);
 	};
 	class TextButton: public Button {
 	private:
@@ -90,6 +92,7 @@ private:
 
 		virtual void render();
 		virtual void doAction();
+		virtual void paintMap(int x, int y);
 	};
 	class HeightButton: public Button {
 	public:
@@ -105,8 +108,10 @@ private:
 		HeightButton(objCounterParametersComma() char pHeight, Zone zone, int zoneLeftX, int zoneTopY);
 		~HeightButton();
 
+		char getHeight() { return height; }
 		virtual void render();
 		virtual void doAction();
+		virtual void paintMap(int x, int y);
 	};
 	class PaintBoxRadiusButton: public Button {
 	public:
@@ -120,6 +125,7 @@ private:
 		PaintBoxRadiusButton(objCounterParametersComma() char pRadius, Zone zone, int zoneLeftX, int zoneTopY);
 		~PaintBoxRadiusButton();
 
+		char getRadius() { return radius; }
 		virtual void render();
 		virtual void doAction();
 	};
@@ -129,17 +135,16 @@ private:
 		~NoiseButton();
 
 		virtual void doAction();
+		virtual void paintMap(int x, int y);
 	};
 	class NoiseTileButton: public Button {
 	public:
 		static const int buttonWidth;
 		static const int buttonHeight;
 
-	private:
 		char tile;
-		short count;
+		int count;
 
-	public:
 		NoiseTileButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY);
 		~NoiseTileButton();
 
@@ -153,8 +158,12 @@ private:
 
 	static vector<Button*> buttons;
 	static NoiseButton* noiseButton;
+	static NoiseTileButton** noiseTileButtons;
 	static Button* selectedButton;
 	static PaintBoxRadiusButton* selectedPaintBoxRadiusButton;
+	static HeightButton* lastSelectedHeightButton;
+	static default_random_engine* randomEngine;
+	static discrete_distribution<int>* randomDistribution;
 	static bool saveButtonDisabled;
 	static bool exportMapButtonDisabled;
 
@@ -164,6 +173,10 @@ public:
 private:
 	static void getMouseMapXY(int screenLeftWorldX, int screenTopWorldY, int* outMapX, int* outMapY);
 public:
-	static void handleClick(SDL_MouseButtonEvent& clickEvent);
+	static void handleClick(SDL_MouseButtonEvent& clickEvent, EntityState* camera, int ticksTime);
 	static void render(EntityState* camera, int ticksTime);
+	static char getSelectedHeight();
+private:
+	static void addNoiseTile(char tile);
+	static void removeNoiseTile(char tile);
 };

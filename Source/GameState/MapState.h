@@ -26,6 +26,10 @@ private:
 public:
 	static char getTile(int x, int y) { return tiles[y * width + x]; }
 	static char getHeight(int x, int y) { return heights[y * width + x]; }
+	#ifdef EDITOR
+		static void setTile(int x, int y, char tile) { tiles[y * width + x] = tile; }
+		static void setHeight(int x, int y, char height) { heights[y * width + x] = height; }
+	#endif
 	static int mapWidth() { return width; }
 	static int mapHeight() { return height; }
 	static void buildMap();

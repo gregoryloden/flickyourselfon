@@ -72,7 +72,11 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 				break;
 			#ifdef EDITOR
 				case SDL_MOUSEBUTTONDOWN:
-					Editor::handleClick(gameEvent.button);
+					Editor::handleClick(gameEvent.button, camera, gameTicksTime);
+					break;
+				case SDL_MOUSEMOTION:
+					if ((SDL_GetMouseState(nullptr, nullptr) & (SDL_BUTTON_LMASK | SDL_BUTTON_MMASK | SDL_BUTTON_RMASK)) != 0)
+						Editor::handleClick(gameEvent.button, camera, gameTicksTime);
 					break;
 			#endif
 			default:
