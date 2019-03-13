@@ -507,8 +507,6 @@
 		if (selectedButton != nullptr)
 			selectedButton->renderHighlightOutline();
 		selectedPaintBoxRadiusButton->renderHighlightOutline();
-
-		//TODO: player bounding box
 	}
 	//return the height of the selected height button, or -1 if it's not selected
 	char Editor::getSelectedHeight() {

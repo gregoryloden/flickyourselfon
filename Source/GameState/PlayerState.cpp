@@ -8,6 +8,10 @@
 #include "Util/Config.h"
 #include "Util/StringUtils.h"
 
+#ifdef DEBUG
+	//**/#define SHOW_PLAYER_BOUNDING_BOX 1
+#endif
+
 const float PlayerState::playerStartingXPosition = 179.5f;
 const float PlayerState::playerStartingYPosition = 166.5f;
 const float PlayerState::playerWidth = 11.0f;
@@ -472,6 +476,18 @@ void PlayerState::render(EntityState* camera, int ticksTime) {
 	else
 		SpriteRegistry::player->renderSpriteCenteredAtScreenPosition(
 			hasBoot ? 4 : 0, (int)spriteDirection, renderCenterX, renderCenterY);
+
+	#ifdef SHOW_PLAYER_BOUNDING_BOX
+		SpriteSheet::renderFilledRectangle(
+			1.0f,
+			1.0f,
+			1.0f,
+			0.75f,
+			(GLint)(renderCenterX + boundingBoxLeftOffset),
+			(GLint)(renderCenterY + boundingBoxTopOffset),
+			(GLint)(renderCenterX + boundingBoxRightOffset),
+			(GLint)(renderCenterY + boundingBoxBottomOffset));
+	#endif
 }
 //save this player state to the file
 void PlayerState::saveState(ofstream& file) {

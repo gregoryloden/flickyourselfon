@@ -83,16 +83,18 @@ void Text::loadFont() {
 	int headerRow = 0;
 	GlyphRow* lastGlyphRow = nullptr;
 	while (true) {
-		int glyphBottom = -1;
+		int lowestGlyphBottom = -1;
 		int baselineOffset = 0;
 		//iterate through all the glyphs in this row, if there are any
 		//each glyph consists of its rectangle, plus a row above it and column to the left of it
-		//the row above it contains gray pixels spanning the width of the glyph rectangle, plus a white pixel in the top-left
+		//the row above it contains black pixels spanning the width of the glyph rectangle, plus a white pixel in the top-left
 		//	corner at the intersection with the column to the left of the glyph
 		//the column to the left has a pixel at the top with the unicode value of the glyph (clear if it's the one after the
-		//	glyph to the left of it, a pixel below it with how many pixels the baseline is above the bottom (clear if it's the
+		//	glyph to the left of it), a pixel below it with how many pixels the baseline is above the bottom (clear if it's the
 		//	same as the glyph to the left of it), and gray pixels the rest of the way down to a black pixel marking the last
 		//	pixel row of the glyph
+		//glyphs can be different heights but each header row is on one line of pixels; header rows will be below the tallest
+		//	glyph of the row above
 		for (int headerCol = 0; pixels[headerRow * imageWidth + headerCol] == solidWhite; ) {
 			//remember which column holds the glyph data, then find the first pixel column to the right of the glyph
 			int glyphDataCol = headerCol;
@@ -113,7 +115,8 @@ void Text::loadFont() {
 				baselineOffset = (baselineOffsetPixel & blueMask) >> blueShift;
 
 			//find the last pixel row of the glyph
-			for (glyphBottom = headerRow + 3; pixels[glyphBottom * imageWidth + glyphDataCol] != solidBlack; glyphBottom++)
+			int glyphBottom = headerRow + 3;
+			for (; pixels[glyphBottom * imageWidth + glyphDataCol] != solidBlack; glyphBottom++)
 				;
 
 			Glyph* glyph =
@@ -126,11 +129,12 @@ void Text::loadFont() {
 				glyphRows.push_back(lastGlyphRow);
 			}
 			lastUnicodeValue = unicodeValue;
+			lowestGlyphBottom = MathUtils::max(lowestGlyphBottom, glyphBottom);
 		}
-		if (glyphBottom == -1)
+		if (lowestGlyphBottom == -1)
 			break;
 		else
-			headerRow = glyphBottom + 1;
+			headerRow = lowestGlyphBottom + 1;
 	}
 
 	SDL_FreeSurface(fontSurface);
