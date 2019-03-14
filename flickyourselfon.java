@@ -56,6 +56,7 @@ public class flickyourselfon extends JPanel implements MouseListener, MouseMotio
 	public static final int PAUSE_MENU_RIGHT_KEY = KeyEvent.VK_RIGHT;
 	public static final int PAUSE_MENU_SELECT_KEY = KeyEvent.VK_ENTER;
 	public static final int PAUSE_MENU_SELECT_KEY2 = KeyEvent.VK_SPACE;
+	public static final int PAUSE_MENU_BACK_KEY = KeyEvent.VK_BACK_SPACE;
 	public static final int OPTIONS_BYTE_COUNT =
 		//version number, 1 int
 		4 +
@@ -128,6 +129,8 @@ public class flickyourselfon extends JPanel implements MouseListener, MouseMotio
 	public int vertKey = 0;
 	public int horizKey = 0;
 	public boolean pressedVertLast = true;
+	public int bootMapX = -1;
+	public int bootMapY = -1;
 	public int upKey = DEFAULT_UP_KEY;
 	public int downKey = DEFAULT_DOWN_KEY;
 	public int leftKey = DEFAULT_LEFT_KEY;
@@ -271,6 +274,10 @@ setBackground(new Color(48, 0, 48));
 			load(true, true);
 	}
 	public void resetGame() throws Exception {
+		loadImages();
+		resetGameState();
+	}
+	public void loadImages() throws Exception {
 		//load all sprites
 		playerImage = ImageIO.read(playerImageFile);
 		tilesImage = ImageIO.read(tilesImageFile);
@@ -284,7 +291,6 @@ setBackground(new Color(48, 0, 48));
 			for (int x = 0; x < SPRITE_FRAMES; x++)
 				playerSpritesY[x] = playerImage.getSubimage(x * SPRITE_WIDTH, y * SPRITE_HEIGHT, SPRITE_WIDTH, SPRITE_HEIGHT);
 		}
-		currentPlayerSprites = playerSprites[3];
 		//setup the tile list
 		int tileCount = tilesImage.getWidth() / TILE_SIZE;
 		for (int i = 0; i < tileCount; i++)
@@ -304,11 +310,32 @@ setBackground(new Color(48, 0, 48));
 			int[] heightsY = heights[y];
 			for (int x = 0; x < mapWidth; x++) {
 				int pixel = floorImage.getRGB(x, y);
+				int railComponent;
+				//consider anything at the max height to be filler
 				if ((heightsY[x] = (pixel & 255) / MAP_HEIGHTS_FACTOR) == MAP_HEIGHTS - 1) {
 					tilesY[x] = null;
 					tileIndicesY[x] = -1;
+				//if it has a red component, it's a rail/switch
+				//0 is technically sine-wave/rail/group-0, but group 0 is disallowed
+				} else if ((railComponent = ((pixel >> 16) & 255)) != 0) {
+					//bits 0-1: which wave it's part of
+					//bit 2: rail (0) or switch (1)
+					//bits 3-7: which switch group it's part of (exclude 0, 31 possible groups)
+				//it's just a regular map tile
 				} else
 					tilesY[x] = tileList[tileIndicesY[x] = ((pixel >> 8) & 255) / MAP_TILES_FACTOR];
+			}
+		}
+		//go find the boot tile
+		for (int y = mapHeight - 1; y >= 0; y--) {
+			int[] tileIndicesY = tileIndices[y];
+			for (int x = 0; x < mapWidth; x++) {
+				if (tileIndicesY[x] == BOOT_TILE) {
+					bootMapX = x;
+					bootMapY = y;
+					y = 0;
+					break;
+				}
 			}
 		}
 		//build font images
@@ -373,11 +400,13 @@ setBackground(new Color(48, 0, 48));
 		while (fontImage.getRGB(kbx, checky) != 0)
 			kbx--;
 		keyBackground = fontImage.getSubimage(kbx + 1, kby + 1, fontimagewidth - kbx - 1, fontimageheight - kby - 1);
-		//setup game state
+	}
+	public void resetGameState() {
 		px = STARTING_PLAYER_X;
 		py = STARTING_PLAYER_Y;
 		pz = STARTING_PLAYER_Z;
 		facing = 3;
+		currentPlayerSprites = playerSprites[3];
 		vertKey = 0;
 		horizKey = 0;
 		pressedVertLast = true;
@@ -415,22 +444,23 @@ super.paintComponent(g);
 			if (pauseOption == 1) {
 				pauseMenuDrawY = 52;
 				titleY = 16;
+				title = "Pause";
 				renderNormalMenuOption(g, "display");
 				renderNormalMenuOption(g, "controls");
 				renderNormalMenuOption(g, "exit game");
-				title = "Pause";
 			} else if (pauseOption == 2) {
 				pauseMenuDrawY = 44;
 				titleY = 12;
+				title = "Display";
 				renderNormalMenuOption(g, String.format("pixel width: %.3f", pixelWidth));
 				renderNormalMenuOption(g, String.format("pixel height: %.3f", pixelHeight));
 				renderNormalMenuOption(g, "defaults");
 				renderNormalMenuOption(g, "accept");
 				renderNormalMenuOption(g, "cancel");
-				title = "Display";
 			} else {
 				pauseMenuDrawY = 28;
 				titleY = 4;
+				title = "Controls";
 				renderKeyControlMenuOption(g, "up:");
 				renderKeyControlMenuOption(g, "down:");
 				renderKeyControlMenuOption(g, "left:");
@@ -440,7 +470,6 @@ super.paintComponent(g);
 				renderNormalMenuOption(g, "defaults");
 				renderNormalMenuOption(g, "accept");
 				renderNormalMenuOption(g, "cancel");
-				title = "Controls";
 			}
 			//draw title text big
 			g2.transform(AffineTransform.getScaleInstance(2, 2));
@@ -1092,20 +1121,31 @@ super.paintComponent(g);
 		//game is paused
 		} else {
 			//unpause the game
-			if (code == PAUSE_KEY)
+			if (code == PAUSE_KEY) {
+				//if we were in a menu, revert changes
+				if (pauseOption >= 2) {
+					evt.setKeyCode(PAUSE_MENU_BACK_KEY);
+					keyPressed(evt);
+				}
 				pauseOption = 0;
 			//choosing a key
-			else if (choosingKey) {
-				if (pauseMenuOption == 0)
-					keyStrings[0] = keyToString(upKey = code);
-				else if (pauseMenuOption == 1)
-					keyStrings[1] = keyToString(downKey = code);
-				else if (pauseMenuOption == 2)
-					keyStrings[2] = keyToString(leftKey = code);
-				else if (pauseMenuOption == 3)
-					keyStrings[3] = keyToString(rightKey = code);
-				else if (pauseMenuOption == 4)
-					keyStrings[4] = keyToString(bootKey = code);
+			} else if (choosingKey) {
+				if (pauseMenuOption == 0) {
+					upKey = code;
+					keyStrings[0] = keyToString(evt);
+				} else if (pauseMenuOption == 1) {
+					downKey = code;
+					keyStrings[1] = keyToString(evt);
+				} else if (pauseMenuOption == 2) {
+					leftKey = code;
+					keyStrings[2] = keyToString(evt);
+				} else if (pauseMenuOption == 3) {
+					rightKey = code;
+					keyStrings[3] = keyToString(evt);
+				} else if (pauseMenuOption == 4) {
+					bootKey = code;
+					keyStrings[4] = keyToString(evt);
+				}
 				//if there was another key assigned to this, set that one to be chosen
 				if (upKey == code && pauseMenuOption != 0)
 					pauseMenuOption = 0;
@@ -1155,14 +1195,10 @@ super.paintComponent(g);
 				} else if (pauseMenuOption == (lastOption = PAUSE_MENU_OPTION_COUNTS[pauseOption - 1] - 1)) {
 					if (pauseOption == 1)
 						System.exit(0);
-					else if (pauseOption >= 2 && pauseOption <= 3) {
-						load(true, false);
-						//window size was reverted, restore the old window size
-						if (pauseOption == 2)
-							resizeWindow(2);
-						//go back to the main pause menu at the position of this submenu
-						pauseMenuOption = pauseOption - 2;
-						pauseOption = 1;
+					else if (pauseOption >= 2) {
+						//redo the event as a back
+						evt.setKeyCode(PAUSE_MENU_BACK_KEY);
+						keyPressed(evt);
 					}
 				//accept, save options
 				//if this is true then we know we're in a sub-menu because the main menu would already have caught the event
@@ -1190,6 +1226,14 @@ super.paintComponent(g);
 				//if we get here, the pauseMenuOption is definitely on a key option
 				} else if (pauseOption == 3)
 					choosingKey = true;
+			} else if (code == PAUSE_MENU_BACK_KEY) {
+				load(true, false);
+				//window size was reverted, restore the old window size
+				if (pauseOption == 2)
+					resizeWindow(2);
+				//go back to the main pause menu at the position of this submenu
+				pauseMenuOption = pauseOption - 2;
+				pauseOption = 1;
 			}
 		}
 	}
@@ -1422,6 +1466,15 @@ super.paintComponent(g);
 	public void produceMapCoordinates(int mouseX, int mouseY) {
 		mouseMapX = (int)(Math.floor((Math.floor(px) - BASE_WIDTH / 2 + mouseX / pixelWidth) / TILE_SIZE));
 		mouseMapY = (int)(Math.floor((Math.floor(py) - BASE_HEIGHT / 2 + mouseY / pixelHeight) / TILE_SIZE));
+	}
+	public String keyToString(KeyEvent evt) {
+		char c = evt.getKeyChar();
+		if (c != KeyEvent.CHAR_UNDEFINED && c != ' ' && c != '\n') {
+			if (c >= 'a' && c <= 'z')
+				c += 'A' - 'a';
+			return String.valueOf(c);
+		} else
+			return keyToString(evt.getKeyCode());
 	}
 	public String keyToString(int key) {
 		if (key == KeyEvent.VK_UP)
