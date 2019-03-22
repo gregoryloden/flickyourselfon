@@ -151,9 +151,56 @@ private:
 		virtual void render();
 		virtual void doAction();
 	};
+	class SwitchButton: public Button {
+	public:
+		static const int buttonSize;
+
+	private:
+		char switchType;
+
+	public:
+		SwitchButton(objCounterParametersComma() char pSwitchType, Zone zone, int zoneLeftX, int zoneTopY);
+		~SwitchButton();
+
+		virtual void render();
+		virtual void doAction();
+		virtual void paintMap(int x, int y);
+	};
+	class RailButton: public Button {
+	public:
+		static const int buttonSize;
+
+	private:
+		char color;
+
+	public:
+		RailButton(objCounterParametersComma() char pColor, Zone zone, int zoneLeftX, int zoneTopY);
+		~RailButton();
+
+		virtual void render();
+		virtual void doAction();
+		virtual void paintMap(int x, int y);
+	};
+	class RailSwitchGroupButton: public Button {
+	public:
+		static const int groupSquareSize = 6;
+		static const int groupSquareHalfSize = groupSquareSize / 2;
+		static const int buttonSize = groupSquareSize + 2;
+
+	private:
+		char railSwitchGroup;
+
+	public:
+		RailSwitchGroupButton(objCounterParametersComma() char pRailSwitchGroup, Zone zone, int zoneLeftX, int zoneTopY);
+		~RailSwitchGroupButton();
+
+		virtual void render();
+		virtual void doAction();
+	};
 
 	static const int paintBoxMaxRadius = 7;
 	static const int noiseTileButtonMaxCount = 16;
+	static const int railSwitchGroupCount = 64;
 	static const RGB backgroundRGB;
 
 	static vector<Button*> buttons;
@@ -161,7 +208,10 @@ private:
 	static NoiseTileButton** noiseTileButtons;
 	static Button* selectedButton;
 	static PaintBoxRadiusButton* selectedPaintBoxRadiusButton;
+	static RailSwitchGroupButton* selectedRailSwitchGroupButton;
 	static HeightButton* lastSelectedHeightButton;
+	static SwitchButton* lastSelectedSwitchButton;
+	static RailButton* lastSelectedRailButton;
 	static default_random_engine* randomEngine;
 	static discrete_distribution<int>* randomDistribution;
 	static bool saveButtonDisabled;

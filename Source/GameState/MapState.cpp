@@ -11,6 +11,7 @@ const float MapState::diagonalSpeedPerSecond = MapState::speedPerSecond * sqrt(0
 const float MapState::smallDistance = 1.0f / 256.0f;
 char* MapState::tiles = nullptr;
 char* MapState::heights = nullptr;
+short* MapState::railSwitchIds = nullptr;
 int MapState::width = 1;
 int MapState::height = 1;
 //load the map and extract all the map data from it
@@ -21,6 +22,7 @@ void MapState::buildMap() {
 	int totalTiles = width * height;
 	tiles = new char[totalTiles];
 	heights = new char[totalTiles];
+	railSwitchIds = new short[totalTiles];
 
 	int greenShift = (int)floor->format->Gshift;
 	int greenMask = (int)floor->format->Gmask;
@@ -39,6 +41,7 @@ void MapState::buildMap() {
 void MapState::deleteMap() {
 	delete[] tiles;
 	delete[] heights;
+	delete[] railSwitchIds;
 }
 //get the world position of the left edge of the screen using the camera as the center of the screen
 int MapState::getScreenLeftWorldX(EntityState* camera, int ticksTime) {

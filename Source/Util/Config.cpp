@@ -20,9 +20,9 @@ void Config::KeyBindings::set(const KeyBindings* other) {
 }
 
 //////////////////////////////// Config ////////////////////////////////
-//TODO: settle on final background color
 const float Config::defaultPixelWidth = 3.0f;
 const float Config::defaultPixelHeight = 3.0f;
+//TODO: settle on final background color
 const float Config::backgroundColorRed = 3.0f / 16.0f;
 const float Config::backgroundColorGreen = 0.0f;
 const float Config::backgroundColorBlue = 3.0f / 16.0f;

@@ -14,6 +14,10 @@
 		newWithArgs(Editor::PaintBoxRadiusButton, radius, zone, leftX, topY)
 	#define newNoiseButton(zone, leftX, topY) newWithArgs(Editor::NoiseButton, zone, leftX, topY)
 	#define newNoiseTileButton(zone, leftX, topY) newWithArgs(Editor::NoiseTileButton, zone, leftX, topY)
+	#define newSwitchButton(switchType, zone, leftX, topY) newWithArgs(Editor::SwitchButton, switchType, zone, leftX, topY)
+	#define newRailButton(color, zone, leftX, topY) newWithArgs(Editor::RailButton, color, zone, leftX, topY)
+	#define newRailSwitchGrouopButton(railSwitchGroup, zone, leftX, topY) \
+		newWithArgs(Editor::RailSwitchGroupButton, railSwitchGroup, zone, leftX, topY)
 
 	//////////////////////////////// Editor::RGB ////////////////////////////////
 	Editor::RGB::RGB(float pRed, float pGreen, float pBlue)
@@ -218,6 +222,7 @@
 	//render the tile above the button
 	void Editor::TileButton::render() {
 		Button::render();
+		glDisable(GL_BLEND);
 		SpriteRegistry::tiles->renderSpriteAtScreenPosition((int)tile, 0, (GLint)leftX + 1, (GLint)topY + 1);
 	}
 	//if noisy tile selection is off, highlight this tile for tile painting
@@ -333,6 +338,7 @@
 	void Editor::NoiseTileButton::render() {
 		Button::render();
 		if (tile >= 0) {
+			glDisable(GL_BLEND);
 			SpriteRegistry::tiles->renderSpriteAtScreenPosition((int)tile, 0, (GLint)leftX + 1, (GLint)topY + 1);
 			int drawCount = count;
 			for (int i = 0; i < MapState::tileSize; i++) {
@@ -353,6 +359,102 @@
 			removeNoiseTile(tile);
 	}
 
+	//////////////////////////////// Editor::SwitchButton ////////////////////////////////
+	const int Editor::SwitchButton::buttonSize = MapState::switchSize + 2;
+	Editor::SwitchButton::SwitchButton(objCounterParametersComma() char pSwitchType, Zone zone, int zoneLeftX, int zoneTopY)
+	: Button(objCounterArgumentsComma() zone, zoneLeftX, zoneTopY)
+	, switchType(pSwitchType) {
+		setWidthAndHeight(buttonSize, buttonSize);
+	}
+	Editor::SwitchButton::~SwitchButton() {}
+	//render the switch above the button
+	void Editor::SwitchButton::render() {
+		Button::render();
+		SpriteSheet::renderFilledRectangle(
+			0.0f, 0.0f, 0.0f, 1.0f, (GLint)leftX + 1, (GLint)topY + 1, (GLint)rightX - 1, (GLint)bottomY - 1);
+		glEnable(GL_BLEND);
+		SpriteRegistry::switches->renderSpriteAtScreenPosition((int)(switchType * 2 + 1), 0, (GLint)leftX + 1, (GLint)topY + 1);
+	}
+	//select this switch as the painting action
+	void Editor::SwitchButton::doAction() {
+		selectedButton = selectedButton == this ? nullptr : this;
+		lastSelectedSwitchButton = this;
+	}
+	//set a switch at this position
+	void Editor::SwitchButton::paintMap(int x, int y) {
+		//TODO: set a switch
+	}
+
+	//////////////////////////////// Editor::RailButton ////////////////////////////////
+	const int Editor::RailButton::buttonSize = MapState::tileSize + 2;
+	Editor::RailButton::RailButton(objCounterParametersComma() char pColor, Zone zone, int zoneLeftX, int zoneTopY)
+	: Button(objCounterArgumentsComma() zone, zoneLeftX, zoneTopY)
+	, color(pColor) {
+		setWidthAndHeight(buttonSize, buttonSize);
+	}
+	Editor::RailButton::~RailButton() {}
+	//render the rail above the button
+	void Editor::RailButton::render() {
+		Button::render();
+		SpriteSheet::renderFilledRectangle(
+			(color == 0 || color == 3) ? 0.75f : 0.0f,
+			(color == 1 || color == 3) ? 0.75f : 0.0f,
+			(color == 2 || color == 3) ? 0.75f : 0.0f,
+			1.0f,
+			(GLint)leftX + 1,
+			(GLint)topY + 1,
+			(GLint)rightX - 1,
+			(GLint)bottomY - 1);
+		glEnable(GL_BLEND);
+		SpriteRegistry::rails->renderSpriteAtScreenPosition(0, 0, (GLint)leftX + 1, (GLint)topY + 1);
+	}
+	//select this rail as the painting action
+	void Editor::RailButton::doAction() {
+		selectedButton = selectedButton == this ? nullptr : this;
+		lastSelectedRailButton = this;
+	}
+	//set a rail at this position
+	void Editor::RailButton::paintMap(int x, int y) {
+		//TODO: set a rail
+	}
+
+	//////////////////////////////// Editor::RailSwitchGroupButton ////////////////////////////////
+	Editor::RailSwitchGroupButton::RailSwitchGroupButton(
+		objCounterParametersComma() char pRailSwitchGroup, Zone zone, int zoneLeftX, int zoneTopY)
+	: Button(objCounterArgumentsComma() zone, zoneLeftX, zoneTopY)
+	, railSwitchGroup(pRailSwitchGroup) {
+		setWidthAndHeight(buttonSize, buttonSize);
+	}
+	Editor::RailSwitchGroupButton::~RailSwitchGroupButton() {}
+	//render the group above the button
+	void Editor::RailSwitchGroupButton::render() {
+		Button::render();
+		//bits 0-2
+		SpriteSheet::renderFilledRectangle(
+			(float)(railSwitchGroup & 1),
+			(float)((railSwitchGroup & 2) >> 1),
+			(float)((railSwitchGroup & 4) >> 2),
+			1.0f,
+			(GLint)leftX + 1,
+			(GLint)topY + 1,
+			(GLint)(leftX + 1 + groupSquareHalfSize),
+			(GLint)bottomY - 1);
+		//bits 3-5
+		SpriteSheet::renderFilledRectangle(
+			(float)((railSwitchGroup & 8) >> 3),
+			(float)((railSwitchGroup & 16) >> 4),
+			(float)((railSwitchGroup & 32) >> 5),
+			1.0f,
+			(GLint)(leftX + 1 + groupSquareHalfSize),
+			(GLint)topY + 1,
+			(GLint)rightX - 1,
+			(GLint)bottomY - 1);
+	}
+	//select a group to use when painting switches or rails
+	void Editor::RailSwitchGroupButton::doAction() {
+		selectedRailSwitchGroupButton = this;
+	}
+
 	//////////////////////////////// Editor ////////////////////////////////
 	const Editor::RGB Editor::backgroundRGB (0.25f, 0.75f, 0.75f);
 	vector<Editor::Button*> Editor::buttons;
@@ -360,7 +462,10 @@
 	Editor::NoiseTileButton** Editor::noiseTileButtons = nullptr;
 	Editor::Button* Editor::selectedButton = nullptr;
 	Editor::PaintBoxRadiusButton* Editor::selectedPaintBoxRadiusButton = nullptr;
+	Editor::RailSwitchGroupButton* Editor::selectedRailSwitchGroupButton = nullptr;
 	Editor::HeightButton* Editor::lastSelectedHeightButton = nullptr;
+	Editor::SwitchButton* Editor::lastSelectedSwitchButton = nullptr;
+	Editor::RailButton* Editor::lastSelectedRailButton = nullptr;
 	default_random_engine* Editor::randomEngine = nullptr;
 	discrete_distribution<int>* Editor::randomDistribution = nullptr;
 	bool Editor::saveButtonDisabled = true;
@@ -386,10 +491,22 @@
 		noiseButton = newNoiseButton(Zone::Right, 73, 58);
 		buttons.push_back(noiseButton);
 		noiseTileButtons = new NoiseTileButton*[noiseTileButtonMaxCount];
-		for (char i = 0; i < noiseTileButtonMaxCount; i++) {
+		for (char i = 0; i < (char)noiseTileButtonMaxCount; i++) {
 			NoiseTileButton* button = newNoiseTileButton(
 				Zone::Right, 73 + NoiseTileButton::buttonWidth * (i % 8), 74 + NoiseTileButton::buttonHeight * (i / 8));
 			noiseTileButtons[i] = button;
+			buttons.push_back(button);
+		}
+		for (char i = 0; i < 4; i++)
+			buttons.push_back(newSwitchButton(i, Zone::Right, 5 + SwitchButton::buttonSize * i, 97));
+		for (char i = 0; i < 4; i++)
+			buttons.push_back(newRailButton(i, Zone::Right, 5 + RailButton::buttonSize * i, 114));
+		for (char i = 0; i < (char)railSwitchGroupCount; i++) {
+			RailSwitchGroupButton* button =
+				newRailSwitchGrouopButton(
+					i, Zone::Right, 5 + TileButton::buttonSize * (i % 16), 125 + TileButton::buttonSize * (i / 16));
+			if (i == 0)
+				selectedRailSwitchGroupButton = button;
 			buttons.push_back(button);
 		}
 	}
@@ -417,11 +534,14 @@
 	void Editor::handleClick(SDL_MouseButtonEvent& clickEvent, EntityState* camera, int ticksTime) {
 		int screenX = (int)((float)clickEvent.x / Config::currentPixelWidth);
 		int screenY = (int)((float)clickEvent.y / Config::currentPixelHeight);
-		for (Button* button : buttons)
+		for (Button* button : buttons) {
 			if (button->tryHandleClick(screenX, screenY))
 				return;
-		//try to paint part of the map
-		if (screenX < Config::gameScreenWidth && screenY < Config::gameScreenHeight
+		}
+
+		//we didn't hit any of the buttons, check if we're painting part of the map
+		if (screenX < Config::gameScreenWidth
+			&& screenY < Config::gameScreenHeight
 			&& selectedButton != nullptr
 			&& (selectedButton != noiseButton || noiseTileButtons[0]->tile != -1))
 		{
@@ -442,7 +562,10 @@
 			int mouseMapY;
 			getMouseMapXY(screenLeftWorldX, screenTopWorldY, &mouseMapX, &mouseMapY);
 
-			int radius = (int)selectedPaintBoxRadiusButton->getRadius();
+			int radius = (selectedButton == lastSelectedSwitchButton || selectedButton == lastSelectedRailButton)
+				? 0
+				: (int)selectedPaintBoxRadiusButton->getRadius();
+
 			int lowMapX = MathUtils::max(mouseMapX - radius, 0);
 			int lowMapY = MathUtils::max(mouseMapY - radius, 0);
 			int highMapX = MathUtils::min(mouseMapX + radius, MapState::mapWidth() - 1);
@@ -459,8 +582,16 @@
 	}
 	//draw the editor interface
 	void Editor::render(EntityState* camera, int ticksTime) {
+		//these get used for multiple things
+		bool selectedSwitch = false;
+		bool selectedRail = false;
+
 		//if we've selected something to paint, draw a box around the area we'll paint
 		if (selectedButton != nullptr) {
+			//check which button we've selected
+			selectedSwitch = selectedButton == lastSelectedSwitchButton;
+			selectedRail = selectedButton == lastSelectedRailButton;
+
 			//get the map coordinate of the mouse
 			int screenLeftWorldX = MapState::getScreenLeftWorldX(camera, ticksTime);
 			int screenTopWorldY = MapState::getScreenTopWorldY(camera, ticksTime);
@@ -469,12 +600,23 @@
 			getMouseMapXY(screenLeftWorldX, screenTopWorldY, &mouseMapX, &mouseMapY);
 
 			//draw a mouse selection box
-			int radius = (int)selectedPaintBoxRadiusButton->getRadius();
-			int worldDiameter = (radius * 2 + 1) * MapState::tileSize;
-			GLint boxLeftX = (GLint)((mouseMapX - radius) * MapState::tileSize - screenLeftWorldX);
-			GLint boxTopY = (GLint)((mouseMapY - radius) * MapState::tileSize - screenTopWorldY);
-			GLint boxRightX = boxLeftX + (GLint)worldDiameter;
-			GLint boxBottomY = boxTopY + (GLint)worldDiameter;
+			int boxTopLeftMapOffset;
+			int boxMapSize;
+			if (selectedSwitch) {
+				boxTopLeftMapOffset = 0;
+				boxMapSize = 2;
+			} else if (selectedRail) {
+				boxTopLeftMapOffset = 0;
+				boxMapSize = 1;
+			} else {
+				boxTopLeftMapOffset = (int)selectedPaintBoxRadiusButton->getRadius();
+				boxMapSize = (boxTopLeftMapOffset * 2 + 1);
+			}
+			GLint boxScreenSize = (GLint)(boxMapSize * MapState::tileSize);
+			GLint boxLeftX = (GLint)((mouseMapX - boxTopLeftMapOffset) * MapState::tileSize - screenLeftWorldX);
+			GLint boxTopY = (GLint)((mouseMapY - boxTopLeftMapOffset) * MapState::tileSize - screenTopWorldY);
+			GLint boxRightX = boxLeftX + boxScreenSize;
+			GLint boxBottomY = boxTopY + boxScreenSize;
 			SpriteSheet::renderRectangleOutline(1.0f, 1.0f, 1.0f, 1.0f, boxLeftX, boxTopY, boxRightX, boxBottomY);
 		}
 
@@ -506,6 +648,7 @@
 
 		if (selectedButton != nullptr)
 			selectedButton->renderHighlightOutline();
+		selectedRailSwitchGroupButton->renderHighlightOutline();
 		selectedPaintBoxRadiusButton->renderHighlightOutline();
 	}
 	//return the height of the selected height button, or -1 if it's not selected

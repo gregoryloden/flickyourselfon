@@ -31,10 +31,14 @@ SpriteSheet* SpriteSheet::produce(
 	SDL_FreeSurface(surface);
 	return spriteSheet;
 }
-//the last row of pixels shouldn't get drawn as part of the sprite
-//TODO: make this correct/more general purpose if we ever use this for more than just the tiles sprite
-void SpriteSheet::clampSpriteRectForTilesSprite() {
-	spriteHeight--;
+//the last row and column of pixels shouldn't get drawn as part of the sprite
+void SpriteSheet::removeBottomRightPixelBorder() {
+	//because of floored int division, and assuming (sheet width = 1 + sprite width * sprites), any sprite with 2 or more in a
+	//	direction should already have the proper value
+	if (spriteWidth == spriteSheetWidth)
+		spriteWidth--;
+	if (spriteHeight == spriteSheetHeight)
+		spriteHeight--;
 }
 //draw the specified region of the sprite sheet
 void SpriteSheet::renderSpriteSheetRegionAtScreenRegion(

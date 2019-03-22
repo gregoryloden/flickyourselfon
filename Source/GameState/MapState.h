@@ -10,6 +10,7 @@ public:
 	static const int heightDivisor = 256 / heightCount;
 	static const int emptySpaceHeight = heightCount - 1;
 	static const int tileSize = 6;
+	static const int switchSize = 12;
 	static const char invalidHeight = -1;
 	static const int radioTowerLeftXOffset = 324;
 	static const int radioTowerTopYOffset = -106;
@@ -20,6 +21,7 @@ public:
 private:
 	static char* tiles;
 	static char* heights;
+	static short* railSwitchIds;
 	static int width;
 	static int height;
 

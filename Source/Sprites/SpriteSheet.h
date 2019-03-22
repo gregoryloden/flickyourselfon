@@ -23,7 +23,7 @@ public:
 		objCounterParametersComma() const char* imagePath, int horizontalSpriteCount, int verticalSpriteCount);
 	int getSpriteSheetWidth() { return spriteSheetWidth; }
 	int getSpriteSheetHeight() { return spriteSheetHeight; }
-	void clampSpriteRectForTilesSprite();
+	void removeBottomRightPixelBorder();
 	void renderSpriteSheetRegionAtScreenRegion(
 		int spriteLeftX,
 		int spriteTopY,

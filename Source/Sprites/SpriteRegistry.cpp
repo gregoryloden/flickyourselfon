@@ -6,9 +6,13 @@
 const char* SpriteRegistry::playerFileName = "images/player.png";
 const char* SpriteRegistry::tilesFileName = "images/tiles.png";
 const char* SpriteRegistry::radioTowerFileName = "images/radiotower.png";
+const char* SpriteRegistry::railsFileName = "images/rails.png";
+const char* SpriteRegistry::switchesFileName = "images/switches.png";
 SpriteSheet* SpriteRegistry::player = nullptr;
 SpriteSheet* SpriteRegistry::tiles = nullptr;
 SpriteSheet* SpriteRegistry::radioTower = nullptr;
+SpriteSheet* SpriteRegistry::rails = nullptr;
+SpriteSheet* SpriteRegistry::switches = nullptr;
 SpriteAnimation* SpriteRegistry::playerWalkingAnimation = nullptr;
 SpriteAnimation* SpriteRegistry::playerLegLiftAnimation = nullptr;
 SpriteAnimation* SpriteRegistry::playerBootWalkingAnimation = nullptr;
@@ -18,8 +22,12 @@ SpriteAnimation* SpriteRegistry::playerKickingAnimation = nullptr;
 void SpriteRegistry::loadAll() {
 	player = newSpriteSheetWithImagePath(playerFileName, 9, 4);
 	tiles = newSpriteSheetWithImagePath(tilesFileName, MapState::tileCount, 1);
-	tiles->clampSpriteRectForTilesSprite();
+	tiles->removeBottomRightPixelBorder();
 	radioTower = newSpriteSheetWithImagePath(radioTowerFileName, 1, 1);
+	rails = newSpriteSheetWithImagePath(railsFileName, 12, 1);
+	rails->removeBottomRightPixelBorder();
+	switches = newSpriteSheetWithImagePath(switchesFileName, 9, 1);
+	switches->removeBottomRightPixelBorder();
 	playerWalkingAnimation = newSpriteAnimation(
 		player,
 		{
@@ -54,6 +62,8 @@ void SpriteRegistry::unloadAll() {
 	delete player;
 	delete tiles;
 	delete radioTower;
+	delete rails;
+	delete switches;
 	delete playerWalkingAnimation;
 	delete playerLegLiftAnimation;
 	delete playerBootWalkingAnimation;
