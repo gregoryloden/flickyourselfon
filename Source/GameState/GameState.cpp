@@ -14,6 +14,7 @@ const char* GameState::savedGameFileName = "fyo.sav";
 GameState::GameState(objCounterParameters())
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
 playerState(newPlayerState())
+, mapState(newMapState())
 , camera(nullptr)
 , pauseState(nullptr)
 , pauseStartTicksTime(-1)
@@ -23,9 +24,11 @@ playerState(newPlayerState())
 }
 GameState::~GameState() {
 	delete playerState;
+	delete mapState;
 }
 //update this game state by reading from the previous state
 void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
+	//don't update any state if we're paused
 	if (prev->pauseState.get() != nullptr) {
 		PauseState* nextPauseState = prev->pauseState.get()->getNextPauseState();
 		pauseState.set(nextPauseState);
@@ -45,13 +48,16 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 		return;
 	}
 
+	//we're not paused, reset the pause state just to be safe, and find what time it really is
 	pauseState.set(nullptr);
 	gameTimeOffsetTicksDuration = prev->gameTimeOffsetTicksDuration;
 	int gameTicksTime = ticksTime - gameTimeOffsetTicksDuration;
 
+	//update states
 	playerState->updateWithPreviousPlayerState(prev->playerState, gameTicksTime);
+	mapState->updateWithPreviousMapState(prev->mapState, gameTicksTime);
 
-	//handle events
+	//handle events after states have been updated
 	SDL_Event gameEvent;
 	while (SDL_PollEvent(&gameEvent) != 0) {
 		switch (gameEvent.type) {
@@ -90,7 +96,7 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 //render this state, which was deemed to be the last state to need rendering
 void GameState::render(int ticksTime) {
 	int gameTicksTime = (pauseState.get() != nullptr ? pauseStartTicksTime : ticksTime) - gameTimeOffsetTicksDuration;
-	MapState::render(camera, gameTicksTime);
+	mapState->render(camera, gameTicksTime);
 	playerState->render(camera, gameTicksTime);
 	if (pauseState.get() != nullptr)
 		pauseState.get()->render();

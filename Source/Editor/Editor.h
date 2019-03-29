@@ -156,10 +156,10 @@ private:
 		static const int buttonSize;
 
 	private:
-		char switchType;
+		char color;
 
 	public:
-		SwitchButton(objCounterParametersComma() char pSwitchType, Zone zone, int zoneLeftX, int zoneTopY);
+		SwitchButton(objCounterParametersComma() char pColor, Zone zone, int zoneLeftX, int zoneTopY);
 		~SwitchButton();
 
 		virtual void render();
@@ -194,6 +194,7 @@ private:
 		RailSwitchGroupButton(objCounterParametersComma() char pRailSwitchGroup, Zone zone, int zoneLeftX, int zoneTopY);
 		~RailSwitchGroupButton();
 
+		char getRailSwitchGroup() { return railSwitchGroup; }
 		virtual void render();
 		virtual void doAction();
 	};
@@ -220,12 +221,13 @@ private:
 public:
 	static void loadButtons();
 	static void unloadButtons();
+	static char getSelectedHeight();
 private:
 	static void getMouseMapXY(int screenLeftWorldX, int screenTopWorldY, int* outMapX, int* outMapY);
 public:
 	static void handleClick(SDL_MouseButtonEvent& clickEvent, EntityState* camera, int ticksTime);
 	static void render(EntityState* camera, int ticksTime);
-	static char getSelectedHeight();
+	static void renderGroupRect(char group, int leftX, int topY, int rightX, int bottomY);
 private:
 	static void addNoiseTile(char tile);
 	static void removeNoiseTile(char tile);

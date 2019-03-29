@@ -16,7 +16,7 @@
 	#define newNoiseTileButton(zone, leftX, topY) newWithArgs(Editor::NoiseTileButton, zone, leftX, topY)
 	#define newSwitchButton(switchType, zone, leftX, topY) newWithArgs(Editor::SwitchButton, switchType, zone, leftX, topY)
 	#define newRailButton(color, zone, leftX, topY) newWithArgs(Editor::RailButton, color, zone, leftX, topY)
-	#define newRailSwitchGrouopButton(railSwitchGroup, zone, leftX, topY) \
+	#define newRailSwitchGroupButton(railSwitchGroup, zone, leftX, topY) \
 		newWithArgs(Editor::RailSwitchGroupButton, railSwitchGroup, zone, leftX, topY)
 
 	//////////////////////////////// Editor::RGB ////////////////////////////////
@@ -114,6 +114,9 @@
 	}
 	//save the floor image
 	void Editor::SaveButton::doAction() {
+		if (saveButtonDisabled)
+			return;
+
 		int mapWidth = MapState::mapWidth();
 		int mapHeight = MapState::mapHeight();
 
@@ -136,11 +139,12 @@
 					SDL_SetRenderDrawColor(floorRenderer, 255, 255, 255, 255);
 				else {
 					char tile = MapState::getTile(mapX, mapY);
+					char railSwitchData = (Uint8)MapState::getRailSwitchFloorSaveData(mapX, mapY);
 					SDL_SetRenderDrawColor(
 						floorRenderer,
-						0,
-						(Uint8)(((int)tile + 1) * MapState::tileDivisor - 1),
-						(Uint8)(((int)height + 1) * MapState::heightDivisor - 1),
+						(Uint8)railSwitchData,
+						(Uint8)((tile + 1) * (char)MapState::tileDivisor - 1),
+						height == MapState::switchHeight ? 0 : (Uint8)((height + 1) * (char)MapState::heightDivisor - 1),
 						255);
 				}
 				SDL_RenderDrawPoint(floorRenderer, mapX, mapY);
@@ -361,9 +365,9 @@
 
 	//////////////////////////////// Editor::SwitchButton ////////////////////////////////
 	const int Editor::SwitchButton::buttonSize = MapState::switchSize + 2;
-	Editor::SwitchButton::SwitchButton(objCounterParametersComma() char pSwitchType, Zone zone, int zoneLeftX, int zoneTopY)
+	Editor::SwitchButton::SwitchButton(objCounterParametersComma() char pColor, Zone zone, int zoneLeftX, int zoneTopY)
 	: Button(objCounterArgumentsComma() zone, zoneLeftX, zoneTopY)
-	, switchType(pSwitchType) {
+	, color(pColor) {
 		setWidthAndHeight(buttonSize, buttonSize);
 	}
 	Editor::SwitchButton::~SwitchButton() {}
@@ -373,7 +377,7 @@
 		SpriteSheet::renderFilledRectangle(
 			0.0f, 0.0f, 0.0f, 1.0f, (GLint)leftX + 1, (GLint)topY + 1, (GLint)rightX - 1, (GLint)bottomY - 1);
 		glEnable(GL_BLEND);
-		SpriteRegistry::switches->renderSpriteAtScreenPosition((int)(switchType * 2 + 1), 0, (GLint)leftX + 1, (GLint)topY + 1);
+		SpriteRegistry::switches->renderSpriteAtScreenPosition((int)(color * 2 + 1), 0, (GLint)leftX + 1, (GLint)topY + 1);
 	}
 	//select this switch as the painting action
 	void Editor::SwitchButton::doAction() {
@@ -382,7 +386,7 @@
 	}
 	//set a switch at this position
 	void Editor::SwitchButton::paintMap(int x, int y) {
-		//TODO: set a switch
+		MapState::setSwitch(x, y, color, selectedRailSwitchGroupButton->getRailSwitchGroup());
 	}
 
 	//////////////////////////////// Editor::RailButton ////////////////////////////////
@@ -398,8 +402,8 @@
 		Button::render();
 		SpriteSheet::renderFilledRectangle(
 			(color == 0 || color == 3) ? 0.75f : 0.0f,
-			(color == 1 || color == 3) ? 0.75f : 0.0f,
 			(color == 2 || color == 3) ? 0.75f : 0.0f,
+			(color == 1 || color == 3) ? 0.75f : 0.0f,
 			1.0f,
 			(GLint)leftX + 1,
 			(GLint)topY + 1,
@@ -429,26 +433,7 @@
 	//render the group above the button
 	void Editor::RailSwitchGroupButton::render() {
 		Button::render();
-		//bits 0-2
-		SpriteSheet::renderFilledRectangle(
-			(float)(railSwitchGroup & 1),
-			(float)((railSwitchGroup & 2) >> 1),
-			(float)((railSwitchGroup & 4) >> 2),
-			1.0f,
-			(GLint)leftX + 1,
-			(GLint)topY + 1,
-			(GLint)(leftX + 1 + groupSquareHalfSize),
-			(GLint)bottomY - 1);
-		//bits 3-5
-		SpriteSheet::renderFilledRectangle(
-			(float)((railSwitchGroup & 8) >> 3),
-			(float)((railSwitchGroup & 16) >> 4),
-			(float)((railSwitchGroup & 32) >> 5),
-			1.0f,
-			(GLint)(leftX + 1 + groupSquareHalfSize),
-			(GLint)topY + 1,
-			(GLint)rightX - 1,
-			(GLint)bottomY - 1);
+		renderGroupRect(railSwitchGroup, leftX + 1, topY + 1, rightX - 1, bottomY - 1);
 	}
 	//select a group to use when painting switches or rails
 	void Editor::RailSwitchGroupButton::doAction() {
@@ -502,9 +487,8 @@
 		for (char i = 0; i < 4; i++)
 			buttons.push_back(newRailButton(i, Zone::Right, 5 + RailButton::buttonSize * i, 114));
 		for (char i = 0; i < (char)railSwitchGroupCount; i++) {
-			RailSwitchGroupButton* button =
-				newRailSwitchGrouopButton(
-					i, Zone::Right, 5 + TileButton::buttonSize * (i % 16), 125 + TileButton::buttonSize * (i / 16));
+			RailSwitchGroupButton* button = newRailSwitchGroupButton(
+				i, Zone::Right, 5 + TileButton::buttonSize * (i % 16), 125 + TileButton::buttonSize * (i / 16));
 			if (i == 0)
 				selectedRailSwitchGroupButton = button;
 			buttons.push_back(button);
@@ -519,6 +503,12 @@
 		randomEngine = nullptr;
 		delete randomDistribution;
 		randomDistribution = nullptr;
+	}
+	//return the height of the selected height button, or -1 if it's not selected
+	char Editor::getSelectedHeight() {
+		return selectedButton != nullptr && selectedButton == lastSelectedHeightButton
+			? lastSelectedHeightButton->getHeight()
+			: -1;
 	}
 	//convert the mouse position to map coordinates
 	void Editor::getMouseMapXY(int screenLeftWorldX, int screenTopWorldY, int* outMapX, int* outMapY) {
@@ -651,11 +641,29 @@
 		selectedRailSwitchGroupButton->renderHighlightOutline();
 		selectedPaintBoxRadiusButton->renderHighlightOutline();
 	}
-	//return the height of the selected height button, or -1 if it's not selected
-	char Editor::getSelectedHeight() {
-		return selectedButton != nullptr && selectedButton == lastSelectedHeightButton
-			? lastSelectedHeightButton->getHeight()
-			: -1;
+	//draw a graphic to represent this rail/switch group
+	void Editor::renderGroupRect(char group, int leftX, int topY, int rightX, int bottomY) {
+		GLint midX = (GLint)((leftX + rightX) / 2);
+		//bits 0-2
+		SpriteSheet::renderFilledRectangle(
+			(float)(group & 1),
+			(float)((group & 2) >> 1),
+			(float)((group & 4) >> 2),
+			1.0f,
+			(GLint)leftX,
+			(GLint)topY,
+			midX,
+			(GLint)bottomY);
+		//bits 3-5
+		SpriteSheet::renderFilledRectangle(
+			(float)((group & 8) >> 3),
+			(float)((group & 16) >> 4),
+			(float)((group & 32) >> 5),
+			1.0f,
+			midX,
+			(GLint)topY,
+			(GLint)rightX,
+			(GLint)bottomY);
 	}
 	//add to the count of this tile
 	void Editor::addNoiseTile(char tile) {

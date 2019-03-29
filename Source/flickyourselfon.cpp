@@ -53,6 +53,9 @@ int main(int argc, char *argv[]) {
 		Config::refreshRate = displayMode.refresh_rate;
 	Logger::log("Window set up");
 
+	//load the map, which doesn't depend on the render thread
+	MapState::buildMap();
+
 	//create our state queue
 	CircularStateQueue<GameState>* gameStateQueue = newCircularStateQueue(GameState, newGameState(), newGameState());
 	//our initial state is renderable
@@ -111,11 +114,11 @@ int main(int argc, char *argv[]) {
 		#ifdef EDITOR
 			Editor::unloadButtons();
 		#endif
-		MapState::deleteMap();
 		PauseState::unloadMenu();
 		SpriteRegistry::unloadAll();
 		Text::unloadFont();
 		delete gameStateQueue;
+		MapState::deleteMap();
 		ObjectPool<CompositeQuarticValue>::clearPool();
 		ObjectPool<EntityAnimation>::clearPool();
 		ObjectPool<EntityAnimation::Delay>::clearPool();
@@ -150,7 +153,6 @@ void renderLoop(CircularStateQueue<GameState>* gameStateQueue) {
 	Text::loadFont();
 	SpriteRegistry::loadAll();
 	PauseState::loadMenu();
-	MapState::buildMap();
 	#ifdef EDITOR
 		Editor::loadButtons();
 	#endif

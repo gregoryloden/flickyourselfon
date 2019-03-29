@@ -1,6 +1,7 @@
 #include "Util/PooledReferenceCounter.h"
 
 class EntityState;
+class MapState;
 class PauseState;
 class PlayerState;
 
@@ -11,6 +12,7 @@ private:
 	static const char* savedGameFileName;
 
 	PlayerState* playerState;
+	MapState* mapState;
 	EntityState* camera;
 	ReferenceCounterHolder<PauseState> pauseState;
 	int pauseStartTicksTime;

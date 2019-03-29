@@ -39,7 +39,7 @@ private:
 		Glyph* getGlyph(int unicodeValue);
 	};
 public:
-	//Should only be allocated within an object or on the stack
+	//Should only be allocated within an object, on the stack, or as a static object
 	class Metrics {
 	public:
 		float charactersWidth;
