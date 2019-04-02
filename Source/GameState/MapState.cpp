@@ -122,6 +122,8 @@ const char* MapState::floorFileName = "images/floor.png";
 const float MapState::speedPerSecond = 40.0f;
 const float MapState::diagonalSpeedPerSecond = MapState::speedPerSecond * sqrt(0.5f);
 const float MapState::smallDistance = 1.0f / 256.0f;
+const float MapState::introAnimationMapCenterX = (float)(MapState::tileSize * introAnimationBootTileX) + 3.5f;
+const float MapState::introAnimationMapCenterY = (float)(MapState::tileSize * introAnimationBootTileY) + 4.5f;
 char* MapState::tiles = nullptr;
 char* MapState::heights = nullptr;
 short* MapState::railSwitchIds = nullptr;
@@ -130,8 +132,8 @@ vector<MapState::Switch*> MapState::switches;
 int MapState::width = 1;
 int MapState::height = 1;
 MapState::MapState(objCounterParameters())
-: onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
-railStates()
+: PooledReferenceCounter(objCounterArguments())
+, railStates()
 , switchStates() {
 	for (Rail* rail : rails)
 		//TODO: put the initial position of the rail
@@ -145,6 +147,12 @@ MapState::~MapState() {
 	for (SwitchState* switchState : switchStates)
 		delete switchState;
 }
+//initialize and return a MapState
+MapState* MapState::produce(objCounterParameters()) {
+	initializeWithNewFromPool(m, MapState)
+	return m;
+}
+pooledReferenceCounterDefineRelease(MapState)
 //load the map and extract all the map data from it
 void MapState::buildMap() {
 	SDL_Surface* floor = IMG_Load(floorFileName);
@@ -246,6 +254,10 @@ char MapState::horizontalTilesHeight(int lowMapX, int highMapX, int mapY) {
 			return invalidHeight;
 	}
 	return foundHeight;
+}
+//change one of the tiles to be the boot tile
+void MapState::setIntroAnimationBootTile() {
+	tiles[introAnimationBootTileY * width + introAnimationBootTileX] = introAnimationBootTile;
 }
 //update the rails and switches
 void MapState::updateWithPreviousMapState(MapState* prev, int ticksTime) {

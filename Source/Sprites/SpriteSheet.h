@@ -19,10 +19,10 @@ public:
 	SpriteSheet(objCounterParametersComma() SDL_Surface* imageSurface, int horizontalSpriteCount, int verticalSpriteCount);
 	~SpriteSheet();
 
-	static SpriteSheet* produce(
-		objCounterParametersComma() const char* imagePath, int horizontalSpriteCount, int verticalSpriteCount);
 	int getSpriteSheetWidth() { return spriteSheetWidth; }
 	int getSpriteSheetHeight() { return spriteSheetHeight; }
+	static SpriteSheet* produce(
+		objCounterParametersComma() const char* imagePath, int horizontalSpriteCount, int verticalSpriteCount);
 	void removeBottomRightPixelBorder();
 	void renderSpriteSheetRegionAtScreenRegion(
 		int spriteLeftX,

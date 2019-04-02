@@ -10,10 +10,12 @@ class PlayerState;
 class GameState onlyInDebug(: public ObjCounter) {
 private:
 	static const char* savedGameFileName;
+	static const string sawIntroAnimationFilePrefix;
 
-	PlayerState* playerState;
-	MapState* mapState;
-	EntityState* camera;
+	bool sawIntroAnimation;
+	ReferenceCounterHolder<PlayerState> playerState;
+	ReferenceCounterHolder<MapState> mapState;
+	ReferenceCounterHolder<EntityState> camera;
 	ReferenceCounterHolder<PauseState> pauseState;
 	int pauseStartTicksTime;
 	int gameTimeOffsetTicksDuration;
@@ -26,7 +28,9 @@ public:
 	//return whether updates and renders should stop
 	bool getShouldQuitGame() { return shouldQuitGame; }
 	void updateWithPreviousGameState(GameState* prev, int ticksTime);
+	void setPlayerCamera();
+	void setProvidedCamera(EntityState* pCamera);
 	void render(int ticksTime);
 	void saveState();
-	void loadSavedState();
+	void loadInitialState();
 };

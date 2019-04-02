@@ -4,6 +4,7 @@
 #endif
 #include "GameState/DynamicValue.h"
 #include "GameState/EntityAnimation.h"
+#include "GameState/EntityState.h"
 #include "GameState/GameState.h"
 #include "GameState/PauseState.h"
 #include "GameState/MapState.h"
@@ -21,7 +22,7 @@ bool renderThreadReadyForUpdates = false;
 #ifdef __cplusplus
 extern "C"
 #endif
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
 	//initialize SDL
 	int initResult = SDL_Init(SDL_INIT_EVERYTHING);
 	if (initResult < 0)
@@ -51,21 +52,19 @@ int main(int argc, char *argv[]) {
 	SDL_GetCurrentDisplayMode(SDL_GetWindowDisplayIndex(window), &displayMode);
 	if (displayMode.refresh_rate > 0)
 		Config::refreshRate = displayMode.refresh_rate;
-	Logger::log("Window set up");
+	Logger::log("Window set up /// Loading game state...");
 
-	//load the map, which doesn't depend on the render thread
+	//load the map and settings which don't depend on the render thread
 	MapState::buildMap();
+	Config::loadSettings();
 
 	//create our state queue
 	CircularStateQueue<GameState>* gameStateQueue = newCircularStateQueue(GameState, newGameState(), newGameState());
 	//our initial state is renderable
 	gameStateQueue->finishWritingToState();
 	GameState* prevGameState = gameStateQueue->getNextReadableState();
-
-	Logger::log("Loading settings and game state...");
-	Config::loadSettings();
-	prevGameState->loadSavedState();
-	Logger::log("Settings loaded");
+	prevGameState->loadInitialState();
+	Logger::log("Game state loaded");
 
 	//now that our initial state is ready, start the render thread
 	thread renderLoopThread (renderLoop, gameStateQueue);
@@ -119,12 +118,16 @@ int main(int argc, char *argv[]) {
 		Text::unloadFont();
 		delete gameStateQueue;
 		MapState::deleteMap();
-		ObjectPool<CompositeQuarticValue>::clearPool();
+		//the order that these object pools are cleared matters since some objects contain other objects
+		ObjectPool<PlayerState>::clearPool();
+		ObjectPool<MapState>::clearPool();
+		ObjectPool<PauseState>::clearPool();
 		ObjectPool<EntityAnimation>::clearPool();
+		ObjectPool<StaticCameraAnchor>::clearPool();
+		ObjectPool<CompositeQuarticValue>::clearPool();
 		ObjectPool<EntityAnimation::Delay>::clearPool();
 		ObjectPool<EntityAnimation::SetVelocity>::clearPool();
 		ObjectPool<EntityAnimation::SetSpriteAnimation>::clearPool();
-		ObjectPool<PauseState>::clearPool();
 		ObjCounter::end();
 	#endif
 	Logger::log("Game exit");

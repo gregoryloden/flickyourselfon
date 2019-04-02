@@ -1,21 +1,28 @@
 #include "PooledReferenceCounter.h"
 #include "GameState/DynamicValue.h"
 #include "GameState/EntityAnimation.h"
+#include "GameState/EntityState.h"
+#include "GameState/MapState.h"
 #include "GameState/PauseState.h"
+#include "GameState/PlayerState.h"
 
-#define instantiatePooledReferenceCounter(className) \
+#define instantiateObjectPool(className) \
 	template class ObjectPool<className>; vector<className*> ObjectPool<className>::pool;
-#define instantiatePooledReferenceCounterAndHolder(className) \
-	instantiatePooledReferenceCounter(className) template class ReferenceCounterHolder<className>;
+#define instantiateObjectPoolAndReferenceCounterHolder(className) \
+	instantiateObjectPool(className) template class ReferenceCounterHolder<className>;
 
-instantiatePooledReferenceCounter(CompositeQuarticValue)
-instantiatePooledReferenceCounter(EntityAnimation::Delay)
-instantiatePooledReferenceCounter(EntityAnimation::SetVelocity)
-instantiatePooledReferenceCounter(EntityAnimation::SetSpriteAnimation)
-instantiatePooledReferenceCounterAndHolder(EntityAnimation)
-instantiatePooledReferenceCounterAndHolder(PauseState)
+instantiateObjectPool(CompositeQuarticValue)
+instantiateObjectPool(EntityAnimation::Delay)
+instantiateObjectPool(EntityAnimation::SetVelocity)
+instantiateObjectPool(EntityAnimation::SetSpriteAnimation)
+instantiateObjectPool(StaticCameraAnchor)
+instantiateObjectPoolAndReferenceCounterHolder(EntityAnimation)
+instantiateObjectPoolAndReferenceCounterHolder(MapState)
+instantiateObjectPoolAndReferenceCounterHolder(PauseState)
+instantiateObjectPoolAndReferenceCounterHolder(PlayerState)
 template class ReferenceCounterHolder<DynamicValue>;
 template class ReferenceCounterHolder<EntityAnimation::Component>;
+template class ReferenceCounterHolder<EntityState>;
 
 //////////////////////////////// PooledReferenceCounter ////////////////////////////////
 PooledReferenceCounter::PooledReferenceCounter(objCounterParameters())

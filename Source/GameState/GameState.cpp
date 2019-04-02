@@ -9,32 +9,37 @@
 #include "Sprites/SpriteRegistry.h"
 #include "Sprites/SpriteSheet.h"
 #include "Util/Config.h"
+#include "Util/StringUtils.h"
 
 const char* GameState::savedGameFileName = "fyo.sav";
+const string GameState::sawIntroAnimationFilePrefix = "sawIntroAnimation ";
 GameState::GameState(objCounterParameters())
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
-playerState(newPlayerState())
-, mapState(newMapState())
+sawIntroAnimation(false)
+, playerState(nullptr)
+, mapState(nullptr)
 , camera(nullptr)
 , pauseState(nullptr)
 , pauseStartTicksTime(-1)
 , gameTimeOffsetTicksDuration(0)
 , shouldQuitGame(false) {
-	camera = playerState;
 }
-GameState::~GameState() {
-	delete playerState;
-	delete mapState;
-}
+GameState::~GameState() {}
 //update this game state by reading from the previous state
 void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
+	//first things first: dump all our previous state so that we can start fresh
+	playerState.set(nullptr);
+	mapState.set(nullptr);
+	camera.set(nullptr);
+
 	//don't update any state if we're paused
 	if (prev->pauseState.get() != nullptr) {
 		PauseState* nextPauseState = prev->pauseState.get()->getNextPauseState();
 		pauseState.set(nextPauseState);
 		gameTimeOffsetTicksDuration = prev->gameTimeOffsetTicksDuration + ticksTime - prev->pauseStartTicksTime;
 		pauseStartTicksTime = ticksTime;
-		playerState->copyPlayerState(prev->playerState);
+		playerState.set(newPlayerState());
+		playerState.get()->copyPlayerState(prev->playerState.get());
 
 		if (nextPauseState != nullptr) {
 			int endPauseDecision = nextPauseState->getEndPauseDecision();
@@ -54,8 +59,10 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 	int gameTicksTime = ticksTime - gameTimeOffsetTicksDuration;
 
 	//update states
-	playerState->updateWithPreviousPlayerState(prev->playerState, gameTicksTime);
-	mapState->updateWithPreviousMapState(prev->mapState, gameTicksTime);
+	playerState.set(newPlayerState());
+	playerState.get()->updateWithPreviousPlayerState(prev->playerState.get(), gameTicksTime);
+	mapState.set(newMapState());
+	mapState.get()->updateWithPreviousMapState(prev->mapState.get(), gameTicksTime);
 
 	//handle events after states have been updated
 	SDL_Event gameEvent;
@@ -63,11 +70,11 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 		switch (gameEvent.type) {
 			case SDL_QUIT:
 				shouldQuitGame = true;
-				return;
+				break;
 			case SDL_KEYDOWN:
 				#ifndef EDITOR
 					if (gameEvent.key.keysym.scancode == Config::keyBindings.kickKey) {
-						playerState->beginKicking(gameTicksTime);
+						playerState.get()->beginKicking(gameTicksTime);
 						break;
 					}
 				#endif
@@ -78,11 +85,11 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 				break;
 			#ifdef EDITOR
 				case SDL_MOUSEBUTTONDOWN:
-					Editor::handleClick(gameEvent.button, camera, gameTicksTime);
+					Editor::handleClick(gameEvent.button, camera.get(), gameTicksTime);
 					break;
 				case SDL_MOUSEMOTION:
 					if ((SDL_GetMouseState(nullptr, nullptr) & (SDL_BUTTON_LMASK | SDL_BUTTON_MMASK | SDL_BUTTON_RMASK)) != 0)
-						Editor::handleClick(gameEvent.button, camera, gameTicksTime);
+						Editor::handleClick(gameEvent.button, camera.get(), gameTicksTime);
 					break;
 			#endif
 			default:
@@ -90,34 +97,61 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 		}
 	}
 
-	//get our next camera anchor
-	camera = camera->getNextCameraAnchor(gameTicksTime);
+	//set our next camera anchor
+	prev->camera.get()->setNextCamera(this, gameTicksTime);
+}
+//set our camera to our player
+void GameState::setPlayerCamera() {
+	camera.set(playerState.get());
+}
+//set our camera to the one provided
+void GameState::setProvidedCamera(EntityState* pCamera) {
+	camera.set(pCamera);
 }
 //render this state, which was deemed to be the last state to need rendering
 void GameState::render(int ticksTime) {
 	int gameTicksTime = (pauseState.get() != nullptr ? pauseStartTicksTime : ticksTime) - gameTimeOffsetTicksDuration;
-	mapState->render(camera, gameTicksTime);
-	playerState->render(camera, gameTicksTime);
+	mapState.get()->render(camera.get(), gameTicksTime);
+	playerState.get()->render(camera.get(), gameTicksTime);
 	if (pauseState.get() != nullptr)
 		pauseState.get()->render();
 	#ifdef EDITOR
-		Editor::render(camera, gameTicksTime);
+		Editor::render(camera.get(), gameTicksTime);
 	#endif
 }
 //save the state to a file
 void GameState::saveState() {
 	ofstream file;
 	file.open(savedGameFileName);
-	playerState->saveState(file);
+	playerState.get()->saveState(file);
 	file.close();
 }
-//load the state from the save file if there is one
-void GameState::loadSavedState() {
+//initialize our state and load the state from the save file if there is one
+void GameState::loadInitialState() {
+	//first things first, we need some state
+	playerState.set(newPlayerState());
+	mapState.set(newMapState());
+
+	//next, load state if we can
 	ifstream file;
 	file.open(savedGameFileName);
 	string line;
 	while (getline(file, line)) {
-		playerState->loadState(line);
+		if (StringUtils::startsWith(line, sawIntroAnimationFilePrefix))
+			sawIntroAnimation = strcmp(line.c_str() + sawIntroAnimationFilePrefix.size(), "true") == 0;
+		else
+			playerState.get()->loadState(line);
 	}
 	file.close();
+
+//TODO: intro animation
+sawIntroAnimation = true;
+	//and finally, setup the initial state
+	if (sawIntroAnimation) {
+		playerState.get()->obtainBoot();
+		camera.set(playerState.get());
+	} else {
+		MapState::setIntroAnimationBootTile();
+		camera.set(newStaticCameraAnchor(MapState::introAnimationMapCenterX, MapState::introAnimationMapCenterY));
+	}
 }

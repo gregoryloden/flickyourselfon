@@ -1,10 +1,10 @@
-#include "General/General.h"
+#include "Util/PooledReferenceCounter.h"
 
-#define newMapState() newWithoutArgs(MapState)
+#define newMapState() produceWithoutArgs(MapState)
 
 class EntityState;
 
-class MapState onlyInDebug(: public ObjCounter) {
+class MapState: public PooledReferenceCounter {
 private:
 	class Rail onlyInDebug(: public ObjCounter) {
 	private:
@@ -91,6 +91,9 @@ public:
 	static const char invalidHeight = -1;
 	static const int radioTowerLeftXOffset = 324;
 	static const int radioTowerTopYOffset = -106;
+	static const char introAnimationBootTile = 37;
+	static const int introAnimationBootTileX = 29;
+	static const int introAnimationBootTileY = 26;
 	static const int railIdBitmask = 1 << 12;
 	static const int switchIdBitmask = railIdBitmask << 1;
 	static const int railSwitchIndexBitmask = railIdBitmask - 1;
@@ -110,6 +113,8 @@ public:
 	static const float speedPerSecond;
 	static const float diagonalSpeedPerSecond;
 	static const float smallDistance;
+	static const float introAnimationMapCenterX;
+	static const float introAnimationMapCenterY;
 
 private:
 	static char* tiles;
@@ -130,19 +135,22 @@ public:
 
 	static char getTile(int x, int y) { return tiles[y * width + x]; }
 	static char getHeight(int x, int y) { return heights[y * width + x]; }
+	static int mapWidth() { return width; }
+	static int mapHeight() { return height; }
 	#ifdef EDITOR
 		static void setTile(int x, int y, char tile) { tiles[y * width + x] = tile; }
 		static void setHeight(int x, int y, char height) { heights[y * width + x] = height; }
 	#endif
-	static int mapWidth() { return width; }
-	static int mapHeight() { return height; }
 	static short getRailSwitchId(int x, int y) { return railSwitchIds[y * width + x]; }
 	static bool tileHasRailOrSwitch(int x, int y) { return getRailSwitchId(x, y) != 0; }
+	static MapState* produce(objCounterParameters());
+	virtual void release();
 	static void buildMap();
 	static void deleteMap();
 	static int getScreenLeftWorldX(EntityState* camera, int ticksTime);
 	static int getScreenTopWorldY(EntityState* camera, int ticksTime);
 	static char horizontalTilesHeight(int lowMapX, int highMapX, int mapY);
+	static void setIntroAnimationBootTile();
 	void updateWithPreviousMapState(MapState* prev, int ticksTime);
 	void render(EntityState* camera, int ticksTime);
 	#ifdef EDITOR

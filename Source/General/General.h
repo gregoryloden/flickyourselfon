@@ -20,7 +20,7 @@ using namespace std;
 #define COMMA ,
 #ifdef DEBUG
 	#define onlyInDebug(x) x
-	/**/#define EDITOR 1
+	//**/#define EDITOR 1
 #else
 	#define onlyInDebug(x)
 #endif

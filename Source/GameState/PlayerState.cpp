@@ -1,5 +1,6 @@
 #include "PlayerState.h"
 #include "GameState/DynamicValue.h"
+#include "GameState/GameState.h"
 #include "GameState/EntityAnimation.h"
 #include "GameState/MapState.h"
 #include "Sprites/SpriteAnimation.h"
@@ -24,65 +25,70 @@ const string PlayerState::playerXFilePrefix = "playerX ";
 const string PlayerState::playerYFilePrefix = "playerY ";
 const string PlayerState::playerZFilePrefix = "playerZ ";
 PlayerState::PlayerState(objCounterParameters())
-: EntityState(objCounterArgumentsComma() playerStartingXPosition, playerStartingYPosition)
+: EntityState(objCounterArguments())
 , xDirection(0)
 , yDirection(0)
-, animation(nullptr)
-, animationStartTicksTime(-1)
+, spriteAnimation(nullptr)
+, spriteAnimationStartTicksTime(-1)
 , spriteDirection(SpriteDirection::Down)
 , hasBoot(false)
-, kickingAnimation(nullptr)
 , lastControlledX(0.0f)
 , lastControlledY(0.0f)
 , lastControlledZ(0) {
+	x.set(newCompositeQuarticValue(playerStartingXPosition, 0.0f, 0.0f, 0.0f, 0.0f));
+	y.set(newCompositeQuarticValue(playerStartingYPosition, 0.0f, 0.0f, 0.0f, 0.0f));
 	lastControlledX = x.get()->getValue(0);
 	lastControlledY = y.get()->getValue(0);
 	lastControlledZ = z;
 }
 PlayerState::~PlayerState() {}
+//initialize and return a PlayerState
+PlayerState* PlayerState::produce(objCounterParameters()) {
+	initializeWithNewFromPool(p, PlayerState)
+	//TODO: what parameters does this function need to properly initialize a player state?
+	return p;
+}
 //copy the other state
 void PlayerState::copyPlayerState(PlayerState* other) {
 	copyEntityState(other);
 	xDirection = other->xDirection;
 	yDirection = other->yDirection;
-	animation = other->animation;
-	animationStartTicksTime = other->animationStartTicksTime;
+	spriteAnimation = other->spriteAnimation;
+	spriteAnimationStartTicksTime = other->spriteAnimationStartTicksTime;
 	spriteDirection = other->spriteDirection;
 	hasBoot = other->hasBoot;
-	kickingAnimation.set(other->kickingAnimation.get());
 }
+pooledReferenceCounterDefineRelease(PlayerState)
 //use the player as the next camera anchor unless we're starting an animation with a new camera anchor
-EntityState* PlayerState::getNextCameraAnchor(int ticksTime) {
-	//TODO: return a different camera anchor for animations
-	return this;
+void PlayerState::setNextCamera(GameState* nextGameState, int ticksTime) {
+	//TODO: set a different camera anchor at the end of our animation
+	nextGameState->setPlayerCamera();
 }
 //set the animation to the given animation at the given time
-void PlayerState::setSpriteAnimation(SpriteAnimation* pAnimation, int pAnimationStartTicksTime) {
-	animation = pAnimation;
-	animationStartTicksTime = pAnimationStartTicksTime;
+void PlayerState::setSpriteAnimation(SpriteAnimation* pSpriteAnimation, int pSpriteAnimationStartTicksTime) {
+	spriteAnimation = pSpriteAnimation;
+	spriteAnimationStartTicksTime = pSpriteAnimationStartTicksTime;
 }
 //update this player state by reading from the previous state
 void PlayerState::updateWithPreviousPlayerState(PlayerState* prev, int ticksTime) {
-	bool previousStateHadKickingAnimation = prev->kickingAnimation.get() != nullptr;
+	bool previousStateHadEntityAnimation = prev->entityAnimation.get() != nullptr;
 
 	//if we have a kicking animation, update with that instead
-	if (previousStateHadKickingAnimation) {
+	if (previousStateHadEntityAnimation) {
 		copyPlayerState(prev);
-		if (kickingAnimation.get()->update(this, ticksTime))
+		if (entityAnimation.get()->update(this, ticksTime))
 			return;
 	} else
 		hasBoot = prev->hasBoot;
 
-//TODO: put on the boot in-game
-hasBoot = true;
-	kickingAnimation.set(nullptr);
+	entityAnimation.set(nullptr);
 
 	//update this player state normally by reading from the last state
 	updatePositionWithPreviousPlayerState(prev, ticksTime);
 	#ifndef EDITOR
 		collideWithEnvironmentWithPreviousPlayerState(prev);
 	#endif
-	updateSpriteWithPreviousPlayerState(prev, ticksTime, !previousStateHadKickingAnimation);
+	updateSpriteWithPreviousPlayerState(prev, ticksTime, !previousStateHadEntityAnimation);
 
 	//copy the position to the save values
 	lastControlledX = x.get()->getValue(0);
@@ -218,19 +224,19 @@ void PlayerState::updateSpriteWithPreviousPlayerState(PlayerState* prev, int tic
 
 	//update the animation
 	if (!moving)
-		animation = nullptr;
-	else if (prev->animation != nullptr && usePreviousStateSpriteAnimation) {
-		animation = prev->animation;
-		animationStartTicksTime = prev->animationStartTicksTime;
+		spriteAnimation = nullptr;
+	else if (prev->spriteAnimation != nullptr && usePreviousStateSpriteAnimation) {
+		spriteAnimation = prev->spriteAnimation;
+		spriteAnimationStartTicksTime = prev->spriteAnimationStartTicksTime;
 	} else {
-		animation = hasBoot ? SpriteRegistry::playerBootWalkingAnimation : SpriteRegistry::playerWalkingAnimation;
-		animationStartTicksTime = ticksTime;
+		spriteAnimation = hasBoot ? SpriteRegistry::playerBootWalkingAnimation : SpriteRegistry::playerWalkingAnimation;
+		spriteAnimationStartTicksTime = ticksTime;
 	}
 }
 //if we don't have a kicking animation, start one
 //this should be called after the player has been updated
 void PlayerState::beginKicking(int ticksTime) {
-	if (kickingAnimation.get() != nullptr)
+	if (entityAnimation.get() != nullptr)
 		return;
 
 	xDirection = 0;
@@ -252,8 +258,8 @@ void PlayerState::beginKicking(int ticksTime) {
 	//add the delay for the animation and then return
 	if (!hasBoot) {
 		kickingAnimationComponents.push_back(newEntityAnimationDelay(kickingDuration));
-		kickingAnimation.set(newEntityAnimation(ticksTime, kickingAnimationComponents));
-		kickingAnimation.get()->update(this, ticksTime);
+		entityAnimation.set(newEntityAnimation(ticksTime, kickingAnimationComponents));
+		entityAnimation.get()->update(this, ticksTime);
 		return;
 	}
 
@@ -459,9 +465,9 @@ void PlayerState::beginKicking(int ticksTime) {
 	kickingAnimationComponents.push_back(
 		newEntityAnimationSetVelocity(
 			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f), newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)));
-	kickingAnimation.set(newEntityAnimation(ticksTime, kickingAnimationComponents));
+	entityAnimation.set(newEntityAnimation(ticksTime, kickingAnimationComponents));
 	//update it once to get it started
-	kickingAnimation.get()->update(this, ticksTime);
+	entityAnimation.get()->update(this, ticksTime);
 }
 //render this player state, which was deemed to be the last state to need rendering
 void PlayerState::render(EntityState* camera, int ticksTime) {
@@ -470,9 +476,9 @@ void PlayerState::render(EntityState* camera, int ticksTime) {
 	float renderCenterY =
 		getRenderCenterWorldY(ticksTime) - camera->getRenderCenterWorldY(ticksTime) + (float)Config::gameScreenHeight * 0.5f;
 	glEnable(GL_BLEND);
-	if (animation != nullptr)
-		animation->renderUsingCenter(
-			renderCenterX, renderCenterY, ticksTime - animationStartTicksTime, 0, (int)spriteDirection);
+	if (spriteAnimation != nullptr)
+		spriteAnimation->renderUsingCenter(
+			renderCenterX, renderCenterY, ticksTime - spriteAnimationStartTicksTime, 0, (int)spriteDirection);
 	else
 		SpriteRegistry::player->renderSpriteCenteredAtScreenPosition(
 			hasBoot ? 4 : 0, (int)spriteDirection, renderCenterX, renderCenterY);

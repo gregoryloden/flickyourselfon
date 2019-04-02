@@ -1,7 +1,6 @@
 #include "GameState/EntityState.h"
-#include "Util/PooledReferenceCounter.h"
 
-#define newPlayerState() newWithoutArgs(PlayerState)
+#define newPlayerState() produceWithoutArgs(PlayerState)
 
 class PositionState;
 class SpriteAnimation;
@@ -30,11 +29,10 @@ private:
 
 	char xDirection;
 	char yDirection;
-	SpriteAnimation* animation;
-	int animationStartTicksTime;
+	SpriteAnimation* spriteAnimation;
+	int spriteAnimationStartTicksTime;
 	SpriteDirection spriteDirection;
 	bool hasBoot;
-	ReferenceCounterHolder<EntityAnimation> kickingAnimation;
 	float lastControlledX;
 	float lastControlledY;
 	char lastControlledZ;
@@ -43,9 +41,12 @@ public:
 	PlayerState(objCounterParameters());
 	~PlayerState();
 
+	void obtainBoot() { hasBoot = true; }
+	static PlayerState* produce(objCounterParameters());
 	void copyPlayerState(PlayerState* other);
-	virtual EntityState* getNextCameraAnchor(int ticksTime);
-	virtual void setSpriteAnimation(SpriteAnimation* spriteAnimation, int pAnimationStartTicksTime);
+	virtual void release();
+	virtual void setNextCamera(GameState* nextGameState, int ticksTime);
+	virtual void setSpriteAnimation(SpriteAnimation* pSpriteAnimation, int pSpriteAnimationStartTicksTime);
 	void updateWithPreviousPlayerState(PlayerState* prev, int ticksTime);
 private:
 	void updatePositionWithPreviousPlayerState(PlayerState* prev, int ticksTime);

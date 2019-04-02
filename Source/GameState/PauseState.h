@@ -129,8 +129,8 @@ private:
 		EndPauseOption(objCounterParametersComma() int pEndPauseDecision);
 		~EndPauseOption();
 
-		virtual PauseState* handle(PauseState* currentState);
 		int getEndPauseDecision() { return endPauseDecision; }
+		virtual PauseState* handle(PauseState* currentState);
 	};
 
 	static PauseMenu* baseMenu;
@@ -154,11 +154,11 @@ private:
 		KeyBindingOption* pSelectingKeyBindingOption,
 		int pEndPauseDecision);
 public:
+	//return a bit field of EndPauseDecision specifying whether we should save, quit
+	int getEndPauseDecision() { return endPauseDecision; }
 	static PauseState* produce(objCounterParameters());
 	virtual void release();
 	virtual void prepareReturnToPool();
-	//return a bit field of EndPauseDecision specifying whether we should save, quit
-	int getEndPauseDecision() { return endPauseDecision; }
 	static void loadMenu();
 	static void unloadMenu();
 	PauseState* getNextPauseState();

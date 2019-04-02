@@ -1,13 +1,17 @@
 #include "EntityState.h"
 #include "GameState/DynamicValue.h"
+#include "GameState/GameState.h"
+#include "GameState/EntityAnimation.h"
 
-EntityState::EntityState(objCounterParametersComma() float xPosition, float yPosition)
-: onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
-x(newCompositeQuarticValue(xPosition, 0.0f, 0.0f, 0.0f, 0.0f))
+//////////////////////////////// EntityState ////////////////////////////////
+EntityState::EntityState(objCounterParameters())
+: PooledReferenceCounter(objCounterArguments())
+, x(nullptr)
 , renderInterpolatedX(true)
-, y(newCompositeQuarticValue(yPosition, 0.0f, 0.0f, 0.0f, 0.0f))
+, y(nullptr)
 , renderInterpolatedY(true)
 , z(0)
+, entityAnimation(nullptr)
 , lastUpdateTicksTime(0) {
 }
 EntityState::~EntityState() {}
@@ -18,6 +22,7 @@ void EntityState::copyEntityState(EntityState* other) {
 	y.set(other->y.get());
 	renderInterpolatedY = other->renderInterpolatedY;
 	z = other->z;
+	entityAnimation.set(other->entityAnimation.get());
 	lastUpdateTicksTime = other->lastUpdateTicksTime;
 }
 //return the entity's x coordinate at the given time that we should use for rendering the world
@@ -35,7 +40,23 @@ void EntityState::setVelocity(DynamicValue* vx, DynamicValue* vy, int pLastUpdat
 	y.set(vy->copyWithConstantValue(y.get()->getValue(timediff)));
 	lastUpdateTicksTime = pLastUpdateTicksTime;
 }
-StaticCameraAnchor::StaticCameraAnchor(objCounterParametersComma() float cameraX, float cameraY)
-: EntityState(objCounterArgumentsComma() cameraX, cameraY) {
+
+//////////////////////////////// StaticCameraAnchor ////////////////////////////////
+StaticCameraAnchor::StaticCameraAnchor(objCounterParameters())
+: EntityState(objCounterArguments()) {
 }
 StaticCameraAnchor::~StaticCameraAnchor() {}
+//initialize and return a StaticCameraAnchor
+StaticCameraAnchor* StaticCameraAnchor::produce(objCounterParametersComma() float pX, float pY) {
+	initializeWithNewFromPool(s, StaticCameraAnchor)
+	s->x.set(newCompositeQuarticValue(pX, 0.0f, 0.0f, 0.0f, 0.0f));
+	s->y.set(newCompositeQuarticValue(pY, 0.0f, 0.0f, 0.0f, 0.0f));
+	return s;
+}
+pooledReferenceCounterDefineRelease(StaticCameraAnchor)
+//TODO: descibe this
+//TODO: what causes this to stop being the camera anchor?
+void StaticCameraAnchor::setNextCamera(GameState* nextGameState, int ticksTime) {
+	//TODO: set a different camera anchor at the end of our animation
+	nextGameState->setProvidedCamera(newStaticCameraAnchor(x.get()->getValue(0), y.get()->getValue(0)));
+}
