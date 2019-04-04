@@ -18,19 +18,22 @@ GameState::GameState(objCounterParameters())
 sawIntroAnimation(false)
 , playerState(nullptr)
 , mapState(nullptr)
+, dynamicCameraAnchor(nullptr)
 , camera(nullptr)
 , pauseState(nullptr)
 , pauseStartTicksTime(-1)
 , gameTimeOffsetTicksDuration(0)
 , shouldQuitGame(false) {
 }
-GameState::~GameState() {}
+GameState::~GameState() {
+	//don't delete the camera, it's one of our other states
+}
 //update this game state by reading from the previous state
 void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 	//first things first: dump all our previous state so that we can start fresh
 	playerState.set(nullptr);
 	mapState.set(nullptr);
-	camera.set(nullptr);
+	dynamicCameraAnchor.set(nullptr);
 
 	//don't update any state if we're paused
 	if (prev->pauseState.get() != nullptr) {
@@ -38,8 +41,11 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 		pauseState.set(nextPauseState);
 		gameTimeOffsetTicksDuration = prev->gameTimeOffsetTicksDuration + ticksTime - prev->pauseStartTicksTime;
 		pauseStartTicksTime = ticksTime;
-		playerState.set(newPlayerState());
-		playerState.get()->copyPlayerState(prev->playerState.get());
+
+		//use the direct pointers from the previous state since they didn't change
+		playerState.set(prev->playerState.get());
+		mapState.set(prev->mapState.get());
+		dynamicCameraAnchor.set(prev->dynamicCameraAnchor.get());
 
 		if (nextPauseState != nullptr) {
 			int endPauseDecision = nextPauseState->getEndPauseDecision();
@@ -63,6 +69,8 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 	playerState.get()->updateWithPreviousPlayerState(prev->playerState.get(), gameTicksTime);
 	mapState.set(newMapState());
 	mapState.get()->updateWithPreviousMapState(prev->mapState.get(), gameTicksTime);
+	dynamicCameraAnchor.set(newDynamicCameraAnchor());
+	dynamicCameraAnchor.get()->updateWithPreviousDynamicCameraAnchor(prev->dynamicCameraAnchor.get(), gameTicksTime);
 
 	//handle events after states have been updated
 	SDL_Event gameEvent;
@@ -98,25 +106,25 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 	}
 
 	//set our next camera anchor
-	prev->camera.get()->setNextCamera(this, gameTicksTime);
+	prev->camera->setNextCamera(this, gameTicksTime);
 }
 //set our camera to our player
 void GameState::setPlayerCamera() {
-	camera.set(playerState.get());
+	camera = playerState.get();
 }
-//set our camera to the one provided
-void GameState::setProvidedCamera(EntityState* pCamera) {
-	camera.set(pCamera);
+//set our camera to the dynamic camera anchor
+void GameState::setDynamicCamera() {
+	camera = dynamicCameraAnchor.get();
 }
 //render this state, which was deemed to be the last state to need rendering
 void GameState::render(int ticksTime) {
 	int gameTicksTime = (pauseState.get() != nullptr ? pauseStartTicksTime : ticksTime) - gameTimeOffsetTicksDuration;
-	mapState.get()->render(camera.get(), gameTicksTime);
-	playerState.get()->render(camera.get(), gameTicksTime);
+	mapState.get()->render(camera, gameTicksTime);
+	playerState.get()->render(camera, gameTicksTime);
 	if (pauseState.get() != nullptr)
 		pauseState.get()->render();
 	#ifdef EDITOR
-		Editor::render(camera.get(), gameTicksTime);
+		Editor::render(camera, gameTicksTime);
 	#endif
 }
 //save the state to a file
@@ -131,6 +139,7 @@ void GameState::loadInitialState() {
 	//first things first, we need some state
 	playerState.set(newPlayerState());
 	mapState.set(newMapState());
+	dynamicCameraAnchor.set(newDynamicCameraAnchor());
 
 	//next, load state if we can
 	ifstream file;
@@ -145,13 +154,14 @@ void GameState::loadInitialState() {
 	file.close();
 
 //TODO: intro animation
-sawIntroAnimation = true;
+//sawIntroAnimation = true;
 	//and finally, setup the initial state
 	if (sawIntroAnimation) {
 		playerState.get()->obtainBoot();
-		camera.set(playerState.get());
+		camera = playerState.get();
 	} else {
 		MapState::setIntroAnimationBootTile();
-		camera.set(newStaticCameraAnchor(MapState::introAnimationMapCenterX, MapState::introAnimationMapCenterY));
+		dynamicCameraAnchor.get()->setPosition(MapState::introAnimationMapCenterX, MapState::introAnimationMapCenterY, 0);
+		camera = dynamicCameraAnchor.get();
 	}
 }

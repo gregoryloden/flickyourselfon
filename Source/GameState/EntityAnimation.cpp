@@ -8,10 +8,6 @@ EntityAnimation::Component::Component(objCounterParameters())
 : PooledReferenceCounter(objCounterArguments()) {
 }
 EntityAnimation::Component::~Component() {}
-//return how long this component should last; only Delay overrides this
-int EntityAnimation::Component::getDelayTicksDuration() {
-	return 0;
-}
 
 //////////////////////////////// EntityAnimation::Delay ////////////////////////////////
 EntityAnimation::Delay::Delay(objCounterParameters())
@@ -29,10 +25,6 @@ pooledReferenceCounterDefineRelease(EntityAnimation::Delay)
 //return that the animation should not proceed without checking that the delay is finished
 bool EntityAnimation::Delay::handle(EntityState* entityState, int ticksTime) {
 	return false;
-}
-//return the ticks duration for this delay
-int EntityAnimation::Delay::getDelayTicksDuration() {
-	return ticksDuration;
 }
 
 //////////////////////////////// EntityAnimation::SetVelocity ////////////////////////////////

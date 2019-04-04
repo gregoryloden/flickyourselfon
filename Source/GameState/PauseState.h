@@ -47,9 +47,9 @@ private:
 		//PauseOption caches the metrics of the regular display text and will return it, subclasses can override this and return
 		//	a different value if they draw something else
 		virtual Text::Metrics getDisplayTextMetrics() { return displayTextMetrics; }
+		virtual void render(float leftX, float baselineY);
 		//handle this option being selected, return the pause state to use as a result
 		virtual PauseState* handle(PauseState* currentState) = 0;
-		virtual void render(float leftX, float baselineY);
 	};
 	class NavigationOption: public PauseOption {
 	private:

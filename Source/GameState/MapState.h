@@ -137,12 +137,12 @@ public:
 	static char getHeight(int x, int y) { return heights[y * width + x]; }
 	static int mapWidth() { return width; }
 	static int mapHeight() { return height; }
+	static short getRailSwitchId(int x, int y) { return railSwitchIds[y * width + x]; }
+	static bool tileHasRailOrSwitch(int x, int y) { return getRailSwitchId(x, y) != 0; }
 	#ifdef EDITOR
 		static void setTile(int x, int y, char tile) { tiles[y * width + x] = tile; }
 		static void setHeight(int x, int y, char height) { heights[y * width + x] = height; }
 	#endif
-	static short getRailSwitchId(int x, int y) { return railSwitchIds[y * width + x]; }
-	static bool tileHasRailOrSwitch(int x, int y) { return getRailSwitchId(x, y) != 0; }
 	static MapState* produce(objCounterParameters());
 	virtual void release();
 	static void buildMap();

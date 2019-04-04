@@ -35,6 +35,7 @@ PlayerState::PlayerState(objCounterParameters())
 , lastControlledX(0.0f)
 , lastControlledY(0.0f)
 , lastControlledZ(0) {
+	//TODO: set a real starting position
 	x.set(newCompositeQuarticValue(playerStartingXPosition, 0.0f, 0.0f, 0.0f, 0.0f));
 	y.set(newCompositeQuarticValue(playerStartingYPosition, 0.0f, 0.0f, 0.0f, 0.0f));
 	lastControlledX = x.get()->getValue(0);

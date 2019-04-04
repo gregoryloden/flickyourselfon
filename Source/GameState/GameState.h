@@ -1,5 +1,6 @@
 #include "Util/PooledReferenceCounter.h"
 
+class DynamicCameraAnchor;
 class EntityState;
 class MapState;
 class PauseState;
@@ -15,7 +16,8 @@ private:
 	bool sawIntroAnimation;
 	ReferenceCounterHolder<PlayerState> playerState;
 	ReferenceCounterHolder<MapState> mapState;
-	ReferenceCounterHolder<EntityState> camera;
+	ReferenceCounterHolder<DynamicCameraAnchor> dynamicCameraAnchor;
+	EntityState* camera;
 	ReferenceCounterHolder<PauseState> pauseState;
 	int pauseStartTicksTime;
 	int gameTimeOffsetTicksDuration;
@@ -29,7 +31,7 @@ public:
 	bool getShouldQuitGame() { return shouldQuitGame; }
 	void updateWithPreviousGameState(GameState* prev, int ticksTime);
 	void setPlayerCamera();
-	void setProvidedCamera(EntityState* pCamera);
+	void setDynamicCamera();
 	void render(int ticksTime);
 	void saveState();
 	void loadInitialState();

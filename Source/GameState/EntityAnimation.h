@@ -19,9 +19,10 @@ public:
 		Component(objCounterParameters());
 		~Component();
 
+		//return how long this component should last; only Delay overrides this
+		virtual int getDelayTicksDuration() { return 0; }
 		//return whether this component is done handling the state and we can move on to the next component
 		virtual bool handle(EntityState* entityState, int ticksTime) = 0;
-		virtual int getDelayTicksDuration();
 	};
 	class Delay: public Component {
 	private:
@@ -31,10 +32,10 @@ public:
 		Delay(objCounterParameters());
 		~Delay();
 
+		virtual int getDelayTicksDuration() { return ticksDuration; }
 		static Delay* produce(objCounterParametersComma() int pTicksDuration);
 		virtual void release();
 		virtual bool handle(EntityState* entityState, int ticksTime);
-		virtual int getDelayTicksDuration();
 	};
 	class SetVelocity: public Component {
 	private:

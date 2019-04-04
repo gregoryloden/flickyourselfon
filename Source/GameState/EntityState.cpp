@@ -6,9 +6,9 @@
 //////////////////////////////// EntityState ////////////////////////////////
 EntityState::EntityState(objCounterParameters())
 : PooledReferenceCounter(objCounterArguments())
-, x(nullptr)
+, x(newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f))
 , renderInterpolatedX(true)
-, y(nullptr)
+, y(newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f))
 , renderInterpolatedY(true)
 , z(0)
 , entityAnimation(nullptr)
@@ -33,7 +33,20 @@ float EntityState::getRenderCenterWorldX(int ticksTime) {
 float EntityState::getRenderCenterWorldY(int ticksTime) {
 	return y.get()->getValue(renderInterpolatedY ? ticksTime - lastUpdateTicksTime : 0);
 }
-//set the position to the given position at the given time
+//set the position to the given position at the given time, preserving the velocity
+void EntityState::setPosition(float pX, float pY, int pLastUpdateTicksTime) {
+	//get our original position
+	float originalXPosition = x.get()->getValue(0);
+	float originalYPosition = y.get()->getValue(0);
+	//find how far we have to go
+	int timediff = pLastUpdateTicksTime - lastUpdateTicksTime;
+	float addX = pX - x.get()->getValue(timediff);
+	float addY = pY - y.get()->getValue(timediff);
+	//set a new position offset by how far we have to move
+	x.set(x.get()->copyWithConstantValue(originalXPosition + addX));
+	y.set(y.get()->copyWithConstantValue(originalYPosition + addY));
+}
+//set the velocity to the given velocity at the given time, preserving the position
 void EntityState::setVelocity(DynamicValue* vx, DynamicValue* vy, int pLastUpdateTicksTime) {
 	int timediff = pLastUpdateTicksTime - lastUpdateTicksTime;
 	x.set(vx->copyWithConstantValue(x.get()->getValue(timediff)));
@@ -41,22 +54,30 @@ void EntityState::setVelocity(DynamicValue* vx, DynamicValue* vy, int pLastUpdat
 	lastUpdateTicksTime = pLastUpdateTicksTime;
 }
 
-//////////////////////////////// StaticCameraAnchor ////////////////////////////////
-StaticCameraAnchor::StaticCameraAnchor(objCounterParameters())
-: EntityState(objCounterArguments()) {
+//////////////////////////////// DynamicCameraAnchor ////////////////////////////////
+DynamicCameraAnchor::DynamicCameraAnchor(objCounterParameters())
+: EntityState(objCounterArguments())
+, shouldSwitchToPlayerCamera(false) {
 }
-StaticCameraAnchor::~StaticCameraAnchor() {}
-//initialize and return a StaticCameraAnchor
-StaticCameraAnchor* StaticCameraAnchor::produce(objCounterParametersComma() float pX, float pY) {
-	initializeWithNewFromPool(s, StaticCameraAnchor)
-	s->x.set(newCompositeQuarticValue(pX, 0.0f, 0.0f, 0.0f, 0.0f));
-	s->y.set(newCompositeQuarticValue(pY, 0.0f, 0.0f, 0.0f, 0.0f));
+DynamicCameraAnchor::~DynamicCameraAnchor() {}
+//initialize and return a DynamicCameraAnchor
+DynamicCameraAnchor* DynamicCameraAnchor::produce(objCounterParameters()) {
+	initializeWithNewFromPool(s, DynamicCameraAnchor)
+	s->shouldSwitchToPlayerCamera = false;
 	return s;
 }
-pooledReferenceCounterDefineRelease(StaticCameraAnchor)
+pooledReferenceCounterDefineRelease(DynamicCameraAnchor)
+//update this dynamic camera anchor
+void DynamicCameraAnchor::updateWithPreviousDynamicCameraAnchor(DynamicCameraAnchor* prev, int ticksTime) {
+	//TODO: advance our animation
+	copyEntityState(prev);
+}
 //TODO: descibe this
 //TODO: what causes this to stop being the camera anchor?
-void StaticCameraAnchor::setNextCamera(GameState* nextGameState, int ticksTime) {
+void DynamicCameraAnchor::setNextCamera(GameState* nextGameState, int ticksTime) {
 	//TODO: set a different camera anchor at the end of our animation
-	nextGameState->setProvidedCamera(newStaticCameraAnchor(x.get()->getValue(0), y.get()->getValue(0)));
+	if (shouldSwitchToPlayerCamera)
+		nextGameState->setPlayerCamera();
+	else
+		nextGameState->setDynamicCamera();
 }

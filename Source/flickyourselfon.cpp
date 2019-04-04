@@ -123,7 +123,7 @@ int main(int argc, char* argv[]) {
 		ObjectPool<MapState>::clearPool();
 		ObjectPool<PauseState>::clearPool();
 		ObjectPool<EntityAnimation>::clearPool();
-		ObjectPool<StaticCameraAnchor>::clearPool();
+		ObjectPool<DynamicCameraAnchor>::clearPool();
 		ObjectPool<CompositeQuarticValue>::clearPool();
 		ObjectPool<EntityAnimation::Delay>::clearPool();
 		ObjectPool<EntityAnimation::SetVelocity>::clearPool();

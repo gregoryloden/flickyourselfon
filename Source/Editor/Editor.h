@@ -39,9 +39,9 @@ private:
 		virtual void render();
 		void renderFadedOverlay();
 		void renderHighlightOutline();
+		virtual void paintMap(int x, int y);
 		//this button was clicked, do its associated action
 		virtual void doAction() = 0;
-		virtual void paintMap(int x, int y);
 	};
 	class TextButton: public Button {
 	private:
