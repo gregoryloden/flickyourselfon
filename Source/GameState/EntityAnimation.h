@@ -2,12 +2,16 @@
 
 #define newEntityAnimation(startTicksTime, components) produceWithArgs(EntityAnimation, startTicksTime, components)
 #define newEntityAnimationDelay(ticksDuration) produceWithArgs(EntityAnimation::Delay, ticksDuration)
+#define newEntityAnimationSetPosition(x, y) produceWithArgs(EntityAnimation::SetPosition, x, y)
 #define newEntityAnimationSetVelocity(vx, vy) produceWithArgs(EntityAnimation::SetVelocity, vx, vy)
 #define newEntityAnimationSetSpriteAnimation(animation) produceWithArgs(EntityAnimation::SetSpriteAnimation, animation)
+#define newEntityAnimationSetSpriteDirection(direction) produceWithArgs(EntityAnimation::SetSpriteDirection, direction)
+#define newEntityAnimationSwitchToPlayerCamera() produceWithoutArgs(EntityAnimation::SwitchToPlayerCamera)
 
 class DynamicValue;
 class EntityState;
 class SpriteAnimation;
+enum class SpriteDirection: int;
 
 //a single EntityAnimation instance is shared across multiple game states
 //it gets mutated but does not mutate a game state unless it's in the middle of updating
@@ -37,6 +41,19 @@ public:
 		virtual void release();
 		virtual bool handle(EntityState* entityState, int ticksTime);
 	};
+	class SetPosition: public Component {
+	private:
+		float x;
+		float y;
+
+	public:
+		SetPosition(objCounterParameters());
+		~SetPosition();
+
+		static SetPosition* produce(objCounterParametersComma() float pX, float pY);
+		virtual void release();
+		virtual bool handle(EntityState* entityState, int ticksTime);
+	};
 	class SetVelocity: public Component {
 	private:
 		ReferenceCounterHolder<DynamicValue> vx;
@@ -48,7 +65,9 @@ public:
 
 		static SetVelocity* produce(objCounterParametersComma() DynamicValue* pVx, DynamicValue* pVy);
 		virtual void release();
+	protected:
 		virtual void prepareReturnToPool();
+	public:
 		virtual bool handle(EntityState* entityState, int ticksTime);
 	};
 	class SetSpriteAnimation: public Component {
@@ -63,17 +82,43 @@ public:
 		virtual void release();
 		virtual bool handle(EntityState* entityState, int ticksTime);
 	};
+	class SetSpriteDirection: public Component {
+	private:
+		SpriteDirection direction;
 
+	public:
+		SetSpriteDirection(objCounterParameters());
+		~SetSpriteDirection();
+
+		static SetSpriteDirection* produce(objCounterParametersComma() SpriteDirection pDirection);
+		virtual void release();
+		virtual bool handle(EntityState* entityState, int ticksTime);
+	};
+	class SwitchToPlayerCamera: public Component {
+	public:
+		SwitchToPlayerCamera(objCounterParameters());
+		~SwitchToPlayerCamera();
+
+		static SwitchToPlayerCamera* produce(objCounterParameters());
+		virtual void release();
+		virtual bool handle(EntityState* entityState, int ticksTime);
+	};
+
+private:
 	int lastUpdateTicksTime;
 	vector<ReferenceCounterHolder<Component>> components;
 	int nextComponentIndex;
 
+public:
 	EntityAnimation(objCounterParameters());
 	~EntityAnimation();
 
 	static EntityAnimation* produce(
 		objCounterParametersComma() int pStartTicksTime, vector<ReferenceCounterHolder<Component>> pComponents);
 	virtual void release();
+protected:
 	virtual void prepareReturnToPool();
+public:
 	bool update(EntityState* entityState, int ticksTime);
+	int getTotalTicksDuration();
 };

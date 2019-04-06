@@ -8,21 +8,16 @@ class EntityAnimation;
 
 class PlayerState: public EntityState {
 private:
-	enum class SpriteDirection: int {
-		Right = 0,
-		Up = 1,
-		Left = 2,
-		Down = 3
-	};
-
-	static const float playerStartingXPosition;
-	static const float playerStartingYPosition;
 	static const float playerWidth;
 	static const float playerHeight;
 	static const float boundingBoxLeftOffset;
 	static const float boundingBoxRightOffset;
 	static const float boundingBoxTopOffset;
 	static const float boundingBoxBottomOffset;
+public:
+	static const float introAnimationPlayerCenterX;
+	static const float introAnimationPlayerCenterY;
+private:
 	static const string playerXFilePrefix;
 	static const string playerYFilePrefix;
 	static const string playerZFilePrefix;
@@ -41,6 +36,7 @@ public:
 	PlayerState(objCounterParameters());
 	~PlayerState();
 
+	virtual void setSpriteDirection(SpriteDirection pSpriteDirection) { spriteDirection = pSpriteDirection; }
 	void obtainBoot() { hasBoot = true; }
 	static PlayerState* produce(objCounterParameters());
 	void copyPlayerState(PlayerState* other);

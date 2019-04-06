@@ -2,6 +2,8 @@
 #ifdef EDITOR
 	#include "Editor/Editor.h"
 #endif
+#include "GameState/DynamicValue.h"
+#include "GameState/EntityAnimation.h"
 #include "GameState/MapState.h"
 #include "GameState/PauseState.h"
 #include "GameState/PlayerState.h"
@@ -30,6 +32,8 @@ GameState::~GameState() {
 }
 //update this game state by reading from the previous state
 void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
+	sawIntroAnimation = prev->sawIntroAnimation;
+
 	//first things first: dump all our previous state so that we can start fresh
 	playerState.set(nullptr);
 	mapState.set(nullptr);
@@ -111,6 +115,10 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 //set our camera to our player
 void GameState::setPlayerCamera() {
 	camera = playerState.get();
+
+	//since we only set the player camera once we get the boot, reset the tile
+	sawIntroAnimation = true;
+	MapState::setIntroAnimationBootTile(false);
 }
 //set our camera to the dynamic camera anchor
 void GameState::setDynamicCamera() {
@@ -131,6 +139,8 @@ void GameState::render(int ticksTime) {
 void GameState::saveState() {
 	ofstream file;
 	file.open(savedGameFileName);
+	if (sawIntroAnimation)
+		file << sawIntroAnimationFilePrefix << "true\n";
 	playerState.get()->saveState(file);
 	file.close();
 }
@@ -160,8 +170,134 @@ void GameState::loadInitialState() {
 		playerState.get()->obtainBoot();
 		camera = playerState.get();
 	} else {
-		MapState::setIntroAnimationBootTile();
-		dynamicCameraAnchor.get()->setPosition(MapState::introAnimationMapCenterX, MapState::introAnimationMapCenterY, 0);
+		MapState::setIntroAnimationBootTile(true);
 		camera = dynamicCameraAnchor.get();
+
+		//player animation component helpers
+		float speedPerTick = MapState::speedPerSecond / (float)Config::ticksPerSecond;
+		EntityAnimation::SetVelocity* stopMoving = newEntityAnimationSetVelocity(
+			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
+			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f));
+		EntityAnimation::SetVelocity* walkRight = newEntityAnimationSetVelocity(
+			newCompositeQuarticValue(0.0f, speedPerTick, 0.0f, 0.0f, 0.0f),
+			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f));
+		EntityAnimation::SetVelocity* walkUp = newEntityAnimationSetVelocity(
+			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
+			newCompositeQuarticValue(0.0f, -speedPerTick, 0.0f, 0.0f, 0.0f));
+		EntityAnimation::SetVelocity* walkLeft = newEntityAnimationSetVelocity(
+			newCompositeQuarticValue(0.0f, -speedPerTick, 0.0f, 0.0f, 0.0f),
+			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f));
+		EntityAnimation::SetVelocity* walkDown = newEntityAnimationSetVelocity(
+			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
+			newCompositeQuarticValue(0.0f, speedPerTick, 0.0f, 0.0f, 0.0f));
+		EntityAnimation::SetSpriteAnimation* setWalkingAnimation =
+			newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerWalkingAnimation);
+		EntityAnimation::SetSpriteAnimation* clearSpriteAnimation = newEntityAnimationSetSpriteAnimation(nullptr);
+
+		EntityAnimation* playerEntityAnimation = newEntityAnimation(
+			0,
+			{
+				newEntityAnimationSetPosition(
+					PlayerState::introAnimationPlayerCenterX, PlayerState::introAnimationPlayerCenterY) COMMA
+				newEntityAnimationDelay(3000) COMMA
+				//walk to the wall
+				walkRight COMMA
+				setWalkingAnimation COMMA
+				newEntityAnimationSetSpriteDirection(SpriteDirection::Right) COMMA
+				newEntityAnimationDelay(1700) COMMA
+				//walk down, stop at the boot
+				walkDown COMMA
+				newEntityAnimationSetSpriteDirection(SpriteDirection::Down) COMMA
+				newEntityAnimationDelay(1000) COMMA
+				stopMoving COMMA
+				clearSpriteAnimation COMMA
+				newEntityAnimationDelay(1500) COMMA
+				//look at the boot
+				newEntityAnimationSetSpriteDirection(SpriteDirection::Right) COMMA
+				newEntityAnimationDelay(800) COMMA
+				newEntityAnimationSetSpriteDirection(SpriteDirection::Down) COMMA
+				newEntityAnimationDelay(1000) COMMA
+				//walk around the boot
+				walkDown COMMA
+				setWalkingAnimation COMMA
+				newEntityAnimationDelay(900) COMMA
+				stopMoving COMMA
+				clearSpriteAnimation COMMA
+				newEntityAnimationDelay(300) COMMA
+				walkRight COMMA
+				setWalkingAnimation COMMA
+				newEntityAnimationSetSpriteDirection(SpriteDirection::Right) COMMA
+				newEntityAnimationDelay(1800) COMMA
+				//stop and look around
+				stopMoving COMMA
+				clearSpriteAnimation COMMA
+				newEntityAnimationDelay(700) COMMA
+				newEntityAnimationSetSpriteDirection(SpriteDirection::Up) COMMA
+				newEntityAnimationDelay(700) COMMA
+				newEntityAnimationSetSpriteDirection(SpriteDirection::Down) COMMA
+				newEntityAnimationDelay(500) COMMA
+				newEntityAnimationSetSpriteDirection(SpriteDirection::Left) COMMA
+				newEntityAnimationDelay(350) COMMA
+				newEntityAnimationSetSpriteDirection(SpriteDirection::Right) COMMA
+				newEntityAnimationDelay(1000) COMMA
+				//walk up
+				newEntityAnimationSetSpriteDirection(SpriteDirection::Up) COMMA
+				walkUp COMMA
+				setWalkingAnimation COMMA
+				newEntityAnimationDelay(1700) COMMA
+				//stop and look around
+				stopMoving COMMA
+				clearSpriteAnimation COMMA
+				newEntityAnimationDelay(1000) COMMA
+				newEntityAnimationSetSpriteDirection(SpriteDirection::Right) COMMA
+				newEntityAnimationDelay(600) COMMA
+				newEntityAnimationSetSpriteDirection(SpriteDirection::Left) COMMA
+				newEntityAnimationDelay(400) COMMA
+				newEntityAnimationSetSpriteDirection(SpriteDirection::Up) COMMA
+				newEntityAnimationDelay(1200) COMMA
+				//walk back down to the boot
+				walkDown COMMA
+				setWalkingAnimation COMMA
+				newEntityAnimationSetSpriteDirection(SpriteDirection::Down) COMMA
+				newEntityAnimationDelay(900) COMMA
+				walkLeft COMMA
+				newEntityAnimationSetSpriteDirection(SpriteDirection::Left) COMMA
+				newEntityAnimationDelay(400) COMMA
+				stopMoving COMMA
+				clearSpriteAnimation COMMA
+				newEntityAnimationDelay(500) COMMA
+				//approach more slowly
+				newEntityAnimationSetVelocity(
+					newCompositeQuarticValue(0.0f, -speedPerTick * 0.5f, 0.0f, 0.0f, 0.0f),
+					newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)) COMMA
+				setWalkingAnimation COMMA
+				newEntityAnimationDelay(540) COMMA
+				stopMoving COMMA
+				clearSpriteAnimation COMMA
+				newEntityAnimationDelay(800) COMMA
+				//put on the boot
+				newEntityAnimationSetVelocity(
+					newCompositeQuarticValue(0.0f, -0.017f, 0.0f, 0.0f, 0.0f),
+					newCompositeQuarticValue(0.0f, 0.004f, 0.0f, 0.0f, 0.0f)) COMMA
+				newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerLegLiftAnimation) COMMA
+				newEntityAnimationDelay(SpriteRegistry::playerLegLiftAnimation->getTotalTicksDuration()) COMMA
+				stopMoving COMMA
+				clearSpriteAnimation
+			});
+		vector<ReferenceCounterHolder<EntityAnimation::Component>> cameraAnimationComponents ({
+			//TODO: fade in animation
+			newEntityAnimationSetPosition(MapState::introAnimationCameraCenterX, MapState::introAnimationCameraCenterY)
+		});
+
+		//delay the camera animation until the end of the player animation
+		int cameraAnimationTicksDuration = 0;
+		for (ReferenceCounterHolder<EntityAnimation::Component>& component : cameraAnimationComponents)
+			cameraAnimationTicksDuration += component.get()->getDelayTicksDuration();
+		cameraAnimationComponents.push_back(
+			newEntityAnimationDelay(playerEntityAnimation->getTotalTicksDuration() - cameraAnimationTicksDuration));
+		cameraAnimationComponents.push_back(newEntityAnimationSwitchToPlayerCamera());
+
+		playerState.get()->beginEntityAnimation(playerEntityAnimation, 0);
+		dynamicCameraAnchor.get()->beginEntityAnimation(newEntityAnimation(0, cameraAnimationComponents), 0);
 	}
 }

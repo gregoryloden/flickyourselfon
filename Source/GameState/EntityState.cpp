@@ -53,6 +53,12 @@ void EntityState::setVelocity(DynamicValue* vx, DynamicValue* vy, int pLastUpdat
 	y.set(vy->copyWithConstantValue(y.get()->getValue(timediff)));
 	lastUpdateTicksTime = pLastUpdateTicksTime;
 }
+//start the given entity animation
+void EntityState::beginEntityAnimation(EntityAnimation* pEntityAnimation, int ticksTime) {
+	entityAnimation.set(pEntityAnimation);
+	//update it once to get it started
+	entityAnimation.get()->update(this, ticksTime);
+}
 
 //////////////////////////////// DynamicCameraAnchor ////////////////////////////////
 DynamicCameraAnchor::DynamicCameraAnchor(objCounterParameters())
@@ -69,13 +75,15 @@ DynamicCameraAnchor* DynamicCameraAnchor::produce(objCounterParameters()) {
 pooledReferenceCounterDefineRelease(DynamicCameraAnchor)
 //update this dynamic camera anchor
 void DynamicCameraAnchor::updateWithPreviousDynamicCameraAnchor(DynamicCameraAnchor* prev, int ticksTime) {
-	//TODO: advance our animation
 	copyEntityState(prev);
+	if (entityAnimation.get() != nullptr) {
+		if (entityAnimation.get()->update(this, ticksTime))
+			return;
+		entityAnimation.set(nullptr);
+	}
 }
-//TODO: descibe this
-//TODO: what causes this to stop being the camera anchor?
+//use this anchor unless we've been told to switch to the player camera
 void DynamicCameraAnchor::setNextCamera(GameState* nextGameState, int ticksTime) {
-	//TODO: set a different camera anchor at the end of our animation
 	if (shouldSwitchToPlayerCamera)
 		nextGameState->setPlayerCamera();
 	else

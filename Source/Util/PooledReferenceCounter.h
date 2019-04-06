@@ -20,9 +20,11 @@ public:
 	PooledReferenceCounter(objCounterParameters());
 	~PooledReferenceCounter();
 
+protected:
+	virtual void prepareReturnToPool() {}
+public:
 	void retain();
 	virtual void release() = 0;
-	virtual void prepareReturnToPool() {}
 };
 //Should only be allocated within an object, or on the stack if its internal object will not be returned
 template <class ReferenceCountedObject> class ReferenceCounterHolder {

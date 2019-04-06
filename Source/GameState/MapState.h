@@ -113,8 +113,8 @@ public:
 	static const float speedPerSecond;
 	static const float diagonalSpeedPerSecond;
 	static const float smallDistance;
-	static const float introAnimationMapCenterX;
-	static const float introAnimationMapCenterY;
+	static const float introAnimationCameraCenterX;
+	static const float introAnimationCameraCenterY;
 
 private:
 	static char* tiles;
@@ -150,7 +150,7 @@ public:
 	static int getScreenLeftWorldX(EntityState* camera, int ticksTime);
 	static int getScreenTopWorldY(EntityState* camera, int ticksTime);
 	static char horizontalTilesHeight(int lowMapX, int highMapX, int mapY);
-	static void setIntroAnimationBootTile();
+	static void setIntroAnimationBootTile(bool startingAnimation);
 	void updateWithPreviousMapState(MapState* prev, int ticksTime);
 	void render(EntityState* camera, int ticksTime);
 	#ifdef EDITOR

@@ -60,10 +60,9 @@ int main(int argc, char* argv[]) {
 
 	//create our state queue
 	CircularStateQueue<GameState>* gameStateQueue = newCircularStateQueue(GameState, newGameState(), newGameState());
-	//our initial state is renderable
+	//the render thread will handle updating our initial state
 	gameStateQueue->finishWritingToState();
 	GameState* prevGameState = gameStateQueue->getNextReadableState();
-	prevGameState->loadInitialState();
 	Logger::log("Game state loaded");
 
 	//now that our initial state is ready, start the render thread
@@ -122,12 +121,15 @@ int main(int argc, char* argv[]) {
 		ObjectPool<PlayerState>::clearPool();
 		ObjectPool<MapState>::clearPool();
 		ObjectPool<PauseState>::clearPool();
-		ObjectPool<EntityAnimation>::clearPool();
 		ObjectPool<DynamicCameraAnchor>::clearPool();
+		ObjectPool<EntityAnimation>::clearPool();
 		ObjectPool<CompositeQuarticValue>::clearPool();
 		ObjectPool<EntityAnimation::Delay>::clearPool();
+		ObjectPool<EntityAnimation::SetPosition>::clearPool();
 		ObjectPool<EntityAnimation::SetVelocity>::clearPool();
 		ObjectPool<EntityAnimation::SetSpriteAnimation>::clearPool();
+		ObjectPool<EntityAnimation::SetSpriteDirection>::clearPool();
+		ObjectPool<EntityAnimation::SwitchToPlayerCamera>::clearPool();
 		ObjCounter::end();
 	#endif
 	Logger::log("Game exit");
@@ -152,14 +154,16 @@ void renderLoop(CircularStateQueue<GameState>* gameStateQueue) {
 	glOrtho(0, (GLdouble)Config::windowScreenWidth, (GLdouble)Config::windowScreenHeight, 0, -1, 1);
 
 	//load all the sprites now that our context has been created
-	Logger::log("OpenGL set up /// Loading sprites...");
+	Logger::log("OpenGL set up /// Loading sprites and game state...");
 	Text::loadFont();
 	SpriteRegistry::loadAll();
 	PauseState::loadMenu();
 	#ifdef EDITOR
 		Editor::loadButtons();
 	#endif
-	Logger::log("Sprites loaded /// Beginning render loop");
+	//load the initial state after loading all sprites
+	gameStateQueue->getNextReadableState()->loadInitialState();
+	Logger::log("Sprites and game state loaded /// Beginning render loop");
 
 	//begin the render loop
 	int lastWindowWidth = 0;

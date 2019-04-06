@@ -13,8 +13,11 @@
 
 instantiateObjectPool(CompositeQuarticValue)
 instantiateObjectPool(EntityAnimation::Delay)
-instantiateObjectPool(EntityAnimation::SetVelocity)
+instantiateObjectPool(EntityAnimation::SetPosition)
 instantiateObjectPool(EntityAnimation::SetSpriteAnimation)
+instantiateObjectPool(EntityAnimation::SetSpriteDirection)
+instantiateObjectPool(EntityAnimation::SetVelocity)
+instantiateObjectPool(EntityAnimation::SwitchToPlayerCamera)
 instantiateObjectPoolAndReferenceCounterHolder(DynamicCameraAnchor)
 instantiateObjectPoolAndReferenceCounterHolder(EntityAnimation)
 instantiateObjectPoolAndReferenceCounterHolder(MapState)

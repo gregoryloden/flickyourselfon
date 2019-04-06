@@ -13,14 +13,14 @@
 	//**/#define SHOW_PLAYER_BOUNDING_BOX 1
 #endif
 
-const float PlayerState::playerStartingXPosition = 179.5f;
-const float PlayerState::playerStartingYPosition = 166.5f;
 const float PlayerState::playerWidth = 11.0f;
 const float PlayerState::playerHeight = 5.0f;
 const float PlayerState::boundingBoxLeftOffset = PlayerState::playerWidth * -0.5f;
 const float PlayerState::boundingBoxRightOffset = PlayerState::boundingBoxLeftOffset + PlayerState::playerWidth;
 const float PlayerState::boundingBoxTopOffset = 4.5f;
 const float PlayerState::boundingBoxBottomOffset = PlayerState::boundingBoxTopOffset + PlayerState::playerHeight;
+const float PlayerState::introAnimationPlayerCenterX = 70.5f;
+const float PlayerState::introAnimationPlayerCenterY = 106.5f;
 const string PlayerState::playerXFilePrefix = "playerX ";
 const string PlayerState::playerYFilePrefix = "playerY ";
 const string PlayerState::playerZFilePrefix = "playerZ ";
@@ -35,9 +35,6 @@ PlayerState::PlayerState(objCounterParameters())
 , lastControlledX(0.0f)
 , lastControlledY(0.0f)
 , lastControlledZ(0) {
-	//TODO: set a real starting position
-	x.set(newCompositeQuarticValue(playerStartingXPosition, 0.0f, 0.0f, 0.0f, 0.0f));
-	y.set(newCompositeQuarticValue(playerStartingYPosition, 0.0f, 0.0f, 0.0f, 0.0f));
 	lastControlledX = x.get()->getValue(0);
 	lastControlledY = y.get()->getValue(0);
 	lastControlledZ = z;
@@ -74,15 +71,16 @@ void PlayerState::setSpriteAnimation(SpriteAnimation* pSpriteAnimation, int pSpr
 void PlayerState::updateWithPreviousPlayerState(PlayerState* prev, int ticksTime) {
 	bool previousStateHadEntityAnimation = prev->entityAnimation.get() != nullptr;
 
-	//if we have a kicking animation, update with that instead
+	//if we have an entity animation, update with that instead
 	if (previousStateHadEntityAnimation) {
 		copyPlayerState(prev);
 		if (entityAnimation.get()->update(this, ticksTime))
 			return;
-	} else
-		hasBoot = prev->hasBoot;
-
+	}
 	entityAnimation.set(nullptr);
+
+	//if we can control the player then that must mean the player has the boot
+	hasBoot = true;
 
 	//update this player state normally by reading from the last state
 	updatePositionWithPreviousPlayerState(prev, ticksTime);
@@ -466,16 +464,16 @@ void PlayerState::beginKicking(int ticksTime) {
 	kickingAnimationComponents.push_back(
 		newEntityAnimationSetVelocity(
 			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f), newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)));
-	entityAnimation.set(newEntityAnimation(ticksTime, kickingAnimationComponents));
-	//update it once to get it started
-	entityAnimation.get()->update(this, ticksTime);
+
+	beginEntityAnimation(newEntityAnimation(ticksTime, kickingAnimationComponents), ticksTime);
 }
 //render this player state, which was deemed to be the last state to need rendering
 void PlayerState::render(EntityState* camera, int ticksTime) {
-	float renderCenterX =
-		getRenderCenterWorldX(ticksTime) - camera->getRenderCenterWorldX(ticksTime) + (float)Config::gameScreenWidth * 0.5f;
-	float renderCenterY =
-		getRenderCenterWorldY(ticksTime) - camera->getRenderCenterWorldY(ticksTime) + (float)Config::gameScreenHeight * 0.5f;
+	//convert these to ints first to align with the map in case the camera is not the player
+	int playerScreenXOffset = (int)getRenderCenterWorldX(ticksTime) - (int)camera->getRenderCenterWorldX(ticksTime);
+	int playerScreenYOffset = (int)getRenderCenterWorldY(ticksTime) - (int)camera->getRenderCenterWorldY(ticksTime);
+	float renderCenterX = (float)playerScreenXOffset + (float)Config::gameScreenWidth * 0.5f;
+	float renderCenterY = (float)playerScreenYOffset + (float)Config::gameScreenHeight * 0.5f;
 	glEnable(GL_BLEND);
 	if (spriteAnimation != nullptr)
 		spriteAnimation->renderUsingCenter(

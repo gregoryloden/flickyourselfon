@@ -122,8 +122,8 @@ const char* MapState::floorFileName = "images/floor.png";
 const float MapState::speedPerSecond = 40.0f;
 const float MapState::diagonalSpeedPerSecond = MapState::speedPerSecond * sqrt(0.5f);
 const float MapState::smallDistance = 1.0f / 256.0f;
-const float MapState::introAnimationMapCenterX = (float)(MapState::tileSize * introAnimationBootTileX) + 3.5f;
-const float MapState::introAnimationMapCenterY = (float)(MapState::tileSize * introAnimationBootTileY) + 4.5f;
+const float MapState::introAnimationCameraCenterX = (float)(MapState::tileSize * introAnimationBootTileX) + 4.5f;
+const float MapState::introAnimationCameraCenterY = (float)(MapState::tileSize * introAnimationBootTileY) - 4.5f;
 char* MapState::tiles = nullptr;
 char* MapState::heights = nullptr;
 short* MapState::railSwitchIds = nullptr;
@@ -238,7 +238,7 @@ void MapState::deleteMap() {
 //get the world position of the left edge of the screen using the camera as the center of the screen
 int MapState::getScreenLeftWorldX(EntityState* camera, int ticksTime) {
 	//we convert the camera center to int first because with a position with 0.5 offsets, we render all pixels aligned (because
-	//	the player width is odd); once we get to a .0 position, then we render one pixel over
+	//	the screen/player width is odd); once we get to a .0 position, then we render one pixel over
 	return (int)(camera->getRenderCenterWorldX(ticksTime)) - Config::gameScreenWidth / 2;
 }
 //get the world position of the top edge of the screen using the camera as the center of the screen
@@ -256,8 +256,8 @@ char MapState::horizontalTilesHeight(int lowMapX, int highMapX, int mapY) {
 	return foundHeight;
 }
 //change one of the tiles to be the boot tile
-void MapState::setIntroAnimationBootTile() {
-	tiles[introAnimationBootTileY * width + introAnimationBootTileX] = introAnimationBootTile;
+void MapState::setIntroAnimationBootTile(bool startingAnimation) {
+	tiles[introAnimationBootTileY * width + introAnimationBootTileX] = startingAnimation ? introAnimationBootTile : 0;
 }
 //update the rails and switches
 void MapState::updateWithPreviousMapState(MapState* prev, int ticksTime) {

@@ -158,7 +158,9 @@ public:
 	int getEndPauseDecision() { return endPauseDecision; }
 	static PauseState* produce(objCounterParameters());
 	virtual void release();
+protected:
 	virtual void prepareReturnToPool();
+public:
 	static void loadMenu();
 	static void unloadMenu();
 	PauseState* getNextPauseState();

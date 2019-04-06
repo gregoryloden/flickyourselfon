@@ -9,6 +9,12 @@ class GameState;
 class EntityAnimation;
 class SpriteAnimation;
 
+enum class SpriteDirection: int {
+	Right = 0,
+	Up = 1,
+	Left = 2,
+	Down = 3
+};
 class EntityState: public PooledReferenceCounter {
 protected:
 	ReferenceCounterHolder<DynamicValue> x;
@@ -25,6 +31,8 @@ public:
 
 	//begin a sprite animation if applicable
 	virtual void setSpriteAnimation(SpriteAnimation* spriteAnimation, int pAnimationStartTicksTime) {}
+	//set the direction for this state's sprite, if it has one
+	virtual void setSpriteDirection(SpriteDirection pSpriteDirection) {}
 	//mark that the player camera should be used as the next camera
 	virtual void setShouldSwitchToPlayerCamera() {}
 	void copyEntityState(EntityState* other);
@@ -32,6 +40,7 @@ public:
 	float getRenderCenterWorldY(int ticksTime);
 	void setPosition(float pX, float pY, int pLastUpdateTicksTime);
 	void setVelocity(DynamicValue* vx, DynamicValue* vy, int pLastUpdateTicksTime);
+	void beginEntityAnimation(EntityAnimation* pEntityAnimation, int ticksTime);
 	//set the camera on the next game state, based on this being the previous game state's camera
 	virtual void setNextCamera(GameState* nextGameState, int ticksTime) = 0;
 };
