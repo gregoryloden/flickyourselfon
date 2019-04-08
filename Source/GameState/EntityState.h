@@ -35,6 +35,11 @@ public:
 	virtual void setSpriteDirection(SpriteDirection pSpriteDirection) {}
 	//mark that the player camera should be used as the next camera
 	virtual void setShouldSwitchToPlayerCamera() {}
+	//set a dynamic color that should be used to render an overlay over the screen
+	virtual void setScreenOverlayColor(
+		DynamicValue* r, DynamicValue* g, DynamicValue* b, DynamicValue* a, int pLastUpdateTicksTime)
+	{
+	}
 	void copyEntityState(EntityState* other);
 	float getRenderCenterWorldX(int ticksTime);
 	float getRenderCenterWorldY(int ticksTime);
@@ -46,6 +51,10 @@ public:
 };
 class DynamicCameraAnchor: public EntityState {
 private:
+	ReferenceCounterHolder<DynamicValue> screenOverlayR;
+	ReferenceCounterHolder<DynamicValue> screenOverlayG;
+	ReferenceCounterHolder<DynamicValue> screenOverlayB;
+	ReferenceCounterHolder<DynamicValue> screenOverlayA;
 	bool shouldSwitchToPlayerCamera;
 
 public:
@@ -54,8 +63,12 @@ public:
 
 	virtual void setShouldSwitchToPlayerCamera() { shouldSwitchToPlayerCamera = true; }
 	static DynamicCameraAnchor* produce(objCounterParameters());
+	void copyDynamicCameraAnchor(DynamicCameraAnchor* other);
 	virtual void release();
 	void updateWithPreviousDynamicCameraAnchor(DynamicCameraAnchor* prev, int ticksTime);
+	virtual void setScreenOverlayColor(
+		DynamicValue* r, DynamicValue* g, DynamicValue* b, DynamicValue* a, int pLastUpdateTicksTime);
 	virtual void setNextCamera(GameState* nextGameState, int ticksTime);
+	void render(int ticksTime);
 };
 #endif

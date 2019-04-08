@@ -2,6 +2,8 @@
 #include "GameState/DynamicValue.h"
 #include "GameState/GameState.h"
 #include "GameState/EntityAnimation.h"
+#include "Sprites/SpriteSheet.h"
+#include "Util/Config.h"
 
 //////////////////////////////// EntityState ////////////////////////////////
 EntityState::EntityState(objCounterParameters())
@@ -63,24 +65,50 @@ void EntityState::beginEntityAnimation(EntityAnimation* pEntityAnimation, int ti
 //////////////////////////////// DynamicCameraAnchor ////////////////////////////////
 DynamicCameraAnchor::DynamicCameraAnchor(objCounterParameters())
 : EntityState(objCounterArguments())
+, screenOverlayR(nullptr)
+, screenOverlayG(nullptr)
+, screenOverlayB(nullptr)
+, screenOverlayA(nullptr)
 , shouldSwitchToPlayerCamera(false) {
 }
 DynamicCameraAnchor::~DynamicCameraAnchor() {}
 //initialize and return a DynamicCameraAnchor
 DynamicCameraAnchor* DynamicCameraAnchor::produce(objCounterParameters()) {
 	initializeWithNewFromPool(s, DynamicCameraAnchor)
+	s->screenOverlayR.set(newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f));
+	s->screenOverlayG.set(newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f));
+	s->screenOverlayB.set(newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f));
+	s->screenOverlayA.set(newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f));
 	s->shouldSwitchToPlayerCamera = false;
 	return s;
+}
+//copy the other state
+void DynamicCameraAnchor::copyDynamicCameraAnchor(DynamicCameraAnchor* other) {
+	copyEntityState(other);
+	screenOverlayR.set(other->screenOverlayR.get());
+	screenOverlayG.set(other->screenOverlayG.get());
+	screenOverlayB.set(other->screenOverlayB.get());
+	screenOverlayA.set(other->screenOverlayA.get());
 }
 pooledReferenceCounterDefineRelease(DynamicCameraAnchor)
 //update this dynamic camera anchor
 void DynamicCameraAnchor::updateWithPreviousDynamicCameraAnchor(DynamicCameraAnchor* prev, int ticksTime) {
-	copyEntityState(prev);
+	copyDynamicCameraAnchor(prev);
 	if (entityAnimation.get() != nullptr) {
 		if (entityAnimation.get()->update(this, ticksTime))
 			return;
 		entityAnimation.set(nullptr);
 	}
+}
+//use this color to render an overlay on the screen
+void DynamicCameraAnchor::setScreenOverlayColor(
+	DynamicValue* r, DynamicValue* g, DynamicValue* b, DynamicValue* a, int pLastUpdateTicksTime)
+{
+	screenOverlayR.set(r);
+	screenOverlayG.set(g);
+	screenOverlayB.set(b);
+	screenOverlayA.set(a);
+	lastUpdateTicksTime = pLastUpdateTicksTime;
 }
 //use this anchor unless we've been told to switch to the player camera
 void DynamicCameraAnchor::setNextCamera(GameState* nextGameState, int ticksTime) {
@@ -88,4 +116,14 @@ void DynamicCameraAnchor::setNextCamera(GameState* nextGameState, int ticksTime)
 		nextGameState->setPlayerCamera();
 	else
 		nextGameState->setDynamicCamera();
+}
+//render an overlay over the screen if applicable
+void DynamicCameraAnchor::render(int ticksTime) {
+	int timediff = ticksTime - lastUpdateTicksTime;
+	GLfloat r = (GLfloat)screenOverlayR.get()->getValue(timediff);
+	GLfloat g = (GLfloat)screenOverlayG.get()->getValue(timediff);
+	GLfloat b = (GLfloat)screenOverlayB.get()->getValue(timediff);
+	GLfloat a = (GLfloat)screenOverlayA.get()->getValue(timediff);
+	if (a > 0)
+		SpriteSheet::renderFilledRectangle(r, g, b, a, 0, 0, (GLint)Config::gameScreenWidth, (GLint)Config::gameScreenHeight);
 }

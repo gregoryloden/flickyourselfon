@@ -129,6 +129,8 @@ void GameState::render(int ticksTime) {
 	int gameTicksTime = (pauseState.get() != nullptr ? pauseStartTicksTime : ticksTime) - gameTimeOffsetTicksDuration;
 	mapState.get()->render(camera, gameTicksTime);
 	playerState.get()->render(camera, gameTicksTime);
+	if (camera == dynamicCameraAnchor.get())
+		dynamicCameraAnchor.get()->render(gameTicksTime);
 	if (pauseState.get() != nullptr)
 		pauseState.get()->render();
 	#ifdef EDITOR
@@ -285,16 +287,42 @@ void GameState::loadInitialState() {
 				clearSpriteAnimation
 			});
 		vector<ReferenceCounterHolder<EntityAnimation::Component>> cameraAnimationComponents ({
-			//TODO: fade in animation
-			newEntityAnimationSetPosition(MapState::introAnimationCameraCenterX, MapState::introAnimationCameraCenterY)
+			newEntityAnimationSetPosition(MapState::introAnimationCameraCenterX, MapState::introAnimationCameraCenterY) COMMA
+			newEntityAnimationSetScreenOverlayColor(
+				newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
+				newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
+				newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
+				newCompositeQuarticValue(1.0f, -0.000875f, 0.0f, 0.0f, 0.0f)) COMMA
+			newEntityAnimationDelay(1000) COMMA
+			newEntityAnimationSetScreenOverlayColor(
+				newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
+				newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
+				newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
+				newCompositeQuarticValue(0.125f, 0.0f, 0.0f, 0.0f, 0.0f))
 		});
 
-		//delay the camera animation until the end of the player animation
-		int cameraAnimationTicksDuration = 0;
+		//delay the camera animation until the end of the player animation minus the leg lift animation duration
+		int legLiftAnimationTicksDuration = SpriteRegistry::playerLegLiftAnimation->getTotalTicksDuration();
+		int cameraAnimationTicksDuration = legLiftAnimationTicksDuration;
 		for (ReferenceCounterHolder<EntityAnimation::Component>& component : cameraAnimationComponents)
 			cameraAnimationTicksDuration += component.get()->getDelayTicksDuration();
 		cameraAnimationComponents.push_back(
-			newEntityAnimationDelay(playerEntityAnimation->getTotalTicksDuration() - cameraAnimationTicksDuration));
+			newEntityAnimationDelay(
+				playerEntityAnimation->getTotalTicksDuration() - cameraAnimationTicksDuration));
+		//fade in the screen and then switch to the player camera
+		cameraAnimationComponents.push_back(
+			newEntityAnimationSetScreenOverlayColor(
+				newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
+				newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
+				newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
+				newCompositeQuarticValue(0.125f, -0.125f / (float)legLiftAnimationTicksDuration, 0.0f, 0.0f, 0.0f)));
+		cameraAnimationComponents.push_back(newEntityAnimationDelay(legLiftAnimationTicksDuration));
+		cameraAnimationComponents.push_back(
+			newEntityAnimationSetScreenOverlayColor(
+				newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
+				newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
+				newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
+				newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)));
 		cameraAnimationComponents.push_back(newEntityAnimationSwitchToPlayerCamera());
 
 		playerState.get()->beginEntityAnimation(playerEntityAnimation, 0);

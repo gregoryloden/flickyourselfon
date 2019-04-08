@@ -14,6 +14,7 @@
 instantiateObjectPool(CompositeQuarticValue)
 instantiateObjectPool(EntityAnimation::Delay)
 instantiateObjectPool(EntityAnimation::SetPosition)
+instantiateObjectPool(EntityAnimation::SetScreenOverlayColor)
 instantiateObjectPool(EntityAnimation::SetSpriteAnimation)
 instantiateObjectPool(EntityAnimation::SetSpriteDirection)
 instantiateObjectPool(EntityAnimation::SetVelocity)

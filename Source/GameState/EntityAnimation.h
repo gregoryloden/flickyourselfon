@@ -6,6 +6,7 @@
 #define newEntityAnimationSetVelocity(vx, vy) produceWithArgs(EntityAnimation::SetVelocity, vx, vy)
 #define newEntityAnimationSetSpriteAnimation(animation) produceWithArgs(EntityAnimation::SetSpriteAnimation, animation)
 #define newEntityAnimationSetSpriteDirection(direction) produceWithArgs(EntityAnimation::SetSpriteDirection, direction)
+#define newEntityAnimationSetScreenOverlayColor(r, g, b, a) produceWithArgs(EntityAnimation::SetScreenOverlayColor, r, g, b, a)
 #define newEntityAnimationSwitchToPlayerCamera() produceWithoutArgs(EntityAnimation::SwitchToPlayerCamera)
 
 class DynamicValue;
@@ -91,6 +92,22 @@ public:
 		~SetSpriteDirection();
 
 		static SetSpriteDirection* produce(objCounterParametersComma() SpriteDirection pDirection);
+		virtual void release();
+		virtual bool handle(EntityState* entityState, int ticksTime);
+	};
+	class SetScreenOverlayColor: public Component {
+	private:
+		ReferenceCounterHolder<DynamicValue> r;
+		ReferenceCounterHolder<DynamicValue> g;
+		ReferenceCounterHolder<DynamicValue> b;
+		ReferenceCounterHolder<DynamicValue> a;
+
+	public:
+		SetScreenOverlayColor(objCounterParameters());
+		~SetScreenOverlayColor();
+
+		static SetScreenOverlayColor* produce(
+			objCounterParametersComma() DynamicValue* pR, DynamicValue* pG, DynamicValue* pB, DynamicValue* pA);
 		virtual void release();
 		virtual bool handle(EntityState* entityState, int ticksTime);
 	};

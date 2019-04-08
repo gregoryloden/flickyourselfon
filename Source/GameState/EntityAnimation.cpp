@@ -120,6 +120,33 @@ bool EntityAnimation::SetSpriteDirection::handle(EntityState* entityState, int t
 	return true;
 }
 
+//////////////////////////////// EntityAnimation::SetScreenOverlayColor ////////////////////////////////
+EntityAnimation::SetScreenOverlayColor::SetScreenOverlayColor(objCounterParameters())
+: Component(objCounterArguments())
+, r(nullptr)
+, g(nullptr)
+, b(nullptr)
+, a(nullptr) {
+}
+EntityAnimation::SetScreenOverlayColor::~SetScreenOverlayColor() {}
+//initialize and return a SetScreenOverlayColor
+EntityAnimation::SetScreenOverlayColor* EntityAnimation::SetScreenOverlayColor::produce(
+	objCounterParametersComma() DynamicValue* pR, DynamicValue* pG, DynamicValue* pB, DynamicValue* pA)
+{
+	initializeWithNewFromPool(s, EntityAnimation::SetScreenOverlayColor)
+	s->r.set(pR);
+	s->g.set(pG);
+	s->b.set(pB);
+	s->a.set(pA);
+	return s;
+}
+pooledReferenceCounterDefineRelease(EntityAnimation::SetScreenOverlayColor)
+//return that the animation should continue updating after setting the screen overlay color on the entity state
+bool EntityAnimation::SetScreenOverlayColor::handle(EntityState* entityState, int ticksTime) {
+	entityState->setScreenOverlayColor(r.get(), g.get(), b.get(), a.get(), ticksTime);
+	return true;
+}
+
 //////////////////////////////// EntityAnimation::SwitchToPlayerCamera ////////////////////////////////
 EntityAnimation::SwitchToPlayerCamera::SwitchToPlayerCamera(objCounterParameters())
 : Component(objCounterArguments()) {
