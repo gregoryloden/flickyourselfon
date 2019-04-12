@@ -119,8 +119,6 @@ void MapState::SwitchState::render(int screenLeftWorldX, int screenTopWorldY) {
 
 //////////////////////////////// MapState ////////////////////////////////
 const char* MapState::floorFileName = "images/floor.png";
-const float MapState::speedPerSecond = 40.0f;
-const float MapState::diagonalSpeedPerSecond = MapState::speedPerSecond * sqrt(0.5f);
 const float MapState::smallDistance = 1.0f / 256.0f;
 const float MapState::introAnimationCameraCenterX = (float)(MapState::tileSize * introAnimationBootTileX) + 4.5f;
 const float MapState::introAnimationCameraCenterY = (float)(MapState::tileSize * introAnimationBootTileY) - 4.5f;
@@ -213,12 +211,6 @@ void MapState::buildMap() {
 				//TODO: load rails
 			}
 		}
-	}
-
-	//go through all the tiles again, any tiles with switches need to be set at the switch height
-	for (int i = 0; i < totalTiles; i++) {
-		if ((railSwitchIds[i] & switchIdBitmask) != 0)
-			heights[i] = switchHeight;
 	}
 
 	SDL_FreeSurface(floor);
@@ -322,7 +314,6 @@ void MapState::render(EntityState* camera, int ticksTime) {
 			return;
 
 		short newSwitchId = (short)switches.size() | switchIdBitmask;
-		char newHeight = switchHeight;
 		for (int checkY = topY - 1; checkY < topY + 3; checkY++) {
 			for (int checkX = leftX - 1; checkX < leftX + 3; checkX++) {
 				//no rail or switch here, keep looking
@@ -347,7 +338,6 @@ void MapState::render(EntityState* camera, int ticksTime) {
 				//	so that we can use the regular switch-placing logic to clear the switch
 				switch0->isDeleted = true;
 				newSwitchId = 0;
-				newHeight = 0;
 				checkY = topY + 3;
 				break;
 			}
@@ -369,7 +359,6 @@ void MapState::render(EntityState* camera, int ticksTime) {
 			for (int switchIdX = leftX; switchIdX <= leftX + 1; switchIdX++) {
 				int railSwitchIndex = switchIdY * width + switchIdX;
 				railSwitchIds[railSwitchIndex] = newSwitchId;
-				heights[railSwitchIndex] = newHeight;
 			}
 		}
 	}

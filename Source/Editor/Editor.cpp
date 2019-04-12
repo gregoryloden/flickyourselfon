@@ -144,7 +144,7 @@
 						floorRenderer,
 						(Uint8)railSwitchData,
 						(Uint8)((tile + 1) * (char)MapState::tileDivisor - 1),
-						height == MapState::switchHeight ? 0 : (Uint8)((height + 1) * (char)MapState::heightDivisor - 1),
+						(Uint8)((height + 1) * (char)MapState::heightDivisor - 1),
 						255);
 				}
 				SDL_RenderDrawPoint(floorRenderer, mapX, mapY);

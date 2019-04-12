@@ -21,6 +21,8 @@ const float PlayerState::boundingBoxTopOffset = 4.5f;
 const float PlayerState::boundingBoxBottomOffset = PlayerState::boundingBoxTopOffset + PlayerState::playerHeight;
 const float PlayerState::introAnimationPlayerCenterX = 70.5f;
 const float PlayerState::introAnimationPlayerCenterY = 106.5f;
+const float PlayerState::speedPerSecond = 40.0f;
+const float PlayerState::diagonalSpeedPerSecond = speedPerSecond * sqrt(0.5f);
 const string PlayerState::playerXFilePrefix = "playerX ";
 const string PlayerState::playerYFilePrefix = "playerY ";
 const string PlayerState::playerZFilePrefix = "playerZ ";
@@ -100,8 +102,7 @@ void PlayerState::updatePositionWithPreviousPlayerState(PlayerState* prev, int t
 	xDirection = (char)(keyboardState[Config::keyBindings.rightKey] - keyboardState[Config::keyBindings.leftKey]);
 	yDirection = (char)(keyboardState[Config::keyBindings.downKey] - keyboardState[Config::keyBindings.upKey]);
 	float speedPerTick =
-		((xDirection & yDirection) != 0 ? MapState::diagonalSpeedPerSecond : MapState::speedPerSecond)
-			/ (float)Config::ticksPerSecond;
+		((xDirection & yDirection) != 0 ? diagonalSpeedPerSecond : speedPerSecond) / (float)Config::ticksPerSecond;
 	#ifdef EDITOR
 		if (keyboardState[Config::keyBindings.kickKey] != 0)
 			speedPerTick *= 8.0f;
@@ -141,47 +142,123 @@ void PlayerState::collideWithEnvironmentWithPreviousPlayerState(PlayerState* pre
 	bool hasYCollision = false;
 
 	//check for horizontal collisions, excluding the corner if we're moving diagonally
+	int switchCollisionXOffset = 0;
 	if (prev->xDirection != 0) {
-		if (prev->yDirection < 0)
-			lowMapY++;
-		else if (prev->yDirection > 0)
-			highMapY--;
-		for (int currentMapY = lowMapY; currentMapY <= highMapY; currentMapY++) {
+		//don't check the corner
+		int iterLowMapY = prev->yDirection < 0 ? lowMapY + 1 : lowMapY;
+		int iterHighMapY = prev->yDirection > 0 ? highMapY - 1 : highMapY;
+		for (int currentMapY = iterLowMapY; currentMapY <= iterHighMapY; currentMapY++) {
 			if (MapState::getHeight(collisionMapX, currentMapY) != z) {
 				hasXCollision = true;
 				break;
 			}
+			if (MapState::tileHasSwitch(collisionMapX, currentMapY) &&
+				(MapState::getRailSwitchId(collisionMapX, currentMapY)
+						== MapState::getRailSwitchId(collisionMapX, currentMapY + 1)
+					//looking at the top of the switch, only collide if our bottom edge is past the top of the switch
+					? playerBottomEdge >= (float)(currentMapY * MapState::tileSize + 1)
+					//looking at the bottom of the switch, only collide if our top edge is past the bottom of the switch
+					: playerTopEdge <= (float)((currentMapY + 1) * MapState::tileSize - 2)))
+			{
+				//we went left, check if the player is far enough into the switch right side
+				if (prev->xDirection < 0) {
+					if (playerLeftEdge <= (float)((collisionMapX + 1) * MapState::tileSize - 2))
+						switchCollisionXOffset = -2;
+				//we went right, check if the player is far enough into the switch left side
+				} else {
+					if (playerRightEdge >= (float)(collisionMapX * MapState::tileSize + 2))
+						switchCollisionXOffset = 2;
+				}
+			}
 		}
+		if (hasXCollision)
+			switchCollisionXOffset = 0;
+		else if (switchCollisionXOffset != 0)
+			hasXCollision = true;
 	}
 	//check for vertical collisions, excluding the corner if we're moving diagonally
+	int switchCollisionYOffset = 0;
 	if (prev->yDirection != 0) {
-		if (prev->xDirection < 0)
-			lowMapX++;
-		else if (prev->xDirection > 0)
-			highMapX--;
-		for (int currentMapX = lowMapX; currentMapX <= highMapX; currentMapX++) {
+		//don't check the corner
+		int iterLowMapX = prev->xDirection < 0 ? lowMapX + 1 : lowMapX;
+		int iterHighMapX = prev->xDirection > 0 ? highMapX - 1 : highMapX;
+		for (int currentMapX = iterLowMapX; currentMapX <= iterHighMapX; currentMapX++) {
 			if (MapState::getHeight(currentMapX, collisionMapY) != z) {
 				hasYCollision = true;
 				break;
 			}
+			if (MapState::tileHasSwitch(currentMapX, collisionMapY) &&
+				(MapState::getRailSwitchId(currentMapX, collisionMapY)
+						== MapState::getRailSwitchId(currentMapX + 1, collisionMapY)
+					//looking at the left of the switch, only collide if our right edge is past the left of the switch
+					? playerRightEdge >= (float)(currentMapX * MapState::tileSize + 2)
+					//looking at the right of the switch, only collide if our left edge is past the right of the switch
+					: playerLeftEdge <= (float)((currentMapX + 1) * MapState::tileSize - 2)))
+			{
+				//we went up, check if the player is far enough into the switch bottom
+				if (prev->yDirection < 0) {
+					if (playerTopEdge <= (float)((collisionMapY + 1) * MapState::tileSize - 2))
+						switchCollisionYOffset = -2;
+				//we went down, check if the player is far enough into the switch top
+				} else {
+					if (playerBottomEdge >= (float)(collisionMapY * MapState::tileSize + 1))
+						switchCollisionYOffset = 1;
+				}
+			}
+		}
+		if (hasYCollision)
+			switchCollisionYOffset = 0;
+		else if (switchCollisionYOffset != 0)
+			hasYCollision = true;
+	}
+
+	//if we haven't collided with any walls yet and we're moving diagonally, try to collide with the corner
+	if ((!hasXCollision || switchCollisionXOffset != 0)
+		&& (!hasYCollision || switchCollisionYOffset != 0)
+		&& prev->xDirection != 0
+		&& prev->yDirection != 0)
+	{
+		//if the heights differ then we have a collision, if not then check for a switch if we didn't already collide with one
+		bool hasCornerCollision = MapState::getHeight(collisionMapX, collisionMapY) != z;
+		if (!hasCornerCollision && !hasXCollision && !hasYCollision && MapState::tileHasSwitch(collisionMapX, collisionMapY)) {
+			//the corner has a switch, this is only a collision if both the x and y are in it
+			if (prev->xDirection < 0) {
+				if (playerLeftEdge <= (float)((collisionMapX + 1) * MapState::tileSize - 2))
+					switchCollisionXOffset = -2;
+			} else {
+				if (playerRightEdge >= (float)(collisionMapX * MapState::tileSize + 2))
+					switchCollisionXOffset = 2;
+			}
+			if (prev->yDirection < 0) {
+				if (playerTopEdge <= (float)((collisionMapY + 1) * MapState::tileSize - 2))
+					switchCollisionYOffset = -2;
+			} else {
+				if (playerBottomEdge >= (float)(collisionMapY * MapState::tileSize + 1))
+					switchCollisionYOffset = 1;
+			}
+			if (switchCollisionXOffset != 0 && switchCollisionYOffset != 0) {
+				wallX += (float)switchCollisionXOffset;
+				wallY += (float)switchCollisionYOffset;
+				switchCollisionXOffset = 0;
+				switchCollisionYOffset = 0;
+				hasCornerCollision = true;
+			}
+		}
+		if (hasCornerCollision) {
+			//move in whichever direction makes us move less
+			float xCollisionDistance = prev->xDirection < 0 ? wallX - playerLeftEdge : playerRightEdge - wallX;
+			float yCollisionDistance = prev->yDirection < 0 ? wallY - playerTopEdge : playerBottomEdge - wallY;
+			if (xCollisionDistance < yCollisionDistance)
+				hasXCollision = true;
+			else
+				hasYCollision = true;
 		}
 	}
 
-	//if we're moving diagonally and haven't collided with anything yet, collide with the corner
-	if (prev->xDirection != 0
-		&& prev->yDirection != 0
-		&& !hasXCollision
-		&& !hasYCollision
-		&& MapState::getHeight(collisionMapX, collisionMapY) != z)
-	{
-		//move in whichever direction makes us move less
-		float xCollisionDistance = prev->xDirection < 0 ? wallX - playerLeftEdge : playerRightEdge - wallX;
-		float yCollisionDistance = prev->yDirection < 0 ? wallY - playerTopEdge : playerBottomEdge - wallY;
-		if (xCollisionDistance < yCollisionDistance)
-			hasXCollision = true;
-		else
-			hasYCollision = true;
-	}
+	//now add the switch offsets
+	//in the event that we collided with a switch corner, wall x and y were already offset and the offsets were reset to 0
+	wallX += (float)switchCollisionXOffset;
+	wallY += (float)switchCollisionYOffset;
 
 	//adjust our position if we collided
 	if (hasXCollision) {

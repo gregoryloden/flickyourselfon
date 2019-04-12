@@ -85,7 +85,6 @@ public:
 	static const int heightCount = 16; // height = blue / 16
 	static const int heightDivisor = 256 / heightCount;
 	static const int emptySpaceHeight = heightCount - 1;
-	static const int switchHeight = heightCount + 2;
 	static const int tileSize = 6;
 	static const int switchSize = 12;
 	static const char invalidHeight = -1;
@@ -110,8 +109,6 @@ public:
 	static const int floorSwitchHeadValue = floorIsSwitchBitmask | floorRailSwitchAndHeadValue;
 	static const int floorSwitchTailValue = floorIsSwitchBitmask | floorIsRailSwitchBitmask;
 	static const char* floorFileName;
-	static const float speedPerSecond;
-	static const float diagonalSpeedPerSecond;
 	static const float smallDistance;
 	static const float introAnimationCameraCenterX;
 	static const float introAnimationCameraCenterY;
@@ -139,6 +136,7 @@ public:
 	static int mapHeight() { return height; }
 	static short getRailSwitchId(int x, int y) { return railSwitchIds[y * width + x]; }
 	static bool tileHasRailOrSwitch(int x, int y) { return getRailSwitchId(x, y) != 0; }
+	static bool tileHasSwitch(int x, int y) { return (getRailSwitchId(x, y) & switchIdBitmask) != 0; }
 	#ifdef EDITOR
 		static void setTile(int x, int y, char tile) { tiles[y * width + x] = tile; }
 		static void setHeight(int x, int y, char height) { heights[y * width + x] = height; }

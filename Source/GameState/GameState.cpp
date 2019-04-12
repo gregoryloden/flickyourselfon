@@ -97,11 +97,11 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 				break;
 			#ifdef EDITOR
 				case SDL_MOUSEBUTTONDOWN:
-					Editor::handleClick(gameEvent.button, camera.get(), gameTicksTime);
+					Editor::handleClick(gameEvent.button, camera, gameTicksTime);
 					break;
 				case SDL_MOUSEMOTION:
 					if ((SDL_GetMouseState(nullptr, nullptr) & (SDL_BUTTON_LMASK | SDL_BUTTON_MMASK | SDL_BUTTON_RMASK)) != 0)
-						Editor::handleClick(gameEvent.button, camera.get(), gameTicksTime);
+						Editor::handleClick(gameEvent.button, camera, gameTicksTime);
 					break;
 			#endif
 			default:
@@ -176,7 +176,7 @@ void GameState::loadInitialState() {
 		camera = dynamicCameraAnchor.get();
 
 		//player animation component helpers
-		float speedPerTick = MapState::speedPerSecond / (float)Config::ticksPerSecond;
+		float speedPerTick = PlayerState::speedPerSecond / (float)Config::ticksPerSecond;
 		EntityAnimation::SetVelocity* stopMoving = newEntityAnimationSetVelocity(
 			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
 			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f));

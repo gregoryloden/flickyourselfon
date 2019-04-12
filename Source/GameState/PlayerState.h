@@ -17,6 +17,8 @@ private:
 public:
 	static const float introAnimationPlayerCenterX;
 	static const float introAnimationPlayerCenterY;
+	static const float speedPerSecond;
+	static const float diagonalSpeedPerSecond;
 private:
 	static const string playerXFilePrefix;
 	static const string playerYFilePrefix;
