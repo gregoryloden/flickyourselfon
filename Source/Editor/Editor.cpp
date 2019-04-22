@@ -419,7 +419,7 @@
 	}
 	//set a rail at this position
 	void Editor::RailButton::paintMap(int x, int y) {
-		//TODO: set a rail
+		MapState::setRail(x, y, color, selectedRailSwitchGroupButton->getRailSwitchGroup());
 	}
 
 	//////////////////////////////// Editor::RailSwitchGroupButton ////////////////////////////////

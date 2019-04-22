@@ -9,27 +9,44 @@ private:
 	class Rail onlyInDebug(: public ObjCounter) {
 	private:
 		//Should only be allocated within an object, on the stack, or as a static object
-		class Rect {
+		class Segment {
 		public:
-			int leftX;
-			int topY;
-			int rightX;
-			int bottomY;
+			char xChange;
+			char yChange;
 
-			Rect(int pLeftX, int pTopY, int pRightX, int pBottomY);
-			~Rect();
+			Segment(char pXChange, char pYChange);
+			~Segment();
 		};
 
-		vector<Rect> rects;
+		int startX;
+		int startY;
+		int endX;
+		int endY;
+		vector<Segment>* segments;
 		char color;
-		vector<int> groups;
+		vector<char> groups;
+		#ifdef EDITOR
+			char groupIndexToRender;
+		public:
+			bool isDeleted;
+		#endif
 
 	public:
-		Rail(objCounterParametersComma() vector<Rect> pRects, char pColor, vector<int> pGroups);
+		Rail(objCounterParametersComma() int x, int y, char pColor);
 		~Rail();
 
+		char getColor() { return color; }
+		void reverseSegments();
+		void addGroup(char group);
+		void addSegment(int x, int y);
 		void render(int screenLeftWorldX, int screenTopWorldY, float offset);
+		void renderEndSegment(
+			int screenLeftWorldX, int screenTopWorldY, int segmentX, int segmentY, int xExtents, int yExtents);
+		void renderSegment(
+			int screenLeftWorldX, int screenTopWorldY, float offset, int segmentX, int segmentY, int spriteHorizontalIndex);
 		#ifdef EDITOR
+			void removeGroup(char group);
+			void removeSegment(int x, int y);
 			char getFloorSaveData(int x, int y);
 		#endif
 	};
@@ -132,9 +149,9 @@ public:
 
 	static char getTile(int x, int y) { return tiles[y * width + x]; }
 	static char getHeight(int x, int y) { return heights[y * width + x]; }
+	static short getRailSwitchId(int x, int y) { return railSwitchIds[y * width + x]; }
 	static int mapWidth() { return width; }
 	static int mapHeight() { return height; }
-	static short getRailSwitchId(int x, int y) { return railSwitchIds[y * width + x]; }
 	static bool tileHasRailOrSwitch(int x, int y) { return getRailSwitchId(x, y) != 0; }
 	static bool tileHasSwitch(int x, int y) { return (getRailSwitchId(x, y) & switchIdBitmask) != 0; }
 	#ifdef EDITOR
@@ -153,6 +170,7 @@ public:
 	void render(EntityState* camera, int ticksTime);
 	#ifdef EDITOR
 		static void setSwitch(int leftX, int topY, char color, char group);
+		static void setRail(int x, int y, char color, char group);
 		static char getRailSwitchFloorSaveData(int x, int y);
 	#endif
 };

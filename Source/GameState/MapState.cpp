@@ -5,32 +5,160 @@
 #include "Sprites/SpriteSheet.h"
 #include "Util/Config.h"
 
+#define newRail(x, y, color) newWithArgs(MapState::Rail, x, y, color)
 #define newSwitch(leftX, topY, color, group) newWithArgs(MapState::Switch, leftX, topY, color, group)
 #define newRailState(rail, position) newWithArgs(MapState::RailState, rail, position)
 #define newSwitchState(switch0) newWithArgs(MapState::SwitchState, switch0)
 
-//////////////////////////////// MapState::Rail::Rect ////////////////////////////////
-MapState::Rail::Rect::Rect(int pLeftX, int pTopY, int pRightX, int pBottomY)
-: leftX(pLeftX)
-, topY(pTopY)
-, rightX(pRightX)
-, bottomY(pBottomY) {
+//////////////////////////////// MapState::Rail::Segment ////////////////////////////////
+MapState::Rail::Segment::Segment(char pXChange, char pYChange)
+: xChange(pXChange)
+, yChange(pYChange) {
 }
-MapState::Rail::Rect::~Rect() {}
+MapState::Rail::Segment::~Segment() {}
 
 //////////////////////////////// MapState::Rail ////////////////////////////////
-MapState::Rail::Rail(objCounterParametersComma() vector<Rect> pRects, char pColor, vector<int> pGroups)
+MapState::Rail::Rail(objCounterParametersComma() int x, int y, char pColor)
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
-rects(pRects)
+startX(x)
+, startY(y)
+, endX(x)
+, endY(y)
+, segments(new vector<Segment>())
 , color(pColor)
-, groups(pGroups) {
+, groups()
+#ifdef EDITOR
+	, groupIndexToRender(0)
+	, isDeleted(false)
+#endif
+{
 }
-MapState::Rail::~Rail() {}
-//render this rail at its position, clipping it if part of the map
+MapState::Rail::~Rail() {
+	delete segments;
+}
+//reverse the order of the segments, as well as the start and end coordinates
+void MapState::Rail::reverseSegments() {
+	vector<Segment>* newSegments = new vector<Segment>();
+	for (int i = segments->size() - 1; i >= 0; i--) {
+		Segment& segment = (*segments)[i];
+		newSegments->push_back(Segment(-segment.xChange, -segment.yChange));
+	}
+	int tempEndX = startX;
+	int tempEndY = startY;
+	startX = endX;
+	startY = endY;
+	endX = tempEndX;
+	endY = tempEndY;
+	delete segments;
+	segments = newSegments;
+}
+//add this group to the rail if it does not already contain it
+void MapState::Rail::addGroup(char group) {
+	if (group == 0)
+		return;
+	for (int i = 0; i < (int)groups.size(); i++) {
+		if (groups[i] == group)
+			return;
+	}
+	groups.push_back(group);
+}
+//add a segment on this tile to the rail
+void MapState::Rail::addSegment(int x, int y) {
+	//if we aren't adding at the end, reverse the list before continuing
+	if (!((y == endY && (x == endX + 1 || x == endX - 1)) || (x == endX && (y == endY + 1 || y == endY - 1))))
+		reverseSegments();
+
+	segments->push_back(Segment((char)(x - endX), (char)(y - endY)));
+	endX = x;
+	endY = y;
+}
+//render this rail at its position by rendering each segment
 void MapState::Rail::render(int screenLeftWorldX, int screenTopWorldY, float offset) {
-	//TODO: render the rail
+	#ifdef EDITOR
+		if (isDeleted)
+			return;
+		groupIndexToRender = 0;
+	#endif
+	glEnable(GL_BLEND);
+
+	//only one segment, just render it as a bottom end segment
+	if (segments->size() == 0) {
+		renderEndSegment(screenLeftWorldX, screenTopWorldY, startX, startY, 0, -1);
+	} else {
+		Segment* lastSegment = &(*segments)[0];
+		renderEndSegment(screenLeftWorldX, screenTopWorldY, startX, startY, lastSegment->xChange, lastSegment->yChange);
+		int lastRailX = startX;
+		int lastRailY = startY;
+		for (int i = 1; i < (int)segments->size(); i++) {
+			Segment* nextSegment = &(*segments)[i];
+			lastRailX += lastSegment->xChange;
+			lastRailY += lastSegment->yChange;
+			if (lastSegment->yChange != 0 && nextSegment->yChange != 0)
+				renderSegment(screenLeftWorldX, screenTopWorldY, offset, lastRailX, lastRailY, 0);
+			else if (lastSegment->xChange != 0 && nextSegment->xChange != 0)
+				renderSegment(screenLeftWorldX, screenTopWorldY, offset, lastRailX, lastRailY, 1);
+			else {
+				int xExtents = nextSegment->xChange - lastSegment->xChange;
+				int yExtents = nextSegment->yChange - lastSegment->yChange;
+				renderSegment(
+					screenLeftWorldX, screenTopWorldY, offset, lastRailX, lastRailY, 3 - yExtents + (1 - xExtents) / 2);
+			}
+			lastSegment = nextSegment;
+		}
+		renderEndSegment(screenLeftWorldX, screenTopWorldY, endX, endY, -lastSegment->xChange, -lastSegment->yChange);
+	}
+}
+//render the rail end segment at its position
+void MapState::Rail::renderEndSegment(
+	int screenLeftWorldX, int screenTopWorldY, int segmentX, int segmentY, int xExtents, int yExtents)
+{
+	if (yExtents == 0)
+		renderSegment(screenLeftWorldX, screenTopWorldY, 0.0f, segmentX, segmentY, 6 + (1 - xExtents) / 2);
+	else
+		renderSegment(screenLeftWorldX, screenTopWorldY, 0.0f, segmentX, segmentY, 8 + (1 - yExtents) / 2);
+}
+//render the rail segment at its position, clipping it if part of the map is higher than it
+void MapState::Rail::renderSegment(
+	int screenLeftWorldX, int screenTopWorldY, float offset, int segmentX, int segmentY, int spriteHorizontalIndex)
+{
+	GLint drawLeftX = (GLint)(segmentX * tileSize - screenLeftWorldX);
+	GLint drawTopY = (GLint)(segmentY * tileSize - screenTopWorldY);
+	SpriteRegistry::rails->renderSpriteAtScreenPosition(spriteHorizontalIndex, 0, drawLeftX, drawTopY);
+	#ifdef EDITOR
+		drawLeftX = (GLint)(segmentX * tileSize - screenLeftWorldX);
+		drawTopY = (GLint)(segmentY * tileSize - screenTopWorldY);
+		SpriteRegistry::rails->renderSpriteAtScreenPosition(spriteHorizontalIndex, 0, drawLeftX, drawTopY);
+		if (groups.size() > 0) {
+			Editor::renderGroupRect(groups[groupIndexToRender], drawLeftX + 2, drawTopY + 2, drawLeftX + 4, drawTopY + 4);
+			glEnable(GL_BLEND);
+			groupIndexToRender = (groupIndexToRender + 1) % groups.size();
+		}
+	#endif
 }
 #ifdef EDITOR
+	//remove this group from the rail if it contains it
+	void MapState::Rail::removeGroup(char group) {
+		for (int i = 0; i < (int)groups.size(); i++) {
+			if (groups[i] == group) {
+				groups.erase(groups.begin() + i);
+				return;
+			}
+		}
+	}
+	//remove the segment on this tile from the rail
+	void MapState::Rail::removeSegment(int x, int y) {
+		if (y == endY && x == endX) {
+			Segment& endSegment = segments->back();
+			endX -= endSegment.xChange;
+			endY -= endSegment.yChange;
+			segments->pop_back();
+		} else {
+			Segment& startSegment = segments->front();
+			startX += startSegment.xChange;
+			startY += startSegment.yChange;
+			segments->erase(segments->begin());
+		}
+	}
 	//we're saving this rail to the floor file, get the data we need at this tile
 	char MapState::Rail::getFloorSaveData(int x, int y) {
 		//TODO: get the data
@@ -324,7 +452,7 @@ void MapState::render(EntityState* camera, int ticksTime) {
 				if (checkX != leftX || checkY != topY)
 					return;
 
-				//this is a rail, not a switch, we can't delete this
+				//this is a rail, not a switch, we can't delete this or place a new switch here
 				short otherRailSwitchId = getRailSwitchId(checkX, checkY);
 				if ((otherRailSwitchId & switchIdBitmask) == 0)
 					return;
@@ -345,7 +473,7 @@ void MapState::render(EntityState* camera, int ticksTime) {
 
 		//we're clear to set the switch (assuming we're not actually deleting a switch)
 		if (newSwitchId != 0) {
-			//but if we already have a switch for this group, don't set a new one
+			//but if we already have a switch exactly like this one, don't set a new one
 			for (int i = 0; i < (int)switches.size(); i++) {
 				Switch* switch0 = switches[i];
 				if (switch0->getColor() == color && switch0->getGroup() == group && !switch0->isDeleted)
@@ -359,6 +487,87 @@ void MapState::render(EntityState* camera, int ticksTime) {
 			for (int switchIdX = leftX; switchIdX <= leftX + 1; switchIdX++) {
 				int railSwitchIndex = switchIdY * width + switchIdX;
 				railSwitchIds[railSwitchIndex] = newSwitchId;
+			}
+		}
+	}
+	//set a rail, or delete a rail if we can
+	void MapState::setRail(int x, int y, char color, char group) {
+		short editingRailId = -1;
+		Rail* editingRail = nullptr;
+		int orthogonalRails = 0;
+		int diagonalRails = 0;
+		bool clickedOnRail = false;
+		for (int checkY = y - 1; checkY <= y + 1; checkY++) {
+			for (int checkX = x - 1; checkX <= x + 1; checkX++) {
+				//no rail or switch here, keep looking
+				if (!tileHasRailOrSwitch(checkX, checkY))
+					continue;
+
+				//this is a switch, not a rail, we can't place a new rail here
+				short otherRailSwitchId = getRailSwitchId(checkX, checkY);
+				if ((otherRailSwitchId & railIdBitmask) == 0)
+					return;
+
+				if (editingRailId == -1) {
+					editingRailId = otherRailSwitchId;
+					editingRail = rails[otherRailSwitchId & railSwitchIndexBitmask];
+				//we saw one rail id before and we found another rail id now, we can't place a rail here
+				} else if (editingRailId != otherRailSwitchId)
+					return;
+
+				if (checkX == x && checkY == y)
+					clickedOnRail = true;
+				else if (checkX == x || checkY == y)
+					orthogonalRails++;
+				else
+					diagonalRails++;
+			}
+		}
+
+		//don't make any changes except at the end of a rail, which will have exactly one orthogonal rail and at most one
+		//	diagonal rail, or on an empty space/single rail, which will have no adjacent rails
+		bool endOfRail = orthogonalRails == 1 && diagonalRails <= 1;
+		bool hasAdjacentRail = orthogonalRails + diagonalRails > 0;
+		if (!endOfRail && hasAdjacentRail)
+			return;
+
+		//if we have a diagonal rail, make sure our orthogonal rail isn't actually connected to a rail on the other side
+		if (diagonalRails == 1
+				&& ((tileHasRailOrSwitch(x - 1, y) && tileHasRailOrSwitch(x - 2, y))
+					|| (tileHasRailOrSwitch(x + 1, y) && tileHasRailOrSwitch(x + 2, y))
+					|| (tileHasRailOrSwitch(x, y - 1) && tileHasRailOrSwitch(x, y - 2))
+					|| (tileHasRailOrSwitch(x, y + 1) && tileHasRailOrSwitch(x, y + 2))))
+			return;
+
+		//don't modify a rail if it doesn't match the color that we selected
+		if (editingRail != nullptr && editingRail->getColor() != color)
+			return;
+
+		int railSwitchIndex = y * width + x;
+
+		//this is the end of a rail, find the rail and modify it
+		if (endOfRail) {
+			//delete this end segment of this rail
+			if (clickedOnRail) {
+				editingRail->removeGroup(group);
+				editingRail->removeSegment(x, y);
+				railSwitchIds[railSwitchIndex] = 0;
+			//add a segment to the end of this rail
+			} else {
+				editingRail->addGroup(group);
+				editingRail->addSegment(x, y);
+				railSwitchIds[railSwitchIndex] = editingRailId;
+			}
+		//there are no rails around this square, create a new rail, or remove the last segment of this rail
+		} else {
+			//mark this rail as deleted
+			if (clickedOnRail) {
+				editingRail->isDeleted = true;
+				railSwitchIds[railSwitchIndex] = 0;
+			//add a new rail here
+			} else {
+				railSwitchIds[railSwitchIndex] = (short)rails.size() | railIdBitmask;
+				rails.push_back(newRail(x, y, color));
 			}
 		}
 	}
