@@ -155,6 +155,11 @@
 		SDL_DestroyRenderer(floorRenderer);
 		SDL_FreeSurface(floorSurface);
 
+		//throw away the whole save file becuase rail/switch ids may have changed
+		ofstream file;
+		file.open("fyo.sav");
+		file.close();
+
 		saveButtonDisabled = true;
 	}
 

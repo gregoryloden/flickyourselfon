@@ -168,8 +168,11 @@ void GameState::loadInitialState() {
 	}
 	file.close();
 
-//TODO: intro animation
-//sawIntroAnimation = true;
+	#ifdef EDITOR
+		//always skip the intro animation for the editor, this may stick the player in the top-left corner (0, 0)
+		sawIntroAnimation = true;
+	#endif
+
 	//and finally, setup the initial state
 	if (sawIntroAnimation) {
 		playerState.get()->obtainBoot();

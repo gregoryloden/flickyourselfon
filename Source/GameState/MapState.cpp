@@ -36,7 +36,7 @@ startX(x)
 MapState::Rail::~Rail() {
 	delete segments;
 }
-//reverse the order of the segments, as well as the start and end coordinates
+//reverse the order of the segments and the start and end coordinates
 void MapState::Rail::reverseSegments() {
 	vector<Segment>* newSegments = new vector<Segment>();
 	for (int i = segments->size() - 1; i >= 0; i--) {
@@ -98,10 +98,10 @@ void MapState::Rail::render(int screenLeftWorldX, int screenTopWorldY, float off
 			else if (lastSegment->xChange != 0 && nextSegment->xChange != 0)
 				renderSegment(screenLeftWorldX, screenTopWorldY, offset, lastRailX, lastRailY, 1);
 			else {
-				int xExtents = nextSegment->xChange - lastSegment->xChange;
-				int yExtents = nextSegment->yChange - lastSegment->yChange;
+				char xExtents = nextSegment->xChange - lastSegment->xChange;
+				char yExtents = nextSegment->yChange - lastSegment->yChange;
 				renderSegment(
-					screenLeftWorldX, screenTopWorldY, offset, lastRailX, lastRailY, 3 - yExtents + (1 - xExtents) / 2);
+					screenLeftWorldX, screenTopWorldY, offset, lastRailX, lastRailY, (int)(3 - yExtents + (1 - xExtents) / 2));
 			}
 			lastSegment = nextSegment;
 		}
@@ -121,12 +121,23 @@ void MapState::Rail::renderEndSegment(
 void MapState::Rail::renderSegment(
 	int screenLeftWorldX, int screenTopWorldY, float offset, int segmentX, int segmentY, int spriteHorizontalIndex)
 {
+	//TODO: render rail shadow
+	//TODO: render offset rail
 	GLint drawLeftX = (GLint)(segmentX * tileSize - screenLeftWorldX);
 	GLint drawTopY = (GLint)(segmentY * tileSize - screenTopWorldY);
 	SpriteRegistry::rails->renderSpriteAtScreenPosition(spriteHorizontalIndex, 0, drawLeftX, drawTopY);
 	#ifdef EDITOR
 		drawLeftX = (GLint)(segmentX * tileSize - screenLeftWorldX);
 		drawTopY = (GLint)(segmentY * tileSize - screenTopWorldY);
+		SpriteSheet::renderFilledRectangle(
+			(color == 0 || color == 3) ? 0.75f : 0.0f,
+			(color == 2 || color == 3) ? 0.75f : 0.0f,
+			(color == 1 || color == 3) ? 0.75f : 0.0f,
+			0.75f,
+			drawLeftX + 1,
+			drawTopY + 1,
+			drawLeftX + 5,
+			drawTopY + 5);
 		SpriteRegistry::rails->renderSpriteAtScreenPosition(spriteHorizontalIndex, 0, drawLeftX, drawTopY);
 		if (groups.size() > 0) {
 			Editor::renderGroupRect(groups[groupIndexToRender], drawLeftX + 2, drawTopY + 2, drawLeftX + 4, drawTopY + 4);
@@ -161,8 +172,22 @@ void MapState::Rail::renderSegment(
 	}
 	//we're saving this rail to the floor file, get the data we need at this tile
 	char MapState::Rail::getFloorSaveData(int x, int y) {
-		//TODO: get the data
-		return 0;
+		if (x == startX && y == startY)
+			//TODO: rail starting offset
+			return (color << floorRailSwitchHeadDataShift) | floorRailHeadValue;
+		else {
+			int searchX = startX;
+			int searchY = startY;
+			for (int i = 0; i < (int)groups.size() && i < (int)segments->size(); i++) {
+				Segment& segment = (*segments)[i];
+				searchX += segment.xChange;
+				searchY += segment.yChange;
+				if (searchX == x && searchY == y)
+					return groups[i] << floorRailSwitchTailDataShift | floorIsRailSwitchBitmask;
+			}
+		}
+		//no data but still part of this rail
+		return floorIsRailSwitchBitmask;
 	}
 #endif
 
@@ -206,13 +231,13 @@ void MapState::Switch::render(int screenLeftWorldX, int screenTopWorldY, bool is
 	char MapState::Switch::getFloorSaveData(int x, int y) {
 		//head byte, write our color
 		if (x == leftX && y == topY)
-			return (color << floorRailSwitchDataShift) | floorSwitchHeadValue;
+			return (color << floorRailSwitchHeadDataShift) | floorSwitchHeadValue;
 		//tail byte, write our number
 		else if (x == leftX + 1&& y == topY)
-			return (group << floorRailSwitchDataShift) | floorSwitchTailValue;
+			return (group << floorRailSwitchTailDataShift) | floorIsRailSwitchBitmask;
 		//no data but still part of this switch
 		else
-			return floorSwitchTailValue;
+			return floorIsRailSwitchBitmask;
 	}
 #endif
 
@@ -304,39 +329,69 @@ void MapState::buildMap() {
 	for (int i = 0; i < totalTiles; i++) {
 		tiles[i] = (char)(((pixels[i] & greenMask) >> greenShift) / tileDivisor);
 		heights[i] = (char)(((pixels[i] & blueMask) >> blueShift) / heightDivisor);
+		char railSwitchValue = (char)((pixels[i] & redMask) >> redShift);
 
-		//max-height tiles have red bytes set, but we should ignore them
-		if (heights[i] == MapState::emptySpaceHeight)
+		//if the high red bit is set, it does not contain rail/switch data
+		if ((railSwitchValue & floorIsTrueEmptySpaceBitmask) != 0
+				//rail/switch data occupies 2+ red bytes, each byte has bit 0 set
+				//head bytes that start a rail/switch have bit 1 set, we only build rails/switches when we get to one of these
+				|| (railSwitchValue & floorIsRailSwitchAndHeadBitmask) != floorRailSwitchAndHeadValue)
 			continue;
 
-		//rail/switch data occupies 2+ red bytes, each byte has bit 0 set
-		//head bytes that start a rail/switch have bit 1 set, we only build rails/switches when we get to one of these
-		char railSwitchValue = (char)((pixels[i] & redMask) >> redShift);
-		if ((railSwitchValue & floorIsRailSwitchOrHeadBitmask) == floorRailSwitchAndHeadValue) {
-			//the topmost (and then leftmost) tile is byte 1 (the head byte)
-			//for switches, there is only 1 tail byte to the right, byte 2
-			//for rails, the rail can extend to the right and/or below, specifying which groups the rail responds to
-			//byte 1:
-			//	bit 1: 1 (indicates head byte)
-			//	bit 2 indicates rail (0) vs switch (1)
-			//	bits 3-4: color (R/B/G/W)
-			char color = (railSwitchValue & floorRailSwitchColorBitmask) >> floorRailSwitchDataShift;
-			//	rail bit 5: vertical starting position
-			//byte 2+:
-			//	bit 1: 0 (indicates tail byte)
-			//	bits 2-7: group number
-			if ((railSwitchValue & floorIsSwitchBitmask) != 0) {
-				char switchByte2 = (char)((pixels[i + 1] & redMask) >> redShift);
-				char group = (switchByte2 & floorRailSwitchGroupBitmask) >> floorRailSwitchDataShift;
-				short newSwitchId = (short)switches.size() | switchIdBitmask;
-				switches.push_back(newSwitch(i % width, i / width, color, group));
-				for (int yOffset = 0; yOffset <= 1; yOffset++) {
-					for (int xOffset = 0; xOffset <= 1; xOffset++) {
-						railSwitchIds[i + xOffset + yOffset * width] = newSwitchId;
-					}
+		//the topmost (and then leftmost) tile is byte 1 (the head byte)
+		//for switches, there is only 1 tail byte with data, byte 2 to the right
+		//for rails, the rail can extend in any direction, specifying which tiles and groups belong to the rail
+		//byte 1:
+		//	bit 1: 1 (indicates head byte)
+		//	bit 2 indicates rail (0) vs switch (1)
+		//	bits 3-4: color (R/B/G/W)
+		//	rail bit 5: vertical starting position
+		//	bit 7 must be 0 to indicate that this is not a strictly-empty tile
+		//byte 2+:
+		//	bit 1: 0 (indicates tail byte)
+		//	bits 2-7: group number
+		char color = (railSwitchValue >> floorRailSwitchHeadDataShift) & floorRailSwitchColorPostShiftBitmask;
+		//this is a switch
+		if ((railSwitchValue & floorIsSwitchBitmask) != 0) {
+			char switchByte2 = (char)((pixels[i + 1] & redMask) >> redShift);
+			char group = (switchByte2 >> floorRailSwitchTailDataShift) & floorRailSwitchGroupPostShiftBitmask;
+			short newSwitchId = (short)switches.size() | switchIdBitmask;
+			//add the switch and set all the ids
+			switches.push_back(newSwitch(i % width, i / width, color, group));
+			for (int yOffset = 0; yOffset <= 1; yOffset++) {
+				for (int xOffset = 0; xOffset <= 1; xOffset++) {
+					railSwitchIds[i + xOffset + yOffset * width] = newSwitchId;
 				}
-			} else {
-				//TODO: load rails
+			}
+		//this is a rail
+		} else {
+			short newRailId = (short)rails.size() | railIdBitmask;
+			Rail* rail = newRail(i % width, i / width, color);
+			rails.push_back(rail);
+			railSwitchIds[i] = newRailId;
+			int railI = i;
+			//cache shift values so that we can iterate the floor data quicker
+			int floorIsRailSwitchTailShiftedBitmask = floorIsRailSwitchAndHeadBitmask << redShift;
+			int floorRailSwitchTailShiftedValue = floorIsRailSwitchBitmask << redShift;
+			int floorRailGroupShiftedShift = redShift + floorRailSwitchTailDataShift;
+			while (true) {
+				if ((pixels[railI + 1] & floorIsRailSwitchTailShiftedBitmask) == floorRailSwitchTailShiftedValue
+						&& railSwitchIds[railI + 1] == 0)
+					railI++;
+				else if ((pixels[railI - 1] & floorIsRailSwitchTailShiftedBitmask) == floorRailSwitchTailShiftedValue
+						&& railSwitchIds[railI - 1] == 0)
+					railI--;
+				else if ((pixels[railI + width] & floorIsRailSwitchTailShiftedBitmask) == floorRailSwitchTailShiftedValue
+						&& railSwitchIds[railI + width] == 0)
+					railI += width;
+				else if ((pixels[railI - width] & floorIsRailSwitchTailShiftedBitmask) == floorRailSwitchTailShiftedValue
+						&& railSwitchIds[railI - width] == 0)
+					railI -= width;
+				else
+					break;
+				rail->addSegment(railI % width, railI / width);
+				rail->addGroup((char)(pixels[railI] >> floorRailGroupShiftedShift) & floorRailSwitchGroupPostShiftBitmask);
+				railSwitchIds[railI] = newRailId;
 			}
 		}
 	}
