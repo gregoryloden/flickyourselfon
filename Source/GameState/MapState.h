@@ -11,20 +11,22 @@ private:
 		//Should only be allocated within an object, on the stack, or as a static object
 		class Segment {
 		public:
-			char xChange;
-			char yChange;
+			static const char absentTileOffset = -1;
 
-			Segment(char pXChange, char pYChange);
+			int x;
+			int y;
+			int spriteHorizontalIndex;
+			char maxTileOffset;
+
+			Segment(int pX, int pY, char pMaxTileOffset);
 			~Segment();
 		};
 
-		int startX;
-		int startY;
-		int endX;
-		int endY;
-		vector<Segment>* segments;
+		char baseHeight;
 		char color;
+		vector<Segment>* segments;
 		vector<char> groups;
+		char maxTileOffset;
 		#ifdef EDITOR
 			char groupIndexToRender;
 		public:
@@ -32,18 +34,16 @@ private:
 		#endif
 
 	public:
-		Rail(objCounterParametersComma() int x, int y, char pColor);
+		Rail(objCounterParametersComma() int x, int y, char pBaseHeight, char pColor);
 		~Rail();
 
 		char getColor() { return color; }
+		static int endSegmentSpriteHorizontalIndex(int xExtents, int yExtents);
 		void reverseSegments();
 		void addGroup(char group);
 		void addSegment(int x, int y);
-		void render(int screenLeftWorldX, int screenTopWorldY, float offset);
-		void renderEndSegment(
-			int screenLeftWorldX, int screenTopWorldY, int segmentX, int segmentY, int xExtents, int yExtents);
-		void renderSegment(
-			int screenLeftWorldX, int screenTopWorldY, float offset, int segmentX, int segmentY, int spriteHorizontalIndex);
+		void render(int screenLeftWorldX, int screenTopWorldY, float tileOffset, bool renderShadow);
+		void renderSegment(GLint drawLeftX, GLint drawTopY, float tileOffset, int spriteHorizontalIndex);
 		#ifdef EDITOR
 			void removeGroup(char group);
 			void removeSegment(int x, int y);
@@ -76,13 +76,13 @@ private:
 	class RailState onlyInDebug(: public ObjCounter) {
 	private:
 		Rail* rail;
-		char position;
+		float tileOffset;
 
 	public:
-		RailState(objCounterParametersComma() Rail* pRail, char pPosition);
+		RailState(objCounterParametersComma() Rail* pRail, char initialTileOffset);
 		~RailState();
 
-		void render(int screenLeftWorldX, int screenTopWorldY);
+		void render(int screenLeftWorldX, int screenTopWorldY, bool renderShadow);
 	};
 	class SwitchState onlyInDebug(: public ObjCounter) {
 	private:
@@ -113,7 +113,6 @@ public:
 	static const int railIdBitmask = 1 << 12;
 	static const int switchIdBitmask = railIdBitmask << 1;
 	static const int railSwitchIndexBitmask = railIdBitmask - 1;
-	static const int floorIsTrueEmptySpaceBitmask = 0x80;
 	static const int floorIsRailSwitchBitmask = 1;
 	static const int floorIsRailSwitchHeadBitmask = 2;
 	static const int floorIsRailSwitchAndHeadBitmask = floorIsRailSwitchHeadBitmask | floorIsRailSwitchBitmask;

@@ -135,11 +135,12 @@
 		for (int mapY = 0; mapY < mapHeight; mapY++) {
 			for (int mapX = 0; mapX < mapWidth; mapX++) {
 				char height = MapState::getHeight(mapX, mapY);
+				char railSwitchData = (Uint8)MapState::getRailSwitchFloorSaveData(mapX, mapY);
 				if (height == MapState::emptySpaceHeight)
-					SDL_SetRenderDrawColor(floorRenderer, 255, 255, 255, 255);
+					//if we don't have a rail/witch, use 254 for red since bit 0 indicates a rail/switch
+					SDL_SetRenderDrawColor(floorRenderer, railSwitchData != 0 ? railSwitchData : 254, 255, 255, 255);
 				else {
 					char tile = MapState::getTile(mapX, mapY);
-					char railSwitchData = (Uint8)MapState::getRailSwitchFloorSaveData(mapX, mapY);
 					SDL_SetRenderDrawColor(
 						floorRenderer,
 						(Uint8)railSwitchData,

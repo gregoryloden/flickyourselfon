@@ -5,50 +5,49 @@
 #include "Sprites/SpriteSheet.h"
 #include "Util/Config.h"
 
-#define newRail(x, y, color) newWithArgs(MapState::Rail, x, y, color)
+#define newRail(x, y, baseHeight, color) newWithArgs(MapState::Rail, x, y, baseHeight, color)
 #define newSwitch(leftX, topY, color, group) newWithArgs(MapState::Switch, leftX, topY, color, group)
 #define newRailState(rail, position) newWithArgs(MapState::RailState, rail, position)
 #define newSwitchState(switch0) newWithArgs(MapState::SwitchState, switch0)
 
 //////////////////////////////// MapState::Rail::Segment ////////////////////////////////
-MapState::Rail::Segment::Segment(char pXChange, char pYChange)
-: xChange(pXChange)
-, yChange(pYChange) {
+MapState::Rail::Segment::Segment(int pX, int pY, char pMaxTileOffset)
+: x(pX)
+, y(pY)
+//use the bottom end sprite as the default, we'll fix it later
+, spriteHorizontalIndex(endSegmentSpriteHorizontalIndex(0, -1))
+, maxTileOffset(pMaxTileOffset) {
 }
 MapState::Rail::Segment::~Segment() {}
 
 //////////////////////////////// MapState::Rail ////////////////////////////////
-MapState::Rail::Rail(objCounterParametersComma() int x, int y, char pColor)
+MapState::Rail::Rail(objCounterParametersComma() int x, int y, char pBaseHeight, char pColor)
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
-startX(x)
-, startY(y)
-, endX(x)
-, endY(y)
-, segments(new vector<Segment>())
+baseHeight(pBaseHeight)
 , color(pColor)
+, segments(new vector<Segment>())
 , groups()
+//give a default tile offset extending to the lowest height
+, maxTileOffset(pBaseHeight / 2)
 #ifdef EDITOR
 	, groupIndexToRender(0)
 	, isDeleted(false)
 #endif
 {
+	segments->push_back(Segment(x, y, 0));
 }
 MapState::Rail::~Rail() {
 	delete segments;
 }
-//reverse the order of the segments and the start and end coordinates
+//get the sprite index based on which direction this end segment extends towards
+int MapState::Rail::endSegmentSpriteHorizontalIndex(int xExtents, int yExtents) {
+	return yExtents != 0 ? 8 + (1 - yExtents) / 2 : 6 + (1 - xExtents) / 2;
+}
+//reverse the order of the segments
 void MapState::Rail::reverseSegments() {
 	vector<Segment>* newSegments = new vector<Segment>();
-	for (int i = segments->size() - 1; i >= 0; i--) {
-		Segment& segment = (*segments)[i];
-		newSegments->push_back(Segment(-segment.xChange, -segment.yChange));
-	}
-	int tempEndX = startX;
-	int tempEndY = startY;
-	startX = endX;
-	startY = endY;
-	endX = tempEndX;
-	endY = tempEndY;
+	for (int i = segments->size() - 1; i >= 0; i--)
+		newSegments->push_back((*segments)[i]);
 	delete segments;
 	segments = newSegments;
 }
@@ -65,15 +64,52 @@ void MapState::Rail::addGroup(char group) {
 //add a segment on this tile to the rail
 void MapState::Rail::addSegment(int x, int y) {
 	//if we aren't adding at the end, reverse the list before continuing
-	if (!((y == endY && (x == endX + 1 || x == endX - 1)) || (x == endX && (y == endY + 1 || y == endY - 1))))
+	Segment* end = &segments->back();
+	if (MathUtils::abs(y - end->y) + MathUtils::abs(x - end->x) != 1)
 		reverseSegments();
 
-	segments->push_back(Segment((char)(x - endX), (char)(y - endY)));
-	endX = x;
-	endY = y;
+	//find the tile where the shadow should go
+	for (char segmentMaxTileOffset = 0; true; segmentMaxTileOffset++) {
+		char railGroundHeight = baseHeight - (segmentMaxTileOffset * 2);
+		char tileHeight = getHeight(x, y + segmentMaxTileOffset);
+		//keep looking if we haven't gone down to the lowest level
+		//	and we found an empty space tile or a non-empty-space tile that's too low
+		if (railGroundHeight >= 0 && (tileHeight == emptySpaceHeight || tileHeight < railGroundHeight))
+			continue;
+
+		//we ended up on a tile above what would be a ground tile for this rail
+		//this is an empty space or a tile that the rail hides behind, mark that this segment does not have an offset
+		if (tileHeight > railGroundHeight)
+			segmentMaxTileOffset = Segment::absentTileOffset;
+		segments->push_back(Segment(x, y, segmentMaxTileOffset));
+		break;
+	}
+
+	//our newest segment is an end segment, figure out which way it should face
+	Segment* lastEnd = &(*segments)[segments->size() - 2];
+	end = &segments->back();
+	end->spriteHorizontalIndex = endSegmentSpriteHorizontalIndex(lastEnd->x - end->x, lastEnd->y - end->y);
+
+	//our last end segment is now a middle rail, find its sprite and account for its max height offset
+	if (segments->size() >= 3) {
+		Segment* secondLastEnd = &(*segments)[segments->size() - 3];
+		if (secondLastEnd->x == end->x)
+			lastEnd->spriteHorizontalIndex = 0;
+		else if (secondLastEnd->y == end->y)
+			lastEnd->spriteHorizontalIndex = 1;
+		else {
+			int xExtents = secondLastEnd->x - lastEnd->x + end->x - lastEnd->x;
+			int yExtents = secondLastEnd->y - lastEnd->y + end->y - lastEnd->y;
+			lastEnd->spriteHorizontalIndex = 3 - yExtents + (1 - xExtents) / 2;
+		}
+		if (lastEnd->maxTileOffset != Segment::absentTileOffset)
+			maxTileOffset = MathUtils::min(lastEnd->maxTileOffset, maxTileOffset);
+	//we only have 2 segments so the other rail is just the end segment that complements this
+	} else
+		lastEnd->spriteHorizontalIndex = endSegmentSpriteHorizontalIndex(end->x - lastEnd->x, end->y - lastEnd->y);
 }
 //render this rail at its position by rendering each segment
-void MapState::Rail::render(int screenLeftWorldX, int screenTopWorldY, float offset) {
+void MapState::Rail::render(int screenLeftWorldX, int screenTopWorldY, float tileOffset, bool renderShadow) {
 	#ifdef EDITOR
 		if (isDeleted)
 			return;
@@ -81,54 +117,33 @@ void MapState::Rail::render(int screenLeftWorldX, int screenTopWorldY, float off
 	#endif
 	glEnable(GL_BLEND);
 
-	//only one segment, just render it as a bottom end segment
-	if (segments->size() == 0) {
-		renderEndSegment(screenLeftWorldX, screenTopWorldY, startX, startY, 0, -1);
-	} else {
-		Segment* lastSegment = &(*segments)[0];
-		renderEndSegment(screenLeftWorldX, screenTopWorldY, startX, startY, lastSegment->xChange, lastSegment->yChange);
-		int lastRailX = startX;
-		int lastRailY = startY;
-		for (int i = 1; i < (int)segments->size(); i++) {
-			Segment* nextSegment = &(*segments)[i];
-			lastRailX += lastSegment->xChange;
-			lastRailY += lastSegment->yChange;
-			if (lastSegment->yChange != 0 && nextSegment->yChange != 0)
-				renderSegment(screenLeftWorldX, screenTopWorldY, offset, lastRailX, lastRailY, 0);
-			else if (lastSegment->xChange != 0 && nextSegment->xChange != 0)
-				renderSegment(screenLeftWorldX, screenTopWorldY, offset, lastRailX, lastRailY, 1);
-			else {
-				char xExtents = nextSegment->xChange - lastSegment->xChange;
-				char yExtents = nextSegment->yChange - lastSegment->yChange;
-				renderSegment(
-					screenLeftWorldX, screenTopWorldY, offset, lastRailX, lastRailY, (int)(3 - yExtents + (1 - xExtents) / 2));
-			}
-			lastSegment = nextSegment;
+	int lastSegmentIndex = (int)segments->size() - 1;
+	for (int i = 0; i <= lastSegmentIndex; i++) {
+		Segment& segment = (*segments)[i];
+		GLint drawLeftX = (GLint)(segment.x * tileSize - screenLeftWorldX);
+		GLint drawTopY = (GLint)(segment.y * tileSize - screenTopWorldY);
+		if (i == 0 || i == lastSegmentIndex) {
+			//no shadows for end segments
+			if (!renderShadow)
+				renderSegment(drawLeftX, drawTopY, 0.0f, segment.spriteHorizontalIndex);
+		} else {
+			if (!renderShadow)
+				renderSegment(drawLeftX, drawTopY, tileOffset, segment.spriteHorizontalIndex);
+			else if (segment.maxTileOffset > 0)
+				SpriteRegistry::rails->renderSpriteAtScreenPosition(
+					segment.spriteHorizontalIndex + 10,
+					0,
+					drawLeftX,
+					drawTopY + (GLint)((int)segment.maxTileOffset * tileSize));
 		}
-		renderEndSegment(screenLeftWorldX, screenTopWorldY, endX, endY, -lastSegment->xChange, -lastSegment->yChange);
 	}
 }
-//render the rail end segment at its position
-void MapState::Rail::renderEndSegment(
-	int screenLeftWorldX, int screenTopWorldY, int segmentX, int segmentY, int xExtents, int yExtents)
-{
-	if (yExtents == 0)
-		renderSegment(screenLeftWorldX, screenTopWorldY, 0.0f, segmentX, segmentY, 6 + (1 - xExtents) / 2);
-	else
-		renderSegment(screenLeftWorldX, screenTopWorldY, 0.0f, segmentX, segmentY, 8 + (1 - yExtents) / 2);
-}
 //render the rail segment at its position, clipping it if part of the map is higher than it
-void MapState::Rail::renderSegment(
-	int screenLeftWorldX, int screenTopWorldY, float offset, int segmentX, int segmentY, int spriteHorizontalIndex)
-{
-	//TODO: render rail shadow
-	//TODO: render offset rail
-	GLint drawLeftX = (GLint)(segmentX * tileSize - screenLeftWorldX);
-	GLint drawTopY = (GLint)(segmentY * tileSize - screenTopWorldY);
-	SpriteRegistry::rails->renderSpriteAtScreenPosition(spriteHorizontalIndex, 0, drawLeftX, drawTopY);
+void MapState::Rail::renderSegment(GLint drawLeftX, GLint drawTopY, float tileOffset, int spriteHorizontalIndex) {
+	//TODO: clip rail
+	SpriteRegistry::rails->renderSpriteAtScreenPosition(
+		spriteHorizontalIndex, 0, drawLeftX, drawTopY + (int)(tileOffset * (float)tileSize));
 	#ifdef EDITOR
-		drawLeftX = (GLint)(segmentX * tileSize - screenLeftWorldX);
-		drawTopY = (GLint)(segmentY * tileSize - screenTopWorldY);
 		SpriteSheet::renderFilledRectangle(
 			(color == 0 || color == 3) ? 0.75f : 0.0f,
 			(color == 2 || color == 3) ? 0.75f : 0.0f,
@@ -158,32 +173,30 @@ void MapState::Rail::renderSegment(
 	}
 	//remove the segment on this tile from the rail
 	void MapState::Rail::removeSegment(int x, int y) {
-		if (y == endY && x == endX) {
-			Segment& endSegment = segments->back();
-			endX -= endSegment.xChange;
-			endY -= endSegment.yChange;
+		Segment& end = segments->back();
+		if (y == end.y && x == end.x)
 			segments->pop_back();
-		} else {
-			Segment& startSegment = segments->front();
-			startX += startSegment.xChange;
-			startY += startSegment.yChange;
+		else
 			segments->erase(segments->begin());
+		//reset the max tile offset
+		maxTileOffset = baseHeight / 2;
+		for (int i = 1; i < (int)segments->size() - 1; i++) {
+			Segment& segment = (*segments)[i];
+			if (segment.maxTileOffset != Segment::absentTileOffset)
+				maxTileOffset = MathUtils::min(segment.maxTileOffset, maxTileOffset);
 		}
 	}
 	//we're saving this rail to the floor file, get the data we need at this tile
 	char MapState::Rail::getFloorSaveData(int x, int y) {
-		if (x == startX && y == startY)
+		Segment& start = segments->front();
+		if (x == start.x && y == start.y)
 			//TODO: rail starting offset
 			return (color << floorRailSwitchHeadDataShift) | floorRailHeadValue;
 		else {
-			int searchX = startX;
-			int searchY = startY;
-			for (int i = 0; i < (int)groups.size() && i < (int)segments->size(); i++) {
+			for (int i = 1; i - 1 < (int)groups.size() && i < (int)segments->size(); i++) {
 				Segment& segment = (*segments)[i];
-				searchX += segment.xChange;
-				searchY += segment.yChange;
-				if (searchX == x && searchY == y)
-					return groups[i] << floorRailSwitchTailDataShift | floorIsRailSwitchBitmask;
+				if (segment.x == x && segment.y == y)
+					return groups[i - 1] << floorRailSwitchTailDataShift | floorIsRailSwitchBitmask;
 			}
 		}
 		//no data but still part of this rail
@@ -242,18 +255,17 @@ void MapState::Switch::render(int screenLeftWorldX, int screenTopWorldY, bool is
 #endif
 
 //////////////////////////////// MapState::RailState ////////////////////////////////
-MapState::RailState::RailState(objCounterParametersComma() Rail* pRail, char pPosition)
+MapState::RailState::RailState(objCounterParametersComma() Rail* pRail, char initialTileOffset)
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
 rail(pRail)
-, position(pPosition) {
+, tileOffset((float)initialTileOffset) {
 }
 MapState::RailState::~RailState() {
 	//don't delete the rail, it's owned by MapState
 }
 //render the rail
-void MapState::RailState::render(int screenLeftWorldX, int screenTopWorldY) {
-	//TODO: pass the position
-	rail->render(screenLeftWorldX, screenTopWorldY, 0.0f);
+void MapState::RailState::render(int screenLeftWorldX, int screenTopWorldY, bool renderShadow) {
+	rail->render(screenLeftWorldX, screenTopWorldY, tileOffset, renderShadow);
 }
 
 //////////////////////////////// MapState::SwitchState ////////////////////////////////
@@ -326,32 +338,31 @@ void MapState::buildMap() {
 	int blueMask = (int)floor->format->Bmask;
 	int* pixels = static_cast<int*>(floor->pixels);
 
+	//set all tiles and heights before loading rails/switches
 	for (int i = 0; i < totalTiles; i++) {
 		tiles[i] = (char)(((pixels[i] & greenMask) >> greenShift) / tileDivisor);
 		heights[i] = (char)(((pixels[i] & blueMask) >> blueShift) / heightDivisor);
+	}
+
+	for (int i = 0; i < totalTiles; i++) {
 		char railSwitchValue = (char)((pixels[i] & redMask) >> redShift);
 
-		//if the high red bit is set, it does not contain rail/switch data
-		if ((railSwitchValue & floorIsTrueEmptySpaceBitmask) != 0
-				//rail/switch data occupies 2+ red bytes, each byte has bit 0 set
-				//head bytes that start a rail/switch have bit 1 set, we only build rails/switches when we get to one of these
-				|| (railSwitchValue & floorIsRailSwitchAndHeadBitmask) != floorRailSwitchAndHeadValue)
+		//rail/switch data occupies 2+ red bytes, each byte has bit 0 set, and non-switch/rail bytes have bit 0 unset
+		//head bytes that start a rail/switch have bit 1 set, we only build rails/switches when we get to one of these
+		if ((railSwitchValue & floorIsRailSwitchAndHeadBitmask) != floorRailSwitchAndHeadValue)
 			continue;
 
-		//the topmost (and then leftmost) tile is byte 1 (the head byte)
-		//for switches, there is only 1 tail byte with data, byte 2 to the right
-		//for rails, the rail can extend in any direction, specifying which tiles and groups belong to the rail
-		//byte 1:
+		//head byte 1:
 		//	bit 1: 1 (indicates head byte)
 		//	bit 2 indicates rail (0) vs switch (1)
 		//	bits 3-4: color (R/B/G/W)
 		//	rail bit 5: vertical starting position
 		//	bit 7 must be 0 to indicate that this is not a strictly-empty tile
-		//byte 2+:
+		//tail byte 2+:
 		//	bit 1: 0 (indicates tail byte)
 		//	bits 2-7: group number
 		char color = (railSwitchValue >> floorRailSwitchHeadDataShift) & floorRailSwitchColorPostShiftBitmask;
-		//this is a switch
+		//switches have only 2 bytes, head byte 1 at its top-left tile, and tail byte 2 at its top-right tile
 		if ((railSwitchValue & floorIsSwitchBitmask) != 0) {
 			char switchByte2 = (char)((pixels[i + 1] & redMask) >> redShift);
 			char group = (switchByte2 >> floorRailSwitchTailDataShift) & floorRailSwitchGroupPostShiftBitmask;
@@ -363,10 +374,10 @@ void MapState::buildMap() {
 					railSwitchIds[i + xOffset + yOffset * width] = newSwitchId;
 				}
 			}
-		//this is a rail
+		//rails can extend in any direction after this head byte tile
 		} else {
 			short newRailId = (short)rails.size() | railIdBitmask;
-			Rail* rail = newRail(i % width, i / width, color);
+			Rail* rail = newRail(i % width, i / width, heights[i], color);
 			rails.push_back(rail);
 			railSwitchIds[i] = newRailId;
 			int railI = i;
@@ -478,16 +489,18 @@ void MapState::render(EntityState* camera, int ticksTime) {
 		}
 	}
 
-	//draw the radio tower after drawing the map
+	//draw rail shadows, rails, and switches
+	for (RailState* railState : railStates)
+		railState->render(screenLeftWorldX, screenTopWorldY, true);
+	for (RailState* railState : railStates)
+		railState->render(screenLeftWorldX, screenTopWorldY, false);
+	for (SwitchState* switchState : switchStates)
+		switchState->render(screenLeftWorldX, screenTopWorldY);
+
+	//draw the radio tower after drawing everything else
 	glEnable(GL_BLEND);
 	SpriteRegistry::radioTower->renderSpriteAtScreenPosition(
 		0, 0, (GLint)(radioTowerLeftXOffset - screenLeftWorldX), (GLint)(radioTowerTopYOffset - screenTopWorldY));
-
-	//draw rails and switches after everything else
-	for (RailState* railState : railStates)
-		railState->render(screenLeftWorldX, screenTopWorldY);
-	for (SwitchState* switchState : switchStates)
-		switchState->render(screenLeftWorldX, screenTopWorldY);
 }
 #ifdef EDITOR
 	//set a switch if there's room, or delete a switch if we can
@@ -622,7 +635,7 @@ void MapState::render(EntityState* camera, int ticksTime) {
 			//add a new rail here
 			} else {
 				railSwitchIds[railSwitchIndex] = (short)rails.size() | railIdBitmask;
-				rails.push_back(newRail(x, y, color));
+				rails.push_back(newRail(x, y, getHeight(x, y), color));
 			}
 		}
 	}
