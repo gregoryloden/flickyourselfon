@@ -120,30 +120,51 @@ void MapState::Rail::render(int screenLeftWorldX, int screenTopWorldY, float til
 	int lastSegmentIndex = (int)segments->size() - 1;
 	for (int i = 0; i <= lastSegmentIndex; i++) {
 		Segment& segment = (*segments)[i];
-		GLint drawLeftX = (GLint)(segment.x * tileSize - screenLeftWorldX);
-		GLint drawTopY = (GLint)(segment.y * tileSize - screenTopWorldY);
 		if (i == 0 || i == lastSegmentIndex) {
 			//no shadows for end segments
 			if (!renderShadow)
-				renderSegment(drawLeftX, drawTopY, 0.0f, segment.spriteHorizontalIndex);
+				renderSegment(screenLeftWorldX, screenTopWorldY, 0.0f, segment);
 		} else {
 			if (!renderShadow)
-				renderSegment(drawLeftX, drawTopY, tileOffset, segment.spriteHorizontalIndex);
+				renderSegment(screenLeftWorldX, screenTopWorldY, tileOffset, segment);
 			else if (segment.maxTileOffset > 0)
 				SpriteRegistry::rails->renderSpriteAtScreenPosition(
 					segment.spriteHorizontalIndex + 10,
 					0,
-					drawLeftX,
-					drawTopY + (GLint)((int)segment.maxTileOffset * tileSize));
+					(GLint)(segment.x * tileSize - screenLeftWorldX),
+					(GLint)((segment.y + (int)segment.maxTileOffset) * tileSize - screenTopWorldY));
 		}
 	}
 }
 //render the rail segment at its position, clipping it if part of the map is higher than it
-void MapState::Rail::renderSegment(GLint drawLeftX, GLint drawTopY, float tileOffset, int spriteHorizontalIndex) {
-	//TODO: clip rail
-	SpriteRegistry::rails->renderSpriteAtScreenPosition(
-		spriteHorizontalIndex, 0, drawLeftX, drawTopY + (int)(tileOffset * (float)tileSize));
+void MapState::Rail::renderSegment(int screenLeftWorldX, int screenTopWorldY, float tileOffset, Rail::Segment& segment) {
+	int pixelOffset = (int)(tileOffset * (float)tileSize + 0.5f);
+	int topWorldY = segment.y * tileSize + pixelOffset;
+	int bottomTileY = (topWorldY + tileSize - 1) / tileSize;
+	GLint drawLeftX = (GLint)(segment.x * tileSize - screenLeftWorldX);
+	GLint drawTopY = (GLint)(topWorldY - screenTopWorldY);
+	char topTileHeight = getHeight(segment.x, topWorldY / tileSize);
+	char bottomTileHeight = getHeight(segment.x, bottomTileY);
+	//this segment is completely visible
+	if (bottomTileHeight == emptySpaceHeight
+			|| bottomTileHeight <= baseHeight - (char)((pixelOffset + tileSize - 1) / tileSize) * 2)
+		SpriteRegistry::rails->renderSpriteAtScreenPosition(segment.spriteHorizontalIndex, 0, drawLeftX, drawTopY);
+	//the top part of this segment is visible
+	else if (topTileHeight == emptySpaceHeight || topTileHeight <= baseHeight - (char)(pixelOffset / tileSize) * 2) {
+		int spriteX = segment.spriteHorizontalIndex * tileSize;
+		int spriteHeight = bottomTileY * tileSize - topWorldY;
+		SpriteRegistry::rails->renderSpriteSheetRegionAtScreenRegion(
+			spriteX,
+			0,
+			spriteX + tileSize,
+			spriteHeight,
+			drawLeftX,
+			drawTopY,
+			drawLeftX + (GLint)tileSize,
+			drawTopY + (GLint)spriteHeight);
+	}
 	#ifdef EDITOR
+		drawTopY = (GLint)(segment.y * tileSize - screenTopWorldY);
 		SpriteSheet::renderFilledRectangle(
 			(color == 0 || color == 3) ? 0.75f : 0.0f,
 			(color == 2 || color == 3) ? 0.75f : 0.0f,
@@ -153,7 +174,7 @@ void MapState::Rail::renderSegment(GLint drawLeftX, GLint drawTopY, float tileOf
 			drawTopY + 1,
 			drawLeftX + 5,
 			drawTopY + 5);
-		SpriteRegistry::rails->renderSpriteAtScreenPosition(spriteHorizontalIndex, 0, drawLeftX, drawTopY);
+		SpriteRegistry::rails->renderSpriteAtScreenPosition(segment.spriteHorizontalIndex, 0, drawLeftX, drawTopY);
 		if (groups.size() > 0) {
 			Editor::renderGroupRect(groups[groupIndexToRender], drawLeftX + 2, drawTopY + 2, drawLeftX + 4, drawTopY + 4);
 			glEnable(GL_BLEND);
@@ -178,7 +199,7 @@ void MapState::Rail::renderSegment(GLint drawLeftX, GLint drawTopY, float tileOf
 			segments->pop_back();
 		else
 			segments->erase(segments->begin());
-		//reset the max tile offset
+		//reset the max tile offset, find the smallest offset among the non-end segments
 		maxTileOffset = baseHeight / 2;
 		for (int i = 1; i < (int)segments->size() - 1; i++) {
 			Segment& segment = (*segments)[i];
@@ -347,7 +368,7 @@ void MapState::buildMap() {
 	for (int i = 0; i < totalTiles; i++) {
 		char railSwitchValue = (char)((pixels[i] & redMask) >> redShift);
 
-		//rail/switch data occupies 2+ red bytes, each byte has bit 0 set, and non-switch/rail bytes have bit 0 unset
+		//rail/switch data occupies 2+ red bytes, each byte has bit 0 set (non-switch/rail bytes have bit 0 unset)
 		//head bytes that start a rail/switch have bit 1 set, we only build rails/switches when we get to one of these
 		if ((railSwitchValue & floorIsRailSwitchAndHeadBitmask) != floorRailSwitchAndHeadValue)
 			continue;
@@ -382,20 +403,20 @@ void MapState::buildMap() {
 			railSwitchIds[i] = newRailId;
 			int railI = i;
 			//cache shift values so that we can iterate the floor data quicker
-			int floorIsRailSwitchTailShiftedBitmask = floorIsRailSwitchAndHeadBitmask << redShift;
+			int floorIsRailSwitchAndHeadShiftedBitmask = floorIsRailSwitchAndHeadBitmask << redShift;
 			int floorRailSwitchTailShiftedValue = floorIsRailSwitchBitmask << redShift;
 			int floorRailGroupShiftedShift = redShift + floorRailSwitchTailDataShift;
 			while (true) {
-				if ((pixels[railI + 1] & floorIsRailSwitchTailShiftedBitmask) == floorRailSwitchTailShiftedValue
+				if ((pixels[railI + 1] & floorIsRailSwitchAndHeadShiftedBitmask) == floorRailSwitchTailShiftedValue
 						&& railSwitchIds[railI + 1] == 0)
 					railI++;
-				else if ((pixels[railI - 1] & floorIsRailSwitchTailShiftedBitmask) == floorRailSwitchTailShiftedValue
+				else if ((pixels[railI - 1] & floorIsRailSwitchAndHeadShiftedBitmask) == floorRailSwitchTailShiftedValue
 						&& railSwitchIds[railI - 1] == 0)
 					railI--;
-				else if ((pixels[railI + width] & floorIsRailSwitchTailShiftedBitmask) == floorRailSwitchTailShiftedValue
+				else if ((pixels[railI + width] & floorIsRailSwitchAndHeadShiftedBitmask) == floorRailSwitchTailShiftedValue
 						&& railSwitchIds[railI + width] == 0)
 					railI += width;
-				else if ((pixels[railI - width] & floorIsRailSwitchTailShiftedBitmask) == floorRailSwitchTailShiftedValue
+				else if ((pixels[railI - width] & floorIsRailSwitchAndHeadShiftedBitmask) == floorRailSwitchTailShiftedValue
 						&& railSwitchIds[railI - width] == 0)
 					railI -= width;
 				else
@@ -457,7 +478,7 @@ void MapState::updateWithPreviousMapState(MapState* prev, int ticksTime) {
 	#endif
 }
 //draw the map
-void MapState::render(EntityState* camera, int ticksTime) {
+void MapState::render(EntityState* camera, char playerZ, int ticksTime) {
 	glDisable(GL_BLEND);
 	//render the map
 	//these values are just right so that every tile rendered is at least partially in the window and no tiles are left out
@@ -489,11 +510,13 @@ void MapState::render(EntityState* camera, int ticksTime) {
 		}
 	}
 
-	//draw rail shadows, rails, and switches
+	//draw rail shadows, rails (that are below the player, and switches
 	for (RailState* railState : railStates)
 		railState->render(screenLeftWorldX, screenTopWorldY, true);
-	for (RailState* railState : railStates)
-		railState->render(screenLeftWorldX, screenTopWorldY, false);
+	for (RailState* railState : railStates) {
+		if (railState->getEffectiveHeight() <= playerZ)
+			railState->render(screenLeftWorldX, screenTopWorldY, false);
+	}
 	for (SwitchState* switchState : switchStates)
 		switchState->render(screenLeftWorldX, screenTopWorldY);
 
@@ -501,6 +524,15 @@ void MapState::render(EntityState* camera, int ticksTime) {
 	glEnable(GL_BLEND);
 	SpriteRegistry::radioTower->renderSpriteAtScreenPosition(
 		0, 0, (GLint)(radioTowerLeftXOffset - screenLeftWorldX), (GLint)(radioTowerTopYOffset - screenTopWorldY));
+}
+//draw any rails that are above the player
+void MapState::renderRailsAbovePlayer(EntityState* camera, char playerZ, int ticksTime) {
+	int screenLeftWorldX = getScreenLeftWorldX(camera, ticksTime);
+	int screenTopWorldY = getScreenTopWorldY(camera, ticksTime);
+	for (RailState* railState : railStates) {
+		if (railState->getEffectiveHeight() > playerZ)
+			railState->render(screenLeftWorldX, screenTopWorldY, false);
+	}
 }
 #ifdef EDITOR
 	//set a switch if there's room, or delete a switch if we can

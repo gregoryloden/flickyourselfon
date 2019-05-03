@@ -130,8 +130,11 @@ void GameState::setDynamicCamera() {
 //render this state, which was deemed to be the last state to need rendering
 void GameState::render(int ticksTime) {
 	int gameTicksTime = (pauseState.get() != nullptr ? pauseStartTicksTime : ticksTime) - gameTimeOffsetTicksDuration;
-	mapState.get()->render(camera, gameTicksTime);
+	int playerZ = playerState.get()->getZ();
+	mapState.get()->render(camera, playerZ, gameTicksTime);
 	playerState.get()->render(camera, gameTicksTime);
+	mapState.get()->renderRailsAbovePlayer(camera, playerZ, gameTicksTime);
+
 	if (camera == dynamicCameraAnchor.get())
 		dynamicCameraAnchor.get()->render(gameTicksTime);
 	if (pauseState.get() != nullptr)

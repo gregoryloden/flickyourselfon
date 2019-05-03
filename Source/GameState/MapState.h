@@ -37,13 +37,15 @@ private:
 		Rail(objCounterParametersComma() int x, int y, char pBaseHeight, char pColor);
 		~Rail();
 
+		char getBaseHeight() { return baseHeight; }
 		char getColor() { return color; }
+		char getMaxTileOffset() { return maxTileOffset; }
 		static int endSegmentSpriteHorizontalIndex(int xExtents, int yExtents);
 		void reverseSegments();
 		void addGroup(char group);
 		void addSegment(int x, int y);
 		void render(int screenLeftWorldX, int screenTopWorldY, float tileOffset, bool renderShadow);
-		void renderSegment(GLint drawLeftX, GLint drawTopY, float tileOffset, int spriteHorizontalIndex);
+		void renderSegment(int screenLeftWorldX, int screenTopWorldY, float tileOffset, Rail::Segment& segment);
 		#ifdef EDITOR
 			void removeGroup(char group);
 			void removeSegment(int x, int y);
@@ -82,6 +84,7 @@ private:
 		RailState(objCounterParametersComma() Rail* pRail, char initialTileOffset);
 		~RailState();
 
+		char getEffectiveHeight() { return rail->getBaseHeight() - (char)tileOffset * 2; }
 		void render(int screenLeftWorldX, int screenTopWorldY, bool renderShadow);
 	};
 	class SwitchState onlyInDebug(: public ObjCounter) {
@@ -166,7 +169,8 @@ public:
 	static char horizontalTilesHeight(int lowMapX, int highMapX, int mapY);
 	static void setIntroAnimationBootTile(bool startingAnimation);
 	void updateWithPreviousMapState(MapState* prev, int ticksTime);
-	void render(EntityState* camera, int ticksTime);
+	void render(EntityState* camera, char playerZ, int ticksTime);
+	void renderRailsAbovePlayer(EntityState* camera, char playerZ, int ticksTime);
 	#ifdef EDITOR
 		static void setSwitch(int leftX, int topY, char color, char group);
 		static void setRail(int x, int y, char color, char group);

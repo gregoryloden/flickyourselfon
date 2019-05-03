@@ -1,5 +1,6 @@
 #include "Editor.h"
 #include "GameState/EntityState.h"
+#include "GameState/GameState.h"
 #include "GameState/MapState.h"
 #include "Sprites/SpriteRegistry.h"
 #include "Sprites/SpriteSheet.h"
@@ -158,7 +159,7 @@
 
 		//throw away the whole save file becuase rail/switch ids may have changed
 		ofstream file;
-		file.open("fyo.sav");
+		file.open(GameState::savedGameFileName);
 		file.close();
 
 		saveButtonDisabled = true;

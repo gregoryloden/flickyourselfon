@@ -29,6 +29,7 @@ public:
 	EntityState(objCounterParameters());
 	~EntityState();
 
+	char getZ() { return z; }
 	//begin a sprite animation if applicable
 	virtual void setSpriteAnimation(SpriteAnimation* spriteAnimation, int pAnimationStartTicksTime) {}
 	//set the direction for this state's sprite, if it has one

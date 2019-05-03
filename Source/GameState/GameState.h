@@ -9,8 +9,9 @@ class PlayerState;
 #define newGameState() newWithoutArgs(GameState)
 
 class GameState onlyInDebug(: public ObjCounter) {
-private:
+public:
 	static const char* savedGameFileName;
+private:
 	static const string sawIntroAnimationFilePrefix;
 
 	bool sawIntroAnimation;
