@@ -26,6 +26,7 @@ private:
 		char color;
 		vector<Segment>* segments;
 		vector<char> groups;
+		char initialTileOffset;
 		char maxTileOffset;
 		#ifdef EDITOR
 			char groupIndexToRender;
@@ -34,11 +35,12 @@ private:
 		#endif
 
 	public:
-		Rail(objCounterParametersComma() int x, int y, char pBaseHeight, char pColor);
+		Rail(objCounterParametersComma() int x, int y, char pBaseHeight, char pColor, char pInitialTileOffset);
 		~Rail();
 
 		char getBaseHeight() { return baseHeight; }
 		char getColor() { return color; }
+		char getInitialTileOffset() { return initialTileOffset; }
 		char getMaxTileOffset() { return maxTileOffset; }
 		static int endSegmentSpriteHorizontalIndex(int xExtents, int yExtents);
 		void reverseSegments();
@@ -49,6 +51,7 @@ private:
 		#ifdef EDITOR
 			void removeGroup(char group);
 			void removeSegment(int x, int y);
+			void adjustInitialTileOffset(int x, int y, char tileOffset);
 			char getFloorSaveData(int x, int y);
 		#endif
 	};
@@ -81,10 +84,12 @@ private:
 		float tileOffset;
 
 	public:
-		RailState(objCounterParametersComma() Rail* pRail, char initialTileOffset);
+		RailState(objCounterParametersComma() Rail* pRail);
 		~RailState();
 
-		char getEffectiveHeight() { return rail->getBaseHeight() - (char)tileOffset * 2; }
+		// say the last 1/2 tile of offset is below the player
+		bool isAbovePlayerZ(char z) { return rail->getBaseHeight() - (char)(tileOffset + 0.5f) * 2 > z; }
+		void updateWithPreviousRailState(RailState* prev, int ticksTime);
 		void render(int screenLeftWorldX, int screenTopWorldY, bool renderShadow);
 	};
 	class SwitchState onlyInDebug(: public ObjCounter) {
@@ -96,6 +101,7 @@ private:
 		SwitchState(objCounterParametersComma() Switch* pSwitch0);
 		~SwitchState();
 
+		void updateWithPreviousSwitchState(SwitchState* prev, int ticksTime);
 		void render(int screenLeftWorldX, int screenTopWorldY);
 	};
 
@@ -120,10 +126,12 @@ public:
 	static const int floorIsRailSwitchHeadBitmask = 2;
 	static const int floorIsRailSwitchAndHeadBitmask = floorIsRailSwitchHeadBitmask | floorIsRailSwitchBitmask;
 	static const int floorIsSwitchBitmask = 4;
-	static const char floorRailSwitchColorPostShiftBitmask = 0x18;
+	static const char floorRailSwitchColorPostShiftBitmask = 0x3;
 	static const char floorRailSwitchGroupPostShiftBitmask = 0x3F;
-	static const int floorRailSwitchHeadDataShift = 3;
-	static const int floorRailSwitchTailDataShift = 2;
+	static const char floorRailInitialTileOffsetPostShiftBitmask = 0x7;
+	static const int floorRailSwitchColorDataShift = 3;
+	static const int floorRailSwitchGroupDataShift = 2;
+	static const int floorRailInitialTileOffsetDataShift = 5;
 	static const int floorRailSwitchAndHeadValue = floorIsRailSwitchHeadBitmask | floorIsRailSwitchBitmask;
 	static const int floorRailHeadValue = floorRailSwitchAndHeadValue;
 	static const int floorSwitchHeadValue = floorIsSwitchBitmask | floorRailSwitchAndHeadValue;
@@ -174,6 +182,7 @@ public:
 	#ifdef EDITOR
 		static void setSwitch(int leftX, int topY, char color, char group);
 		static void setRail(int x, int y, char color, char group);
+		static void adjustRailInitialTileOffset(int x, int y, char tileOffset);
 		static char getRailSwitchFloorSaveData(int x, int y);
 	#endif
 };

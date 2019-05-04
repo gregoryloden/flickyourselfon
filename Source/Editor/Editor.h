@@ -55,7 +55,7 @@ private:
 		float textBaselineY;
 
 	public:
-		TextButton(objCounterParametersComma() string pText, Zone zone, int zoneLeftX, int zoneTopY);
+		TextButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY, string pText);
 		~TextButton();
 
 		virtual void render();
@@ -87,7 +87,7 @@ private:
 		char tile;
 
 	public:
-		TileButton(objCounterParametersComma() char pTile, Zone zone, int zoneLeftX, int zoneTopY);
+		TileButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY, char pTile);
 		~TileButton();
 
 		virtual void render();
@@ -105,7 +105,7 @@ private:
 		char height;
 
 	public:
-		HeightButton(objCounterParametersComma() char pHeight, Zone zone, int zoneLeftX, int zoneTopY);
+		HeightButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY, char pHeight);
 		~HeightButton();
 
 		char getHeight() { return height; }
@@ -122,7 +122,7 @@ private:
 		char radius;
 
 	public:
-		PaintBoxRadiusButton(objCounterParametersComma() char pRadius, Zone zone, int zoneLeftX, int zoneTopY);
+		PaintBoxRadiusButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY, char pRadius);
 		~PaintBoxRadiusButton();
 
 		char getRadius() { return radius; }
@@ -159,7 +159,7 @@ private:
 		char color;
 
 	public:
-		SwitchButton(objCounterParametersComma() char pColor, Zone zone, int zoneLeftX, int zoneTopY);
+		SwitchButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY, char pColor);
 		~SwitchButton();
 
 		virtual void render();
@@ -174,8 +174,23 @@ private:
 		char color;
 
 	public:
-		RailButton(objCounterParametersComma() char pColor, Zone zone, int zoneLeftX, int zoneTopY);
+		RailButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY, char pColor);
 		~RailButton();
+
+		virtual void render();
+		virtual void doAction();
+		virtual void paintMap(int x, int y);
+	};
+	class RailTileOffsetButton: public Button {
+	public:
+		static const int buttonSize;
+
+	private:
+		char tileOffset;
+
+	public:
+		RailTileOffsetButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY, char pTileOffset);
+		~RailTileOffsetButton();
 
 		virtual void render();
 		virtual void doAction();
@@ -191,7 +206,7 @@ private:
 		char railSwitchGroup;
 
 	public:
-		RailSwitchGroupButton(objCounterParametersComma() char pRailSwitchGroup, Zone zone, int zoneLeftX, int zoneTopY);
+		RailSwitchGroupButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY, char pRailSwitchGroup);
 		~RailSwitchGroupButton();
 
 		char getRailSwitchGroup() { return railSwitchGroup; }
@@ -213,6 +228,7 @@ private:
 	static HeightButton* lastSelectedHeightButton;
 	static SwitchButton* lastSelectedSwitchButton;
 	static RailButton* lastSelectedRailButton;
+	static RailTileOffsetButton* lastSelectedRailTileOffsetButton;
 	static default_random_engine* randomEngine;
 	static discrete_distribution<int>* randomDistribution;
 	static bool saveButtonDisabled;

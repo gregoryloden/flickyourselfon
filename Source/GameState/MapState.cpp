@@ -5,9 +5,10 @@
 #include "Sprites/SpriteSheet.h"
 #include "Util/Config.h"
 
-#define newRail(x, y, baseHeight, color) newWithArgs(MapState::Rail, x, y, baseHeight, color)
+#define newRail(x, y, baseHeight, color, initialTileOffset) \
+	newWithArgs(MapState::Rail, x, y, baseHeight, color, initialTileOffset)
 #define newSwitch(leftX, topY, color, group) newWithArgs(MapState::Switch, leftX, topY, color, group)
-#define newRailState(rail, position) newWithArgs(MapState::RailState, rail, position)
+#define newRailState(rail) newWithArgs(MapState::RailState, rail)
 #define newSwitchState(switch0) newWithArgs(MapState::SwitchState, switch0)
 
 //////////////////////////////// MapState::Rail::Segment ////////////////////////////////
@@ -21,12 +22,13 @@ MapState::Rail::Segment::Segment(int pX, int pY, char pMaxTileOffset)
 MapState::Rail::Segment::~Segment() {}
 
 //////////////////////////////// MapState::Rail ////////////////////////////////
-MapState::Rail::Rail(objCounterParametersComma() int x, int y, char pBaseHeight, char pColor)
+MapState::Rail::Rail(objCounterParametersComma() int x, int y, char pBaseHeight, char pColor, char pInitialTileOffset)
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
 baseHeight(pBaseHeight)
 , color(pColor)
 , segments(new vector<Segment>())
 , groups()
+, initialTileOffset(pInitialTileOffset)
 //give a default tile offset extending to the lowest height
 , maxTileOffset(pBaseHeight / 2)
 #ifdef EDITOR
@@ -102,8 +104,10 @@ void MapState::Rail::addSegment(int x, int y) {
 			int yExtents = secondLastEnd->y - lastEnd->y + end->y - lastEnd->y;
 			lastEnd->spriteHorizontalIndex = 3 - yExtents + (1 - xExtents) / 2;
 		}
-		if (lastEnd->maxTileOffset != Segment::absentTileOffset)
+		if (lastEnd->maxTileOffset != Segment::absentTileOffset) {
 			maxTileOffset = MathUtils::min(lastEnd->maxTileOffset, maxTileOffset);
+			initialTileOffset = MathUtils::min(maxTileOffset, initialTileOffset);
+		}
 	//we only have 2 segments so the other rail is just the end segment that complements this
 	} else
 		lastEnd->spriteHorizontalIndex = endSegmentSpriteHorizontalIndex(end->x - lastEnd->x, end->y - lastEnd->y);
@@ -145,6 +149,19 @@ void MapState::Rail::renderSegment(int screenLeftWorldX, int screenTopWorldY, fl
 	GLint drawTopY = (GLint)(topWorldY - screenTopWorldY);
 	char topTileHeight = getHeight(segment.x, topWorldY / tileSize);
 	char bottomTileHeight = getHeight(segment.x, bottomTileY);
+
+	#ifdef EDITOR
+		if (&segment == &segments->front() || &segment == &segments->back())
+			SpriteSheet::renderFilledRectangle(
+				(color == 0 || color == 3) ? 0.75f : 0.0f,
+				(color == 2 || color == 3) ? 0.75f : 0.0f,
+				(color == 1 || color == 3) ? 0.75f : 0.0f,
+				0.75f,
+				drawLeftX + 1,
+				drawTopY + 1,
+				drawLeftX + 5,
+				drawTopY + 5);
+	#endif
 	//this segment is completely visible
 	if (bottomTileHeight == emptySpaceHeight
 			|| bottomTileHeight <= baseHeight - (char)((pixelOffset + tileSize - 1) / tileSize) * 2)
@@ -164,17 +181,6 @@ void MapState::Rail::renderSegment(int screenLeftWorldX, int screenTopWorldY, fl
 			drawTopY + (GLint)spriteHeight);
 	}
 	#ifdef EDITOR
-		drawTopY = (GLint)(segment.y * tileSize - screenTopWorldY);
-		SpriteSheet::renderFilledRectangle(
-			(color == 0 || color == 3) ? 0.75f : 0.0f,
-			(color == 2 || color == 3) ? 0.75f : 0.0f,
-			(color == 1 || color == 3) ? 0.75f : 0.0f,
-			0.75f,
-			drawLeftX + 1,
-			drawTopY + 1,
-			drawLeftX + 5,
-			drawTopY + 5);
-		SpriteRegistry::rails->renderSpriteAtScreenPosition(segment.spriteHorizontalIndex, 0, drawLeftX, drawTopY);
 		if (groups.size() > 0) {
 			Editor::renderGroupRect(groups[groupIndexToRender], drawLeftX + 2, drawTopY + 2, drawLeftX + 4, drawTopY + 4);
 			glEnable(GL_BLEND);
@@ -207,17 +213,25 @@ void MapState::Rail::renderSegment(int screenLeftWorldX, int screenTopWorldY, fl
 				maxTileOffset = MathUtils::min(segment.maxTileOffset, maxTileOffset);
 		}
 	}
+	//adjust the initial tile offset of this rail if we're clicking on one of its end segments
+	void MapState::Rail::adjustInitialTileOffset(int x, int y, char tileOffset) {
+		Segment& start = segments->front();
+		Segment& end = segments->back();
+		if ((x == start.x && y == start.y) || (x == end.x && y == end.y))
+			initialTileOffset = MathUtils::max(0, MathUtils::min(maxTileOffset, initialTileOffset + tileOffset));
+	}
 	//we're saving this rail to the floor file, get the data we need at this tile
 	char MapState::Rail::getFloorSaveData(int x, int y) {
 		Segment& start = segments->front();
 		if (x == start.x && y == start.y)
-			//TODO: rail starting offset
-			return (color << floorRailSwitchHeadDataShift) | floorRailHeadValue;
+			return (color << floorRailSwitchColorDataShift)
+				| (initialTileOffset << floorRailInitialTileOffsetDataShift)
+				| floorRailHeadValue;
 		else {
 			for (int i = 1; i - 1 < (int)groups.size() && i < (int)segments->size(); i++) {
 				Segment& segment = (*segments)[i];
 				if (segment.x == x && segment.y == y)
-					return groups[i - 1] << floorRailSwitchTailDataShift | floorIsRailSwitchBitmask;
+					return groups[i - 1] << floorRailSwitchGroupDataShift | floorIsRailSwitchBitmask;
 			}
 		}
 		//no data but still part of this rail
@@ -247,7 +261,7 @@ void MapState::Switch::render(int screenLeftWorldX, int screenTopWorldY, bool is
 		if (isDeleted)
 			return;
 	#else
-		//group 0 is the turn-on-all-switches switch, don't render it unless we're in the editor
+		//group 0 is the turn-on-all-switches switch, don't render it if we're not in the editor
 		if (group == 0)
 			return;
 	#endif
@@ -265,10 +279,10 @@ void MapState::Switch::render(int screenLeftWorldX, int screenTopWorldY, bool is
 	char MapState::Switch::getFloorSaveData(int x, int y) {
 		//head byte, write our color
 		if (x == leftX && y == topY)
-			return (color << floorRailSwitchHeadDataShift) | floorSwitchHeadValue;
+			return (color << floorRailSwitchColorDataShift) | floorSwitchHeadValue;
 		//tail byte, write our number
 		else if (x == leftX + 1&& y == topY)
-			return (group << floorRailSwitchTailDataShift) | floorIsRailSwitchBitmask;
+			return (group << floorRailSwitchGroupDataShift) | floorIsRailSwitchBitmask;
 		//no data but still part of this switch
 		else
 			return floorIsRailSwitchBitmask;
@@ -276,13 +290,20 @@ void MapState::Switch::render(int screenLeftWorldX, int screenTopWorldY, bool is
 #endif
 
 //////////////////////////////// MapState::RailState ////////////////////////////////
-MapState::RailState::RailState(objCounterParametersComma() Rail* pRail, char initialTileOffset)
+MapState::RailState::RailState(objCounterParametersComma() Rail* pRail)
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
 rail(pRail)
-, tileOffset((float)initialTileOffset) {
+, tileOffset((float)pRail->getInitialTileOffset()) {
 }
 MapState::RailState::~RailState() {
 	//don't delete the rail, it's owned by MapState
+}
+//check if we need to start/stop moving
+void MapState::RailState::updateWithPreviousRailState(RailState* prev, int ticksTime) {
+	//TODO: DynamicValue for tile offset
+	#ifdef EDITOR
+		tileOffset = (float)rail->getInitialTileOffset();
+	#endif
 }
 //render the rail
 void MapState::RailState::render(int screenLeftWorldX, int screenTopWorldY, bool renderShadow) {
@@ -297,6 +318,10 @@ switch0(pSwitch0)
 }
 MapState::SwitchState::~SwitchState() {
 	//don't delete the switch, it's owned by MapState
+}
+//activate rails if this switch was kicked
+void MapState::SwitchState::updateWithPreviousSwitchState(SwitchState* prev, int ticksTime) {
+	//TODO: handle getting kicked
 }
 //render the switch
 void MapState::SwitchState::render(int screenLeftWorldX, int screenTopWorldY) {
@@ -320,8 +345,7 @@ MapState::MapState(objCounterParameters())
 , railStates()
 , switchStates() {
 	for (Rail* rail : rails)
-		//TODO: put the initial position of the rail
-		railStates.push_back(newRailState(rail, 0));
+		railStates.push_back(newRailState(rail));
 	for (Switch* switch0 : switches)
 		switchStates.push_back(newSwitchState(switch0));
 }
@@ -377,16 +401,15 @@ void MapState::buildMap() {
 		//	bit 1: 1 (indicates head byte)
 		//	bit 2 indicates rail (0) vs switch (1)
 		//	bits 3-4: color (R/B/G/W)
-		//	rail bit 5: vertical starting position
-		//	bit 7 must be 0 to indicate that this is not a strictly-empty tile
+		//	rail bits 5-7: initial tile offset
 		//tail byte 2+:
 		//	bit 1: 0 (indicates tail byte)
 		//	bits 2-7: group number
-		char color = (railSwitchValue >> floorRailSwitchHeadDataShift) & floorRailSwitchColorPostShiftBitmask;
+		char color = (railSwitchValue >> floorRailSwitchColorDataShift) & floorRailSwitchColorPostShiftBitmask;
 		//switches have only 2 bytes, head byte 1 at its top-left tile, and tail byte 2 at its top-right tile
 		if ((railSwitchValue & floorIsSwitchBitmask) != 0) {
 			char switchByte2 = (char)((pixels[i + 1] & redMask) >> redShift);
-			char group = (switchByte2 >> floorRailSwitchTailDataShift) & floorRailSwitchGroupPostShiftBitmask;
+			char group = (switchByte2 >> floorRailSwitchGroupDataShift) & floorRailSwitchGroupPostShiftBitmask;
 			short newSwitchId = (short)switches.size() | switchIdBitmask;
 			//add the switch and set all the ids
 			switches.push_back(newSwitch(i % width, i / width, color, group));
@@ -398,14 +421,16 @@ void MapState::buildMap() {
 		//rails can extend in any direction after this head byte tile
 		} else {
 			short newRailId = (short)rails.size() | railIdBitmask;
-			Rail* rail = newRail(i % width, i / width, heights[i], color);
+			char initialTileOffset =
+				(railSwitchValue >> floorRailInitialTileOffsetDataShift) & floorRailInitialTileOffsetPostShiftBitmask;
+			Rail* rail = newRail(i % width, i / width, heights[i], color, initialTileOffset);
 			rails.push_back(rail);
 			railSwitchIds[i] = newRailId;
 			int railI = i;
 			//cache shift values so that we can iterate the floor data quicker
 			int floorIsRailSwitchAndHeadShiftedBitmask = floorIsRailSwitchAndHeadBitmask << redShift;
 			int floorRailSwitchTailShiftedValue = floorIsRailSwitchBitmask << redShift;
-			int floorRailGroupShiftedShift = redShift + floorRailSwitchTailDataShift;
+			int floorRailGroupShiftedShift = redShift + floorRailSwitchGroupDataShift;
 			while (true) {
 				if ((pixels[railI + 1] & floorIsRailSwitchAndHeadShiftedBitmask) == floorRailSwitchTailShiftedValue
 						&& railSwitchIds[railI + 1] == 0)
@@ -468,11 +493,14 @@ void MapState::setIntroAnimationBootTile(bool startingAnimation) {
 }
 //update the rails and switches
 void MapState::updateWithPreviousMapState(MapState* prev, int ticksTime) {
+	for (int i = 0; i < (int)railStates.size(); i++)
+		railStates[i]->updateWithPreviousRailState(prev->railStates[i], ticksTime);
+	for (int i = 0; i < (int)switchStates.size(); i++)
+		switchStates[i]->updateWithPreviousSwitchState(prev->switchStates[i], ticksTime);
 	#ifdef EDITOR
 		//since the editor can add switches and rails, make sure we update our list to track them
 		while (railStates.size() < rails.size())
-			//TODO: rail initial position
-			railStates.push_back(newRailState(rails[railStates.size()], 0));
+			railStates.push_back(newRailState(rails[railStates.size()]));
 		while (switchStates.size() < switches.size())
 			switchStates.push_back(newSwitchState(switches[switchStates.size()]));
 	#endif
@@ -514,7 +542,7 @@ void MapState::render(EntityState* camera, char playerZ, int ticksTime) {
 	for (RailState* railState : railStates)
 		railState->render(screenLeftWorldX, screenTopWorldY, true);
 	for (RailState* railState : railStates) {
-		if (railState->getEffectiveHeight() <= playerZ)
+		if (!railState->isAbovePlayerZ(playerZ))
 			railState->render(screenLeftWorldX, screenTopWorldY, false);
 	}
 	for (SwitchState* switchState : switchStates)
@@ -530,7 +558,7 @@ void MapState::renderRailsAbovePlayer(EntityState* camera, char playerZ, int tic
 	int screenLeftWorldX = getScreenLeftWorldX(camera, ticksTime);
 	int screenTopWorldY = getScreenTopWorldY(camera, ticksTime);
 	for (RailState* railState : railStates) {
-		if (railState->getEffectiveHeight() > playerZ)
+		if (railState->isAbovePlayerZ(playerZ))
 			railState->render(screenLeftWorldX, screenTopWorldY, false);
 	}
 }
@@ -667,9 +695,15 @@ void MapState::renderRailsAbovePlayer(EntityState* camera, char playerZ, int tic
 			//add a new rail here
 			} else {
 				railSwitchIds[railSwitchIndex] = (short)rails.size() | railIdBitmask;
-				rails.push_back(newRail(x, y, getHeight(x, y), color));
+				rails.push_back(newRail(x, y, getHeight(x, y), color, 0));
 			}
 		}
+	}
+	//adjust the tile offset of the rail here, if there is one
+	void MapState::adjustRailInitialTileOffset(int x, int y, char tileOffset) {
+		int railSwitchId = getRailSwitchId(x, y);
+		if ((railSwitchId & railIdBitmask) != 0)
+			rails[railSwitchId & railSwitchIndexBitmask]->adjustInitialTileOffset(x, y, tileOffset);
 	}
 	//check if we're saving a rail or switch to the floor file, and if so get the data we need at this tile
 	char MapState::getRailSwitchFloorSaveData(int x, int y) {
