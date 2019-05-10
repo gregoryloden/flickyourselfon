@@ -123,16 +123,7 @@
 		int mapWidth = MapState::mapWidth();
 		int mapHeight = MapState::mapHeight();
 
-		SDL_Surface* floorSurface =
-			SDL_CreateRGBSurface(
-				0,
-				mapWidth,
-				mapHeight,
-				32,
-				0xFF0000,
-				0xFF00,
-				0xFF,
-				0xFF000000);
+		SDL_Surface* floorSurface = SDL_CreateRGBSurface(0, mapWidth, mapHeight, 32, 0xFF0000, 0xFF00, 0xFF, 0xFF000000);
 		SDL_Renderer* floorRenderer = SDL_CreateSoftwareRenderer(floorSurface);
 
 		for (int mapY = 0; mapY < mapHeight; mapY++) {
@@ -140,7 +131,7 @@
 				char height = MapState::getHeight(mapX, mapY);
 				char railSwitchData = (Uint8)MapState::getRailSwitchFloorSaveData(mapX, mapY);
 				if (height == MapState::emptySpaceHeight)
-					//if we don't have a rail/witch, use 254 for red since bit 0 indicates a rail/switch
+					//if we don't have a rail/switch, use 254 for red since bit 0 indicates a rail/switch
 					SDL_SetRenderDrawColor(floorRenderer, railSwitchData != 0 ? railSwitchData : 254, 255, 255, 255);
 				else {
 					char tile = MapState::getTile(mapX, mapY);

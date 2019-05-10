@@ -130,6 +130,7 @@ public:
 	EntityAnimation(objCounterParameters());
 	~EntityAnimation();
 
+	int getLastUpdateTicksTime() { return lastUpdateTicksTime; }
 	static EntityAnimation* produce(
 		objCounterParametersComma() int pStartTicksTime, vector<ReferenceCounterHolder<Component>> pComponents);
 	virtual void release();

@@ -86,7 +86,7 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 			case SDL_KEYDOWN:
 				#ifndef EDITOR
 					if (gameEvent.key.keysym.scancode == Config::keyBindings.kickKey) {
-						playerState.get()->beginKicking(gameTicksTime);
+						playerState.get()->beginKicking(mapState.get(), gameTicksTime);
 						break;
 					}
 				#endif

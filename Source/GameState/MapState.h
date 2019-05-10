@@ -5,9 +5,9 @@
 class EntityState;
 
 class MapState: public PooledReferenceCounter {
-private:
+public:
 	class Rail onlyInDebug(: public ObjCounter) {
-	private:
+	public:
 		//Should only be allocated within an object, on the stack, or as a static object
 		class Segment {
 		public:
@@ -22,6 +22,7 @@ private:
 			~Segment();
 		};
 
+	private:
 		char baseHeight;
 		char color;
 		vector<Segment>* segments;
@@ -42,6 +43,8 @@ private:
 		char getColor() { return color; }
 		char getInitialTileOffset() { return initialTileOffset; }
 		char getMaxTileOffset() { return maxTileOffset; }
+		int getSegmentCount() { return (int)(segments->size()); }
+		Segment* getSegment(int i) { return &(*segments)[i]; }
 		static int endSegmentSpriteHorizontalIndex(int xExtents, int yExtents);
 		void reverseSegments();
 		void addGroup(char group);
@@ -88,6 +91,8 @@ private:
 		~RailState();
 
 		// say the last 1/2 tile of offset is below the player
+		Rail* getRail() { return rail; }
+		bool canRide() { return tileOffset == 0.0f; }
 		bool isAbovePlayerZ(char z) { return rail->getBaseHeight() - (char)(tileOffset + 0.5f) * 2 > z; }
 		void updateWithPreviousRailState(RailState* prev, int ticksTime);
 		void render(int screenLeftWorldX, int screenTopWorldY, bool renderShadow);
@@ -105,7 +110,6 @@ private:
 		void render(int screenLeftWorldX, int screenTopWorldY);
 	};
 
-public:
 	static const int tileCount = 64; // tile = green / 4
 	static const int tileDivisor = 256 / tileCount;
 	static const int heightCount = 16; // height = blue / 16
@@ -163,7 +167,9 @@ public:
 	static int mapWidth() { return width; }
 	static int mapHeight() { return height; }
 	static bool tileHasRailOrSwitch(int x, int y) { return getRailSwitchId(x, y) != 0; }
+	static bool tileHasRail(int x, int y) { return (getRailSwitchId(x, y) & railIdBitmask) != 0; }
 	static bool tileHasSwitch(int x, int y) { return (getRailSwitchId(x, y) & switchIdBitmask) != 0; }
+	RailState* getRailState(int x, int y) { return railStates[getRailSwitchId(x, y) & railSwitchIndexBitmask]; }
 	#ifdef EDITOR
 		static void setTile(int x, int y, char tile) { tiles[y * width + x] = tile; }
 		static void setHeight(int x, int y, char height) { heights[y * width + x] = height; }

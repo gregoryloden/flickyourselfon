@@ -7,6 +7,7 @@
 #include "Sprites/SpriteRegistry.h"
 #include "Sprites/SpriteSheet.h"
 #include "Util/Config.h"
+#include "Util/Logger.h"
 #include "Util/StringUtils.h"
 
 #ifdef DEBUG
@@ -19,10 +20,12 @@ const float PlayerState::boundingBoxLeftOffset = PlayerState::playerWidth * -0.5
 const float PlayerState::boundingBoxRightOffset = PlayerState::boundingBoxLeftOffset + PlayerState::playerWidth;
 const float PlayerState::boundingBoxTopOffset = 4.5f;
 const float PlayerState::boundingBoxBottomOffset = PlayerState::boundingBoxTopOffset + PlayerState::playerHeight;
+const float PlayerState::boundingBoxCenterYOffset = PlayerState::boundingBoxTopOffset + PlayerState::playerHeight * 0.5f;
 const float PlayerState::introAnimationPlayerCenterX = 70.5f;
 const float PlayerState::introAnimationPlayerCenterY = 106.5f;
 const float PlayerState::speedPerSecond = 40.0f;
 const float PlayerState::diagonalSpeedPerSecond = speedPerSecond * sqrt(0.5f);
+const float PlayerState::kickingDistanceLimit = 1.5f;
 const string PlayerState::playerXFilePrefix = "playerX ";
 const string PlayerState::playerYFilePrefix = "playerY ";
 const string PlayerState::playerZFilePrefix = "playerZ ";
@@ -311,7 +314,7 @@ void PlayerState::updateSpriteWithPreviousPlayerState(PlayerState* prev, int tic
 }
 //if we don't have a kicking animation, start one
 //this should be called after the player has been updated
-void PlayerState::beginKicking(int ticksTime) {
+void PlayerState::beginKicking(MapState* mapState, int ticksTime) {
 	if (entityAnimation.get() != nullptr)
 		return;
 
@@ -320,32 +323,11 @@ void PlayerState::beginKicking(int ticksTime) {
 	renderInterpolatedX = true;
 	renderInterpolatedY = true;
 
-	SpriteAnimation* kickingSpriteAnimation = hasBoot
-		? SpriteRegistry::playerKickingAnimation
-		: SpriteRegistry::playerLegLiftAnimation;
-	int kickingDuration = kickingSpriteAnimation->getTotalTicksDuration();
-	vector<ReferenceCounterHolder<EntityAnimation::Component>> kickingAnimationComponents ({
-		newEntityAnimationSetVelocity(
-			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f), newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)),
-		newEntityAnimationSetSpriteAnimation(kickingSpriteAnimation)
-	});
-
 	//kicking doesn't do anything if you don't have the boot
-	//add the delay for the animation and then return
 	if (!hasBoot) {
-		kickingAnimationComponents.push_back(newEntityAnimationDelay(kickingDuration));
-		entityAnimation.set(newEntityAnimation(ticksTime, kickingAnimationComponents));
-		entityAnimation.get()->update(this, ticksTime);
+		kickAir(ticksTime);
 		return;
 	}
-
-	//only kick something if you're less than this distance from it
-	//visually, you have to be 1 pixel away or closer
-	const float kickingDistanceLimit = 1.5f;
-
-	//we are kicking, start by delaying until the leg-sticking-out frame
-	kickingAnimationComponents.push_back(newEntityAnimationDelay(SpriteRegistry::playerKickingAnimationTicksPerFrame));
-	kickingDuration -= SpriteRegistry::playerKickingAnimationTicksPerFrame;
 
 	//check if we're climbing, falling, or kicking a switch
 	float xPosition = x.get()->getValue(0);
@@ -354,53 +336,21 @@ void PlayerState::beginKicking(int ticksTime) {
 	int highMapX = (int)(xPosition + boundingBoxRightOffset) / MapState::tileSize;
 
 	if (spriteDirection == SpriteDirection::Up) {
+		int railMapX = (int)xPosition / MapState::tileSize;
+		int railMapY = (int)(yPosition + boundingBoxTopOffset) / MapState::tileSize;
+		if (kickRail(mapState, railMapX, railMapY, ticksTime))
+			return;
+
 		int oneTileUpMapY = (int)(yPosition + boundingBoxTopOffset - kickingDistanceLimit) / MapState::tileSize;
 		char oneTileUpHeight = MapState::horizontalTilesHeight(lowMapX, highMapX, oneTileUpMapY);
 		if (oneTileUpHeight != MapState::invalidHeight) {
 			//we found a floor to fall to
 			if (oneTileUpHeight < z && (oneTileUpHeight & 1) == 0) {
-				//move a distance such that the bottom of the player is slightly past the edge of the cliff
+				//move a distance such that the bottom of the player is slightly above the top of the cliff
 				float targetYPosition =
 					(float)((oneTileUpMapY + 1) * MapState::tileSize) - boundingBoxBottomOffset - MapState::smallDistance;
-				float moveDistance = targetYPosition - yPosition;
-				//we want a cubic curve that goes through (0,0) and (1,1) and a chosen midpoint (i,j) where 0 < i < 1
-				//it also goes through (c,#) such that dy/dt has roots at c (trough) and i (crest)
-				//vy = d(t-c)(t-i) = d(t^2-(c+i)t+ci)   (d < 0)
-				//y = d(t^3/3-(c+i)t^2/2+cit) = dt^3/3-d(c+i)t^2/2+dcit
-				//1 = d(1^3/3-(c+i)1^2/2+ci1) = d(1/3-(c+i)/2+ci)
-				//	d = 1/(1/3-(c+i)/2+ci) = 6/(2-3c-3i+6ci)
-				//j = d(i^3/3-(c+i)i^2/2+cii) = d(i^3/3-ci^2/2-i^3/2+ci^2) = d(-i^3/6+ci^2/2)
-				//	d = j/(-i^3/6+ci^2/2) = 6j/(-i^3+3ci^2)
-				//solve for c:
-				//6/(2-3c-3i+6ci) = 6j/(-i^3+3ci^2)
-				//	6(-i^3+3ci^2) = 6j(2-3c-3i+6ci)
-				//	-i^3+3ci^2 = j(2-3c-3i+6ci) = 2j-3jc-3ji+6jci
-				//	2j-3ji+i^3 = 3ci^2+3jc-6jci = c(3i^2+3j-6ji)
-				//	c = (2j-3ji+i^3)/(3i^2+3j-6ji)
-				const float midpointX = 2.0f / 3.0f;
-				const float midpointY = 2.0f;
-				const float troughX =
-					(2.0f * midpointY - 3.0f * midpointY * midpointX + midpointX * midpointX * midpointX)
-						/ (3.0f * midpointX * midpointX + 3.0f * midpointY - 6.0f * midpointY * midpointX);
-				float yMultiplier =
-					6.0f / (2.0f - 3.0f * troughX - 3.0f * midpointX + 6.0f * troughX * midpointX) * moveDistance;
-
-				float linearValuePerDuration = yMultiplier * troughX * midpointX;
-				float quadraticValuePerDuration = -yMultiplier * (troughX + midpointX) / 2.0f;
-				float cubicValuePerDuration = yMultiplier / 3.0f;
-
-				float floatKickingDuration = (float)kickingDuration;
-				float kickingDurationSquared = floatKickingDuration * floatKickingDuration;
-				kickingAnimationComponents.push_back(
-					newEntityAnimationSetVelocity(
-						newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
-						newCompositeQuarticValue(
-							0.0f,
-							linearValuePerDuration / floatKickingDuration,
-							quadraticValuePerDuration / kickingDurationSquared,
-							cubicValuePerDuration / (kickingDurationSquared * floatKickingDuration),
-							0.0f)));
-				z = oneTileUpHeight;
+				kickFall(0.0f, targetYPosition - yPosition, oneTileUpHeight, ticksTime);
+				return;
 			//we found a ledge to climb up
 			} else if (oneTileUpHeight == z + 1
 				&& MapState::horizontalTilesHeight(lowMapX, highMapX, oneTileUpMapY - 1) == z + 2)
@@ -408,27 +358,17 @@ void PlayerState::beginKicking(int ticksTime) {
 				//move a distance such that the bottom of the player is slightly past the edge of the ledge
 				float targetYPosition =
 					(float)(oneTileUpMapY * MapState::tileSize) - boundingBoxBottomOffset - MapState::smallDistance;
-				float moveDistance = targetYPosition - yPosition;
-
-				float cubicValuePerDuration = moveDistance / 2.0f;
-				float quarticValuePerDuration = moveDistance / 2.0f;
-
-				float floatKickingDuration = (float)kickingDuration;
-				float kickingDurationCubed = floatKickingDuration * floatKickingDuration * floatKickingDuration;
-				kickingAnimationComponents.push_back(
-					newEntityAnimationSetVelocity(
-						newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
-						newCompositeQuarticValue(
-							0.0f,
-							0.0f,
-							0.0f,
-							cubicValuePerDuration / kickingDurationCubed,
-							quarticValuePerDuration / (kickingDurationCubed * floatKickingDuration))));
-				z += 2;
+				kickClimb(targetYPosition - yPosition, ticksTime);
+				return;
 			}
 		}
 		//TODO: check if we're kicking a switch north
 	} else if (spriteDirection == SpriteDirection::Down) {
+		int railMapX = (int)xPosition / MapState::tileSize;
+		int railMapY = (int)(yPosition + boundingBoxBottomOffset) / MapState::tileSize;
+		if (kickRail(mapState, railMapX, railMapY, ticksTime))
+			return;
+
 		int oneTileDownMapY = (int)(yPosition + boundingBoxBottomOffset + kickingDistanceLimit) / MapState::tileSize;
 		char fallHeight = MapState::invalidHeight;
 		int tileOffset = 0;
@@ -451,25 +391,11 @@ void PlayerState::beginKicking(int ticksTime) {
 		}
 		//fall if we can
 		if (fallHeight != MapState::invalidHeight) {
-			//move a distance such that the bottom of the player is slightly past the edge of the cliff
+			//move a distance such that the bottom of the player is slightly below the bottom of the cliff
 			float targetYPosition =
 				(float)((oneTileDownMapY + tileOffset) * MapState::tileSize) - boundingBoxTopOffset + MapState::smallDistance;
-			float moveDistance = targetYPosition - yPosition;
-
-			float linearValuePerDuration = -moveDistance;
-			float quadraticValuePerDuration = moveDistance * 2.0f;
-
-			float floatKickingDuration = (float)kickingDuration;
-			kickingAnimationComponents.push_back(
-				newEntityAnimationSetVelocity(
-					newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
-					newCompositeQuarticValue(
-						0.0f,
-						linearValuePerDuration / floatKickingDuration,
-						quadraticValuePerDuration / (floatKickingDuration * floatKickingDuration),
-						0.0f,
-						0.0f)));
-			z = fallHeight;
+			kickFall(0.0f, targetYPosition - yPosition, fallHeight, ticksTime);
+			return;
 		}
 	} else {
 		int sideTilesLeftMapX;
@@ -483,6 +409,14 @@ void PlayerState::beginKicking(int ticksTime) {
 			sideTilesLeftMapX = (int)sideTilesLeftXPosition / MapState::tileSize;
 			sideTilesRightMapX = (int)(sideTilesLeftXPosition + playerWidth) / MapState::tileSize;
 		}
+
+		int railMapX =
+			(int)(xPosition + (spriteDirection == SpriteDirection::Left ? boundingBoxLeftOffset : boundingBoxRightOffset))
+				/ MapState::tileSize;
+		int railMapY = (int)(yPosition + boundingBoxCenterYOffset) / MapState::tileSize;
+		if (kickRail(mapState, railMapX, railMapY, ticksTime))
+			return;
+
 		int bottomMapY = (int)(yPosition + boundingBoxBottomOffset) / MapState::tileSize;
 		int tileOffset = 1;
 		char fallHeight = MapState::invalidHeight;
@@ -515,34 +449,182 @@ void PlayerState::beginKicking(int ticksTime) {
 			float targetXPosition = spriteDirection == SpriteDirection::Left
 				? (float)((sideTilesRightMapX + 1) * MapState::tileSize) - boundingBoxRightOffset - MapState::smallDistance
 				: (float)(sideTilesLeftMapX * MapState::tileSize) - boundingBoxLeftOffset + MapState::smallDistance;
-			float xMoveDistance = targetXPosition - xPosition;
-			float yMoveDistance = (float)(tileOffset * MapState::tileSize);
-
-			const float yLinearValuePerDuration = -yMoveDistance;
-			const float yQuadraticValuePerDuration = yMoveDistance * 2.0f;
-
-			float floatKickingDuration = (float)kickingDuration;
-			kickingAnimationComponents.push_back(
-				newEntityAnimationSetVelocity(
-					newCompositeQuarticValue(0.0f, xMoveDistance / floatKickingDuration, 0.0f, 0.0f, 0.0f),
-					newCompositeQuarticValue(
-						0.0f,
-						yLinearValuePerDuration / floatKickingDuration,
-						yQuadraticValuePerDuration / (floatKickingDuration * floatKickingDuration),
-						0.0f,
-						0.0f)));
-			z = fallHeight;
+			kickFall(targetXPosition - xPosition, (float)(tileOffset * MapState::tileSize), fallHeight, ticksTime);
+			return;
 		}
 		//TODO: check if we're kicking a switch to the side
 	}
 
+	//we didn't do anything with the kick, just play the animation
+	kickAir(ticksTime);
+}
+//begin a kicking animation without changing any state
+void PlayerState::kickAir(int ticksTime) {
+	SpriteAnimation* kickingSpriteAnimation = hasBoot
+		? SpriteRegistry::playerKickingAnimation
+		: SpriteRegistry::playerLegLiftAnimation;
+	beginEntityAnimation(
+		newEntityAnimation(
+			ticksTime,
+			{
+				newEntityAnimationSetVelocity(
+					newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
+					newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)) COMMA
+				newEntityAnimationSetSpriteAnimation(kickingSpriteAnimation) COMMA
+				newEntityAnimationDelay(kickingSpriteAnimation->getTotalTicksDuration())
+			}),
+		ticksTime);
+}
+//begin a kicking animation and climb up to the next tile to the north
+void PlayerState::kickClimb(float yMoveDistance, int ticksTime) {
+	//start by stopping the player and delaying until the leg-sticking-out frame
+	vector<ReferenceCounterHolder<EntityAnimation::Component>> kickingAnimationComponents({
+		newEntityAnimationSetVelocity(
+			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
+			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)) COMMA
+		newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerKickingAnimation) COMMA
+		newEntityAnimationDelay(SpriteRegistry::playerKickingAnimationTicksPerFrame)
+	});
+
+	int moveDuration =
+		SpriteRegistry::playerKickingAnimation->getTotalTicksDuration() - SpriteRegistry::playerKickingAnimationTicksPerFrame;
+	float floatMoveDuration = (float)moveDuration;
+	float moveDurationCubed = floatMoveDuration * floatMoveDuration * floatMoveDuration;
+
+	float yCubicValuePerDuration = yMoveDistance / 2.0f;
+	float yQuarticValuePerDuration = yMoveDistance / 2.0f;
+
+	kickingAnimationComponents.push_back(
+		newEntityAnimationSetVelocity(
+			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
+			newCompositeQuarticValue(
+				0.0f,
+				0.0f,
+				0.0f,
+				yCubicValuePerDuration / moveDurationCubed,
+				yQuarticValuePerDuration / (moveDurationCubed * floatMoveDuration))));
+
 	//delay for the rest of the animation and then stop the player
-	kickingAnimationComponents.push_back(newEntityAnimationDelay(SpriteRegistry::playerKickingAnimationTicksPerFrame * 2));
+	kickingAnimationComponents.push_back(newEntityAnimationDelay(moveDuration));
 	kickingAnimationComponents.push_back(
 		newEntityAnimationSetVelocity(
 			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f), newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)));
 
 	beginEntityAnimation(newEntityAnimation(ticksTime, kickingAnimationComponents), ticksTime);
+	z += 2;
+}
+//begin a kicking animation and fall in whatever direction we're facing
+void PlayerState::kickFall(float xMoveDistance, float yMoveDistance, char fallHeight, int ticksTime) {
+	//start by stopping the player and delaying until the leg-sticking-out frame
+	vector<ReferenceCounterHolder<EntityAnimation::Component>> kickingAnimationComponents({
+		newEntityAnimationSetVelocity(
+			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
+			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)) COMMA
+		newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerKickingAnimation) COMMA
+		newEntityAnimationDelay(SpriteRegistry::playerKickingAnimationTicksPerFrame)
+	});
+
+	int moveDuration =
+		SpriteRegistry::playerKickingAnimation->getTotalTicksDuration() - SpriteRegistry::playerKickingAnimationTicksPerFrame;
+	float floatMoveDuration = (float)moveDuration;
+	float moveDurationSquared = floatMoveDuration * floatMoveDuration;
+
+	if (spriteDirection == SpriteDirection::Up) {
+		//we want a cubic curve that goes through (0,0) and (1,1) and a chosen midpoint (i,j) where 0 < i < 1
+		//it also goes through (c,#) such that dy/dt has roots at c (trough) and i (crest)
+		//vy = d(t-c)(t-i) = d(t^2-(c+i)t+ci)   (d < 0)
+		//y = d(t^3/3-(c+i)t^2/2+cit) = dt^3/3-d(c+i)t^2/2+dcit
+		//1 = d(1^3/3-(c+i)1^2/2+ci1) = d(1/3-(c+i)/2+ci)
+		//	d = 1/(1/3-(c+i)/2+ci) = 6/(2-3c-3i+6ci)
+		//j = d(i^3/3-(c+i)i^2/2+cii) = d(i^3/3-ci^2/2-i^3/2+ci^2) = d(-i^3/6+ci^2/2)
+		//	d = j/(-i^3/6+ci^2/2) = 6j/(-i^3+3ci^2)
+		//solve for c:
+		//6/(2-3c-3i+6ci) = 6j/(-i^3+3ci^2)
+		//	6(-i^3+3ci^2) = 6j(2-3c-3i+6ci)
+		//	-i^3+3ci^2 = j(2-3c-3i+6ci) = 2j-3jc-3ji+6jci
+		//	2j-3ji+i^3 = 3ci^2+3jc-6jci = c(3i^2+3j-6ji)
+		//	c = (2j-3ji+i^3)/(3i^2+3j-6ji)
+		const float midpointX = 2.0f / 3.0f;
+		const float midpointY = 2.0f;
+		const float troughX =
+			(2.0f * midpointY - 3.0f * midpointY * midpointX + midpointX * midpointX * midpointX)
+				/ (3.0f * midpointX * midpointX + 3.0f * midpointY - 6.0f * midpointY * midpointX);
+		float yMultiplier =
+			6.0f / (2.0f - 3.0f * troughX - 3.0f * midpointX + 6.0f * troughX * midpointX) * yMoveDistance;
+
+		float yLinearValuePerDuration = yMultiplier * troughX * midpointX;
+		float yQuadraticValuePerDuration = -yMultiplier * (troughX + midpointX) / 2.0f;
+		float yCubicValuePerDuration = yMultiplier / 3.0f;
+
+		kickingAnimationComponents.push_back(
+			newEntityAnimationSetVelocity(
+				newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
+				newCompositeQuarticValue(
+					0.0f,
+					yLinearValuePerDuration / floatMoveDuration,
+					yQuadraticValuePerDuration / moveDurationSquared,
+					yCubicValuePerDuration / (moveDurationSquared * floatMoveDuration),
+					0.0f)));
+	//left, right, and down all have the same quadratic jump trajectory
+	} else {
+		const float yLinearValuePerDuration = -yMoveDistance;
+		const float yQuadraticValuePerDuration = yMoveDistance * 2.0f;
+
+		kickingAnimationComponents.push_back(
+			newEntityAnimationSetVelocity(
+				newCompositeQuarticValue(0.0f, xMoveDistance / floatMoveDuration, 0.0f, 0.0f, 0.0f),
+				newCompositeQuarticValue(
+					0.0f,
+					yLinearValuePerDuration / floatMoveDuration,
+					yQuadraticValuePerDuration / moveDurationSquared,
+					0.0f,
+					0.0f)));
+	}
+
+	//delay for the rest of the animation and then stop the player
+	kickingAnimationComponents.push_back(newEntityAnimationDelay(moveDuration));
+	kickingAnimationComponents.push_back(
+		newEntityAnimationSetVelocity(
+			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f), newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)));
+
+	beginEntityAnimation(newEntityAnimation(ticksTime, kickingAnimationComponents), ticksTime);
+	z = fallHeight;
+}
+//check if we're kicking the end of a rail, and if so, begin a kicking animation and ride it
+bool PlayerState::kickRail(MapState* mapState, int railMapX, int railMapY, int ticksTime) {
+	if (!MapState::tileHasRail(railMapX, railMapY))
+		return false;
+
+	MapState::RailState* railState = mapState->getRailState(railMapX, railMapY);
+	MapState::Rail* rail = railState->getRail();
+	int lastSegmentIndex = rail->getSegmentCount() - 1;
+	MapState::Rail::Segment* startSegment = rail->getSegment(0);
+	MapState::Rail::Segment* endSegment = rail->getSegment(lastSegmentIndex);
+	int segmentStart = 0;
+	int segmentEnd = 0;
+	int segmentIncrement;
+	if (startSegment->x == railMapX && startSegment->y == railMapY) {
+		segmentEnd = lastSegmentIndex;
+		segmentIncrement = 1;
+	} else if (endSegment->x == railMapX && endSegment->y == railMapY) {
+		segmentStart = lastSegmentIndex;
+		segmentIncrement = -1;
+	} else
+		return false;
+
+	//if it's lowered, we can't ride it but don't try to fall
+	if (!railState->canRide()) {
+		kickAir(ticksTime);
+		return true;
+	}
+
+	//TODO: start a rail riding animation
+	return true;
+}
+//begin a kicking animation and flip a switch
+void PlayerState::kickSwitch(int ticksTime) {
+	kickAir(ticksTime);
+	//TODO: toggle the state of the switch
 }
 //render this player state, which was deemed to be the last state to need rendering
 void PlayerState::render(EntityState* camera, int ticksTime) {
