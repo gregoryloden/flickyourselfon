@@ -22,6 +22,8 @@ public:
 	static SpriteAnimation* playerLegLiftAnimation;
 	static SpriteAnimation* playerBootWalkingAnimation;
 	static SpriteAnimation* playerKickingAnimation;
+	static SpriteAnimation* playerBootLiftAnimation;
+	static SpriteAnimation* playerRidingRailAnimation;
 
 	static void loadAll();
 	static void unloadAll();

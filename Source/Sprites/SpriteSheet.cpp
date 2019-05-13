@@ -27,7 +27,7 @@ SpriteSheet* SpriteSheet::produce(
 	objCounterParametersComma() const char* imagePath, int horizontalSpriteCount, int verticalSpriteCount)
 {
 	SDL_Surface* surface = IMG_Load(imagePath);
-	SpriteSheet* spriteSheet = new SpriteSheet(objCounterArgumentsComma() surface, horizontalSpriteCount, verticalSpriteCount);
+	SpriteSheet* spriteSheet = newSpriteSheet(surface, horizontalSpriteCount, verticalSpriteCount);
 	SDL_FreeSurface(surface);
 	return spriteSheet;
 }

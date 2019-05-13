@@ -67,7 +67,7 @@ void MapState::Rail::addGroup(char group) {
 void MapState::Rail::addSegment(int x, int y) {
 	//if we aren't adding at the end, reverse the list before continuing
 	Segment* end = &segments->back();
-	if (MathUtils::abs(y - end->y) + MathUtils::abs(x - end->x) != 1)
+	if (abs(y - end->y) + abs(x - end->x) != 1)
 		reverseSegments();
 
 	//find the tile where the shadow should go

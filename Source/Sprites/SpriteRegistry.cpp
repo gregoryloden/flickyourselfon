@@ -17,6 +17,8 @@ SpriteAnimation* SpriteRegistry::playerWalkingAnimation = nullptr;
 SpriteAnimation* SpriteRegistry::playerLegLiftAnimation = nullptr;
 SpriteAnimation* SpriteRegistry::playerBootWalkingAnimation = nullptr;
 SpriteAnimation* SpriteRegistry::playerKickingAnimation = nullptr;
+SpriteAnimation* SpriteRegistry::playerBootLiftAnimation = nullptr;
+SpriteAnimation* SpriteRegistry::playerRidingRailAnimation = nullptr;
 //load all the sprite sheets
 //this should only be called after the gl context has been created
 void SpriteRegistry::loadAll() {
@@ -56,6 +58,8 @@ void SpriteRegistry::loadAll() {
 			newSpriteAnimationFrame(8, -1, playerKickingAnimationTicksPerFrame) COMMA
 			newSpriteAnimationFrame(7, -1, playerKickingAnimationTicksPerFrame)
 		});
+	playerBootLiftAnimation = newSpriteAnimation(player, { newSpriteAnimationFrame(7, -1, 1) });
+	playerRidingRailAnimation = newSpriteAnimation(player, { newSpriteAnimationFrame(8, -1, 1) });
 }
 //delete all the sprite sheets
 void SpriteRegistry::unloadAll() {
@@ -68,4 +72,6 @@ void SpriteRegistry::unloadAll() {
 	delete playerLegLiftAnimation;
 	delete playerBootWalkingAnimation;
 	delete playerKickingAnimation;
+	delete playerBootLiftAnimation;
+	delete playerRidingRailAnimation;
 }
