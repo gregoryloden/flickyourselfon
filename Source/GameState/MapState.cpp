@@ -72,17 +72,23 @@ void MapState::Rail::addSegment(int x, int y) {
 
 	//find the tile where the shadow should go
 	for (char segmentMaxTileOffset = 0; true; segmentMaxTileOffset++) {
-		char railGroundHeight = baseHeight - (segmentMaxTileOffset * 2);
-		char tileHeight = getHeight(x, y + segmentMaxTileOffset);
-		//keep looking if we haven't gone down to the lowest level
-		//	and we found an empty space tile or a non-empty-space tile that's too low
-		if (railGroundHeight >= 0 && (tileHeight == emptySpaceHeight || tileHeight < railGroundHeight))
-			continue;
-
-		//we ended up on a tile above what would be a ground tile for this rail
-		//this is an empty space or a tile that the rail hides behind, mark that this segment does not have an offset
-		if (tileHeight > railGroundHeight)
+		//in the event we actually went past the bottom of the map, don't try to find the tile height,
+		//	this segment does not have an offset and we're done searching
+		if (y + segmentMaxTileOffset >= height)
 			segmentMaxTileOffset = Segment::absentTileOffset;
+		else {
+			char railGroundHeight = baseHeight - (segmentMaxTileOffset * 2);
+			char tileHeight = getHeight(x, y + segmentMaxTileOffset);
+			//keep looking if we haven't gone down to the lowest level
+			//	and we found an empty space tile or a non-empty-space tile that's too low
+			if (tileHeight == emptySpaceHeight || tileHeight < railGroundHeight)
+				continue;
+
+			//we ended up on a tile above what would be a ground tile for this rail
+			//this is an empty space or a tile that the rail hides behind, mark that this segment does not have an offset
+			if (tileHeight > railGroundHeight)
+				segmentMaxTileOffset = Segment::absentTileOffset;
+		}
 		segments->push_back(Segment(x, y, segmentMaxTileOffset));
 		break;
 	}

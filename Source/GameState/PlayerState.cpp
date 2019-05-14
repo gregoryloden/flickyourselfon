@@ -732,10 +732,10 @@ bool PlayerState::kickRail(MapState* mapState, int railMapX, int railMapY, float
 	float finalXPosition = (float)(nextSegment->x * MapState::tileSize) + halfTileSize;
 	float finalYPosition = (float)(nextSegment->y * MapState::tileSize) + halfTileSize - boundingBoxBottomOffset;
 	if (finalXPosition == targetXPosition + halfTileSize) {
-		finalXPosition += 1.5f;
+		finalXPosition += -halfTileSize - boundingBoxLeftOffset + MapState::smallDistance;
 		finalYPosition += 2.0f;
 	} else if (finalXPosition == targetXPosition - halfTileSize) {
-		finalXPosition -= 1.5f;
+		finalXPosition += halfTileSize - boundingBoxRightOffset - MapState::smallDistance;
 		finalYPosition += 2.0f;
 	} else if (finalYPosition == targetYPosition + halfTileSize) {
 		finalXPosition += 0.5f;

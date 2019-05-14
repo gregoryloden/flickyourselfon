@@ -117,17 +117,18 @@ int main(int argc, char* argv[]) {
 		Text::unloadFont();
 		delete gameStateQueue;
 		MapState::deleteMap();
-		//the order that these object pools are cleared matters since some objects contain other objects
+		//the order that these object pools are cleared matters since some earlier classes in this list contain objects from
+		//	classes later in this list
 		ObjectPool<PlayerState>::clearPool();
 		ObjectPool<MapState>::clearPool();
 		ObjectPool<PauseState>::clearPool();
 		ObjectPool<DynamicCameraAnchor>::clearPool();
 		ObjectPool<EntityAnimation>::clearPool();
 		ObjectPool<EntityAnimation::SetScreenOverlayColor>::clearPool();
+		ObjectPool<EntityAnimation::SetVelocity>::clearPool();
 		ObjectPool<CompositeQuarticValue>::clearPool();
 		ObjectPool<EntityAnimation::Delay>::clearPool();
 		ObjectPool<EntityAnimation::SetPosition>::clearPool();
-		ObjectPool<EntityAnimation::SetVelocity>::clearPool();
 		ObjectPool<EntityAnimation::SetSpriteAnimation>::clearPool();
 		ObjectPool<EntityAnimation::SetSpriteDirection>::clearPool();
 		ObjectPool<EntityAnimation::SwitchToPlayerCamera>::clearPool();
