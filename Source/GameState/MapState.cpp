@@ -686,8 +686,8 @@ void MapState::renderRailsAbovePlayer(EntityState* camera, char playerZ, int tic
 				editingRail->removeGroup(group);
 				editingRail->removeSegment(x, y);
 				railSwitchIds[railSwitchIndex] = 0;
-			//add a segment to the end of this rail
-			} else {
+			//add a segment to the end of this rail, unless it's above the base height of the rail
+			} else if (getHeight(x, y) <= editingRail->getBaseHeight()) {
 				editingRail->addGroup(group);
 				editingRail->addSegment(x, y);
 				railSwitchIds[railSwitchIndex] = editingRailId;

@@ -335,12 +335,10 @@ void PlayerState::beginKicking(MapState* mapState, int ticksTime) {
 	int lowMapX = (int)(xPosition + boundingBoxLeftOffset) / MapState::tileSize;
 	int highMapX = (int)(xPosition + boundingBoxRightOffset) / MapState::tileSize;
 
-	if (spriteDirection == SpriteDirection::Up) {
-		int railMapX = (int)xPosition / MapState::tileSize;
-		int railMapY = (int)(yPosition + boundingBoxTopOffset) / MapState::tileSize;
-		if (kickRail(mapState, railMapX, railMapY, xPosition, yPosition, ticksTime))
-			return;
+	if (kickRail(mapState, xPosition, yPosition, ticksTime) || kickSwitch(mapState, xPosition, yPosition, ticksTime))
+		return;
 
+	if (spriteDirection == SpriteDirection::Up) {
 		int oneTileUpMapY = (int)(yPosition + boundingBoxTopOffset - kickingDistanceLimit) / MapState::tileSize;
 		char oneTileUpHeight = MapState::horizontalTilesHeight(lowMapX, highMapX, oneTileUpMapY);
 		if (oneTileUpHeight != MapState::invalidHeight) {
@@ -364,11 +362,6 @@ void PlayerState::beginKicking(MapState* mapState, int ticksTime) {
 		}
 		//TODO: check if we're kicking a switch north
 	} else if (spriteDirection == SpriteDirection::Down) {
-		int railMapX = (int)xPosition / MapState::tileSize;
-		int railMapY = (int)(yPosition + boundingBoxBottomOffset) / MapState::tileSize;
-		if (kickRail(mapState, railMapX, railMapY, xPosition, yPosition, ticksTime))
-			return;
-
 		int oneTileDownMapY = (int)(yPosition + boundingBoxBottomOffset + kickingDistanceLimit) / MapState::tileSize;
 		char fallHeight = MapState::invalidHeight;
 		int tileOffset = 0;
@@ -409,13 +402,6 @@ void PlayerState::beginKicking(MapState* mapState, int ticksTime) {
 			sideTilesLeftMapX = (int)sideTilesLeftXPosition / MapState::tileSize;
 			sideTilesRightMapX = (int)(sideTilesLeftXPosition + playerWidth) / MapState::tileSize;
 		}
-
-		int railMapX =
-			(int)(xPosition + (spriteDirection == SpriteDirection::Left ? boundingBoxLeftOffset : boundingBoxRightOffset))
-				/ MapState::tileSize;
-		int railMapY = (int)(yPosition + boundingBoxCenterYOffset) / MapState::tileSize;
-		if (kickRail(mapState, railMapX, railMapY, xPosition, yPosition, ticksTime))
-			return;
 
 		int bottomMapY = (int)(yPosition + boundingBoxBottomOffset) / MapState::tileSize;
 		int tileOffset = 1;
@@ -592,9 +578,41 @@ void PlayerState::kickFall(float xMoveDistance, float yMoveDistance, char fallHe
 }
 //check if we're kicking the end of a rail, and if so, begin a kicking animation and ride it
 //returns whether we handled a rail kick
-bool PlayerState::kickRail(MapState* mapState, int railMapX, int railMapY, float xPosition, float yPosition, int ticksTime) {
-	if (!MapState::tileHasRail(railMapX, railMapY))
-		return false;
+bool PlayerState::kickRail(MapState* mapState, float xPosition, float yPosition, int ticksTime) {
+	const float halfTileSize = (float)MapState::tileSize * 0.5f;
+
+	float railCheckXPosition;
+	float railCheckYPosition;
+	if (spriteDirection == SpriteDirection::Up || spriteDirection == SpriteDirection::Down) {
+		railCheckXPosition = xPosition;
+		railCheckYPosition =
+			yPosition + (spriteDirection == SpriteDirection::Up ? boundingBoxTopOffset : boundingBoxBottomOffset);
+	} else {
+		railCheckXPosition =
+			xPosition + (spriteDirection == SpriteDirection::Left ? boundingBoxLeftOffset : boundingBoxRightOffset);
+		railCheckYPosition = yPosition + boundingBoxCenterYOffset;
+	}
+	int railMapX = (int)railCheckXPosition / MapState::tileSize;
+	int railMapY = (int)railCheckYPosition / MapState::tileSize;
+	//the player didn't kick on a rail
+	if (!MapState::tileHasRail(railMapX, railMapY)) {
+		//if the player kicked within a half tile of a rail, don't let them fall
+		bool kickedNearRail;
+		if (spriteDirection == SpriteDirection::Up || spriteDirection == SpriteDirection::Down) {
+			kickedNearRail =
+				MapState::tileHasRail((int)(railCheckXPosition - halfTileSize) / MapState::tileSize, railMapY)
+					|| MapState::tileHasRail((int)(railCheckXPosition + halfTileSize) / MapState::tileSize, railMapY);
+		} else {
+			kickedNearRail =
+				MapState::tileHasRail(railMapX, (int)(railCheckYPosition - halfTileSize) / MapState::tileSize)
+					|| MapState::tileHasRail(railMapX, (int)(railCheckYPosition + halfTileSize) / MapState::tileSize);
+		}
+		if (kickedNearRail) {
+			kickAir(ticksTime);
+			return true;
+		} else
+			return false;
+	}
 
 	MapState::RailState* railState = mapState->getRailState(railMapX, railMapY);
 	MapState::Rail* rail = railState->getRail();
@@ -622,7 +640,6 @@ bool PlayerState::kickRail(MapState* mapState, int railMapX, int railMapY, float
 	const float bootLiftDuration = (float)SpriteRegistry::playerKickingAnimationTicksPerFrame;
 	const float floatRailToRailTicksDuration = (float)railToRailTicksDuration;
 	const float railToRailTicksDurationSquared = floatRailToRailTicksDuration * floatRailToRailTicksDuration;
-	const float halfTileSize = (float)MapState::tileSize * 0.5f;
 
 	vector<ReferenceCounterHolder<EntityAnimation::Component>> ridingRailAnimationComponents ({
 		newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerBootLiftAnimation)
@@ -765,10 +782,11 @@ bool PlayerState::kickRail(MapState* mapState, int railMapX, int railMapY, float
 	beginEntityAnimation(newEntityAnimation(ticksTime, ridingRailAnimationComponents), ticksTime);
 	return true;
 }
-//begin a kicking animation and flip a switch
-void PlayerState::kickSwitch(int ticksTime) {
-	kickAir(ticksTime);
+//check if we're kicking a switch, and if so, begin a kicking animation, toggle the switch, and move any affected rails
+//returns whether we handled a switch kick
+bool PlayerState::kickSwitch(MapState* mapState, float xPosition, float yPosition, int ticksTime) {
 	//TODO: toggle the state of the switch
+	return false;
 }
 //render this player state, which was deemed to be the last state to need rendering
 void PlayerState::render(EntityState* camera, int ticksTime) {

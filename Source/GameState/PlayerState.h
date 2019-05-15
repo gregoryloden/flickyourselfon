@@ -62,8 +62,8 @@ private:
 	void kickAir(int ticksTime);
 	void kickClimb(float yMoveDistance, int ticksTime);
 	void kickFall(float xMoveDistance, float yMoveDistance, char fallHeight, int ticksTime);
-	bool kickRail(MapState* mapState, int railMapX, int railMapY, float xPosition, float yPosition, int ticksTime);
-	void kickSwitch(int ticksTime);
+	bool kickRail(MapState* mapState, float xPosition, float yPosition, int ticksTime);
+	bool kickSwitch(MapState* mapState, float xPosition, float yPosition, int ticksTime);
 public:
 	void render(EntityState* camera, int ticksTime);
 	void saveState(ofstream& file);
