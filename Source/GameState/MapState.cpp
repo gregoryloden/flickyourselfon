@@ -325,6 +325,10 @@ switch0(pSwitch0)
 MapState::SwitchState::~SwitchState() {
 	//don't delete the switch, it's owned by MapState
 }
+//activate rails because this switch was kicked
+void MapState::SwitchState::flip() {
+	//TODO: handle getting flipped
+}
 //activate rails if this switch was kicked
 void MapState::SwitchState::updateWithPreviousSwitchState(SwitchState* prev, int ticksTime) {
 	//TODO: handle getting kicked
@@ -349,7 +353,9 @@ int MapState::height = 1;
 MapState::MapState(objCounterParameters())
 : PooledReferenceCounter(objCounterArguments())
 , railStates()
-, switchStates() {
+, switchStates()
+, switchToFlipId(absentRailSwitchId)
+, switchToFlipTicksTime(-1) {
 	for (Rail* rail : rails)
 		railStates.push_back(newRailState(rail));
 	for (Switch* switch0 : switches)
@@ -393,6 +399,7 @@ void MapState::buildMap() {
 	for (int i = 0; i < totalTiles; i++) {
 		tiles[i] = (char)(((pixels[i] & greenMask) >> greenShift) / tileDivisor);
 		heights[i] = (char)(((pixels[i] & blueMask) >> blueShift) / heightDivisor);
+		railSwitchIds[i] = absentRailSwitchId;
 	}
 
 	for (int i = 0; i < totalTiles; i++) {
@@ -510,6 +517,24 @@ void MapState::updateWithPreviousMapState(MapState* prev, int ticksTime) {
 		while (switchStates.size() < switches.size())
 			switchStates.push_back(newSwitchState(switches[switchStates.size()]));
 	#endif
+
+	//no switch to flip
+	if (prev->switchToFlipId == absentRailSwitchId)
+		switchToFlipId = absentRailSwitchId;
+	//not time to flip the switch yet
+	else if (ticksTime < prev->switchToFlipTicksTime) {
+		switchToFlipTicksTime = prev->switchToFlipTicksTime;
+		switchToFlipId = prev->switchToFlipId;
+	//flip the switch, it's time
+	} else {
+		switchStates[prev->switchToFlipId & railSwitchIndexBitmask]->flip();
+		switchToFlipId = absentRailSwitchId;
+	}
+}
+//set that we should flip a switch in the future
+void MapState::setSwitchToFlip(short pSwitchToFlipId, int pSwitchToFlipTicksTime) {
+	switchToFlipId = pSwitchToFlipId;
+	switchToFlipTicksTime = pSwitchToFlipTicksTime;
 }
 //draw the map
 void MapState::render(EntityState* camera, char playerZ, int ticksTime) {

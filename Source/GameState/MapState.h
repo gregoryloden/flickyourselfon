@@ -106,6 +106,7 @@ public:
 		SwitchState(objCounterParametersComma() Switch* pSwitch0);
 		~SwitchState();
 
+		void flip();
 		void updateWithPreviousSwitchState(SwitchState* prev, int ticksTime);
 		void render(int screenLeftWorldX, int screenTopWorldY);
 	};
@@ -123,9 +124,10 @@ public:
 	static const char introAnimationBootTile = 37;
 	static const int introAnimationBootTileX = 29;
 	static const int introAnimationBootTileY = 26;
-	static const int railIdBitmask = 1 << 12;
-	static const int switchIdBitmask = railIdBitmask << 1;
-	static const int railSwitchIndexBitmask = railIdBitmask - 1;
+	static const short absentRailSwitchId = 0;
+	static const short railIdBitmask = 1 << 12;
+	static const short switchIdBitmask = railIdBitmask << 1;
+	static const short railSwitchIndexBitmask = railIdBitmask - 1;
 	static const int floorIsRailSwitchBitmask = 1;
 	static const int floorIsRailSwitchHeadBitmask = 2;
 	static const int floorIsRailSwitchAndHeadBitmask = floorIsRailSwitchHeadBitmask | floorIsRailSwitchBitmask;
@@ -156,6 +158,8 @@ private:
 
 	vector<RailState*> railStates;
 	vector<SwitchState*> switchStates;
+	short switchToFlipId;
+	int switchToFlipTicksTime;
 
 public:
 	MapState(objCounterParameters());
@@ -183,6 +187,7 @@ public:
 	static char horizontalTilesHeight(int lowMapX, int highMapX, int mapY);
 	static void setIntroAnimationBootTile(bool startingAnimation);
 	void updateWithPreviousMapState(MapState* prev, int ticksTime);
+	void setSwitchToFlip(short pSwitchToFlipId, int pSwitchToFlipTicksTime);
 	void render(EntityState* camera, char playerZ, int ticksTime);
 	void renderRailsAbovePlayer(EntityState* camera, char playerZ, int ticksTime);
 	#ifdef EDITOR

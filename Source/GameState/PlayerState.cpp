@@ -785,8 +785,36 @@ bool PlayerState::kickRail(MapState* mapState, float xPosition, float yPosition,
 //check if we're kicking a switch, and if so, begin a kicking animation, toggle the switch, and move any affected rails
 //returns whether we handled a switch kick
 bool PlayerState::kickSwitch(MapState* mapState, float xPosition, float yPosition, int ticksTime) {
-	//TODO: toggle the state of the switch
-	return false;
+	//no switch kicking when facing down
+	if (spriteDirection == SpriteDirection::Down)
+		return false;
+
+	short switchId = MapState::absentRailSwitchId;
+	int switchLeftMapX = (int)(xPosition + boundingBoxLeftOffset + 2.0f - kickingDistanceLimit) / MapState::tileSize;
+	int switchRightMapX = (int)(xPosition + boundingBoxRightOffset - 2.0f + kickingDistanceLimit) / MapState::tileSize;
+	int switchTopMapY = (int)(yPosition + boundingBoxTopOffset + 2.0f - kickingDistanceLimit) / MapState::tileSize;
+	if (spriteDirection == SpriteDirection::Up) {
+		int switchCenterMapX = (int)xPosition / MapState::tileSize;
+		if (MapState::tileHasSwitch(switchLeftMapX, switchTopMapY))
+			switchId = MapState::getRailSwitchId(switchLeftMapX, switchTopMapY);
+		else if (MapState::tileHasSwitch(switchCenterMapX, switchTopMapY))
+			switchId = MapState::getRailSwitchId(switchCenterMapX, switchTopMapY);
+		else if (MapState::tileHasSwitch(switchRightMapX, switchTopMapY))
+			switchId = MapState::getRailSwitchId(switchRightMapX, switchTopMapY);
+	} else {
+		int switchMapX = spriteDirection == SpriteDirection::Left ? switchLeftMapX : switchRightMapX;
+		int switchBottomMapY = (int)(yPosition + boundingBoxBottomOffset - 1.0f + kickingDistanceLimit) / MapState::tileSize;
+		if (MapState::tileHasSwitch(switchMapX, switchTopMapY))
+			switchId = MapState::getRailSwitchId(switchMapX, switchTopMapY);
+		else if (MapState::tileHasSwitch(switchMapX, switchBottomMapY))
+			switchId = MapState::getRailSwitchId(switchMapX, switchBottomMapY);
+	}
+	if (switchId == MapState::absentRailSwitchId)
+		return false;
+
+	kickAir(ticksTime);
+	mapState->setSwitchToFlip(switchId, ticksTime + SpriteRegistry::playerKickingAnimationTicksPerFrame);
+	return true;
 }
 //render this player state, which was deemed to be the last state to need rendering
 void PlayerState::render(EntityState* camera, int ticksTime) {
