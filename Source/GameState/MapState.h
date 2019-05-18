@@ -41,6 +41,7 @@ public:
 
 		char getBaseHeight() { return baseHeight; }
 		char getColor() { return color; }
+		vector<char>& getGroups() { return groups; }
 		char getInitialTileOffset() { return initialTileOffset; }
 		char getMaxTileOffset() { return maxTileOffset; }
 		int getSegmentCount() { return (int)(segments->size()); }
@@ -64,7 +65,6 @@ public:
 		int topY;
 		char color;
 		char group;
-		vector<Rail*> rails;
 	#ifdef EDITOR
 	public:
 		bool isDeleted;
@@ -76,39 +76,47 @@ public:
 
 		char getColor() { return color; }
 		char getGroup() { return group; }
-		void render(int screenLeftWorldX, int screenTopWorldY, bool isOn);
+		void render(int screenLeftWorldX, int screenTopWorldY, char lastActivatedSwitchColor, bool isOn);
 		#ifdef EDITOR
 			char getFloorSaveData(int x, int y);
 		#endif
 	};
 	class RailState onlyInDebug(: public ObjCounter) {
 	private:
+		static const float tileOffsetPerTick;
+
 		Rail* rail;
 		float tileOffset;
+		float targetTileOffset;
+		int lastUpdateTicksTime;
 
 	public:
 		RailState(objCounterParametersComma() Rail* pRail);
 		~RailState();
 
-		// say the last 1/2 tile of offset is below the player
 		Rail* getRail() { return rail; }
 		bool canRide() { return tileOffset == 0.0f; }
+		// say the last 1/2 tile of offset is below the player
 		bool isAbovePlayerZ(char z) { return rail->getBaseHeight() - (char)(tileOffset + 0.5f) * 2 > z; }
 		void updateWithPreviousRailState(RailState* prev, int ticksTime);
+		void squareToggleOffset();
 		void render(int screenLeftWorldX, int screenTopWorldY, bool renderShadow);
 	};
 	class SwitchState onlyInDebug(: public ObjCounter) {
 	private:
 		Switch* switch0;
+		vector<RailState*> connectedRailStates;
 		bool isOn;
 
 	public:
 		SwitchState(objCounterParametersComma() Switch* pSwitch0);
 		~SwitchState();
 
+		Switch* getSwitch() { return switch0; }
+		void addConnectedRailState(RailState* railState);
 		void flip();
 		void updateWithPreviousSwitchState(SwitchState* prev, int ticksTime);
-		void render(int screenLeftWorldX, int screenTopWorldY);
+		void render(int screenLeftWorldX, int screenTopWorldY, char lastActivatedSwitchColor);
 	};
 
 	static const int tileCount = 64; // tile = green / 4
@@ -124,6 +132,10 @@ public:
 	static const char introAnimationBootTile = 37;
 	static const int introAnimationBootTileX = 29;
 	static const int introAnimationBootTileY = 26;
+	static const char squareColor = 0;
+	static const char triangleColor = 1;
+	static const char sawColor = 2;
+	static const char sineColor = 3;
 	static const short absentRailSwitchId = 0;
 	static const short railIdBitmask = 1 << 12;
 	static const short switchIdBitmask = railIdBitmask << 1;
@@ -160,6 +172,7 @@ private:
 	vector<SwitchState*> switchStates;
 	short switchToFlipId;
 	int switchToFlipTicksTime;
+	char lastActivatedSwitchColor;
 
 public:
 	MapState(objCounterParameters());

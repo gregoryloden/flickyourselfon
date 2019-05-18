@@ -159,9 +159,9 @@ void MapState::Rail::renderSegment(int screenLeftWorldX, int screenTopWorldY, fl
 	#ifdef EDITOR
 		if (&segment == &segments->front() || &segment == &segments->back())
 			SpriteSheet::renderFilledRectangle(
-				(color == 0 || color == 3) ? 0.75f : 0.0f,
-				(color == 2 || color == 3) ? 0.75f : 0.0f,
-				(color == 1 || color == 3) ? 0.75f : 0.0f,
+				(color == squareColor || color == sineColor) ? 0.75f : 0.0f,
+				(color == sawColor || color == sineColor) ? 0.75f : 0.0f,
+				(color == triangleColor || color == sineColor) ? 0.75f : 0.0f,
 				0.75f,
 				drawLeftX + 1,
 				drawTopY + 1,
@@ -252,7 +252,6 @@ leftX(pLeftX)
 , topY(pTopY)
 , color(pColor)
 , group(pGroup)
-, rails()
 #ifdef EDITOR
 	, isDeleted(false)
 #endif
@@ -262,7 +261,7 @@ MapState::Switch::~Switch() {
 	//don't delete the rails, they're owned by MapState
 }
 //render the switch
-void MapState::Switch::render(int screenLeftWorldX, int screenTopWorldY, bool isOn) {
+void MapState::Switch::render(int screenLeftWorldX, int screenTopWorldY, char lastActivatedSwitchColor, bool isOn) {
 	#ifdef EDITOR
 		if (isDeleted)
 			return;
@@ -275,7 +274,8 @@ void MapState::Switch::render(int screenLeftWorldX, int screenTopWorldY, bool is
 	glEnable(GL_BLEND);
 	GLint drawLeftX = (GLint)(leftX * tileSize - screenLeftWorldX);
 	GLint drawTopY = (GLint)(topY * tileSize - screenTopWorldY);
-	SpriteRegistry::switches->renderSpriteAtScreenPosition((int)(color * 2 + (isOn ? 1 : 2)), 0, drawLeftX, drawTopY);
+	int spriteHorizontalIndex = lastActivatedSwitchColor < color ? 0 : (int)(color * 2 + (isOn ? 1 : 2));
+	SpriteRegistry::switches->renderSpriteAtScreenPosition(spriteHorizontalIndex, 0, drawLeftX, drawTopY);
 	#ifdef EDITOR
 		Editor::renderGroupRect(group, drawLeftX + 4, drawTopY + 4, drawLeftX + 8, drawTopY + 8);
 	#endif
@@ -296,20 +296,37 @@ void MapState::Switch::render(int screenLeftWorldX, int screenTopWorldY, bool is
 #endif
 
 //////////////////////////////// MapState::RailState ////////////////////////////////
+const float MapState::RailState::tileOffsetPerTick = 3.0f / (float)Config::ticksPerSecond;
 MapState::RailState::RailState(objCounterParametersComma() Rail* pRail)
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
 rail(pRail)
-, tileOffset((float)pRail->getInitialTileOffset()) {
+, tileOffset((float)pRail->getInitialTileOffset())
+, targetTileOffset(0.0f)
+, lastUpdateTicksTime(0) {
+	targetTileOffset = tileOffset;
 }
 MapState::RailState::~RailState() {
 	//don't delete the rail, it's owned by MapState
 }
 //check if we need to start/stop moving
 void MapState::RailState::updateWithPreviousRailState(RailState* prev, int ticksTime) {
-	//TODO: DynamicValue for tile offset
+	targetTileOffset = prev->targetTileOffset;
+	if (prev->tileOffset != prev->targetTileOffset) {
+		float tileOffsetDiff = tileOffsetPerTick * (float)(ticksTime - prev->lastUpdateTicksTime);
+		tileOffset = prev->tileOffset > prev->targetTileOffset
+			? MathUtils::fmax(prev->targetTileOffset, prev->tileOffset - tileOffsetDiff)
+			: MathUtils::fmin(prev->targetTileOffset, prev->tileOffset + tileOffsetDiff);
+	} else
+		tileOffset = targetTileOffset;
+	lastUpdateTicksTime = ticksTime;
+
 	#ifdef EDITOR
 		tileOffset = (float)rail->getInitialTileOffset();
 	#endif
+}
+//swap the tile offset between 0 and the max tile offset
+void MapState::RailState::squareToggleOffset() {
+	targetTileOffset = targetTileOffset == 0.0f ? rail->getMaxTileOffset() : 0.0f;
 }
 //render the rail
 void MapState::RailState::render(int screenLeftWorldX, int screenTopWorldY, bool renderShadow) {
@@ -320,22 +337,33 @@ void MapState::RailState::render(int screenLeftWorldX, int screenTopWorldY, bool
 MapState::SwitchState::SwitchState(objCounterParametersComma() Switch* pSwitch0)
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
 switch0(pSwitch0)
-, isOn(false) {
+, connectedRailStates()
+, isOn(true) {
 }
 MapState::SwitchState::~SwitchState() {
 	//don't delete the switch, it's owned by MapState
 }
+//add a rail state to be affected by this switch state
+void MapState::SwitchState::addConnectedRailState(RailState* railState) {
+	connectedRailStates.push_back(railState);
+}
 //activate rails because this switch was kicked
 void MapState::SwitchState::flip() {
-	//TODO: handle getting flipped
+	char color = switch0->getColor();
+	//square wave switch: just toggle the target tile offset of the rails
+	if (color == squareColor) {
+		for (RailState* railState : connectedRailStates) {
+			railState->squareToggleOffset();
+		}
+	}
 }
 //activate rails if this switch was kicked
 void MapState::SwitchState::updateWithPreviousSwitchState(SwitchState* prev, int ticksTime) {
-	//TODO: handle getting kicked
+	//TODO: get flipped on/off
 }
 //render the switch
-void MapState::SwitchState::render(int screenLeftWorldX, int screenTopWorldY) {
-	switch0->render(screenLeftWorldX, screenTopWorldY, isOn);
+void MapState::SwitchState::render(int screenLeftWorldX, int screenTopWorldY, char lastActivatedSwitchColor) {
+	switch0->render(screenLeftWorldX, screenTopWorldY, lastActivatedSwitchColor, isOn);
 }
 
 //////////////////////////////// MapState ////////////////////////////////
@@ -355,11 +383,27 @@ MapState::MapState(objCounterParameters())
 , railStates()
 , switchStates()
 , switchToFlipId(absentRailSwitchId)
-, switchToFlipTicksTime(-1) {
+, switchToFlipTicksTime(-1)
+, lastActivatedSwitchColor(-1) {
 	for (Rail* rail : rails)
 		railStates.push_back(newRailState(rail));
 	for (Switch* switch0 : switches)
 		switchStates.push_back(newSwitchState(switch0));
+
+	//add all the rail states to their appropriate switch states
+	vector<SwitchState*> switchStatesByGroup;
+	for (SwitchState* switchState : switchStates) {
+		int group = (int)switchState->getSwitch()->getGroup();
+		while ((int)switchStatesByGroup.size() <= group)
+			switchStatesByGroup.push_back(nullptr);
+		switchStatesByGroup[group] = switchState;
+	}
+	for (RailState* railState : railStates) {
+		for (char group : railState->getRail()->getGroups())
+			switchStatesByGroup[group]->addConnectedRailState(railState);
+	}
+//TODO: activate switches by kicking
+lastActivatedSwitchColor = 0;
 }
 MapState::~MapState() {
 	for (RailState* railState : railStates)
@@ -512,6 +556,7 @@ void MapState::updateWithPreviousMapState(MapState* prev, int ticksTime) {
 		switchStates[i]->updateWithPreviousSwitchState(prev->switchStates[i], ticksTime);
 	#ifdef EDITOR
 		//since the editor can add switches and rails, make sure we update our list to track them
+		//we won't connect rail states to switch states since we can't kick switches in the editor
 		while (railStates.size() < rails.size())
 			railStates.push_back(newRailState(rails[railStates.size()]));
 		while (switchStates.size() < switches.size())
@@ -527,7 +572,16 @@ void MapState::updateWithPreviousMapState(MapState* prev, int ticksTime) {
 		switchToFlipId = prev->switchToFlipId;
 	//flip the switch, it's time
 	} else {
-		switchStates[prev->switchToFlipId & railSwitchIndexBitmask]->flip();
+		SwitchState* switchState = switchStates[prev->switchToFlipId & railSwitchIndexBitmask];
+		Switch* switch0 = switchState->getSwitch();
+		//this is a turn-on-other-switches switch, flip it if we haven't done so already
+		if (switch0->getGroup() == 0) {
+			if (lastActivatedSwitchColor < switch0->getColor())
+//TODO: flip on all switches
+				;
+		//this is just a regular switch and we've turned on the parent switch, flip it
+		} else if (lastActivatedSwitchColor >= switch0->getColor())
+			switchState->flip();
 		switchToFlipId = absentRailSwitchId;
 	}
 }
@@ -577,7 +631,7 @@ void MapState::render(EntityState* camera, char playerZ, int ticksTime) {
 			railState->render(screenLeftWorldX, screenTopWorldY, false);
 	}
 	for (SwitchState* switchState : switchStates)
-		switchState->render(screenLeftWorldX, screenTopWorldY);
+		switchState->render(screenLeftWorldX, screenTopWorldY, lastActivatedSwitchColor);
 
 	//draw the radio tower after drawing everything else
 	glEnable(GL_BLEND);
@@ -639,6 +693,12 @@ void MapState::renderRailsAbovePlayer(EntityState* camera, char playerZ, int tic
 					return;
 			}
 			switches.push_back(newSwitch(leftX, topY, color, group));
+		//if we are deleting a switch, remove this group from any matching rails
+		} else {
+			for (Rail* rail : rails) {
+				if (rail->getColor() == color)
+					rail->removeGroup(group);
+			}
 		}
 
 		//go through and either set the switch to the new one, or reset it since we're deleting one
@@ -651,6 +711,19 @@ void MapState::renderRailsAbovePlayer(EntityState* camera, char playerZ, int tic
 	}
 	//set a rail, or delete a rail if we can
 	void MapState::setRail(int x, int y, char color, char group) {
+		//if no switch has this group (and it's a valid rail group), don't do anything
+		if (group > 0) {
+			bool foundMatchingSwitch = false;
+			for (Switch* switch0 : switches) {
+				if (switch0->getGroup() == group && !switch0->isDeleted) {
+					foundMatchingSwitch = true;
+					break;
+				}
+			}
+			if (!foundMatchingSwitch)
+				return;
+		}
+
 		short editingRailId = -1;
 		Rail* editingRail = nullptr;
 		int orthogonalRails = 0;

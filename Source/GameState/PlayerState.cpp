@@ -782,7 +782,7 @@ bool PlayerState::kickRail(MapState* mapState, float xPosition, float yPosition,
 	beginEntityAnimation(newEntityAnimation(ticksTime, ridingRailAnimationComponents), ticksTime);
 	return true;
 }
-//check if we're kicking a switch, and if so, begin a kicking animation, toggle the switch, and move any affected rails
+//check if we're kicking a switch, and if so, begin a kicking animation and set the switch to flip
 //returns whether we handled a switch kick
 bool PlayerState::kickSwitch(MapState* mapState, float xPosition, float yPosition, int ticksTime) {
 	//no switch kicking when facing down
@@ -790,11 +790,11 @@ bool PlayerState::kickSwitch(MapState* mapState, float xPosition, float yPositio
 		return false;
 
 	short switchId = MapState::absentRailSwitchId;
-	int switchLeftMapX = (int)(xPosition + boundingBoxLeftOffset + 2.0f - kickingDistanceLimit) / MapState::tileSize;
-	int switchRightMapX = (int)(xPosition + boundingBoxRightOffset - 2.0f + kickingDistanceLimit) / MapState::tileSize;
-	int switchTopMapY = (int)(yPosition + boundingBoxTopOffset + 2.0f - kickingDistanceLimit) / MapState::tileSize;
 	if (spriteDirection == SpriteDirection::Up) {
+		int switchLeftMapX = (int)(xPosition + boundingBoxLeftOffset + 2.0f) / MapState::tileSize;
 		int switchCenterMapX = (int)xPosition / MapState::tileSize;
+		int switchRightMapX = (int)(xPosition + boundingBoxRightOffset - 2.0f) / MapState::tileSize;
+		int switchTopMapY = (int)(yPosition + boundingBoxTopOffset + 2.0f - kickingDistanceLimit) / MapState::tileSize;
 		if (MapState::tileHasSwitch(switchLeftMapX, switchTopMapY))
 			switchId = MapState::getRailSwitchId(switchLeftMapX, switchTopMapY);
 		else if (MapState::tileHasSwitch(switchCenterMapX, switchTopMapY))
@@ -802,8 +802,12 @@ bool PlayerState::kickSwitch(MapState* mapState, float xPosition, float yPositio
 		else if (MapState::tileHasSwitch(switchRightMapX, switchTopMapY))
 			switchId = MapState::getRailSwitchId(switchRightMapX, switchTopMapY);
 	} else {
-		int switchMapX = spriteDirection == SpriteDirection::Left ? switchLeftMapX : switchRightMapX;
-		int switchBottomMapY = (int)(yPosition + boundingBoxBottomOffset - 1.0f + kickingDistanceLimit) / MapState::tileSize;
+		float kickingXOffset = spriteDirection == SpriteDirection::Left
+			? boundingBoxLeftOffset + 2.0f - kickingDistanceLimit
+			: boundingBoxRightOffset - 2.0f + kickingDistanceLimit;
+		int switchMapX = (int)(xPosition + kickingXOffset) / MapState::tileSize;
+		int switchTopMapY = (int)(yPosition + boundingBoxTopOffset + 2.0f) / MapState::tileSize;
+		int switchBottomMapY = (int)(yPosition + boundingBoxBottomOffset - 1.0f) / MapState::tileSize;
 		if (MapState::tileHasSwitch(switchMapX, switchTopMapY))
 			switchId = MapState::getRailSwitchId(switchMapX, switchTopMapY);
 		else if (MapState::tileHasSwitch(switchMapX, switchBottomMapY))
