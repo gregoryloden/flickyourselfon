@@ -22,7 +22,7 @@ SpriteAnimation* SpriteRegistry::playerRidingRailAnimation = nullptr;
 //load all the sprite sheets
 //this should only be called after the gl context has been created
 void SpriteRegistry::loadAll() {
-	player = newSpriteSheetWithImagePath(playerFileName, 9, 4);
+	player = newSpriteSheetWithImagePath(playerFileName, 10, 4);
 	tiles = newSpriteSheetWithImagePath(tilesFileName, MapState::tileCount, 1);
 	tiles->removeBottomRightPixelBorder();
 	radioTower = newSpriteSheetWithImagePath(radioTowerFileName, 1, 1);
@@ -59,7 +59,7 @@ void SpriteRegistry::loadAll() {
 			newSpriteAnimationFrame(7, -1, playerKickingAnimationTicksPerFrame)
 		});
 	playerBootLiftAnimation = newSpriteAnimation(player, { newSpriteAnimationFrame(7, -1, 1) });
-	playerRidingRailAnimation = newSpriteAnimation(player, { newSpriteAnimationFrame(8, -1, 1) });
+	playerRidingRailAnimation = newSpriteAnimation(player, { newSpriteAnimationFrame(9, -1, 1) });
 }
 //delete all the sprite sheets
 void SpriteRegistry::unloadAll() {
