@@ -8,17 +8,20 @@ const char* SpriteRegistry::tilesFileName = "images/tiles.png";
 const char* SpriteRegistry::radioTowerFileName = "images/radiotower.png";
 const char* SpriteRegistry::railsFileName = "images/rails.png";
 const char* SpriteRegistry::switchesFileName = "images/switches.png";
+const char* SpriteRegistry::radioWavesFileName = "images/radiowaves.png";
 SpriteSheet* SpriteRegistry::player = nullptr;
 SpriteSheet* SpriteRegistry::tiles = nullptr;
 SpriteSheet* SpriteRegistry::radioTower = nullptr;
 SpriteSheet* SpriteRegistry::rails = nullptr;
 SpriteSheet* SpriteRegistry::switches = nullptr;
+SpriteSheet* SpriteRegistry::radioWaves = nullptr;
 SpriteAnimation* SpriteRegistry::playerWalkingAnimation = nullptr;
 SpriteAnimation* SpriteRegistry::playerLegLiftAnimation = nullptr;
 SpriteAnimation* SpriteRegistry::playerBootWalkingAnimation = nullptr;
 SpriteAnimation* SpriteRegistry::playerKickingAnimation = nullptr;
 SpriteAnimation* SpriteRegistry::playerBootLiftAnimation = nullptr;
 SpriteAnimation* SpriteRegistry::playerRidingRailAnimation = nullptr;
+SpriteAnimation* SpriteRegistry::radioWavesAnimation = nullptr;
 //load all the sprite sheets
 //this should only be called after the gl context has been created
 void SpriteRegistry::loadAll() {
@@ -30,6 +33,7 @@ void SpriteRegistry::loadAll() {
 	rails->removeBottomRightPixelBorder();
 	switches = newSpriteSheetWithImagePath(switchesFileName, 9, 1);
 	switches->removeBottomRightPixelBorder();
+	radioWaves = newSpriteSheetWithImagePath(radioWavesFileName, 5, 1);
 	playerWalkingAnimation = newSpriteAnimation(
 		player,
 		{
@@ -60,6 +64,18 @@ void SpriteRegistry::loadAll() {
 		});
 	playerBootLiftAnimation = newSpriteAnimation(player, { newSpriteAnimationFrame(7, -1, 1) });
 	playerRidingRailAnimation = newSpriteAnimation(player, { newSpriteAnimationFrame(9, -1, 1) });
+	radioWavesAnimation = newSpriteAnimation(
+		radioWaves,
+		{
+			newSpriteAnimationFrame(0, 0, radioWaveAnimationTicksPerFrame) COMMA
+			newSpriteAnimationFrame(1, 0, radioWaveAnimationTicksPerFrame) COMMA
+			newSpriteAnimationFrame(2, 0, radioWaveAnimationTicksPerFrame) COMMA
+			newSpriteAnimationFrame(4, 0, radioWaveAnimationTicksPerFrame) COMMA
+			newSpriteAnimationFrame(1, 0, radioWaveAnimationTicksPerFrame) COMMA
+			newSpriteAnimationFrame(2, 0, radioWaveAnimationTicksPerFrame) COMMA
+			newSpriteAnimationFrame(3, 0, radioWaveAnimationTicksPerFrame)
+		});
+	radioWavesAnimation->disableLooping();
 }
 //delete all the sprite sheets
 void SpriteRegistry::unloadAll() {
@@ -68,10 +84,12 @@ void SpriteRegistry::unloadAll() {
 	delete radioTower;
 	delete rails;
 	delete switches;
+	delete radioWaves;
 	delete playerWalkingAnimation;
 	delete playerLegLiftAnimation;
 	delete playerBootWalkingAnimation;
 	delete playerKickingAnimation;
 	delete playerBootLiftAnimation;
 	delete playerRidingRailAnimation;
+	delete radioWavesAnimation;
 }

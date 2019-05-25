@@ -1,8 +1,6 @@
-#include "Util/PooledReferenceCounter.h"
+#include "GameState/EntityState.h"
 
 #define newMapState() produceWithoutArgs(MapState)
-
-class EntityState;
 
 class MapState: public PooledReferenceCounter {
 public:
@@ -76,7 +74,12 @@ public:
 
 		char getColor() { return color; }
 		char getGroup() { return group; }
-		void render(int screenLeftWorldX, int screenTopWorldY, char lastActivatedSwitchColor, bool isOn);
+		void render(
+			int screenLeftWorldX,
+			int screenTopWorldY,
+			char lastActivatedSwitchColor,
+			int lastActivatedSwitchColorFadeInTicksOffset,
+			bool isOn);
 		#ifdef EDITOR
 			char getFloorSaveData(int x, int y);
 		#endif
@@ -116,7 +119,31 @@ public:
 		void addConnectedRailState(RailState* railState);
 		void flip();
 		void updateWithPreviousSwitchState(SwitchState* prev, int ticksTime);
-		void render(int screenLeftWorldX, int screenTopWorldY, char lastActivatedSwitchColor);
+		void render(
+			int screenLeftWorldX,
+			int screenTopWorldY,
+			char lastActivatedSwitchColor,
+			int lastActivatedSwitchColorFadeInTicksOffset);
+	};
+	class RadioWavesState: public EntityState {
+	public:
+		static const int interRadioWavesAnimationTicks = 1000;
+
+	private:
+		SpriteAnimation* spriteAnimation;
+		int spriteAnimationStartTicksTime;
+
+	public:
+		RadioWavesState(objCounterParameters());
+		~RadioWavesState();
+
+		static RadioWavesState* produce(objCounterParameters());
+		void copyRadioWavesState(RadioWavesState* other);
+		virtual void release();
+		virtual void setSpriteAnimation(SpriteAnimation* pSpriteAnimation, int pSpriteAnimationStartTicksTime);
+		void updateWithPreviousRadioWavesState(RadioWavesState* prev, int ticksTime);
+		void render(EntityState* camera, int ticksTime);
+		virtual void setNextCamera(GameState* nextGameState, int ticksTime) {}
 	};
 
 	static const int tileCount = 64; // tile = green / 4
@@ -132,6 +159,7 @@ public:
 	static const char introAnimationBootTile = 37;
 	static const int introAnimationBootTileX = 29;
 	static const int introAnimationBootTileY = 26;
+	static const int switchesFadeInDuration = 1000;
 	static const char squareColor = 0;
 	static const char triangleColor = 1;
 	static const char sawColor = 2;
@@ -173,6 +201,9 @@ private:
 	short switchToFlipId;
 	int switchToFlipTicksTime;
 	char lastActivatedSwitchColor;
+	int switchesAnimationFadeInStartTicksTime;
+	bool shouldPlayRadioTowerAnimation;
+	ReferenceCounterHolder<RadioWavesState> radioWavesState;
 
 public:
 	MapState(objCounterParameters());
@@ -187,20 +218,29 @@ public:
 	static bool tileHasRail(int x, int y) { return (getRailSwitchId(x, y) & railIdBitmask) != 0; }
 	static bool tileHasSwitch(int x, int y) { return (getRailSwitchId(x, y) & switchIdBitmask) != 0; }
 	RailState* getRailState(int x, int y) { return railStates[getRailSwitchId(x, y) & railSwitchIndexBitmask]; }
+	bool getShouldPlayRadioTowerAnimation() { return shouldPlayRadioTowerAnimation; }
+	int getRadioWavesAnimationTicksDuration() { return radioWavesState.get()->getAnimationTicksDuration(); }
 	#ifdef EDITOR
 		static void setTile(int x, int y, char tile) { tiles[y * width + x] = tile; }
 		static void setHeight(int x, int y, char height) { heights[y * width + x] = height; }
 	#endif
 	static MapState* produce(objCounterParameters());
 	virtual void release();
+protected:
+	virtual void prepareReturnToPool();
+public:
 	static void buildMap();
 	static void deleteMap();
 	static int getScreenLeftWorldX(EntityState* camera, int ticksTime);
 	static int getScreenTopWorldY(EntityState* camera, int ticksTime);
+	static float antennaCenterWorldX();
+	static float antennaCenterWorldY();
 	static char horizontalTilesHeight(int lowMapX, int highMapX, int mapY);
 	static void setIntroAnimationBootTile(bool startingAnimation);
 	void updateWithPreviousMapState(MapState* prev, int ticksTime);
 	void setSwitchToFlip(short pSwitchToFlipId, int pSwitchToFlipTicksTime);
+	void startRadioWavesAnimation(int initialTicksDelay, int ticksTime);
+	void startSwitchesFadeInAnimation(int ticksTime);
 	void render(EntityState* camera, char playerZ, int ticksTime);
 	void renderRailsAbovePlayer(EntityState* camera, char playerZ, int ticksTime);
 	#ifdef EDITOR

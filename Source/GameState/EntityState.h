@@ -44,6 +44,9 @@ public:
 	void copyEntityState(EntityState* other);
 	float getRenderCenterWorldX(int ticksTime);
 	float getRenderCenterWorldY(int ticksTime);
+	float getRenderCenterScreenX(EntityState* camera, int ticksTime);
+	float getRenderCenterScreenY(EntityState* camera, int ticksTime);
+	int getAnimationTicksDuration();
 	void setPosition(float pX, float pY, int pLastUpdateTicksTime);
 	void setVelocity(DynamicValue* vx, DynamicValue* vy, int pLastUpdateTicksTime);
 	void beginEntityAnimation(EntityAnimation* pEntityAnimation, int ticksTime);

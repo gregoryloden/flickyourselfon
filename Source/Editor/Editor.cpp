@@ -179,16 +179,15 @@
 		int mapHeight = MapState::mapHeight();
 
 		SDL_Surface* tilesSurface = IMG_Load(SpriteRegistry::tilesFileName);
-		SDL_Surface* mapSurface =
-			SDL_CreateRGBSurface(
-				0,
-				mapWidth * MapState::tileSize,
-				mapHeight * MapState::tileSize,
-				tilesSurface->format->BitsPerPixel,
-				tilesSurface->format->Rmask,
-				tilesSurface->format->Gmask,
-				tilesSurface->format->Bmask,
-				tilesSurface->format->Amask);
+		SDL_Surface* mapSurface = SDL_CreateRGBSurface(
+			0,
+			mapWidth * MapState::tileSize,
+			mapHeight * MapState::tileSize,
+			tilesSurface->format->BitsPerPixel,
+			tilesSurface->format->Rmask,
+			tilesSurface->format->Gmask,
+			tilesSurface->format->Bmask,
+			tilesSurface->format->Amask);
 		SDL_Renderer* mapRenderer = SDL_CreateSoftwareRenderer(mapSurface);
 		SDL_Texture* tilesTexture = SDL_CreateTextureFromSurface(mapRenderer, tilesSurface);
 
@@ -401,9 +400,9 @@
 	void Editor::RailButton::render() {
 		Button::render();
 		SpriteSheet::renderFilledRectangle(
-			(color == 0 || color == 3) ? 0.75f : 0.0f,
-			(color == 2 || color == 3) ? 0.75f : 0.0f,
-			(color == 1 || color == 3) ? 0.75f : 0.0f,
+			(color == MapState::squareColor || color == MapState::sineColor) ? 0.75f : 0.0f,
+			(color == MapState::sawColor || color == MapState::sineColor) ? 0.75f : 0.0f,
+			(color == MapState::triangleColor || color == MapState::sineColor) ? 0.75f : 0.0f,
 			1.0f,
 			(GLint)leftX + 1,
 			(GLint)topY + 1,

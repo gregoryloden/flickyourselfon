@@ -70,6 +70,7 @@ public:
 		virtual void prepareReturnToPool();
 	public:
 		virtual bool handle(EntityState* entityState, int ticksTime);
+		static SetVelocity* cubicInterpolation(float xMoveDistance, float yMoveDistance, float ticksDuration);
 	};
 	class SetSpriteAnimation: public Component {
 	private:
@@ -137,5 +138,6 @@ protected:
 	virtual void prepareReturnToPool();
 public:
 	bool update(EntityState* entityState, int ticksTime);
+	static int getComponentTotalTicksDuration(vector<ReferenceCounterHolder<Component>>& pComponents);
 	int getTotalTicksDuration();
 };

@@ -119,9 +119,8 @@ void Text::loadFont() {
 			for (; pixels[glyphBottom * imageWidth + glyphDataCol] != solidBlack; glyphBottom++)
 				;
 
-			Glyph* glyph =
-				newGlyph(
-					glyphDataCol + 1, headerRow + 1, headerCol - glyphDataCol - 1, glyphBottom - headerRow, baselineOffset);
+			Glyph* glyph = newGlyph(
+				glyphDataCol + 1, headerRow + 1, headerCol - glyphDataCol - 1, glyphBottom - headerRow, baselineOffset);
 			if (unicodeValue == lastUnicodeValue + 1 && lastGlyphRow != nullptr)
 				lastGlyphRow->addGlyph(glyph);
 			else {

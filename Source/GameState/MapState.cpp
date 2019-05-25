@@ -1,6 +1,9 @@
 #include "MapState.h"
 #include "Editor/Editor.h"
+#include "GameState/DynamicValue.h"
+#include "GameState/EntityAnimation.h"
 #include "GameState/EntityState.h"
+#include "Sprites/SpriteAnimation.h"
 #include "Sprites/SpriteRegistry.h"
 #include "Sprites/SpriteSheet.h"
 #include "Util/Config.h"
@@ -10,6 +13,7 @@
 #define newSwitch(leftX, topY, color, group) newWithArgs(MapState::Switch, leftX, topY, color, group)
 #define newRailState(rail) newWithArgs(MapState::RailState, rail)
 #define newSwitchState(switch0) newWithArgs(MapState::SwitchState, switch0)
+#define newRadioWavesState() produceWithoutArgs(MapState::RadioWavesState)
 
 //////////////////////////////// MapState::Rail::Segment ////////////////////////////////
 MapState::Rail::Segment::Segment(int pX, int pY, char pMaxTileOffset)
@@ -261,7 +265,13 @@ MapState::Switch::~Switch() {
 	//don't delete the rails, they're owned by MapState
 }
 //render the switch
-void MapState::Switch::render(int screenLeftWorldX, int screenTopWorldY, char lastActivatedSwitchColor, bool isOn) {
+void MapState::Switch::render(
+	int screenLeftWorldX,
+	int screenTopWorldY,
+	char lastActivatedSwitchColor,
+	int lastActivatedSwitchColorFadeInTicksOffset,
+	bool isOn)
+{
 	#ifdef EDITOR
 		if (isDeleted)
 			return;
@@ -274,8 +284,30 @@ void MapState::Switch::render(int screenLeftWorldX, int screenTopWorldY, char la
 	glEnable(GL_BLEND);
 	GLint drawLeftX = (GLint)(leftX * tileSize - screenLeftWorldX);
 	GLint drawTopY = (GLint)(topY * tileSize - screenTopWorldY);
-	int spriteHorizontalIndex = lastActivatedSwitchColor < color ? 0 : (int)(color * 2 + (isOn ? 1 : 2));
-	SpriteRegistry::switches->renderSpriteAtScreenPosition(spriteHorizontalIndex, 0, drawLeftX, drawTopY);
+	//draw the gray sprite if it's off or fading in
+	if (lastActivatedSwitchColor < color
+			|| (lastActivatedSwitchColor == color && lastActivatedSwitchColorFadeInTicksOffset < switchesFadeInDuration))
+		SpriteRegistry::switches->renderSpriteAtScreenPosition(0, 0, drawLeftX, drawTopY);
+	//draw the color sprite if it's an old color or it's fully faded in
+	else if (lastActivatedSwitchColor > color
+			|| (lastActivatedSwitchColor == color && lastActivatedSwitchColorFadeInTicksOffset >= switchesFadeInDuration))
+	{
+		int spriteHorizontalIndex = lastActivatedSwitchColor < color ? 0 : (int)(color * 2 + (isOn ? 1 : 2));
+		SpriteRegistry::switches->renderSpriteAtScreenPosition(spriteHorizontalIndex, 0, drawLeftX, drawTopY);
+	}
+	//draw a partially faded color sprite if we're fading in the color
+	if (lastActivatedSwitchColor == color
+		&& lastActivatedSwitchColorFadeInTicksOffset > 0
+		&& lastActivatedSwitchColorFadeInTicksOffset < switchesFadeInDuration)
+	{
+		int spriteHorizontalIndex = lastActivatedSwitchColor < color ? 0 : (int)(color * 2 + (isOn ? 1 : 2));
+		float fadeInAlpha = (float)lastActivatedSwitchColorFadeInTicksOffset / (float)switchesFadeInDuration;
+		glColor4f(1.0f, 1.0f, 1.0f, fadeInAlpha);
+		int spriteLeftX = spriteHorizontalIndex * 12 + 1;
+		SpriteRegistry::switches->renderSpriteSheetRegionAtScreenRegion(
+			spriteLeftX, 1, spriteLeftX + 10, 11, drawLeftX + 1, drawTopY + 1, drawLeftX + 11, drawTopY + 11);
+		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+	}
 	#ifdef EDITOR
 		Editor::renderGroupRect(group, drawLeftX + 4, drawTopY + 4, drawLeftX + 8, drawTopY + 8);
 	#endif
@@ -362,8 +394,60 @@ void MapState::SwitchState::updateWithPreviousSwitchState(SwitchState* prev, int
 	//TODO: get flipped on/off
 }
 //render the switch
-void MapState::SwitchState::render(int screenLeftWorldX, int screenTopWorldY, char lastActivatedSwitchColor) {
-	switch0->render(screenLeftWorldX, screenTopWorldY, lastActivatedSwitchColor, isOn);
+void MapState::SwitchState::render(
+	int screenLeftWorldX, int screenTopWorldY, char lastActivatedSwitchColor, int lastActivatedSwitchColorFadeInTicksOffset)
+{
+	switch0->render(
+		screenLeftWorldX, screenTopWorldY, lastActivatedSwitchColor, lastActivatedSwitchColorFadeInTicksOffset, isOn);
+}
+
+//////////////////////////////// MapState::RadioWavesState ////////////////////////////////
+MapState::RadioWavesState::RadioWavesState(objCounterParameters())
+: EntityState(objCounterArguments())
+, spriteAnimation(nullptr)
+, spriteAnimationStartTicksTime(0)
+{
+	x.set(newCompositeQuarticValue(antennaCenterWorldX(), 0.0f, 0.0f, 0.0f, 0.0f));
+	y.set(newCompositeQuarticValue(antennaCenterWorldY(), 0.0f, 0.0f, 0.0f, 0.0f));
+}
+MapState::RadioWavesState::~RadioWavesState() {
+	//don't delete the sprite animation, SpriteRegistry owns it
+}
+//initialize and return a RadioWavesState
+MapState::RadioWavesState* MapState::RadioWavesState::produce(objCounterParameters()) {
+	initializeWithNewFromPool(r, MapState::RadioWavesState)
+	return r;
+}
+//copy the other state
+void MapState::RadioWavesState::copyRadioWavesState(RadioWavesState* other) {
+	copyEntityState(other);
+	spriteAnimation = other->spriteAnimation;
+	spriteAnimationStartTicksTime = other->spriteAnimationStartTicksTime;
+}
+pooledReferenceCounterDefineRelease(MapState::RadioWavesState)
+//set the animation to the given animation at the given time
+void MapState::RadioWavesState::setSpriteAnimation(SpriteAnimation* pSpriteAnimation, int pSpriteAnimationStartTicksTime) {
+	spriteAnimation = pSpriteAnimation;
+	spriteAnimationStartTicksTime = pSpriteAnimationStartTicksTime;
+}
+//update this radio waves state
+void MapState::RadioWavesState::updateWithPreviousRadioWavesState(RadioWavesState* prev, int ticksTime) {
+	copyRadioWavesState(prev);
+	//if we have an entity animation, update with that instead
+	if (prev->entityAnimation.get() != nullptr) {
+		if (entityAnimation.get()->update(this, ticksTime))
+			return;
+		entityAnimation.set(nullptr);
+	}
+}
+//render the radio waves if we've got an animation
+void MapState::RadioWavesState::render(EntityState* camera, int ticksTime) {
+	if (spriteAnimation == nullptr)
+		return;
+
+	float renderCenterX = getRenderCenterScreenX(camera,  ticksTime);
+	float renderCenterY = getRenderCenterScreenY(camera,  ticksTime);
+	spriteAnimation->renderUsingCenter(renderCenterX, renderCenterY, ticksTime - spriteAnimationStartTicksTime, 0, 0);
 }
 
 //////////////////////////////// MapState ////////////////////////////////
@@ -384,7 +468,10 @@ MapState::MapState(objCounterParameters())
 , switchStates()
 , switchToFlipId(absentRailSwitchId)
 , switchToFlipTicksTime(-1)
-, lastActivatedSwitchColor(-1) {
+, lastActivatedSwitchColor(-1)
+, switchesAnimationFadeInStartTicksTime(0)
+, shouldPlayRadioTowerAnimation(false)
+, radioWavesState(nullptr) {
 	for (Rail* rail : rails)
 		railStates.push_back(newRailState(rail));
 	for (Switch* switch0 : switches)
@@ -402,8 +489,6 @@ MapState::MapState(objCounterParameters())
 		for (char group : railState->getRail()->getGroups())
 			switchStatesByGroup[group]->addConnectedRailState(railState);
 	}
-//TODO: activate switches by kicking
-lastActivatedSwitchColor = 0;
 }
 MapState::~MapState() {
 	for (RailState* railState : railStates)
@@ -414,9 +499,14 @@ MapState::~MapState() {
 //initialize and return a MapState
 MapState* MapState::produce(objCounterParameters()) {
 	initializeWithNewFromPool(m, MapState)
+	m->radioWavesState.set(newRadioWavesState());
 	return m;
 }
 pooledReferenceCounterDefineRelease(MapState)
+//release the radio waves state before this is returned to the pool
+void MapState::prepareReturnToPool() {
+	radioWavesState.set(nullptr);
+}
 //load the map and extract all the map data from it
 void MapState::buildMap() {
 	SDL_Surface* floor = IMG_Load(floorFileName);
@@ -535,6 +625,14 @@ int MapState::getScreenTopWorldY(EntityState* camera, int ticksTime) {
 	//(see getScreenLeftWorldX)
 	return (int)(camera->getRenderCenterWorldY(ticksTime)) - Config::gameScreenHeight / 2;
 }
+//get the center x of the radio tower antenna
+float MapState::antennaCenterWorldX() {
+	return (float)(radioTowerLeftXOffset + SpriteRegistry::radioTower->getSpriteSheetWidth() / 2);
+}
+//get the center x of the radio tower antenna
+float MapState::antennaCenterWorldY() {
+	return (float)(radioTowerTopYOffset + 2);
+}
 //check the height of all the tiles in the row, and return it if they're all the same or -1 if they differ
 char MapState::horizontalTilesHeight(int lowMapX, int highMapX, int mapY) {
 	char foundHeight = getHeight(lowMapX, mapY);
@@ -550,6 +648,9 @@ void MapState::setIntroAnimationBootTile(bool startingAnimation) {
 }
 //update the rails and switches
 void MapState::updateWithPreviousMapState(MapState* prev, int ticksTime) {
+	lastActivatedSwitchColor = prev->lastActivatedSwitchColor;
+	shouldPlayRadioTowerAnimation = false;
+	switchesAnimationFadeInStartTicksTime = prev->switchesAnimationFadeInStartTicksTime;
 	for (int i = 0; i < (int)railStates.size(); i++)
 		railStates[i]->updateWithPreviousRailState(prev->railStates[i], ticksTime);
 	for (int i = 0; i < (int)switchStates.size(); i++)
@@ -577,18 +678,42 @@ void MapState::updateWithPreviousMapState(MapState* prev, int ticksTime) {
 		//this is a turn-on-other-switches switch, flip it if we haven't done so already
 		if (switch0->getGroup() == 0) {
 			if (lastActivatedSwitchColor < switch0->getColor())
-//TODO: flip on all switches
-				;
+				shouldPlayRadioTowerAnimation = true;
 		//this is just a regular switch and we've turned on the parent switch, flip it
 		} else if (lastActivatedSwitchColor >= switch0->getColor())
 			switchState->flip();
 		switchToFlipId = absentRailSwitchId;
 	}
+
+	radioWavesState.get()->updateWithPreviousRadioWavesState(prev->radioWavesState.get(), ticksTime);
 }
 //set that we should flip a switch in the future
 void MapState::setSwitchToFlip(short pSwitchToFlipId, int pSwitchToFlipTicksTime) {
 	switchToFlipId = pSwitchToFlipId;
 	switchToFlipTicksTime = pSwitchToFlipTicksTime;
+}
+//begin a radio waves animation
+void MapState::startRadioWavesAnimation(int initialTicksDelay, int ticksTime) {
+	radioWavesState.get()->beginEntityAnimation(
+		newEntityAnimation(
+			ticksTime,
+			{
+				newEntityAnimationDelay(initialTicksDelay) COMMA
+				newEntityAnimationSetSpriteAnimation(SpriteRegistry::radioWavesAnimation) COMMA
+				newEntityAnimationDelay(SpriteRegistry::radioWavesAnimation->getTotalTicksDuration()) COMMA
+				newEntityAnimationSetSpriteAnimation(nullptr) COMMA
+				newEntityAnimationDelay(RadioWavesState::interRadioWavesAnimationTicks) COMMA
+				newEntityAnimationSetSpriteAnimation(SpriteRegistry::radioWavesAnimation) COMMA
+				newEntityAnimationDelay(SpriteRegistry::radioWavesAnimation->getTotalTicksDuration()) COMMA
+				newEntityAnimationSetSpriteAnimation(nullptr)
+			}),
+		ticksTime);
+}
+//activate the next switch color and set the start of the animation
+void MapState::startSwitchesFadeInAnimation(int ticksTime) {
+	shouldPlayRadioTowerAnimation = false;
+	lastActivatedSwitchColor++;
+	switchesAnimationFadeInStartTicksTime = ticksTime;
 }
 //draw the map
 void MapState::render(EntityState* camera, char playerZ, int ticksTime) {
@@ -631,12 +756,21 @@ void MapState::render(EntityState* camera, char playerZ, int ticksTime) {
 			railState->render(screenLeftWorldX, screenTopWorldY, false);
 	}
 	for (SwitchState* switchState : switchStates)
-		switchState->render(screenLeftWorldX, screenTopWorldY, lastActivatedSwitchColor);
+		switchState->render(
+			screenLeftWorldX, screenTopWorldY, lastActivatedSwitchColor, ticksTime - switchesAnimationFadeInStartTicksTime);
 
 	//draw the radio tower after drawing everything else
 	glEnable(GL_BLEND);
 	SpriteRegistry::radioTower->renderSpriteAtScreenPosition(
 		0, 0, (GLint)(radioTowerLeftXOffset - screenLeftWorldX), (GLint)(radioTowerTopYOffset - screenTopWorldY));
+
+	glColor4f(
+		(lastActivatedSwitchColor == MapState::squareColor || lastActivatedSwitchColor == MapState::sineColor) ? 1.0f : 0.0f,
+		(lastActivatedSwitchColor == MapState::sawColor || lastActivatedSwitchColor == MapState::sineColor) ? 1.0f : 0.0f,
+		(lastActivatedSwitchColor == MapState::triangleColor || lastActivatedSwitchColor == MapState::sineColor) ? 1.0f : 0.0f,
+		1.0f);
+	radioWavesState.get()->render(camera, ticksTime);
+	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 }
 //draw any rails that are above the player
 void MapState::renderRailsAbovePlayer(EntityState* camera, char playerZ, int ticksTime) {

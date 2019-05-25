@@ -24,6 +24,7 @@ instantiateObjectPoolAndReferenceCounterHolder(EntityAnimation)
 instantiateObjectPoolAndReferenceCounterHolder(MapState)
 instantiateObjectPoolAndReferenceCounterHolder(PauseState)
 instantiateObjectPoolAndReferenceCounterHolder(PlayerState)
+instantiateObjectPoolAndReferenceCounterHolder(MapState::RadioWavesState)
 template class ReferenceCounterHolder<DynamicValue>;
 template class ReferenceCounterHolder<EntityAnimation::Component>;
 template class ReferenceCounterHolder<EntityState>;
@@ -75,6 +76,13 @@ template <class ReferenceCountedObject> void ReferenceCounterHolder<ReferenceCou
 template <class ReferenceCountedObject>
 ReferenceCounterHolder<ReferenceCountedObject>& ReferenceCounterHolder<ReferenceCountedObject>::operator =(
 	const ReferenceCounterHolder<ReferenceCountedObject>& other)
+{
+	set(other.object);
+	return *this;
+}
+template <class ReferenceCountedObject>
+ReferenceCounterHolder<ReferenceCountedObject>& ReferenceCounterHolder<ReferenceCountedObject>::operator =(
+	ReferenceCounterHolder<ReferenceCountedObject>&& other)
 {
 	set(other.object);
 	return *this;

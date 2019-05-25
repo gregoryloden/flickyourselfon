@@ -35,6 +35,22 @@ float EntityState::getRenderCenterWorldX(int ticksTime) {
 float EntityState::getRenderCenterWorldY(int ticksTime) {
 	return y.get()->getValue(renderInterpolatedY ? ticksTime - lastUpdateTicksTime : 0);
 }
+//return the entity's screen x coordinate at the given time
+float EntityState::getRenderCenterScreenX(EntityState* camera, int ticksTime) {
+	//convert these to ints first to align with the map in case the camera is not this entity
+	int screenXOffset = (int)getRenderCenterWorldX(ticksTime) - (int)camera->getRenderCenterWorldX(ticksTime);
+	return (float)screenXOffset + (float)Config::gameScreenWidth * 0.5f;
+}
+//return the entity's screen y coordinate at the given time
+float EntityState::getRenderCenterScreenY(EntityState* camera, int ticksTime) {
+	//convert these to ints first to align with the map in case the camera is not this entity
+	int screenYOffset = (int)getRenderCenterWorldY(ticksTime) - (int)camera->getRenderCenterWorldY(ticksTime);
+	return (float)screenYOffset + (float)Config::gameScreenHeight * 0.5f;
+}
+//get the duration of our entity animation, if we have one
+int EntityState::getAnimationTicksDuration() {
+	return entityAnimation.get() != nullptr ? entityAnimation.get()->getTotalTicksDuration() : 0;
+}
 //set the position to the given position at the given time, preserving the velocity
 void EntityState::setPosition(float pX, float pY, int pLastUpdateTicksTime) {
 	//get our original position

@@ -9,6 +9,17 @@ class PlayerState;
 #define newGameState() newWithoutArgs(GameState)
 
 class GameState onlyInDebug(: public ObjCounter) {
+private:
+	static const int radioTowerInitialPauseAnimationTicks = 1000;
+	static const int playerToRadioTowerAnimationTicks = 3000;
+	static const int preRadioWavesAnimationTicks = 2000;
+	static const int postRadioWavesAnimationTicks = 2000;
+	static const int radioTowerToSwitchesAnimationTicks = 2000;
+	static const int preSwitchesFadeInAnimationTicks = 1000;
+	static const int postSwitchesFadeInAnimationTicks = 1000;
+	static const int switchesToPlayerAnimationTicks = 2000;
+	static const float squareSwitchesAnimationCenterWorldX;
+	static const float squareSwitchesAnimationCenterWorldY;
 public:
 	static const char* savedGameFileName;
 private:
@@ -33,6 +44,7 @@ public:
 	void updateWithPreviousGameState(GameState* prev, int ticksTime);
 	void setPlayerCamera();
 	void setDynamicCamera();
+	void startRadioTowerAnimation(int ticksTime);
 	void render(int ticksTime);
 	void saveState();
 	void loadInitialState();

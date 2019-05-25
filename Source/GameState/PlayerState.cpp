@@ -82,6 +82,8 @@ void PlayerState::updateWithPreviousPlayerState(PlayerState* prev, int ticksTime
 		if (entityAnimation.get()->update(this, ticksTime))
 			return;
 	}
+	//if the previous play state had an animation, we copied it already so clear it
+	//if not, we might have a leftover entity animation from a previous state
 	entityAnimation.set(nullptr);
 
 	//if we can control the player then that must mean the player has the boot
@@ -463,15 +465,6 @@ void PlayerState::kickAir(int ticksTime) {
 }
 //begin a kicking animation and climb up to the next tile to the north
 void PlayerState::kickClimb(float yMoveDistance, int ticksTime) {
-	//start by stopping the player and delaying until the leg-sticking-out frame
-	vector<ReferenceCounterHolder<EntityAnimation::Component>> kickingAnimationComponents ({
-		newEntityAnimationSetVelocity(
-			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
-			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)) COMMA
-		newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerKickingAnimation) COMMA
-		newEntityAnimationDelay(SpriteRegistry::playerKickingAnimationTicksPerFrame)
-	});
-
 	int moveDuration =
 		SpriteRegistry::playerKickingAnimation->getTotalTicksDuration() - SpriteRegistry::playerKickingAnimationTicksPerFrame;
 	float floatMoveDuration = (float)moveDuration;
@@ -480,7 +473,13 @@ void PlayerState::kickClimb(float yMoveDistance, int ticksTime) {
 	float yCubicValuePerDuration = yMoveDistance / 2.0f;
 	float yQuarticValuePerDuration = yMoveDistance / 2.0f;
 
-	kickingAnimationComponents.push_back(
+	//start by stopping the player and delaying until the leg-sticking-out frame
+	vector<ReferenceCounterHolder<EntityAnimation::Component>> kickingAnimationComponents ({
+		newEntityAnimationSetVelocity(
+			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
+			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)) COMMA
+		newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerKickingAnimation) COMMA
+		newEntityAnimationDelay(SpriteRegistry::playerKickingAnimationTicksPerFrame) COMMA
 		newEntityAnimationSetVelocity(
 			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
 			newCompositeQuarticValue(
@@ -488,13 +487,12 @@ void PlayerState::kickClimb(float yMoveDistance, int ticksTime) {
 				0.0f,
 				0.0f,
 				yCubicValuePerDuration / moveDurationCubed,
-				yQuarticValuePerDuration / (moveDurationCubed * floatMoveDuration))));
-
-	//delay for the rest of the animation and then stop the player
-	kickingAnimationComponents.push_back(newEntityAnimationDelay(moveDuration));
-	kickingAnimationComponents.push_back(
+				yQuarticValuePerDuration / (moveDurationCubed * floatMoveDuration))) COMMA
+		//delay for the rest of the animation and then stop the player
+		newEntityAnimationDelay(moveDuration) COMMA
 		newEntityAnimationSetVelocity(
-			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f), newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)));
+			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f), newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f))
+	});
 
 	beginEntityAnimation(newEntityAnimation(ticksTime, kickingAnimationComponents), ticksTime);
 	z += 2;
@@ -568,10 +566,13 @@ void PlayerState::kickFall(float xMoveDistance, float yMoveDistance, char fallHe
 	}
 
 	//delay for the rest of the animation and then stop the player
-	kickingAnimationComponents.push_back(newEntityAnimationDelay(moveDuration));
-	kickingAnimationComponents.push_back(
-		newEntityAnimationSetVelocity(
-			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f), newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)));
+	kickingAnimationComponents.insert(
+		kickingAnimationComponents.end(),
+		{
+			newEntityAnimationDelay(moveDuration) COMMA
+			newEntityAnimationSetVelocity(
+				newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f), newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f))
+		});
 
 	beginEntityAnimation(newEntityAnimation(ticksTime, kickingAnimationComponents), ticksTime);
 	z = fallHeight;
@@ -686,23 +687,27 @@ bool PlayerState::kickRail(MapState* mapState, float xPosition, float yPosition,
 		float yMoveDistance = targetYPosition - lastYPosition;
 		//we haven't done a move yet, get to the initial position
 		if (firstMove) {
-			ridingRailAnimationComponents.push_back(
-				newEntityAnimationSetVelocity(
-					newCompositeQuarticValue(0.0f, xMoveDistance / bootLiftDuration, 0.0f, 0.0f, 0.0f),
-					newCompositeQuarticValue(0.0f, yMoveDistance / bootLiftDuration, 0.0f, 0.0f, 0.0f)));
-			ridingRailAnimationComponents.push_back(
-				newEntityAnimationDelay(SpriteRegistry::playerKickingAnimationTicksPerFrame));
-			ridingRailAnimationComponents.push_back(
-				newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerRidingRailAnimation));
-			ridingRailAnimationComponents.push_back(newEntityAnimationSetSpriteDirection(nextSpriteDirection));
+			ridingRailAnimationComponents.insert(
+				ridingRailAnimationComponents.end(),
+				{
+					newEntityAnimationSetVelocity(
+						newCompositeQuarticValue(0.0f, xMoveDistance / bootLiftDuration, 0.0f, 0.0f, 0.0f),
+						newCompositeQuarticValue(0.0f, yMoveDistance / bootLiftDuration, 0.0f, 0.0f, 0.0f)) COMMA
+					newEntityAnimationDelay(SpriteRegistry::playerKickingAnimationTicksPerFrame) COMMA
+					newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerRidingRailAnimation) COMMA
+					newEntityAnimationSetSpriteDirection(nextSpriteDirection)
+				});
 			firstMove = false;
 		//straight section
 		} else if (fromSide == toSide) {
-			ridingRailAnimationComponents.push_back(
-				newEntityAnimationSetVelocity(
-					newCompositeQuarticValue(0.0f, xMoveDistance / floatRailToRailTicksDuration, 0.0f, 0.0f, 0.0f),
-					newCompositeQuarticValue(0.0f, yMoveDistance / floatRailToRailTicksDuration, 0.0f, 0.0f, 0.0f)));
-			ridingRailAnimationComponents.push_back(newEntityAnimationDelay(railToRailTicksDuration));
+			ridingRailAnimationComponents.insert(
+				ridingRailAnimationComponents.end(),
+				{
+					newEntityAnimationSetVelocity(
+						newCompositeQuarticValue(0.0f, xMoveDistance / floatRailToRailTicksDuration, 0.0f, 0.0f, 0.0f),
+						newCompositeQuarticValue(0.0f, yMoveDistance / floatRailToRailTicksDuration, 0.0f, 0.0f, 0.0f)) COMMA
+					newEntityAnimationDelay(railToRailTicksDuration)
+				});
 		//curved section
 		} else {
 			//curved section going from side to top/bottom
@@ -715,22 +720,12 @@ bool PlayerState::kickRail(MapState* mapState, float xPosition, float yPosition,
 							-xMoveDistance / railToRailTicksDurationSquared,
 							0.0f,
 							0.0f),
-						newCompositeQuarticValue(
-							0.0f,
-							0.0f,
-							yMoveDistance / railToRailTicksDurationSquared,
-							0.0f,
-							0.0f)));
+						newCompositeQuarticValue(0.0f, 0.0f, yMoveDistance / railToRailTicksDurationSquared, 0.0f, 0.0f)));
 			//curved section going from top/bottom to side
 			else
 				ridingRailAnimationComponents.push_back(
 					newEntityAnimationSetVelocity(
-						newCompositeQuarticValue(
-							0.0f,
-							0.0f,
-							xMoveDistance / railToRailTicksDurationSquared,
-							0.0f,
-							0.0f),
+						newCompositeQuarticValue(0.0f, 0.0f, xMoveDistance / railToRailTicksDurationSquared, 0.0f, 0.0f),
 						newCompositeQuarticValue(
 							0.0f,
 							2.0f * yMoveDistance / floatRailToRailTicksDuration,
@@ -738,10 +733,13 @@ bool PlayerState::kickRail(MapState* mapState, float xPosition, float yPosition,
 							0.0f,
 							0.0f)));
 			const int halfRailToRailTicksDuration = railToRailTicksDuration / 2;
-			ridingRailAnimationComponents.push_back(newEntityAnimationDelay(halfRailToRailTicksDuration));
-			ridingRailAnimationComponents.push_back(newEntityAnimationSetSpriteDirection(nextSpriteDirection));
-			ridingRailAnimationComponents.push_back(
-				newEntityAnimationDelay(railToRailTicksDuration - halfRailToRailTicksDuration));
+			ridingRailAnimationComponents.insert(
+				ridingRailAnimationComponents.end(),
+				{
+					newEntityAnimationDelay(halfRailToRailTicksDuration) COMMA
+					newEntityAnimationSetSpriteDirection(nextSpriteDirection) COMMA
+					newEntityAnimationDelay(railToRailTicksDuration - halfRailToRailTicksDuration)
+				});
 		}
 	}
 
@@ -759,25 +757,17 @@ bool PlayerState::kickRail(MapState* mapState, float xPosition, float yPosition,
 		finalYPosition += 2.0f;
 	} else
 		finalXPosition -= 0.5f;
-	ridingRailAnimationComponents.push_back(
-		newEntityAnimationSetVelocity(
-			newCompositeQuarticValue(
-				0.0f,
-				(finalXPosition - targetXPosition) / bootLiftDuration,
-				0.0f,
-				0.0f,
-				0.0f),
-			newCompositeQuarticValue(
-				0.0f,
-				(finalYPosition - targetYPosition) / bootLiftDuration,
-				0.0f,
-				0.0f,
-				0.0f)));
-	ridingRailAnimationComponents.push_back(newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerBootLiftAnimation));
-	ridingRailAnimationComponents.push_back(newEntityAnimationDelay(SpriteRegistry::playerKickingAnimationTicksPerFrame));
-	ridingRailAnimationComponents.push_back(
-		newEntityAnimationSetVelocity(
-			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f), newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)));
+	ridingRailAnimationComponents.insert(
+		ridingRailAnimationComponents.end(),
+		{
+			newEntityAnimationSetVelocity(
+				newCompositeQuarticValue(0.0f, (finalXPosition - targetXPosition) / bootLiftDuration, 0.0f, 0.0f, 0.0f),
+				newCompositeQuarticValue(0.0f, (finalYPosition - targetYPosition) / bootLiftDuration, 0.0f, 0.0f, 0.0f)) COMMA
+			newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerBootLiftAnimation) COMMA
+			newEntityAnimationDelay(SpriteRegistry::playerKickingAnimationTicksPerFrame) COMMA
+			newEntityAnimationSetVelocity(
+				newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f), newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f))
+		});
 
 	beginEntityAnimation(newEntityAnimation(ticksTime, ridingRailAnimationComponents), ticksTime);
 	return true;
@@ -822,11 +812,8 @@ bool PlayerState::kickSwitch(MapState* mapState, float xPosition, float yPositio
 }
 //render this player state, which was deemed to be the last state to need rendering
 void PlayerState::render(EntityState* camera, int ticksTime) {
-	//convert these to ints first to align with the map in case the camera is not the player
-	int playerScreenXOffset = (int)getRenderCenterWorldX(ticksTime) - (int)camera->getRenderCenterWorldX(ticksTime);
-	int playerScreenYOffset = (int)getRenderCenterWorldY(ticksTime) - (int)camera->getRenderCenterWorldY(ticksTime);
-	float renderCenterX = (float)playerScreenXOffset + (float)Config::gameScreenWidth * 0.5f;
-	float renderCenterY = (float)playerScreenYOffset + (float)Config::gameScreenHeight * 0.5f;
+	float renderCenterX = getRenderCenterScreenX(camera,  ticksTime);
+	float renderCenterY = getRenderCenterScreenY(camera,  ticksTime);
 	glEnable(GL_BLEND);
 	if (spriteAnimation != nullptr)
 		spriteAnimation->renderUsingCenter(

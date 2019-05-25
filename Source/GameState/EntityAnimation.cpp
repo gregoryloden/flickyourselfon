@@ -75,6 +75,23 @@ bool EntityAnimation::SetVelocity::handle(EntityState* entityState, int ticksTim
 	entityState->setVelocity(vx.get(), vy.get(), ticksTime);
 	return true;
 }
+//return a SetVelocity that follows a curve from (0, 0) to (1, 1) with 0 slope at (0, 0) and (1, 1)
+EntityAnimation::SetVelocity* EntityAnimation::SetVelocity::cubicInterpolation(
+	float xMoveDistance, float yMoveDistance, float ticksDuration)
+{
+	//vy = at(t-1) = at^2-at   (a < 0)
+	//y = at^3/3-at^2/2
+	//1 = a1^3/3-a1^2/2 = a(1/3 - 1/2) = a(-1/6)
+	//a = 1/(-1/6) = -6
+	//y = -2t^3+3t^2
+	float ticksDurationSquared = ticksDuration * ticksDuration;
+	float ticksDurationCubed = ticksDuration * ticksDurationSquared;
+	return newEntityAnimationSetVelocity(
+		newCompositeQuarticValue(
+			0.0f, 0.0f, 3.0f * xMoveDistance / ticksDurationSquared, -2.0f * xMoveDistance / ticksDurationCubed, 0.0f),
+		newCompositeQuarticValue(
+			0.0f, 0.0f, 3.0f * yMoveDistance / ticksDurationSquared, -2.0f * yMoveDistance / ticksDurationCubed, 0.0f));
+}
 
 //////////////////////////////// EntityAnimation::SetSpriteAnimation ////////////////////////////////
 EntityAnimation::SetSpriteAnimation::SetSpriteAnimation(objCounterParameters())
@@ -209,9 +226,13 @@ bool EntityAnimation::update(EntityState* entityState, int ticksTime) {
 	return updated;
 }
 //return the total ticks duration of all the components (really just the Delays)
-int EntityAnimation::getTotalTicksDuration() {
+int EntityAnimation::getComponentTotalTicksDuration(vector<ReferenceCounterHolder<Component>>& pComponents) {
 	int totalTicksDuration = 0;
-	for (ReferenceCounterHolder<Component>& component : components)
+	for (ReferenceCounterHolder<Component>& component : pComponents)
 		totalTicksDuration += component.get()->getDelayTicksDuration();
 	return totalTicksDuration;
+}
+//get the total ticks duration of this animation's components
+int EntityAnimation::getTotalTicksDuration() {
+	return getComponentTotalTicksDuration(components);
 }

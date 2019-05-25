@@ -17,7 +17,8 @@ SpriteAnimation::SpriteAnimation(objCounterParametersComma() SpriteSheet* pSprit
 sprite(pSprite)
 , frames(pFrames)
 , frameSearchPredecingTicksDurations(new int[pFrames.size()])
-, totalTicksDuration(0) {
+, totalTicksDuration(0)
+, loopAnimation(true) {
 	int frameCount = pFrames.size();
 	int frameSearchPredecingTicksDuration = 0;
 	for (int i = 0; i < frameCount; i++) {
@@ -34,6 +35,10 @@ SpriteAnimation::~SpriteAnimation() {
 }
 //binary search for the referenced frame
 SpriteAnimation::Frame* SpriteAnimation::findFrame(int animationTicksElapsed) {
+	//if we aren't looping the animation, stop at the last frame
+	if (!loopAnimation && animationTicksElapsed >= totalTicksDuration)
+		return frames.back();
+
 	animationTicksElapsed %= totalTicksDuration;
 	int low = 0;
 	int high = frames.size();

@@ -28,12 +28,14 @@ private:
 	vector<Frame*> frames;
 	int* frameSearchPredecingTicksDurations;
 	int totalTicksDuration;
+	bool loopAnimation;
 
 public:
 	SpriteAnimation(objCounterParametersComma() SpriteSheet* pSprite, vector<Frame*> pFrames);
 	~SpriteAnimation();
 
 	int getTotalTicksDuration() { return totalTicksDuration; }
+	void disableLooping() { loopAnimation = false; }
 private:
 	Frame* findFrame(int animationTicksElapsed);
 public:

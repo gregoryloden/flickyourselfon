@@ -13,6 +13,8 @@
 #include "Util/Config.h"
 #include "Util/StringUtils.h"
 
+const float GameState::squareSwitchesAnimationCenterWorldX = 280.0f;
+const float GameState::squareSwitchesAnimationCenterWorldY = 80.0f;
 const char* GameState::savedGameFileName = "fyo.sav";
 const string GameState::sawIntroAnimationFilePrefix = "sawIntroAnimation ";
 GameState::GameState(objCounterParameters())
@@ -76,6 +78,10 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 	dynamicCameraAnchor.set(newDynamicCameraAnchor());
 	dynamicCameraAnchor.get()->updateWithPreviousDynamicCameraAnchor(prev->dynamicCameraAnchor.get(), gameTicksTime);
 
+	bool shouldPlayRadioTowerAnimation = mapState.get()->getShouldPlayRadioTowerAnimation();
+	if (shouldPlayRadioTowerAnimation)
+		startRadioTowerAnimation(ticksTime);
+
 	//handle events after states have been updated
 	SDL_Event gameEvent;
 	while (SDL_PollEvent(&gameEvent) != 0) {
@@ -112,8 +118,12 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 		}
 	}
 
-	//set our next camera anchor
-	prev->camera->setNextCamera(this, gameTicksTime);
+	//forget the previous camera if we're starting our radio tower animation
+	if (shouldPlayRadioTowerAnimation)
+		setDynamicCamera();
+	//otherwise set our next camera anchor
+	else
+		prev->camera->setNextCamera(this, gameTicksTime);
 }
 //set our camera to our player
 void GameState::setPlayerCamera() {
@@ -126,6 +136,86 @@ void GameState::setPlayerCamera() {
 //set our camera to the dynamic camera anchor
 void GameState::setDynamicCamera() {
 	camera = dynamicCameraAnchor.get();
+}
+//begin a radio tower animation for the various states
+void GameState::startRadioTowerAnimation(int ticksTime) {
+	float playerX = playerState.get()->getRenderCenterWorldX(ticksTime);
+	float playerY = playerState.get()->getRenderCenterWorldY(ticksTime);
+	float radioTowerAntennaX = MapState::antennaCenterWorldX();
+	float radioTowerAntennaY = MapState::antennaCenterWorldY();
+	EntityAnimation::SetVelocity* stopMoving = newEntityAnimationSetVelocity(
+		newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f), newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f));
+
+	//build the animation until right before the radio waves animation
+	vector<ReferenceCounterHolder<EntityAnimation::Component>> dynamicCameraAnchorEntityAnimationComponents ({
+		newEntityAnimationSetPosition(playerX, playerY) COMMA
+		stopMoving COMMA
+		newEntityAnimationDelay(radioTowerInitialPauseAnimationTicks) COMMA
+		EntityAnimation::SetVelocity::cubicInterpolation(
+			radioTowerAntennaX - playerX, radioTowerAntennaY - playerY, (float)playerToRadioTowerAnimationTicks) COMMA
+		newEntityAnimationDelay(playerToRadioTowerAnimationTicks) COMMA
+		stopMoving COMMA
+		newEntityAnimationDelay(preRadioWavesAnimationTicks)
+	});
+
+	//add the radio waves animation
+	int ticksUntilStartOfRadioWavesAnimation =
+		EntityAnimation::getComponentTotalTicksDuration(dynamicCameraAnchorEntityAnimationComponents);
+	mapState.get()->startRadioWavesAnimation(ticksUntilStartOfRadioWavesAnimation, ticksTime);
+	int radioWavesAnimationTicksDuration =
+		mapState.get()->getRadioWavesAnimationTicksDuration() - ticksUntilStartOfRadioWavesAnimation;
+
+	//build the animation from after the radio waves animation until right before the switches animation
+	dynamicCameraAnchorEntityAnimationComponents.insert(
+		dynamicCameraAnchorEntityAnimationComponents.end(),
+		{
+			newEntityAnimationDelay(radioWavesAnimationTicksDuration + postRadioWavesAnimationTicks) COMMA
+			EntityAnimation::SetVelocity::cubicInterpolation(
+				squareSwitchesAnimationCenterWorldX - radioTowerAntennaX,
+				squareSwitchesAnimationCenterWorldY - radioTowerAntennaY,
+				(float)radioTowerToSwitchesAnimationTicks) COMMA
+			newEntityAnimationDelay(radioTowerToSwitchesAnimationTicks) COMMA
+			stopMoving COMMA
+			newEntityAnimationDelay(preSwitchesFadeInAnimationTicks)
+	});
+
+	//add the switches animation
+	int ticksUntilStartOfSwitchesAnimation =
+		EntityAnimation::getComponentTotalTicksDuration(dynamicCameraAnchorEntityAnimationComponents);
+	mapState.get()->startSwitchesFadeInAnimation(ticksTime + ticksUntilStartOfSwitchesAnimation);
+
+	//finish the animation by returning to the player
+	dynamicCameraAnchorEntityAnimationComponents.insert(
+		dynamicCameraAnchorEntityAnimationComponents.end(),
+		{
+			newEntityAnimationDelay(MapState::switchesFadeInDuration) COMMA
+			newEntityAnimationDelay(postSwitchesFadeInAnimationTicks) COMMA
+			EntityAnimation::SetVelocity::cubicInterpolation(
+				playerX - squareSwitchesAnimationCenterWorldX,
+				playerY - squareSwitchesAnimationCenterWorldY,
+				(float)switchesToPlayerAnimationTicks) COMMA
+			newEntityAnimationDelay(switchesToPlayerAnimationTicks) COMMA
+			stopMoving COMMA
+			newEntityAnimationSwitchToPlayerCamera()
+	});
+	dynamicCameraAnchor.get()->beginEntityAnimation(
+		newEntityAnimation(ticksTime, dynamicCameraAnchorEntityAnimationComponents), ticksTime);
+
+	//delay the player for the duration of the animation
+	int remainingKickingAimationTicksDuration =
+		SpriteRegistry::playerKickingAnimation->getTotalTicksDuration()
+			- SpriteRegistry::playerKickingAnimationTicksPerFrame;
+	playerState.get()->beginEntityAnimation(
+		newEntityAnimation(
+			ticksTime,
+			{
+				newEntityAnimationDelay(remainingKickingAimationTicksDuration) COMMA
+				newEntityAnimationSetSpriteAnimation(nullptr) COMMA
+				newEntityAnimationDelay(
+					EntityAnimation::getComponentTotalTicksDuration(dynamicCameraAnchorEntityAnimationComponents)
+						- remainingKickingAimationTicksDuration)
+			}),
+		ticksTime);
 }
 //render this state, which was deemed to be the last state to need rendering
 void GameState::render(int ticksTime) {
@@ -187,8 +277,7 @@ void GameState::loadInitialState() {
 		//player animation component helpers
 		float speedPerTick = PlayerState::speedPerSecond / (float)Config::ticksPerSecond;
 		EntityAnimation::SetVelocity* stopMoving = newEntityAnimationSetVelocity(
-			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
-			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f));
+			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f), newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f));
 		EntityAnimation::SetVelocity* walkRight = newEntityAnimationSetVelocity(
 			newCompositeQuarticValue(0.0f, speedPerTick, 0.0f, 0.0f, 0.0f),
 			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f));
@@ -301,7 +390,7 @@ void GameState::loadInitialState() {
 				newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
 				newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
 				newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
-				newCompositeQuarticValue(1.0f, -0.000875f, 0.0f, 0.0f, 0.0f)) COMMA
+				newCompositeQuarticValue(1.0f, -0.875f * (float)Config::ticksPerSecond, 0.0f, 0.0f, 0.0f)) COMMA
 			newEntityAnimationDelay(1000) COMMA
 			newEntityAnimationSetScreenOverlayColor(
 				newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
@@ -315,24 +404,25 @@ void GameState::loadInitialState() {
 		int cameraAnimationTicksDuration = legLiftAnimationTicksDuration;
 		for (ReferenceCounterHolder<EntityAnimation::Component>& component : cameraAnimationComponents)
 			cameraAnimationTicksDuration += component.get()->getDelayTicksDuration();
-		cameraAnimationComponents.push_back(
-			newEntityAnimationDelay(
-				playerEntityAnimation->getTotalTicksDuration() - cameraAnimationTicksDuration));
-		//fade in the screen and then switch to the player camera
-		cameraAnimationComponents.push_back(
-			newEntityAnimationSetScreenOverlayColor(
-				newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
-				newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
-				newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
-				newCompositeQuarticValue(0.125f, -0.125f / (float)legLiftAnimationTicksDuration, 0.0f, 0.0f, 0.0f)));
-		cameraAnimationComponents.push_back(newEntityAnimationDelay(legLiftAnimationTicksDuration));
-		cameraAnimationComponents.push_back(
-			newEntityAnimationSetScreenOverlayColor(
-				newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
-				newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
-				newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
-				newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)));
-		cameraAnimationComponents.push_back(newEntityAnimationSwitchToPlayerCamera());
+		cameraAnimationComponents.insert(
+			cameraAnimationComponents.end(),
+			{
+				newEntityAnimationDelay(
+					playerEntityAnimation->getTotalTicksDuration() - cameraAnimationTicksDuration) COMMA
+				//fade in the screen and then switch to the player camera
+				newEntityAnimationSetScreenOverlayColor(
+					newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
+					newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
+					newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
+					newCompositeQuarticValue(0.125f, -0.125f / (float)legLiftAnimationTicksDuration, 0.0f, 0.0f, 0.0f)) COMMA
+				newEntityAnimationDelay(legLiftAnimationTicksDuration) COMMA
+				newEntityAnimationSetScreenOverlayColor(
+					newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
+					newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
+					newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
+					newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)) COMMA
+				newEntityAnimationSwitchToPlayerCamera()
+			});
 
 		playerState.get()->beginEntityAnimation(playerEntityAnimation, 0);
 		dynamicCameraAnchor.get()->beginEntityAnimation(newEntityAnimation(0, cameraAnimationComponents), 0);
