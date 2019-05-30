@@ -7,6 +7,7 @@
 #include "Sprites/SpriteRegistry.h"
 #include "Sprites/SpriteSheet.h"
 #include "Util/Config.h"
+#include "Util/StringUtils.h"
 
 #define newRail(x, y, baseHeight, color, initialTileOffset) \
 	newWithArgs(MapState::Rail, x, y, baseHeight, color, initialTileOffset)
@@ -286,27 +287,23 @@ void MapState::Switch::render(
 	GLint drawTopY = (GLint)(topY * tileSize - screenTopWorldY);
 	//draw the gray sprite if it's off or fading in
 	if (lastActivatedSwitchColor < color
-			|| (lastActivatedSwitchColor == color && lastActivatedSwitchColorFadeInTicksOffset < switchesFadeInDuration))
-		SpriteRegistry::switches->renderSpriteAtScreenPosition(0, 0, drawLeftX, drawTopY);
-	//draw the color sprite if it's an old color or it's fully faded in
-	else if (lastActivatedSwitchColor > color
-			|| (lastActivatedSwitchColor == color && lastActivatedSwitchColorFadeInTicksOffset >= switchesFadeInDuration))
+		|| (lastActivatedSwitchColor == color && lastActivatedSwitchColorFadeInTicksOffset < switchesFadeInDuration))
 	{
+		SpriteRegistry::switches->renderSpriteAtScreenPosition(0, 0, drawLeftX, drawTopY);
+		//also draw a partially faded color sprite if we're fading in the color
+		if (lastActivatedSwitchColor == color && lastActivatedSwitchColorFadeInTicksOffset > 0) {
+			int spriteHorizontalIndex = lastActivatedSwitchColor < color ? 0 : (int)(color * 2 + (isOn ? 1 : 2));
+			float fadeInAlpha = (float)lastActivatedSwitchColorFadeInTicksOffset / (float)switchesFadeInDuration;
+			glColor4f(1.0f, 1.0f, 1.0f, fadeInAlpha);
+			int spriteLeftX = spriteHorizontalIndex * 12 + 1;
+			SpriteRegistry::switches->renderSpriteSheetRegionAtScreenRegion(
+				spriteLeftX, 1, spriteLeftX + 10, 11, drawLeftX + 1, drawTopY + 1, drawLeftX + 11, drawTopY + 11);
+			glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+		}
+	//draw the color sprite if it's already on or it's fully faded in
+	} else {
 		int spriteHorizontalIndex = lastActivatedSwitchColor < color ? 0 : (int)(color * 2 + (isOn ? 1 : 2));
 		SpriteRegistry::switches->renderSpriteAtScreenPosition(spriteHorizontalIndex, 0, drawLeftX, drawTopY);
-	}
-	//draw a partially faded color sprite if we're fading in the color
-	if (lastActivatedSwitchColor == color
-		&& lastActivatedSwitchColorFadeInTicksOffset > 0
-		&& lastActivatedSwitchColorFadeInTicksOffset < switchesFadeInDuration)
-	{
-		int spriteHorizontalIndex = lastActivatedSwitchColor < color ? 0 : (int)(color * 2 + (isOn ? 1 : 2));
-		float fadeInAlpha = (float)lastActivatedSwitchColorFadeInTicksOffset / (float)switchesFadeInDuration;
-		glColor4f(1.0f, 1.0f, 1.0f, fadeInAlpha);
-		int spriteLeftX = spriteHorizontalIndex * 12 + 1;
-		SpriteRegistry::switches->renderSpriteSheetRegionAtScreenRegion(
-			spriteLeftX, 1, spriteLeftX + 10, 11, drawLeftX + 1, drawTopY + 1, drawLeftX + 11, drawTopY + 11);
-		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 	}
 	#ifdef EDITOR
 		Editor::renderGroupRect(group, drawLeftX + 4, drawTopY + 4, drawLeftX + 8, drawTopY + 8);
@@ -363,6 +360,15 @@ void MapState::RailState::squareToggleOffset() {
 //render the rail
 void MapState::RailState::render(int screenLeftWorldX, int screenTopWorldY, bool renderShadow) {
 	rail->render(screenLeftWorldX, screenTopWorldY, tileOffset, renderShadow);
+}
+//set this rail to the initial tile offset, not moving
+void MapState::RailState::loadState(float pTileOffset) {
+	tileOffset = pTileOffset;
+	targetTileOffset = pTileOffset;
+}
+//reset the offset
+void MapState::RailState::reset() {
+	loadState((float)rail->getInitialTileOffset());
 }
 
 //////////////////////////////// MapState::SwitchState ////////////////////////////////
@@ -462,6 +468,8 @@ vector<MapState::Rail*> MapState::rails;
 vector<MapState::Switch*> MapState::switches;
 int MapState::width = 1;
 int MapState::height = 1;
+const string MapState::railOffsetFilePrefix = "rail ";
+const string MapState::lastActivatedSwitchColorFilePrefix = "lastActivatedSwitchColor ";
 MapState::MapState(objCounterParameters())
 : PooledReferenceCounter(objCounterArguments())
 , railStates()
@@ -780,6 +788,36 @@ void MapState::renderRailsAbovePlayer(EntityState* camera, char playerZ, int tic
 		if (railState->isAbovePlayerZ(playerZ))
 			railState->render(screenLeftWorldX, screenTopWorldY, false);
 	}
+}
+//save the map state to the file
+void MapState::saveState(ofstream& file) {
+	if (lastActivatedSwitchColor >= 0)
+		file << lastActivatedSwitchColorFilePrefix << (int)lastActivatedSwitchColor << "\n";
+	for (int i = 0; i < (int)railStates.size(); i++) {
+		RailState* railState = railStates[i];
+		char targetTileOffset = (char)railState->getTargetTileOffset();
+		if (targetTileOffset != railState->getRail()->getInitialTileOffset())
+			file << railOffsetFilePrefix << i << ' ' << (int)targetTileOffset << "\n";
+	}
+}
+//try to load state from the line of the file, return whether state was loaded
+bool MapState::loadState(string& line) {
+	if (StringUtils::startsWith(line, lastActivatedSwitchColorFilePrefix))
+		lastActivatedSwitchColor = (char)atoi(line.c_str() + lastActivatedSwitchColorFilePrefix.size());
+	else if (StringUtils::startsWith(line, railOffsetFilePrefix)) {
+		const char* railIndexString = line.c_str() + railOffsetFilePrefix.size();
+		const char* offsetString = strchr(railIndexString, ' ') + 1;
+		int railIndex = atoi(railIndexString);
+		railStates[railIndex]->loadState((float)atoi(offsetString));
+	} else
+		return false;
+	return true;
+}
+//reset the rails and switches
+void MapState::resetMap() {
+	lastActivatedSwitchColor = -1;
+	for (RailState* railState : railStates)
+		railState->reset();
 }
 #ifdef EDITOR
 	//set a switch if there's room, or delete a switch if we can

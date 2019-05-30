@@ -549,18 +549,15 @@ void PlayerState::kickFall(float xMoveDistance, float yMoveDistance, char fallHe
 					yQuadraticValuePerDuration / moveDurationSquared,
 					yCubicValuePerDuration / (moveDurationSquared * floatMoveDuration),
 					0.0f)));
-	//left, right, and down all have the same quadratic jump trajectory
+	//left, right, and down all have the same quadratic jump trajectory (for y, and x is linear or 0)
 	} else {
-		const float yLinearValuePerDuration = -yMoveDistance;
-		const float yQuadraticValuePerDuration = yMoveDistance * 2.0f;
-
 		kickingAnimationComponents.push_back(
 			newEntityAnimationSetVelocity(
 				newCompositeQuarticValue(0.0f, xMoveDistance / floatMoveDuration, 0.0f, 0.0f, 0.0f),
 				newCompositeQuarticValue(
 					0.0f,
-					yLinearValuePerDuration / floatMoveDuration,
-					yQuadraticValuePerDuration / moveDurationSquared,
+					-yMoveDistance / floatMoveDuration,
+					2.0f * yMoveDistance / moveDurationSquared,
 					0.0f,
 					0.0f)));
 	}

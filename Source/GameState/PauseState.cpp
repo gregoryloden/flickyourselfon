@@ -274,6 +274,7 @@ PauseState::EndPauseOption::EndPauseOption(objCounterParametersComma() int pEndP
 		pEndPauseDecision == (int)EndPauseDecision::Save ? string("save + resume") :
 		pEndPauseDecision == (int)EndPauseDecision::Exit ? string("exit") :
 		pEndPauseDecision == ((int)EndPauseDecision::Save | (int)EndPauseDecision::Exit) ? string("save + exit") :
+		pEndPauseDecision == (int)EndPauseDecision::Reset ? string("reset game") :
 		string("-"))
 , endPauseDecision(pEndPauseDecision) {
 }
@@ -340,6 +341,7 @@ void PauseState::loadMenu() {
 						newNavigationOption("back", nullptr)
 					})) COMMA
 			newEndPauseOption((int)EndPauseDecision::Save) COMMA
+			newEndPauseOption((int)EndPauseDecision::Reset) COMMA
 			newEndPauseOption((int)EndPauseDecision::Save | (int)EndPauseDecision::Exit) COMMA
 			newEndPauseOption((int)EndPauseDecision::Exit)
 		});

@@ -98,12 +98,15 @@ public:
 		~RailState();
 
 		Rail* getRail() { return rail; }
+		float getTargetTileOffset() { return targetTileOffset; }
 		bool canRide() { return tileOffset == 0.0f; }
 		// say the last 1/2 tile of offset is below the player
 		bool isAbovePlayerZ(char z) { return rail->getBaseHeight() - (char)(tileOffset + 0.5f) * 2 > z; }
 		void updateWithPreviousRailState(RailState* prev, int ticksTime);
 		void squareToggleOffset();
 		void render(int screenLeftWorldX, int screenTopWorldY, bool renderShadow);
+		void loadState(float pTileOffset);
+		void reset();
 	};
 	class SwitchState onlyInDebug(: public ObjCounter) {
 	private:
@@ -185,6 +188,8 @@ public:
 	static const float smallDistance;
 	static const float introAnimationCameraCenterX;
 	static const float introAnimationCameraCenterY;
+	static const string railOffsetFilePrefix;
+	static const string lastActivatedSwitchColorFilePrefix;
 
 private:
 	static char* tiles;
@@ -243,6 +248,9 @@ public:
 	void startSwitchesFadeInAnimation(int ticksTime);
 	void render(EntityState* camera, char playerZ, int ticksTime);
 	void renderRailsAbovePlayer(EntityState* camera, char playerZ, int ticksTime);
+	void saveState(ofstream& file);
+	bool loadState(string& line);
+	void resetMap();
 	#ifdef EDITOR
 		static void setSwitch(int leftX, int topY, char color, char group);
 		static void setRail(int x, int y, char color, char group);

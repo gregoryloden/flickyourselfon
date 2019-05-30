@@ -10,8 +10,8 @@ class PlayerState;
 
 class GameState onlyInDebug(: public ObjCounter) {
 private:
-	static const int radioTowerInitialPauseAnimationTicks = 1000;
-	static const int playerToRadioTowerAnimationTicks = 3000;
+	static const int radioTowerInitialPauseAnimationTicks = 1500;
+	static const int playerToRadioTowerAnimationTicks = 2000;
 	static const int preRadioWavesAnimationTicks = 2000;
 	static const int postRadioWavesAnimationTicks = 2000;
 	static const int radioTowerToSwitchesAnimationTicks = 2000;
@@ -47,5 +47,7 @@ public:
 	void startRadioTowerAnimation(int ticksTime);
 	void render(int ticksTime);
 	void saveState();
-	void loadInitialState();
+	void loadInitialState(int ticksTime);
+	void beginIntroAnimation(int ticksTime);
+	void resetGame(int ticksTime);
 };

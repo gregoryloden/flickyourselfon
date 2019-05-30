@@ -165,7 +165,7 @@ void renderLoop(CircularStateQueue<GameState>* gameStateQueue) {
 		Editor::loadButtons();
 	#endif
 	//load the initial state after loading all sprites
-	gameStateQueue->getNextReadableState()->loadInitialState();
+	gameStateQueue->getNextReadableState()->loadInitialState((int)SDL_GetTicks());
 	Logger::log("Sprites and game state loaded /// Beginning render loop");
 
 	//begin the render loop
