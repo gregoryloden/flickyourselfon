@@ -241,7 +241,7 @@ public:
 	static float antennaCenterWorldX();
 	static float antennaCenterWorldY();
 	static char horizontalTilesHeight(int lowMapX, int highMapX, int mapY);
-	static void setIntroAnimationBootTile(bool startingAnimation);
+	static void setIntroAnimationBootTile(bool showBootTile);
 	void updateWithPreviousMapState(MapState* prev, int ticksTime);
 	void setSwitchToFlip(short pSwitchToFlipId, int pSwitchToFlipTicksTime);
 	void startRadioWavesAnimation(int initialTicksDelay, int ticksTime);

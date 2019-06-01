@@ -51,6 +51,11 @@ public:
 
 		Metrics();
 		~Metrics();
+
+		float getTotalHeight() { return topPadding + aboveBaseline + belowBaseline + bottomPadding; }
+		float getBaselineDistanceBelow(Metrics* aboveMetrics) {
+			return aboveMetrics->belowBaseline + aboveMetrics->bottomPadding + topPadding + aboveBaseline;
+		}
 	};
 
 private:

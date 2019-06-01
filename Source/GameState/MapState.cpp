@@ -287,23 +287,24 @@ void MapState::Switch::render(
 	GLint drawTopY = (GLint)(topY * tileSize - screenTopWorldY);
 	//draw the gray sprite if it's off or fading in
 	if (lastActivatedSwitchColor < color
-		|| (lastActivatedSwitchColor == color && lastActivatedSwitchColorFadeInTicksOffset < switchesFadeInDuration))
-	{
+			|| (lastActivatedSwitchColor == color && lastActivatedSwitchColorFadeInTicksOffset <= 0))
 		SpriteRegistry::switches->renderSpriteAtScreenPosition(0, 0, drawLeftX, drawTopY);
-		//also draw a partially faded color sprite if we're fading in the color
-		if (lastActivatedSwitchColor == color && lastActivatedSwitchColorFadeInTicksOffset > 0) {
-			int spriteHorizontalIndex = lastActivatedSwitchColor < color ? 0 : (int)(color * 2 + (isOn ? 1 : 2));
-			float fadeInAlpha = (float)lastActivatedSwitchColorFadeInTicksOffset / (float)switchesFadeInDuration;
-			glColor4f(1.0f, 1.0f, 1.0f, fadeInAlpha);
-			int spriteLeftX = spriteHorizontalIndex * 12 + 1;
-			SpriteRegistry::switches->renderSpriteSheetRegionAtScreenRegion(
-				spriteLeftX, 1, spriteLeftX + 10, 11, drawLeftX + 1, drawTopY + 1, drawLeftX + 11, drawTopY + 11);
-			glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-		}
 	//draw the color sprite if it's already on or it's fully faded in
-	} else {
+	else if (lastActivatedSwitchColor > color
+		|| (lastActivatedSwitchColor == color && lastActivatedSwitchColorFadeInTicksOffset >= switchesFadeInDuration))
+	{
 		int spriteHorizontalIndex = lastActivatedSwitchColor < color ? 0 : (int)(color * 2 + (isOn ? 1 : 2));
 		SpriteRegistry::switches->renderSpriteAtScreenPosition(spriteHorizontalIndex, 0, drawLeftX, drawTopY);
+	//draw a partially faded light color sprite above the darker color sprite if we're fading in the color
+	} else {
+		int darkSpriteHorizontalIndex = (int)(color * 2 + 2);
+		SpriteRegistry::switches->renderSpriteAtScreenPosition(darkSpriteHorizontalIndex, 0, drawLeftX, drawTopY);
+		float fadeInAlpha = (float)lastActivatedSwitchColorFadeInTicksOffset / (float)switchesFadeInDuration;
+		glColor4f(1.0f, 1.0f, 1.0f, fadeInAlpha);
+		int lightSpriteLeftX = (darkSpriteHorizontalIndex - 1) * 12 + 1;
+		SpriteRegistry::switches->renderSpriteSheetRegionAtScreenRegion(
+			lightSpriteLeftX, 1, lightSpriteLeftX + 10, 11, drawLeftX + 1, drawTopY + 1, drawLeftX + 11, drawTopY + 11);
+		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 	}
 	#ifdef EDITOR
 		Editor::renderGroupRect(group, drawLeftX + 4, drawTopY + 4, drawLeftX + 8, drawTopY + 8);
@@ -651,8 +652,9 @@ char MapState::horizontalTilesHeight(int lowMapX, int highMapX, int mapY) {
 	return foundHeight;
 }
 //change one of the tiles to be the boot tile
-void MapState::setIntroAnimationBootTile(bool startingAnimation) {
-	tiles[introAnimationBootTileY * width + introAnimationBootTileX] = startingAnimation ? introAnimationBootTile : 0;
+void MapState::setIntroAnimationBootTile(bool showBootTile) {
+	//if we're not showing the boot tile, just show tile 0 instead of showing the tile from the floor file
+	tiles[introAnimationBootTileY * width + introAnimationBootTileX] = showBootTile ? introAnimationBootTile : 0;
 }
 //update the rails and switches
 void MapState::updateWithPreviousMapState(MapState* prev, int ticksTime) {

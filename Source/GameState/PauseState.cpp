@@ -27,45 +27,36 @@ PauseState::PauseMenu::~PauseMenu() {
 }
 //render this menu
 void PauseState::PauseMenu::render(int selectedOption, KeyBindingOption* selectingKeyBindingOption) {
-	//render a translucent rectangle the same color as the background color
+	//render a translucent rectangle
 	SpriteSheet::renderFilledRectangle(
-		(GLfloat)Config::backgroundColorRed,
-		(GLfloat)Config::backgroundColorGreen,
-		(GLfloat)Config::backgroundColorBlue,
-		5.0f / 8.0f,
-		0,
-		0,
-		(GLint)Config::gameScreenWidth,
-		(GLint)Config::gameScreenHeight);
+		0.0f, 0.0f, 0.0f, 0.5f, 0, 0, (GLint)Config::gameScreenWidth, (GLint)Config::gameScreenHeight);
 
 	//first find the height of the pause options so that we can vertically center them
 	Text::Metrics titleMetrics = Text::getMetrics(title.c_str(), titleFontScale);
-	float totalHeight = titleMetrics.aboveBaseline + titleMetrics.belowBaseline + titleMetrics.bottomPadding;
-	float lastBottomPadding = 0;
+	float totalHeight = titleMetrics.getTotalHeight();
 	vector<Text::Metrics> optionsMetrics;
 	for (PauseOption* option : options) {
 		Text::Metrics optionMetrics =
 			option == selectingKeyBindingOption
 				? selectingKeyBindingOption->getSelectingDisplayTextMetrics(true)
 				: option->getDisplayTextMetrics();
-		lastBottomPadding = optionMetrics.bottomPadding;
-		totalHeight += optionMetrics.topPadding + optionMetrics.aboveBaseline + optionMetrics.belowBaseline + lastBottomPadding;
+		totalHeight += optionMetrics.getTotalHeight();
 		optionsMetrics.push_back(optionMetrics);
 	}
-	totalHeight -= lastBottomPadding;
+	totalHeight -= titleMetrics.topPadding + optionsMetrics.back().bottomPadding;
 
 	//then render them all
 	float screenCenterX = (float)Config::gameScreenWidth * 0.5f;
 	float optionsBaseline = ((float)Config::gameScreenHeight - totalHeight) * 0.5f + titleMetrics.aboveBaseline;
 
 	Text::render(title.c_str(), screenCenterX - titleMetrics.charactersWidth * 0.5f, optionsBaseline, titleFontScale);
-	optionsBaseline += titleMetrics.belowBaseline + titleMetrics.bottomPadding;
+	Text::Metrics* lastMetrics = &titleMetrics;
 
 	int optionsCount = options.size();
 	for (int i = 0; i < optionsCount; i++) {
 		PauseOption* option = options[i];
 		Text::Metrics& optionMetrics = optionsMetrics[i];
-		optionsBaseline += optionMetrics.topPadding + optionMetrics.aboveBaseline;
+		optionsBaseline += optionMetrics.getBaselineDistanceBelow(lastMetrics);
 		float leftX = screenCenterX - optionMetrics.charactersWidth * 0.5f;
 		if (option == selectingKeyBindingOption)
 			selectingKeyBindingOption->renderSelecting(leftX, optionsBaseline, true);
@@ -86,7 +77,7 @@ void PauseState::PauseMenu::render(int selectedOption, KeyBindingOption* selecti
 				PauseOption::displayTextFontScale);
 		}
 
-		optionsBaseline += optionMetrics.belowBaseline + optionMetrics.bottomPadding;
+		lastMetrics = &optionMetrics;
 	}
 }
 

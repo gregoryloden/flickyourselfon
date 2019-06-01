@@ -10,6 +10,21 @@ class PlayerState;
 
 class GameState onlyInDebug(: public ObjCounter) {
 private:
+	enum class TitleAnimation: int {
+		None,
+		Intro,
+		Outro
+	};
+
+	static const int introTitleFadeInTicksTime = 1000;
+	static const int introTitleFadeInTicksDuration = 1000;
+	static const int introTitleDisplayTicksTime = introTitleFadeInTicksTime + introTitleFadeInTicksDuration;
+	static const int introTitleDisplayTicksDuration = 2000;
+	static const int introTitleFadeOutTicksTime = introTitleDisplayTicksTime + introTitleDisplayTicksDuration;
+	static const int introTitleFadeOutTicksDuration = 1000;
+	static const int introPostTitleTicksTime = introTitleFadeOutTicksTime + introTitleFadeOutTicksDuration;
+	static const int introPostTitleTicksDuration = 500;
+	static const int introAnimationStartTicksTime = introPostTitleTicksTime + introPostTitleTicksDuration;
 	static const int radioTowerInitialPauseAnimationTicks = 1500;
 	static const int playerToRadioTowerAnimationTicks = 2000;
 	static const int preRadioWavesAnimationTicks = 2000;
@@ -20,12 +35,18 @@ private:
 	static const int switchesToPlayerAnimationTicks = 2000;
 	static const float squareSwitchesAnimationCenterWorldX;
 	static const float squareSwitchesAnimationCenterWorldY;
+	static const char* titleGameName;
+	static const char* titleCreditsLine1;
+	static const char* titleCreditsLine2;
+	static const char* titlePostCreditsMessage;
 public:
 	static const char* savedGameFileName;
 private:
 	static const string sawIntroAnimationFilePrefix;
 
 	bool sawIntroAnimation;
+	TitleAnimation titleAnimation;
+	int titleAnimationStartTicksTime;
 	ReferenceCounterHolder<PlayerState> playerState;
 	ReferenceCounterHolder<MapState> mapState;
 	ReferenceCounterHolder<DynamicCameraAnchor> dynamicCameraAnchor;
@@ -46,6 +67,7 @@ public:
 	void setDynamicCamera();
 	void startRadioTowerAnimation(int ticksTime);
 	void render(int ticksTime);
+	void renderTitleAnimation(int gameTicksTime);
 	void saveState();
 	void loadInitialState(int ticksTime);
 	void beginIntroAnimation(int ticksTime);

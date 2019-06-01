@@ -10,16 +10,23 @@
 #include "Sprites/SpriteAnimation.h"
 #include "Sprites/SpriteRegistry.h"
 #include "Sprites/SpriteSheet.h"
+#include "Sprites/Text.h"
 #include "Util/Config.h"
 #include "Util/StringUtils.h"
 
 const float GameState::squareSwitchesAnimationCenterWorldX = 280.0f;
 const float GameState::squareSwitchesAnimationCenterWorldY = 80.0f;
+const char* GameState::titleGameName = "Flick Yourself On";
+const char* GameState::titleCreditsLine1 = "A game by";
+const char* GameState::titleCreditsLine2 = "Gregory Loden";
+const char* GameState::titlePostCreditsMessage = "Thanks for playing!";
 const char* GameState::savedGameFileName = "fyo.sav";
 const string GameState::sawIntroAnimationFilePrefix = "sawIntroAnimation ";
 GameState::GameState(objCounterParameters())
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
 sawIntroAnimation(false)
+, titleAnimation(TitleAnimation::None)
+, titleAnimationStartTicksTime(0)
 , playerState(nullptr)
 , mapState(nullptr)
 , dynamicCameraAnchor(nullptr)
@@ -34,12 +41,15 @@ GameState::~GameState() {
 }
 //update this game state by reading from the previous state
 void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
-	sawIntroAnimation = prev->sawIntroAnimation;
-
 	//first things first: dump all our previous state so that we can start fresh
 	playerState.set(nullptr);
 	mapState.set(nullptr);
 	dynamicCameraAnchor.set(nullptr);
+
+	//copy values that don't usually change from state to state
+	sawIntroAnimation = prev->sawIntroAnimation;
+	titleAnimation = prev->titleAnimation;
+	titleAnimationStartTicksTime = prev->titleAnimationStartTicksTime;
 
 	//don't update any state if we're paused
 	if (prev->pauseState.get() != nullptr) {
@@ -52,6 +62,7 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 		playerState.set(prev->playerState.get());
 		mapState.set(prev->mapState.get());
 		dynamicCameraAnchor.set(prev->dynamicCameraAnchor.get());
+		camera = prev->camera;
 
 		if (nextPauseState != nullptr) {
 			int endPauseDecision = nextPauseState->getEndPauseDecision();
@@ -86,9 +97,13 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 	dynamicCameraAnchor.set(newDynamicCameraAnchor());
 	dynamicCameraAnchor.get()->updateWithPreviousDynamicCameraAnchor(prev->dynamicCameraAnchor.get(), gameTicksTime);
 
-	bool shouldPlayRadioTowerAnimation = mapState.get()->getShouldPlayRadioTowerAnimation();
-	if (shouldPlayRadioTowerAnimation)
+	//forget the previous camera if we're starting our radio tower animation
+	if (mapState.get()->getShouldPlayRadioTowerAnimation()) {
 		startRadioTowerAnimation(ticksTime);
+		setDynamicCamera();
+	//otherwise set our next camera anchor
+	} else
+		prev->camera->setNextCamera(this, gameTicksTime);
 
 	//handle events after states have been updated
 	SDL_Event gameEvent;
@@ -125,13 +140,6 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 				break;
 		}
 	}
-
-	//forget the previous camera if we're starting our radio tower animation
-	if (shouldPlayRadioTowerAnimation)
-		setDynamicCamera();
-	//otherwise set our next camera anchor
-	else
-		prev->camera->setNextCamera(this, gameTicksTime);
 }
 //set our camera to our player
 void GameState::setPlayerCamera() {
@@ -235,11 +243,84 @@ void GameState::render(int ticksTime) {
 
 	if (camera == dynamicCameraAnchor.get())
 		dynamicCameraAnchor.get()->render(gameTicksTime);
+	renderTitleAnimation(gameTicksTime);
+
+	//TODO: real win condition
+	if (playerState.get()->getZ() == 6
+		&& playerState.get()->getRenderCenterWorldX(gameTicksTime) <= (float)(31 * MapState::tileSize))
+	{
+		const char* win = "Win!";
+		Text::Metrics winMetrics = Text::getMetrics(win, 2.0f);
+		Text::render(win, 10.0f, 10.0f + winMetrics.aboveBaseline, 2.0f);
+	}
+
 	if (pauseState.get() != nullptr)
 		pauseState.get()->render();
 	#ifdef EDITOR
 		Editor::render(camera, gameTicksTime);
 	#endif
+}
+//render the title animation at the given time
+void GameState::renderTitleAnimation(int gameTicksTime) {
+	switch (titleAnimation) {
+		case TitleAnimation::Intro: {
+			SpriteSheet::renderFilledRectangle(
+				0.0f, 0.0f, 0.0f, 1.0f, 0, 0, (GLint)Config::gameScreenWidth, (GLint)Config::gameScreenHeight);
+			int titleAnimationTicksTime = gameTicksTime - titleAnimationStartTicksTime;
+			GLfloat titleAlpha;
+			if (titleAnimationTicksTime < introTitleFadeInTicksTime)
+				titleAlpha = 0.0f;
+			else if (titleAnimationTicksTime < introTitleDisplayTicksTime)
+				titleAlpha =
+					(GLfloat)(titleAnimationTicksTime - introTitleFadeInTicksTime) / (GLfloat)introTitleFadeInTicksDuration;
+			else if (titleAnimationTicksTime < introTitleFadeOutTicksTime)
+				titleAlpha = 1.0f;
+			else if (titleAnimationTicksTime < introPostTitleTicksTime)
+				titleAlpha =
+					(GLfloat)(introPostTitleTicksTime - titleAnimationTicksTime) / (GLfloat)introTitleFadeOutTicksDuration;
+			else if (titleAnimationTicksTime < introAnimationStartTicksTime)
+				titleAlpha = 0.0f;
+			else {
+				titleAnimation = TitleAnimation::None;
+				return;
+			}
+
+			Text::Metrics gameNameMetrics = Text::getMetrics(titleGameName, 2.0f);
+			Text::Metrics spacerMetrics = Text::getMetrics(" ", 1.0f);
+			Text::Metrics creditsLine1Metrics = Text::getMetrics(titleCreditsLine1, 1.0f);
+			Text::Metrics creditsLine2Metrics = Text::getMetrics(titleCreditsLine2, 1.0f);
+			float totalHeight =
+				gameNameMetrics.getTotalHeight()
+					+ spacerMetrics.getTotalHeight()
+					+ creditsLine1Metrics.getTotalHeight()
+					+ creditsLine2Metrics.getTotalHeight()
+					- gameNameMetrics.topPadding
+					- creditsLine2Metrics.bottomPadding;;
+
+			glColor4f(1.0f, 1.0f, 1.0f, titleAlpha);
+			float screenCenterX = (float)Config::gameScreenWidth * 0.5f;
+			float gameNameBaseline = ((float)Config::gameScreenHeight - totalHeight) * 0.5f + gameNameMetrics.aboveBaseline;
+			Text::render(titleGameName, screenCenterX - gameNameMetrics.charactersWidth * 0.5f, gameNameBaseline, 2.0f);
+			float creditsLine1Baseline =
+				gameNameBaseline
+					+ spacerMetrics.getBaselineDistanceBelow(&gameNameMetrics)
+					+ creditsLine1Metrics.getBaselineDistanceBelow(&spacerMetrics);
+			Text::render(
+				titleCreditsLine1, screenCenterX - creditsLine1Metrics.charactersWidth * 0.5f, creditsLine1Baseline, 1.0f);
+			float creditsLine2Baseline =
+				creditsLine1Baseline + creditsLine2Metrics.getBaselineDistanceBelow(&creditsLine1Metrics);
+			Text::render(
+				titleCreditsLine2, screenCenterX - creditsLine2Metrics.charactersWidth * 0.5f, creditsLine2Baseline, 1.0f);
+			glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+			return;
+		}
+		case TitleAnimation::Outro:
+			//TODO: outro animation
+			return;
+		case TitleAnimation::None:
+		default:
+			return;
+	}
 }
 //save the state to a file
 void GameState::saveState() {
@@ -287,6 +368,9 @@ void GameState::beginIntroAnimation(int ticksTime) {
 	MapState::setIntroAnimationBootTile(true);
 	camera = dynamicCameraAnchor.get();
 
+	titleAnimation = TitleAnimation::Intro;
+	titleAnimationStartTicksTime = ticksTime;
+
 	//player animation component helpers
 	float speedPerTick = PlayerState::speedPerSecond / (float)Config::ticksPerSecond;
 	EntityAnimation::SetVelocity* stopMoving = newEntityAnimationSetVelocity(
@@ -312,6 +396,7 @@ void GameState::beginIntroAnimation(int ticksTime) {
 		{
 			newEntityAnimationSetPosition(
 				PlayerState::introAnimationPlayerCenterX, PlayerState::introAnimationPlayerCenterY) COMMA
+			newEntityAnimationDelay(introAnimationStartTicksTime) COMMA
 			newEntityAnimationDelay(3000) COMMA
 			//walk to the wall
 			walkRight COMMA
@@ -399,6 +484,12 @@ void GameState::beginIntroAnimation(int ticksTime) {
 		});
 	vector<ReferenceCounterHolder<EntityAnimation::Component>> cameraAnimationComponents ({
 		newEntityAnimationSetPosition(MapState::introAnimationCameraCenterX, MapState::introAnimationCameraCenterY) COMMA
+		newEntityAnimationSetScreenOverlayColor(
+			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
+			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
+			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
+			newCompositeQuarticValue(1.0f, 0.0f, 0.0f, 0.0f, 0.0f)) COMMA
+		newEntityAnimationDelay(introAnimationStartTicksTime) COMMA
 		newEntityAnimationSetScreenOverlayColor(
 			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
 			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
