@@ -23,7 +23,7 @@ bool renderThreadReadyForUpdates = false;
 extern "C"
 #endif
 int main(int argc, char* argv[]) {
-	//initialize SDL
+	//initialize SDL before we do anything else, we need it to log timestamps
 	int initResult = SDL_Init(SDL_INIT_EVERYTHING);
 	if (initResult < 0)
 		return initResult;

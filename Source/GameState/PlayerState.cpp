@@ -48,7 +48,8 @@ PlayerState::~PlayerState() {}
 //initialize and return a PlayerState
 PlayerState* PlayerState::produce(objCounterParameters()) {
 	initializeWithNewFromPool(p, PlayerState)
-	//TODO: what parameters does this function need to properly initialize a player state?
+	p->z = 0;
+	p->hasBoot = false;
 	return p;
 }
 //copy the other state
@@ -62,9 +63,8 @@ void PlayerState::copyPlayerState(PlayerState* other) {
 	hasBoot = other->hasBoot;
 }
 pooledReferenceCounterDefineRelease(PlayerState)
-//use the player as the next camera anchor unless we're starting an animation with a new camera anchor
+//use the player as the next camera anchor, we will handle switching to a different camera somewhere else
 void PlayerState::setNextCamera(GameState* nextGameState, int ticksTime) {
-	//TODO: set a different camera anchor at the end of our animation
 	nextGameState->setPlayerCamera();
 }
 //set the animation to the given animation at the given time
@@ -362,7 +362,6 @@ void PlayerState::beginKicking(MapState* mapState, int ticksTime) {
 				return;
 			}
 		}
-		//TODO: check if we're kicking a switch north
 	} else if (spriteDirection == SpriteDirection::Down) {
 		int oneTileDownMapY = (int)(yPosition + boundingBoxBottomOffset + kickingDistanceLimit) / MapState::tileSize;
 		char fallHeight = MapState::invalidHeight;
@@ -440,7 +439,6 @@ void PlayerState::beginKicking(MapState* mapState, int ticksTime) {
 			kickFall(targetXPosition - xPosition, (float)(tileOffset * MapState::tileSize), fallHeight, ticksTime);
 			return;
 		}
-		//TODO: check if we're kicking a switch to the side
 	}
 
 	//we didn't do anything with the kick, just play the animation
@@ -473,13 +471,14 @@ void PlayerState::kickClimb(float yMoveDistance, int ticksTime) {
 	float yCubicValuePerDuration = yMoveDistance / 2.0f;
 	float yQuarticValuePerDuration = yMoveDistance / 2.0f;
 
-	//start by stopping the player and delaying until the leg-sticking-out frame
 	vector<ReferenceCounterHolder<EntityAnimation::Component>> kickingAnimationComponents ({
+		//start by stopping the player and delaying until the leg-sticking-out frame
 		newEntityAnimationSetVelocity(
 			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
 			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)) COMMA
 		newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerKickingAnimation) COMMA
 		newEntityAnimationDelay(SpriteRegistry::playerKickingAnimationTicksPerFrame) COMMA
+		//then set the climb velocity, delay for the rest of the animation, and then stop the player
 		newEntityAnimationSetVelocity(
 			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
 			newCompositeQuarticValue(
@@ -488,7 +487,6 @@ void PlayerState::kickClimb(float yMoveDistance, int ticksTime) {
 				0.0f,
 				yCubicValuePerDuration / moveDurationCubed,
 				yQuarticValuePerDuration / (moveDurationCubed * floatMoveDuration))) COMMA
-		//delay for the rest of the animation and then stop the player
 		newEntityAnimationDelay(moveDuration) COMMA
 		newEntityAnimationSetVelocity(
 			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f), newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f))
@@ -515,7 +513,7 @@ void PlayerState::kickFall(float xMoveDistance, float yMoveDistance, char fallHe
 
 	if (spriteDirection == SpriteDirection::Up) {
 		//we want a cubic curve that goes through (0,0) and (1,1) and a chosen midpoint (i,j) where 0 < i < 1
-		//it also goes through (c,#) such that dy/dt has roots at c (trough) and i (crest)
+		//it also goes through (c,#) such that dy/dt has roots at c (trough) and i (crest) (and arbitrary multiplier d)
 		//vy = d(t-c)(t-i) = d(t^2-(c+i)t+ci)   (d < 0)
 		//y = d(t^3/3-(c+i)t^2/2+cit) = dt^3/3-d(c+i)t^2/2+dcit
 		//1 = d(1^3/3-(c+i)1^2/2+ci1) = d(1/3-(c+i)/2+ci)
@@ -804,7 +802,10 @@ bool PlayerState::kickSwitch(MapState* mapState, float xPosition, float yPositio
 		return false;
 
 	kickAir(ticksTime);
-	mapState->setSwitchToFlip(switchId, ticksTime + SpriteRegistry::playerKickingAnimationTicksPerFrame);
+	mapState->setSwitchToFlip(
+		switchId,
+		ticksTime + SpriteRegistry::playerKickingAnimationTicksPerFrame,
+		ticksTime + SpriteRegistry::playerKickingAnimation->getTotalTicksDuration());
 	return true;
 }
 //render this player state, which was deemed to be the last state to need rendering

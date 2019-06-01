@@ -112,7 +112,7 @@ public:
 	private:
 		Switch* switch0;
 		vector<RailState*> connectedRailStates;
-		bool isOn;
+		int flipOnTicksTime;
 
 	public:
 		SwitchState(objCounterParametersComma() Switch* pSwitch0);
@@ -120,13 +120,14 @@ public:
 
 		Switch* getSwitch() { return switch0; }
 		void addConnectedRailState(RailState* railState);
-		void flip();
-		void updateWithPreviousSwitchState(SwitchState* prev, int ticksTime);
+		void flip(int pFlipOnTicksTime);
+		void updateWithPreviousSwitchState(SwitchState* prev);
 		void render(
 			int screenLeftWorldX,
 			int screenTopWorldY,
 			char lastActivatedSwitchColor,
-			int lastActivatedSwitchColorFadeInTicksOffset);
+			int lastActivatedSwitchColorFadeInTicksOffset,
+			int ticksTime);
 	};
 	class RadioWavesState: public EntityState {
 	public:
@@ -204,7 +205,8 @@ private:
 	vector<RailState*> railStates;
 	vector<SwitchState*> switchStates;
 	short switchToFlipId;
-	int switchToFlipTicksTime;
+	int switchFlipOffTicksTime;
+	int switchFlipOnTicksTime;
 	char lastActivatedSwitchColor;
 	int switchesAnimationFadeInStartTicksTime;
 	bool shouldPlayRadioTowerAnimation;
@@ -243,7 +245,7 @@ public:
 	static char horizontalTilesHeight(int lowMapX, int highMapX, int mapY);
 	static void setIntroAnimationBootTile(bool showBootTile);
 	void updateWithPreviousMapState(MapState* prev, int ticksTime);
-	void setSwitchToFlip(short pSwitchToFlipId, int pSwitchToFlipTicksTime);
+	void setSwitchToFlip(short pSwitchToFlipId, int pSwitchFlipOffTicksTime, int pSwitchFlipOnTicksTime);
 	void startRadioWavesAnimation(int initialTicksDelay, int ticksTime);
 	void startSwitchesFadeInAnimation(int ticksTime);
 	void render(EntityState* camera, char playerZ, int ticksTime);

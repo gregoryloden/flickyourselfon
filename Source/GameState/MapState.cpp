@@ -299,7 +299,7 @@ void MapState::Switch::render(
 	} else {
 		int darkSpriteHorizontalIndex = (int)(color * 2 + 2);
 		SpriteRegistry::switches->renderSpriteAtScreenPosition(darkSpriteHorizontalIndex, 0, drawLeftX, drawTopY);
-		float fadeInAlpha = (float)lastActivatedSwitchColorFadeInTicksOffset / (float)switchesFadeInDuration;
+		float fadeInAlpha = MathUtils::fsqr((float)lastActivatedSwitchColorFadeInTicksOffset / (float)switchesFadeInDuration);
 		glColor4f(1.0f, 1.0f, 1.0f, fadeInAlpha);
 		int lightSpriteLeftX = (darkSpriteHorizontalIndex - 1) * 12 + 1;
 		SpriteRegistry::switches->renderSpriteSheetRegionAtScreenRegion(
@@ -377,7 +377,7 @@ MapState::SwitchState::SwitchState(objCounterParametersComma() Switch* pSwitch0)
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
 switch0(pSwitch0)
 , connectedRailStates()
-, isOn(true) {
+, flipOnTicksTime(0) {
 }
 MapState::SwitchState::~SwitchState() {
 	//don't delete the switch, it's owned by MapState
@@ -387,7 +387,7 @@ void MapState::SwitchState::addConnectedRailState(RailState* railState) {
 	connectedRailStates.push_back(railState);
 }
 //activate rails because this switch was kicked
-void MapState::SwitchState::flip() {
+void MapState::SwitchState::flip(int pFlipOnTicksTime) {
 	char color = switch0->getColor();
 	//square wave switch: just toggle the target tile offset of the rails
 	if (color == squareColor) {
@@ -395,17 +395,26 @@ void MapState::SwitchState::flip() {
 			railState->squareToggleOffset();
 		}
 	}
+	flipOnTicksTime = pFlipOnTicksTime;
 }
 //activate rails if this switch was kicked
-void MapState::SwitchState::updateWithPreviousSwitchState(SwitchState* prev, int ticksTime) {
-	//TODO: get flipped on/off
+void MapState::SwitchState::updateWithPreviousSwitchState(SwitchState* prev) {
+	flipOnTicksTime = prev->flipOnTicksTime;
 }
 //render the switch
 void MapState::SwitchState::render(
-	int screenLeftWorldX, int screenTopWorldY, char lastActivatedSwitchColor, int lastActivatedSwitchColorFadeInTicksOffset)
+	int screenLeftWorldX,
+	int screenTopWorldY,
+	char lastActivatedSwitchColor,
+	int lastActivatedSwitchColorFadeInTicksOffset,
+	int ticksTime)
 {
 	switch0->render(
-		screenLeftWorldX, screenTopWorldY, lastActivatedSwitchColor, lastActivatedSwitchColorFadeInTicksOffset, isOn);
+		screenLeftWorldX,
+		screenTopWorldY,
+		lastActivatedSwitchColor,
+		lastActivatedSwitchColorFadeInTicksOffset,
+		ticksTime >= flipOnTicksTime);
 }
 
 //////////////////////////////// MapState::RadioWavesState ////////////////////////////////
@@ -476,7 +485,8 @@ MapState::MapState(objCounterParameters())
 , railStates()
 , switchStates()
 , switchToFlipId(absentRailSwitchId)
-, switchToFlipTicksTime(-1)
+, switchFlipOffTicksTime(-1)
+, switchFlipOnTicksTime(-1)
 , lastActivatedSwitchColor(-1)
 , switchesAnimationFadeInStartTicksTime(0)
 , shouldPlayRadioTowerAnimation(false)
@@ -664,7 +674,7 @@ void MapState::updateWithPreviousMapState(MapState* prev, int ticksTime) {
 	for (int i = 0; i < (int)railStates.size(); i++)
 		railStates[i]->updateWithPreviousRailState(prev->railStates[i], ticksTime);
 	for (int i = 0; i < (int)switchStates.size(); i++)
-		switchStates[i]->updateWithPreviousSwitchState(prev->switchStates[i], ticksTime);
+		switchStates[i]->updateWithPreviousSwitchState(prev->switchStates[i]);
 	#ifdef EDITOR
 		//since the editor can add switches and rails, make sure we update our list to track them
 		//we won't connect rail states to switch states since we can't kick switches in the editor
@@ -678,8 +688,8 @@ void MapState::updateWithPreviousMapState(MapState* prev, int ticksTime) {
 	if (prev->switchToFlipId == absentRailSwitchId)
 		switchToFlipId = absentRailSwitchId;
 	//not time to flip the switch yet
-	else if (ticksTime < prev->switchToFlipTicksTime) {
-		switchToFlipTicksTime = prev->switchToFlipTicksTime;
+	else if (ticksTime < prev->switchFlipOffTicksTime) {
+		switchFlipOffTicksTime = prev->switchFlipOffTicksTime;
 		switchToFlipId = prev->switchToFlipId;
 	//flip the switch, it's time
 	} else {
@@ -691,16 +701,17 @@ void MapState::updateWithPreviousMapState(MapState* prev, int ticksTime) {
 				shouldPlayRadioTowerAnimation = true;
 		//this is just a regular switch and we've turned on the parent switch, flip it
 		} else if (lastActivatedSwitchColor >= switch0->getColor())
-			switchState->flip();
+			switchState->flip(switchFlipOnTicksTime);
 		switchToFlipId = absentRailSwitchId;
 	}
 
 	radioWavesState.get()->updateWithPreviousRadioWavesState(prev->radioWavesState.get(), ticksTime);
 }
 //set that we should flip a switch in the future
-void MapState::setSwitchToFlip(short pSwitchToFlipId, int pSwitchToFlipTicksTime) {
+void MapState::setSwitchToFlip(short pSwitchToFlipId, int pSwitchFlipOffTicksTime, int pSwitchFlipOnTicksTime) {
 	switchToFlipId = pSwitchToFlipId;
-	switchToFlipTicksTime = pSwitchToFlipTicksTime;
+	switchFlipOffTicksTime = pSwitchFlipOffTicksTime;
+	switchFlipOnTicksTime = pSwitchFlipOnTicksTime;
 }
 //begin a radio waves animation
 void MapState::startRadioWavesAnimation(int initialTicksDelay, int ticksTime) {
@@ -767,7 +778,11 @@ void MapState::render(EntityState* camera, char playerZ, int ticksTime) {
 	}
 	for (SwitchState* switchState : switchStates)
 		switchState->render(
-			screenLeftWorldX, screenTopWorldY, lastActivatedSwitchColor, ticksTime - switchesAnimationFadeInStartTicksTime);
+			screenLeftWorldX,
+			screenTopWorldY,
+			lastActivatedSwitchColor,
+			ticksTime - switchesAnimationFadeInStartTicksTime,
+			ticksTime);
 
 	//draw the radio tower after drawing everything else
 	glEnable(GL_BLEND);
