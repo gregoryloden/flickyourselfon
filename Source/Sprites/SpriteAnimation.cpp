@@ -52,6 +52,7 @@ SpriteAnimation::Frame* SpriteAnimation::findFrame(int animationTicksElapsed) {
 	}
 	return frames[low];
 }
+//render the appropriate sprite for this frame, using the given center
 void SpriteAnimation::renderUsingCenter(
 	float centerX, float centerY, int animationTicksElapsed, int fallbackSpriteHorizontalIndex, int fallbackSpriteVerticalIndex)
 {

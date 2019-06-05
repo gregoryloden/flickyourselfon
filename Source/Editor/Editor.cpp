@@ -11,8 +11,8 @@
 	#define newExportMapButton(zone, leftX, topY) newWithArgs(Editor::ExportMapButton, zone, leftX, topY)
 	#define newTileButton(zone, leftX, topY, tile) newWithArgs(Editor::TileButton, zone, leftX, topY, tile)
 	#define newHeightButton(zone, leftX, topY, height) newWithArgs(Editor::HeightButton, zone, leftX, topY, height)
-	#define newPaintBoxRadiusButton(zone, leftX, topY, radius) \
-		newWithArgs(Editor::PaintBoxRadiusButton, zone, leftX, topY, radius)
+	#define newPaintBoxRadiusButton(zone, leftX, topY, radius, isXRadius) \
+		newWithArgs(Editor::PaintBoxRadiusButton, zone, leftX, topY, radius, isXRadius)
 	#define newNoiseButton(zone, leftX, topY) newWithArgs(Editor::NoiseButton, zone, leftX, topY)
 	#define newNoiseTileButton(zone, leftX, topY) newWithArgs(Editor::NoiseTileButton, zone, leftX, topY)
 	#define newSwitchButton(zone, leftX, topY, color) newWithArgs(Editor::SwitchButton, zone, leftX, topY, color)
@@ -123,26 +123,41 @@
 		int mapWidth = MapState::mapWidth();
 		int mapHeight = MapState::mapHeight();
 
-		SDL_Surface* floorSurface = SDL_CreateRGBSurface(0, mapWidth, mapHeight, 32, 0xFF0000, 0xFF00, 0xFF, 0xFF000000);
+		int mapExtensionLeftX = 0;
+		int mapExtensionRightX = 0;
+		int mapExtensionTopY = 0;
+		int mapExtensionBottomY = 0;
+		int exportedMapWidth = mapExtensionLeftX + MapState::mapWidth() + mapExtensionRightX;
+		int exportedMapHeight = mapExtensionTopY + MapState::mapHeight() + mapExtensionBottomY;
+
+		SDL_Surface* floorSurface =
+			SDL_CreateRGBSurface(0, exportedMapWidth, exportedMapHeight, 32, 0xFF0000, 0xFF00, 0xFF, 0xFF000000);
 		SDL_Renderer* floorRenderer = SDL_CreateSoftwareRenderer(floorSurface);
 
-		for (int mapY = 0; mapY < mapHeight; mapY++) {
-			for (int mapX = 0; mapX < mapWidth; mapX++) {
-				char height = MapState::getHeight(mapX, mapY);
-				char railSwitchData = (Uint8)MapState::getRailSwitchFloorSaveData(mapX, mapY);
-				if (height == MapState::emptySpaceHeight)
-					//if we don't have a rail/switch, use 254 for red since bit 0 indicates a rail/switch
-					SDL_SetRenderDrawColor(floorRenderer, railSwitchData != 0 ? railSwitchData : 254, 255, 255, 255);
+		for (int exportedMapY = 0; exportedMapY < exportedMapWidth; exportedMapY++) {
+			for (int exportedMapX = 0; exportedMapX < exportedMapHeight; exportedMapX++) {
+				int mapX = exportedMapX - mapExtensionLeftX;
+				int mapY = exportedMapY - mapExtensionTopY;
+				if (mapX < 0 || mapX >= mapWidth || mapY < 0 || mapY >= mapHeight)
+					//we're extending the map, write an empty tile
+					SDL_SetRenderDrawColor(floorRenderer, 254, 255, 255, 255);
 				else {
-					char tile = MapState::getTile(mapX, mapY);
-					SDL_SetRenderDrawColor(
-						floorRenderer,
-						(Uint8)railSwitchData,
-						(Uint8)((tile + 1) * (char)MapState::tileDivisor - 1),
-						(Uint8)((height + 1) * (char)MapState::heightDivisor - 1),
-						255);
+					char height = MapState::getHeight(mapX, mapY);
+					char railSwitchData = (Uint8)MapState::getRailSwitchFloorSaveData(mapX, mapY);
+					if (height == MapState::emptySpaceHeight)
+						//if we don't have a rail/switch, use 254 for red since bit 0 indicates a rail/switch
+						SDL_SetRenderDrawColor(floorRenderer, railSwitchData != 0 ? railSwitchData : 254, 255, 255, 255);
+					else {
+						char tile = MapState::getTile(mapX, mapY);
+						SDL_SetRenderDrawColor(
+							floorRenderer,
+							(Uint8)railSwitchData,
+							(Uint8)((tile + 1) * (char)MapState::tileDivisor - 1),
+							(Uint8)((height + 1) * (char)MapState::heightDivisor - 1),
+							255);
+					}
 				}
-				SDL_RenderDrawPoint(floorRenderer, mapX, mapY);
+				SDL_RenderDrawPoint(floorRenderer, exportedMapX, exportedMapY);
 			}
 		}
 
@@ -290,9 +305,10 @@
 	const int Editor::PaintBoxRadiusButton::buttonSize = paintBoxMaxRadius + 2;
 	const Editor::RGB Editor::PaintBoxRadiusButton::boxRGB (9.0f / 16.0f, 3.0f / 8.0f, 5.0f / 8.0f);
 	Editor::PaintBoxRadiusButton::PaintBoxRadiusButton(
-		objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY, char pRadius)
+		objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY, char pRadius, bool pIsXRadius)
 	: Button(objCounterArgumentsComma() zone, zoneLeftX, zoneTopY)
-	, radius(pRadius) {
+	, radius(pRadius)
+	, isXRadius(pIsXRadius) {
 		setWidthAndHeight(buttonSize, buttonSize);
 	}
 	Editor::PaintBoxRadiusButton::~PaintBoxRadiusButton() {}
@@ -301,15 +317,24 @@
 		Button::render();
 		SpriteSheet::renderFilledRectangle(
 			0.0f, 0.0f, 0.0f, 1.0f, (GLint)leftX + 1, (GLint)topY + 1, (GLint)rightX - 1, (GLint)bottomY - 1);
-		GLint boxLeftX = (GLint)leftX + 1;
-		GLint boxTopY = (GLint)topY + 1;
-		GLint boxSize = (GLint)(radius + 1);
-		SpriteSheet::renderFilledRectangle(
-			boxRGB.red, boxRGB.green, boxRGB.blue, 1.0f, boxLeftX, boxTopY, boxLeftX + boxSize, boxTopY + boxSize);
+		if (isXRadius) {
+			GLint boxLeftX = (GLint)leftX + 1;
+			GLint boxTopY = (GLint)topY + 3;
+			SpriteSheet::renderFilledRectangle(
+				boxRGB.red, boxRGB.green, boxRGB.blue, 1.0f, boxLeftX, boxTopY, boxLeftX + (GLint)radius + 1, boxTopY + 3);
+		} else {
+			GLint boxLeftX = (GLint)leftX + 3;
+			GLint boxTopY = (GLint)topY + 1;
+			SpriteSheet::renderFilledRectangle(
+				boxRGB.red, boxRGB.green, boxRGB.blue, 1.0f, boxLeftX, boxTopY, boxLeftX + 3, boxTopY + (GLint)radius + 1);
+		}
 	}
 	//select a radius to use when painting
 	void Editor::PaintBoxRadiusButton::doAction() {
-		selectedPaintBoxRadiusButton = this;
+		if (isXRadius)
+			selectedPaintBoxXRadiusButton = this;
+		else
+			selectedPaintBoxYRadiusButton = this;
 	}
 
 	//////////////////////////////// Editor::NoiseButton ////////////////////////////////
@@ -478,7 +503,8 @@
 	Editor::NoiseButton* Editor::noiseButton = nullptr;
 	Editor::NoiseTileButton** Editor::noiseTileButtons = nullptr;
 	Editor::Button* Editor::selectedButton = nullptr;
-	Editor::PaintBoxRadiusButton* Editor::selectedPaintBoxRadiusButton = nullptr;
+	Editor::PaintBoxRadiusButton* Editor::selectedPaintBoxXRadiusButton = nullptr;
+	Editor::PaintBoxRadiusButton* Editor::selectedPaintBoxYRadiusButton = nullptr;
 	Editor::RailSwitchGroupButton* Editor::selectedRailSwitchGroupButton = nullptr;
 	Editor::HeightButton* Editor::lastSelectedHeightButton = nullptr;
 	Editor::SwitchButton* Editor::lastSelectedSwitchButton = nullptr;
@@ -498,29 +524,36 @@
 		for (char i = 0; i < (char)MapState::heightCount; i++)
 			buttons.push_back(
 				newHeightButton(
-					Zone::Right, 5 + HeightButton::buttonWidth * (i / 2), 58 + HeightButton::buttonHeight * (i % 2), i));
+					Zone::Right, 5 + HeightButton::buttonWidth * i / 2, 58 + HeightButton::buttonHeight * (i % 2), i));
 		for (char i = 0; i < (char)paintBoxMaxRadius; i++) {
 			PaintBoxRadiusButton* button =
-				newPaintBoxRadiusButton(Zone::Right, 5 + PaintBoxRadiusButton::buttonSize * i, 81, i);
+				newPaintBoxRadiusButton(Zone::Right, 5 + PaintBoxRadiusButton::buttonSize * i, 81, i, true);
 			if (i == 0)
-				selectedPaintBoxRadiusButton = button;
+				selectedPaintBoxXRadiusButton = button;
 			buttons.push_back(button);
 		}
-		noiseButton = newNoiseButton(Zone::Right, 73, 58);
+		for (char i = 0; i < (char)paintBoxMaxRadius; i++) {
+			PaintBoxRadiusButton* button =
+				newPaintBoxRadiusButton(Zone::Right, 5 + PaintBoxRadiusButton::buttonSize * i, 93, i, false);
+			if (i == 0)
+				selectedPaintBoxYRadiusButton = button;
+			buttons.push_back(button);
+		}
+		noiseButton = newNoiseButton(Zone::Right, 77, 58);
 		buttons.push_back(noiseButton);
 		noiseTileButtons = new NoiseTileButton*[noiseTileButtonMaxCount];
 		for (char i = 0; i < (char)noiseTileButtonMaxCount; i++) {
 			NoiseTileButton* button = newNoiseTileButton(
-				Zone::Right, 73 + NoiseTileButton::buttonWidth * (i % 8), 74 + NoiseTileButton::buttonHeight * (i / 8));
+				Zone::Right, 77 + NoiseTileButton::buttonWidth * (i % 8), 74 + NoiseTileButton::buttonHeight * (i / 8));
 			noiseTileButtons[i] = button;
 			buttons.push_back(button);
 		}
 		for (char i = 0; i < 4; i++)
-			buttons.push_back(newSwitchButton(Zone::Right, 5 + SwitchButton::buttonSize * i, 97, i));
+			buttons.push_back(newSwitchButton(Zone::Right, 5 + SwitchButton::buttonSize * i, 108, i));
 		for (char i = 0; i < 4; i++)
-			buttons.push_back(newRailButton(Zone::Right, 5 + RailButton::buttonSize * i, 114, i));
+			buttons.push_back(newRailButton(Zone::Right, 64 + RailButton::buttonSize * i, 114, i));
 		for (char i = -1; i <= 1; i += 2)
-			buttons.push_back(newRailTileOffsetButton(Zone::Right, 44 + RailTileOffsetButton::buttonSize * i / 2, 114, i));
+			buttons.push_back(newRailTileOffsetButton(Zone::Right, 103 + RailTileOffsetButton::buttonSize * i / 2, 114, i));
 		for (char i = 0; i < (char)railSwitchGroupCount; i++) {
 			RailSwitchGroupButton* button = newRailSwitchGroupButton(
 				Zone::Right, 5 + TileButton::buttonSize * (i % 16), 125 + TileButton::buttonSize * (i / 16), i);
@@ -587,17 +620,20 @@
 			int mouseMapY;
 			getMouseMapXY(screenLeftWorldX, screenTopWorldY, &mouseMapX, &mouseMapY);
 
-			int radius =
-				(selectedButton == lastSelectedSwitchButton
-						|| selectedButton == lastSelectedRailButton
-						|| selectedButton == lastSelectedRailTileOffsetButton)
-					? 0
-					: (int)selectedPaintBoxRadiusButton->getRadius();
+			int xRadius = 0;
+			int yRadius = 0;
+			if (selectedButton != lastSelectedSwitchButton
+				&& selectedButton != lastSelectedRailButton
+				&& selectedButton != lastSelectedRailTileOffsetButton)
+			{
+				xRadius = selectedPaintBoxXRadiusButton->getRadius();
+				yRadius = selectedPaintBoxYRadiusButton->getRadius();
+			}
 
-			int lowMapX = MathUtils::max(mouseMapX - radius, 0);
-			int lowMapY = MathUtils::max(mouseMapY - radius, 0);
-			int highMapX = MathUtils::min(mouseMapX + radius, MapState::mapWidth() - 1);
-			int highMapY = MathUtils::min(mouseMapY + radius, MapState::mapHeight() - 1);
+			int lowMapX = MathUtils::max(mouseMapX - xRadius, 0);
+			int lowMapY = MathUtils::max(mouseMapY - yRadius, 0);
+			int highMapX = MathUtils::min(mouseMapX + xRadius, MapState::mapWidth() - 1);
+			int highMapY = MathUtils::min(mouseMapY + yRadius, MapState::mapHeight() - 1);
 			for (int mapX = lowMapX; mapX <= highMapX; mapX++) {
 				for (int mapY = lowMapY; mapY <= highMapY; mapY++) {
 					selectedButton->paintMap(mapX, mapY);
@@ -620,23 +656,26 @@
 			getMouseMapXY(screenLeftWorldX, screenTopWorldY, &mouseMapX, &mouseMapY);
 
 			//draw a mouse selection box
-			int boxTopLeftMapOffset;
-			int boxMapSize;
+			int boxLeftMapOffset = 0;
+			int boxTopMapOffset = 0;
+			int boxMapWidth;
+			int boxMapHeight;
 			if (selectedButton == lastSelectedSwitchButton) {
-				boxTopLeftMapOffset = 0;
-				boxMapSize = 2;
+				boxMapWidth = 2;
+				boxMapHeight = 2;
 			} else if (selectedButton == lastSelectedRailButton || selectedButton == lastSelectedRailTileOffsetButton) {
-				boxTopLeftMapOffset = 0;
-				boxMapSize = 1;
+				boxMapWidth = 1;
+				boxMapHeight = 1;
 			} else {
-				boxTopLeftMapOffset = (int)selectedPaintBoxRadiusButton->getRadius();
-				boxMapSize = (boxTopLeftMapOffset * 2 + 1);
+				boxLeftMapOffset = (int)selectedPaintBoxXRadiusButton->getRadius();
+				boxTopMapOffset = (int)selectedPaintBoxYRadiusButton->getRadius();
+				boxMapWidth = (boxLeftMapOffset * 2 + 1);
+				boxMapHeight = (boxTopMapOffset * 2 + 1);
 			}
-			GLint boxScreenSize = (GLint)(boxMapSize * MapState::tileSize);
-			GLint boxLeftX = (GLint)((mouseMapX - boxTopLeftMapOffset) * MapState::tileSize - screenLeftWorldX);
-			GLint boxTopY = (GLint)((mouseMapY - boxTopLeftMapOffset) * MapState::tileSize - screenTopWorldY);
-			GLint boxRightX = boxLeftX + boxScreenSize;
-			GLint boxBottomY = boxTopY + boxScreenSize;
+			GLint boxLeftX = (GLint)((mouseMapX - boxLeftMapOffset) * MapState::tileSize - screenLeftWorldX);
+			GLint boxTopY = (GLint)((mouseMapY - boxTopMapOffset) * MapState::tileSize - screenTopWorldY);
+			GLint boxRightX = boxLeftX + (GLint)(boxMapWidth * MapState::tileSize);
+			GLint boxBottomY = boxTopY + (GLint)(boxMapHeight * MapState::tileSize);
 			SpriteSheet::renderRectangleOutline(1.0f, 1.0f, 1.0f, 1.0f, boxLeftX, boxTopY, boxRightX, boxBottomY);
 		}
 
@@ -669,7 +708,8 @@
 		if (selectedButton != nullptr)
 			selectedButton->renderHighlightOutline();
 		selectedRailSwitchGroupButton->renderHighlightOutline();
-		selectedPaintBoxRadiusButton->renderHighlightOutline();
+		selectedPaintBoxXRadiusButton->renderHighlightOutline();
+		selectedPaintBoxYRadiusButton->renderHighlightOutline();
 	}
 	//draw a graphic to represent this rail/switch group
 	void Editor::renderGroupRect(char group, int leftX, int topY, int rightX, int bottomY) {

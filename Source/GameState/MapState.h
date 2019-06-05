@@ -158,11 +158,13 @@ public:
 	static const int tileSize = 6;
 	static const int switchSize = 12;
 	static const char invalidHeight = -1;
-	static const int radioTowerLeftXOffset = 324;
-	static const int radioTowerTopYOffset = -106;
+	static const int firstLevelTileOffsetX = 40;
+	static const int firstLevelTileOffsetY = 63;
+	static const int radioTowerLeftXOffset = 324 + firstLevelTileOffsetX * tileSize;
+	static const int radioTowerTopYOffset = -106 + firstLevelTileOffsetY * tileSize;
 	static const char introAnimationBootTile = 37;
-	static const int introAnimationBootTileX = 29;
-	static const int introAnimationBootTileY = 26;
+	static const int introAnimationBootTileX = 29 + firstLevelTileOffsetX;
+	static const int introAnimationBootTileY = 26 + firstLevelTileOffsetY;
 	static const int switchesFadeInDuration = 1000;
 	static const char squareColor = 0;
 	static const char triangleColor = 1;

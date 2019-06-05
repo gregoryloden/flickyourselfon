@@ -120,9 +120,10 @@ private:
 		static const RGB boxRGB;
 
 		char radius;
+		bool isXRadius;
 
 	public:
-		PaintBoxRadiusButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY, char pRadius);
+		PaintBoxRadiusButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY, char pRadius, bool pIsXRadius);
 		~PaintBoxRadiusButton();
 
 		char getRadius() { return radius; }
@@ -223,7 +224,8 @@ private:
 	static NoiseButton* noiseButton;
 	static NoiseTileButton** noiseTileButtons;
 	static Button* selectedButton;
-	static PaintBoxRadiusButton* selectedPaintBoxRadiusButton;
+	static PaintBoxRadiusButton* selectedPaintBoxXRadiusButton;
+	static PaintBoxRadiusButton* selectedPaintBoxYRadiusButton;
 	static RailSwitchGroupButton* selectedRailSwitchGroupButton;
 	static HeightButton* lastSelectedHeightButton;
 	static SwitchButton* lastSelectedSwitchButton;

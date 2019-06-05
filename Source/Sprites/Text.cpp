@@ -256,6 +256,7 @@ void Text::render(const char* text, float leftX, float baselineY, float fontScal
 		leftX += (float)(glyphWidth + defaultInterCharacterSpacing) * fontScale;
 	}
 }
+//draw a key background to be drawn behind text
 void Text::renderKeyBackground(float leftX, float baselineY, Metrics* keyBackgroundMetrics) {
 	int originalBackgroundWidth = (int)(keyBackgroundMetrics->charactersWidth / keyBackgroundMetrics->fontScale);
 	int leftHalfSpriteWidth = keyBackground->getSpriteSheetWidth() / 2;

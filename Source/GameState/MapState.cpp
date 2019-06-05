@@ -786,8 +786,14 @@ void MapState::render(EntityState* camera, char playerZ, int ticksTime) {
 
 	//draw the radio tower after drawing everything else
 	glEnable(GL_BLEND);
+	#ifdef EDITOR
+		glColor4f(1.0f, 1.0f, 1.0f, 2.0f / 3.0f);
+	#endif
 	SpriteRegistry::radioTower->renderSpriteAtScreenPosition(
 		0, 0, (GLint)(radioTowerLeftXOffset - screenLeftWorldX), (GLint)(radioTowerTopYOffset - screenTopWorldY));
+	#ifdef EDITOR
+		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+	#endif
 
 	glColor4f(
 		(lastActivatedSwitchColor == MapState::squareColor || lastActivatedSwitchColor == MapState::sineColor) ? 1.0f : 0.0f,
@@ -973,11 +979,14 @@ void MapState::resetMap() {
 				editingRail->removeGroup(group);
 				editingRail->removeSegment(x, y);
 				railSwitchIds[railSwitchIndex] = 0;
-			//add a segment to the end of this rail, unless it's above the base height of the rail
-			} else if (getHeight(x, y) <= editingRail->getBaseHeight()) {
-				editingRail->addGroup(group);
-				editingRail->addSegment(x, y);
-				railSwitchIds[railSwitchIndex] = editingRailId;
+			} else {
+				int tileHeight = getHeight(x, y);
+				//add a segment to the end of this rail, if the tile is not above the rail or if it's empty
+				if (tileHeight <= editingRail->getBaseHeight() || tileHeight == emptySpaceHeight) {
+					editingRail->addGroup(group);
+					editingRail->addSegment(x, y);
+					railSwitchIds[railSwitchIndex] = editingRailId;
+				}
 			}
 		//there are no rails around this square, create a new rail, or remove the last segment of this rail
 		} else {

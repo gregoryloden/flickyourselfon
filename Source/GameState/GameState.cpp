@@ -14,8 +14,10 @@
 #include "Util/Config.h"
 #include "Util/StringUtils.h"
 
-const float GameState::squareSwitchesAnimationCenterWorldX = 280.0f;
-const float GameState::squareSwitchesAnimationCenterWorldY = 80.0f;
+const float GameState::squareSwitchesAnimationCenterWorldX =
+	280.0f + (float)(MapState::firstLevelTileOffsetX * MapState::tileSize);
+const float GameState::squareSwitchesAnimationCenterWorldY =
+	80.0f + (float)(MapState::firstLevelTileOffsetY * MapState::tileSize);
 const char* GameState::titleGameName = "Flick Yourself On";
 const char* GameState::titleCreditsLine1 = "A game by";
 const char* GameState::titleCreditsLine2 = "Gregory Loden";
@@ -247,7 +249,8 @@ void GameState::render(int ticksTime) {
 
 	//TODO: real win condition
 	if (playerState.get()->getZ() == 6
-		&& playerState.get()->getRenderCenterWorldX(gameTicksTime) <= (float)(31 * MapState::tileSize))
+		&& playerState.get()->getRenderCenterWorldX(gameTicksTime)
+			<= (float)((31 + MapState::firstLevelTileOffsetX) * MapState::tileSize))
 	{
 		const char* win = "Win!";
 		Text::Metrics winMetrics = Text::getMetrics(win, 2.0f);
