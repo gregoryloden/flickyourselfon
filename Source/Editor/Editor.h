@@ -98,10 +98,8 @@ private:
 	public:
 		static const int buttonWidth;
 		static const int buttonHeight;
-	private:
-		static const RGB heightFloorRGB;
-		static const RGB heightWallRGB;
 
+	private:
 		char height;
 
 	public:
@@ -130,6 +128,23 @@ private:
 		virtual void render();
 		virtual void doAction();
 	};
+	class EvenPaintBoxRadiusButton: public Button {
+	public:
+		static const int buttonSize;
+	private:
+		static const RGB boxRGB;
+		static const RGB lineRGB;
+
+		bool isXEvenRadius;
+	public:
+		bool isSelected;
+
+		EvenPaintBoxRadiusButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY, bool pIsXEvenRadius);
+		~EvenPaintBoxRadiusButton();
+
+		virtual void render();
+		virtual void doAction();
+	};
 	class NoiseButton: public TextButton {
 	public:
 		NoiseButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY);
@@ -151,6 +166,22 @@ private:
 
 		virtual void render();
 		virtual void doAction();
+	};
+	class RaiseLowerTileButton: public Button {
+	public:
+		static const int buttonWidth;
+		static const int buttonHeight;
+
+	private:
+		bool isRaiseTileButton;
+
+	public:
+		RaiseLowerTileButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY, bool pIsRaiseTileButton);
+		~RaiseLowerTileButton();
+
+		virtual void render();
+		virtual void doAction();
+		virtual void paintMap(int x, int y);
 	};
 	class SwitchButton: public Button {
 	public:
@@ -219,10 +250,15 @@ private:
 	static const int noiseTileButtonMaxCount = 16;
 	static const int railSwitchGroupCount = 64;
 	static const RGB backgroundRGB;
+	static const RGB heightFloorRGB;
+	static const RGB heightWallRGB;
 
 	static vector<Button*> buttons;
+	static EvenPaintBoxRadiusButton* evenPaintBoxXRadiusButton;
+	static EvenPaintBoxRadiusButton* evenPaintBoxYRadiusButton;
 	static NoiseButton* noiseButton;
 	static NoiseTileButton** noiseTileButtons;
+	static RaiseLowerTileButton* lowerTileButton;
 	static Button* selectedButton;
 	static PaintBoxRadiusButton* selectedPaintBoxXRadiusButton;
 	static PaintBoxRadiusButton* selectedPaintBoxYRadiusButton;
@@ -246,6 +282,7 @@ public:
 	static void handleClick(SDL_MouseButtonEvent& clickEvent, EntityState* camera, int ticksTime);
 	static void render(EntityState* camera, int ticksTime);
 	static void renderGroupRect(char group, int leftX, int topY, int rightX, int bottomY);
+	static void renderRGBRect(const RGB& rgb, float alpha, int leftX, int topY, int rightX, int bottomY);
 private:
 	static void addNoiseTile(char tile);
 	static void removeNoiseTile(char tile);

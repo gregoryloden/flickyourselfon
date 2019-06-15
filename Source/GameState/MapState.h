@@ -155,6 +155,7 @@ public:
 	static const int heightCount = 16; // height = blue / 16
 	static const int heightDivisor = 256 / heightCount;
 	static const int emptySpaceHeight = heightCount - 1;
+	static const int highestFloorHeight = heightCount - 2;
 	static const int tileSize = 6;
 	static const int switchSize = 12;
 	static const char invalidHeight = -1;
@@ -166,6 +167,15 @@ public:
 	static const int introAnimationBootTileX = 29 + firstLevelTileOffsetX;
 	static const int introAnimationBootTileY = 26 + firstLevelTileOffsetY;
 	static const int switchesFadeInDuration = 1000;
+	static const int defaultFloorTile = 0;
+	static const int defaultWallTile = 9;
+	static const int defaultPlatformRightFloorTile = 15;
+	static const int defaultPlatformLeftFloorTile = 19;
+	static const int defaultPlatformTopFloorTile = 23;
+	static const int defaultPlatformTopLeftFloorTile = 27;
+	static const int defaultPlatformTopRightFloorTile = 28;
+	static const int defaultGroundLeftFloorTile = 29;
+	static const int defaultGroundRightFloorTile = 33;
 	static const char squareColor = 0;
 	static const char triangleColor = 1;
 	static const char sawColor = 2;
@@ -256,6 +266,8 @@ public:
 	bool loadState(string& line);
 	void resetMap();
 	#ifdef EDITOR
+		static void setAppropriateDefaultFloorTile(int x, int y, char expectedFloorHeight);
+		static bool hasFloorTileCreatingShadowForHeight(int x, int y, char height);
 		static void setSwitch(int leftX, int topY, char color, char group);
 		static void setRail(int x, int y, char color, char group);
 		static void adjustRailInitialTileOffset(int x, int y, char tileOffset);

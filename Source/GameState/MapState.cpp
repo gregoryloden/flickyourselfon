@@ -276,6 +276,10 @@ void MapState::Switch::render(
 	#ifdef EDITOR
 		if (isDeleted)
 			return;
+		//always render the activated color for all switches up to sine
+		lastActivatedSwitchColor = sineColor;
+		lastActivatedSwitchColorFadeInTicksOffset = switchesFadeInDuration;
+		isOn = true;
 	#else
 		//group 0 is the turn-on-all-switches switch, don't render it if we're not in the editor
 		if (group == 0)
@@ -663,8 +667,8 @@ char MapState::horizontalTilesHeight(int lowMapX, int highMapX, int mapY) {
 }
 //change one of the tiles to be the boot tile
 void MapState::setIntroAnimationBootTile(bool showBootTile) {
-	//if we're not showing the boot tile, just show tile 0 instead of showing the tile from the floor file
-	tiles[introAnimationBootTileY * width + introAnimationBootTileX] = showBootTile ? introAnimationBootTile : 0;
+	//if we're not showing the boot tile, just show a default tile instead of showing the tile from the floor file
+	tiles[introAnimationBootTileY * width + introAnimationBootTileX] = showBootTile ? introAnimationBootTile : defaultFloorTile;
 }
 //update the rails and switches
 void MapState::updateWithPreviousMapState(MapState* prev, int ticksTime) {
@@ -843,6 +847,62 @@ void MapState::resetMap() {
 		railState->reset();
 }
 #ifdef EDITOR
+	//examine the neighboring tiles and pick an appropriate default tile, but only if we match the expected floor height
+	//wall tiles and floor tiles of a different height will be ignored
+	void MapState::setAppropriateDefaultFloorTile(int x, int y, char expectedFloorHeight) {
+		char height = getHeight(x, y);
+		if (height != expectedFloorHeight)
+			return;
+
+		int leftX = x - 1;
+		int rightX = x + 1;
+		char leftHeight = getHeight(leftX, y);
+		char rightHeight = getHeight(rightX, y);
+		bool leftIsBelow = leftHeight < height || leftHeight == emptySpaceHeight;
+		bool leftIsAbove = leftHeight > height && hasFloorTileCreatingShadowForHeight(leftX, y, height);
+		bool rightIsBelow = rightHeight < height || rightHeight == emptySpaceHeight;
+		bool rightIsAbove = rightHeight > height && hasFloorTileCreatingShadowForHeight(rightX, y, height);
+
+		//this tile is higher than the one above it
+		char topHeight = getHeight(x, y - 1);
+		if (height > topHeight || topHeight == emptySpaceHeight) {
+			//we don't have any tile that combines top and left-shadow,
+			//	so use the top-left tile even if the left tile is above this one
+			if (leftIsBelow || leftIsAbove)
+				setTile(x, y, defaultPlatformTopLeftFloorTile);
+			//we don't have any tile that combines top and right-shadow,
+			//	so use the top-right tile even if the right tile is above this one
+			else if (rightIsBelow || rightIsAbove)
+				setTile(x, y, defaultPlatformTopRightFloorTile);
+			else
+				setTile(x, y, defaultPlatformTopFloorTile);
+		//this tile is the same height or lower than the one above it
+		} else {
+			if (leftIsAbove)
+				setTile(x, y, defaultGroundLeftFloorTile);
+			else if (leftIsBelow)
+				setTile(x, y, defaultPlatformLeftFloorTile);
+			else if (rightIsAbove)
+				setTile(x, y, defaultGroundRightFloorTile);
+			else if (rightIsBelow)
+				setTile(x, y, defaultPlatformRightFloorTile);
+			else
+				setTile(x, y, defaultFloorTile);
+		}
+	}
+	//check to see if there is a floor tile at this x that is effectively "above" an adjacent tile at the given y
+	//go up the tiles, and if we find a floor tile with the right height, return true, or if it's too low, return false
+	bool MapState::hasFloorTileCreatingShadowForHeight(int x, int y, char height) {
+		for (char tileOffset = 1; true; tileOffset++) {
+			char heightDiff = getHeight(x, y - (int)tileOffset) - height;
+			//too high to match, keep going
+			if (heightDiff > tileOffset * 2)
+				continue;
+
+			//if it's an exact match then we found the tile above this one, otherwise there is no tile above this one
+			return heightDiff == tileOffset * 2;
+		}
+	}
 	//set a switch if there's room, or delete a switch if we can
 	void MapState::setSwitch(int leftX, int topY, char color, char group) {
 		//a switch occupies a 2x2 square, and must be surrounded by a 1-tile ring of no-swich-or-rail tiles

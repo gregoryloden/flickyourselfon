@@ -13,8 +13,12 @@
 	#define newHeightButton(zone, leftX, topY, height) newWithArgs(Editor::HeightButton, zone, leftX, topY, height)
 	#define newPaintBoxRadiusButton(zone, leftX, topY, radius, isXRadius) \
 		newWithArgs(Editor::PaintBoxRadiusButton, zone, leftX, topY, radius, isXRadius)
+	#define newEvenPaintBoxRadiusButton(zone, leftX, topY, isXEvenRadius) \
+		newWithArgs(Editor::EvenPaintBoxRadiusButton, zone, leftX, topY, isXEvenRadius)
 	#define newNoiseButton(zone, leftX, topY) newWithArgs(Editor::NoiseButton, zone, leftX, topY)
 	#define newNoiseTileButton(zone, leftX, topY) newWithArgs(Editor::NoiseTileButton, zone, leftX, topY)
+	#define newRaiseLowerTileButton(zone, leftX, topY, isRaiseTileButton) \
+		newWithArgs(Editor::RaiseLowerTileButton, zone, leftX, topY, isRaiseTileButton)
 	#define newSwitchButton(zone, leftX, topY, color) newWithArgs(Editor::SwitchButton, zone, leftX, topY, color)
 	#define newRailButton(zone, leftX, topY, color) newWithArgs(Editor::RailButton, zone, leftX, topY, color)
 	#define newRailTileOffsetButton(zone, leftX, topY, tileOffset) \
@@ -261,8 +265,6 @@
 	//////////////////////////////// Editor::HeightButton ////////////////////////////////
 	const int Editor::HeightButton::buttonWidth = MapState::tileSize + 2;
 	const int Editor::HeightButton::buttonHeight = 10;
-	const Editor::RGB Editor::HeightButton::heightFloorRGB (0.0f, 0.75f, 9.0f / 16.0f);
-	const Editor::RGB Editor::HeightButton::heightWallRGB (5.0f / 8.0f, 3.0f / 8.0f, 0.25f);
 	Editor::HeightButton::HeightButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY, char pHeight)
 	: Button(objCounterArgumentsComma() zone, zoneLeftX, zoneTopY)
 	, height(pHeight) {
@@ -337,6 +339,46 @@
 			selectedPaintBoxYRadiusButton = this;
 	}
 
+	//////////////////////////////// Editor::EvenPaintBoxRadiusButton ////////////////////////////////
+	const int Editor::EvenPaintBoxRadiusButton::buttonSize = paintBoxMaxRadius + 2;
+	const Editor::RGB Editor::EvenPaintBoxRadiusButton::boxRGB (0.5f, 0.5f, 0.5f);
+	const Editor::RGB Editor::EvenPaintBoxRadiusButton::lineRGB (0.75f, 0.75f, 0.75f);
+	Editor::EvenPaintBoxRadiusButton::EvenPaintBoxRadiusButton(
+		objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY, bool pIsXEvenRadius)
+	: Button(objCounterArgumentsComma() zone, zoneLeftX, zoneTopY)
+	, isXEvenRadius(pIsXEvenRadius)
+	, isSelected(false) {
+		setWidthAndHeight(buttonSize, buttonSize);
+	}
+	Editor::EvenPaintBoxRadiusButton::~EvenPaintBoxRadiusButton() {}
+	//render the box radius extension above the button
+	void Editor::EvenPaintBoxRadiusButton::render() {
+		Button::render();
+		SpriteSheet::renderFilledRectangle(
+			0.0f, 0.0f, 0.0f, 1.0f, (GLint)leftX + 1, (GLint)topY + 1, (GLint)rightX - 1, (GLint)bottomY - 1);
+		if (isXEvenRadius) {
+			GLint boxLeftX = (GLint)leftX + 3;
+			GLint boxTopY = (GLint)topY + 1;
+			GLint boxBottomY = (GLint)bottomY - 1;
+			SpriteSheet::renderFilledRectangle(
+				boxRGB.red, boxRGB.green, boxRGB.blue, 1.0f, boxLeftX, boxTopY, boxLeftX + 3, boxBottomY);
+			SpriteSheet::renderFilledRectangle(
+				lineRGB.red, lineRGB.green, lineRGB.blue, 1.0f, boxLeftX + 3, boxTopY, boxLeftX + 4, boxBottomY);
+		} else {
+			GLint boxTopY = (GLint)topY + 3;
+			GLint boxLeftX = (GLint)leftX + 1;
+			GLint boxRightX = (GLint)rightX - 1;
+			SpriteSheet::renderFilledRectangle(
+				boxRGB.red, boxRGB.green, boxRGB.blue, 1.0f, boxLeftX, boxTopY, boxRightX, boxTopY + 3);
+			SpriteSheet::renderFilledRectangle(
+				lineRGB.red, lineRGB.green, lineRGB.blue, 1.0f, boxLeftX, boxTopY + 3, boxRightX, boxTopY + 4);
+		}
+	}
+	//add or remove an extra row below/to the right of the paint box
+	void Editor::EvenPaintBoxRadiusButton::doAction() {
+		isSelected = !isSelected;
+	}
+
 	//////////////////////////////// Editor::NoiseButton ////////////////////////////////
 	Editor::NoiseButton::NoiseButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY)
 	: TextButton(objCounterArgumentsComma() zone, zoneLeftX, zoneTopY, "Noise") {
@@ -385,6 +427,75 @@
 	void Editor::NoiseTileButton::doAction() {
 		if (tile >= 0)
 			removeNoiseTile(tile);
+	}
+
+	//////////////////////////////// Editor::RaiseLowerTileButton ////////////////////////////////
+	const int Editor::RaiseLowerTileButton::buttonWidth = 13;
+	const int Editor::RaiseLowerTileButton::buttonHeight = 10;
+	Editor::RaiseLowerTileButton::RaiseLowerTileButton(
+		objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY, bool pIsRaiseTileButton)
+	: Button(objCounterArgumentsComma() zone, zoneLeftX, zoneTopY)
+	, isRaiseTileButton(pIsRaiseTileButton) {
+		setWidthAndHeight(buttonWidth, buttonHeight);
+	}
+	Editor::RaiseLowerTileButton::~RaiseLowerTileButton() {}
+	//render the a raised or lowered platform above the button
+	void Editor::RaiseLowerTileButton::render() {
+		Button::render();
+		SpriteSheet::renderFilledRectangle(
+			0.0f, 0.0f, 0.0f, 1.0f, (GLint)leftX + 1, (GLint)topY + 1, (GLint)rightX - 1, (GLint)bottomY - 1);
+		if (isRaiseTileButton) {
+			renderRGBRect(heightFloorRGB, 1.0f, leftX + 2, topY + 2, rightX - 2, bottomY - 4);
+			renderRGBRect(heightWallRGB, 1.0f, leftX + 2, bottomY - 4, rightX - 2, bottomY - 2);
+		} else {
+			renderRGBRect(heightWallRGB, 1.0f, leftX + 2, topY + 2, rightX - 2, topY + 4);
+			renderRGBRect(heightFloorRGB, 1.0f, leftX + 2, topY + 4, rightX - 2, bottomY - 2);
+		}
+	}
+	//select raising or lowering as the painting action
+	void Editor::RaiseLowerTileButton::doAction() {
+		selectedButton = selectedButton == this ? nullptr : this;
+	}
+	//raise or lower the tile at this position
+	void Editor::RaiseLowerTileButton::paintMap(int x, int y) {
+		//don't raise or lower this tile if it's a wall tile
+		char height = MapState::getHeight(x, y);
+		if (height % 2 != 0)
+			return;
+
+		char newFloorY;
+		char newHeight;
+		if (isRaiseTileButton) {
+			if (height == MapState::highestFloorHeight)
+				return;
+			newFloorY = y - 1;
+			newHeight = height + 2;
+			MapState::setHeight(x, y, height + 1);
+		} else {
+			if (height == 0)
+				return;
+			newFloorY = y + 1;
+			newHeight = height - 2;
+			MapState::setHeight(x, y, height - 1);
+		}
+		MapState::setHeight(x, newFloorY, newHeight);
+		MapState::setTile(x, y, MapState::defaultWallTile);
+		//set the heights for the old adjacent tiles
+		MapState::setAppropriateDefaultFloorTile(x - 1, y, height);
+		MapState::setAppropriateDefaultFloorTile(x + 1, y, height);
+		//set the heights for the new tiles, whether they match the new height or the old height
+		MapState::setAppropriateDefaultFloorTile(x - 1, newFloorY, height);
+		MapState::setAppropriateDefaultFloorTile(x - 1, newFloorY, newHeight);
+		MapState::setAppropriateDefaultFloorTile(x, newFloorY, height);
+		MapState::setAppropriateDefaultFloorTile(x, newFloorY, newHeight);
+		MapState::setAppropriateDefaultFloorTile(x + 1, newFloorY, height);
+		MapState::setAppropriateDefaultFloorTile(x + 1, newFloorY, newHeight);
+		//and also set the tile below if we lowered this tile and the one below is a floor tile
+		if (!isRaiseTileButton) {
+			char belowHeight = MapState::getHeight(x, newFloorY + 1);
+			if (belowHeight % 2 == 0)
+				MapState::setAppropriateDefaultFloorTile(x, newFloorY + 1, belowHeight);
+		}
 	}
 
 	//////////////////////////////// Editor::SwitchButton ////////////////////////////////
@@ -499,9 +610,14 @@
 
 	//////////////////////////////// Editor ////////////////////////////////
 	const Editor::RGB Editor::backgroundRGB (0.25f, 0.75f, 0.75f);
+	const Editor::RGB Editor::heightFloorRGB (0.0f, 0.75f, 9.0f / 16.0f);
+	const Editor::RGB Editor::heightWallRGB (5.0f / 8.0f, 3.0f / 8.0f, 0.25f);
 	vector<Editor::Button*> Editor::buttons;
+	Editor::EvenPaintBoxRadiusButton* Editor::evenPaintBoxXRadiusButton = nullptr;
+	Editor::EvenPaintBoxRadiusButton* Editor::evenPaintBoxYRadiusButton = nullptr;
 	Editor::NoiseButton* Editor::noiseButton = nullptr;
 	Editor::NoiseTileButton** Editor::noiseTileButtons = nullptr;
+	Editor::RaiseLowerTileButton* Editor::lowerTileButton = nullptr;
 	Editor::Button* Editor::selectedButton = nullptr;
 	Editor::PaintBoxRadiusButton* Editor::selectedPaintBoxXRadiusButton = nullptr;
 	Editor::PaintBoxRadiusButton* Editor::selectedPaintBoxYRadiusButton = nullptr;
@@ -534,20 +650,27 @@
 		}
 		for (char i = 0; i < (char)paintBoxMaxRadius; i++) {
 			PaintBoxRadiusButton* button =
-				newPaintBoxRadiusButton(Zone::Right, 5 + PaintBoxRadiusButton::buttonSize * i, 93, i, false);
+				newPaintBoxRadiusButton(Zone::Right, 5 + PaintBoxRadiusButton::buttonSize * i, 91, i, false);
 			if (i == 0)
 				selectedPaintBoxYRadiusButton = button;
 			buttons.push_back(button);
 		}
-		noiseButton = newNoiseButton(Zone::Right, 77, 58);
+		evenPaintBoxXRadiusButton = newEvenPaintBoxRadiusButton(Zone::Right, 69, 81, true);
+		buttons.push_back(evenPaintBoxXRadiusButton);
+		evenPaintBoxYRadiusButton = newEvenPaintBoxRadiusButton(Zone::Right, 69, 91, false);
+		buttons.push_back(evenPaintBoxYRadiusButton);
+		noiseButton = newNoiseButton(Zone::Right, 108, 58);
 		buttons.push_back(noiseButton);
 		noiseTileButtons = new NoiseTileButton*[noiseTileButtonMaxCount];
 		for (char i = 0; i < (char)noiseTileButtonMaxCount; i++) {
 			NoiseTileButton* button = newNoiseTileButton(
-				Zone::Right, 77 + NoiseTileButton::buttonWidth * (i % 8), 74 + NoiseTileButton::buttonHeight * (i / 8));
+				Zone::Right, 81 + NoiseTileButton::buttonWidth * (i % 8), 72 + NoiseTileButton::buttonHeight * (i / 8));
 			noiseTileButtons[i] = button;
 			buttons.push_back(button);
 		}
+		buttons.push_back(newRaiseLowerTileButton(Zone::Right, 76, 58, true));
+		lowerTileButton = newRaiseLowerTileButton(Zone::Right, 92, 58, false);
+		buttons.push_back(lowerTileButton);
 		for (char i = 0; i < 4; i++)
 			buttons.push_back(newSwitchButton(Zone::Right, 5 + SwitchButton::buttonSize * i, 108, i));
 		for (char i = 0; i < 4; i++)
@@ -632,11 +755,24 @@
 
 			int lowMapX = MathUtils::max(mouseMapX - xRadius, 0);
 			int lowMapY = MathUtils::max(mouseMapY - yRadius, 0);
-			int highMapX = MathUtils::min(mouseMapX + xRadius, MapState::mapWidth() - 1);
-			int highMapY = MathUtils::min(mouseMapY + yRadius, MapState::mapHeight() - 1);
-			for (int mapX = lowMapX; mapX <= highMapX; mapX++) {
+			int highMapX =
+				MathUtils::min(mouseMapX + xRadius + (evenPaintBoxXRadiusButton->isSelected ? 1 : 0), MapState::mapWidth() - 1);
+			int highMapY = MathUtils::min(
+				mouseMapY + yRadius + (evenPaintBoxYRadiusButton->isSelected ? 1 : 0), MapState::mapHeight() - 1);
+
+			//we need to iterate from bottom to top if we're lowering tiles,
+			//	otherwise changes in one row would overwrite changes in another row
+			if (selectedButton == lowerTileButton) {
+				for (int mapY = highMapY; mapY >= lowMapY; mapY--) {
+					for (int mapX = lowMapX; mapX <= highMapX; mapX++) {
+						selectedButton->paintMap(mapX, mapY);
+					}
+				}
+			} else {
 				for (int mapY = lowMapY; mapY <= highMapY; mapY++) {
-					selectedButton->paintMap(mapX, mapY);
+					for (int mapX = lowMapX; mapX <= highMapX; mapX++) {
+						selectedButton->paintMap(mapX, mapY);
+					}
 				}
 			}
 
@@ -669,8 +805,8 @@
 			} else {
 				boxLeftMapOffset = (int)selectedPaintBoxXRadiusButton->getRadius();
 				boxTopMapOffset = (int)selectedPaintBoxYRadiusButton->getRadius();
-				boxMapWidth = (boxLeftMapOffset * 2 + 1);
-				boxMapHeight = (boxTopMapOffset * 2 + 1);
+				boxMapWidth = (boxLeftMapOffset * 2 + 1 + (evenPaintBoxXRadiusButton->isSelected ? 1 : 0));
+				boxMapHeight = (boxTopMapOffset * 2 + 1 + (evenPaintBoxYRadiusButton->isSelected ? 1 : 0));
 			}
 			GLint boxLeftX = (GLint)((mouseMapX - boxLeftMapOffset) * MapState::tileSize - screenLeftWorldX);
 			GLint boxTopY = (GLint)((mouseMapY - boxTopMapOffset) * MapState::tileSize - screenTopWorldY);
@@ -679,27 +815,9 @@
 			SpriteSheet::renderRectangleOutline(1.0f, 1.0f, 1.0f, 1.0f, boxLeftX, boxTopY, boxRightX, boxBottomY);
 		}
 
-		//draw the 2 background rectangles around the game view
-		//right zone
-		SpriteSheet::renderFilledRectangle(
-			backgroundRGB.red,
-			backgroundRGB.green,
-			backgroundRGB.blue,
-			1.0f,
-			(GLint)Config::gameScreenWidth,
-			0,
-			(GLint)Config::windowScreenWidth,
-			(GLint)Config::windowScreenHeight);
-		//bottom zone
-		SpriteSheet::renderFilledRectangle(
-			backgroundRGB.red,
-			backgroundRGB.green,
-			backgroundRGB.blue,
-			1.0f,
-			0,
-			(GLint)Config::gameScreenHeight,
-			(GLint)Config::gameScreenWidth,
-			(GLint)Config::windowScreenHeight);
+		//draw the right and bottom background rectangles around the game view
+		renderRGBRect(backgroundRGB, 1.0f, Config::gameScreenWidth, 0, Config::windowScreenWidth, Config::windowScreenHeight);
+		renderRGBRect(backgroundRGB, 1.0f, 0, Config::gameScreenHeight, Config::gameScreenWidth, Config::windowScreenHeight);
 
 		//draw the buttons
 		for (Button* button : buttons)
@@ -710,6 +828,10 @@
 		selectedRailSwitchGroupButton->renderHighlightOutline();
 		selectedPaintBoxXRadiusButton->renderHighlightOutline();
 		selectedPaintBoxYRadiusButton->renderHighlightOutline();
+		if (evenPaintBoxXRadiusButton->isSelected)
+			evenPaintBoxXRadiusButton->renderHighlightOutline();
+		if (evenPaintBoxYRadiusButton->isSelected)
+			evenPaintBoxYRadiusButton->renderHighlightOutline();
 	}
 	//draw a graphic to represent this rail/switch group
 	void Editor::renderGroupRect(char group, int leftX, int topY, int rightX, int bottomY) {
@@ -731,6 +853,18 @@
 			(float)((group & 32) >> 5),
 			1.0f,
 			midX,
+			(GLint)topY,
+			(GLint)rightX,
+			(GLint)bottomY);
+	}
+	//render a rectangle of the given color in the given region;
+	void Editor::renderRGBRect(const RGB& rgb, float alpha, int leftX, int topY, int rightX, int bottomY) {
+		SpriteSheet::renderFilledRectangle(
+			(GLfloat)rgb.red,
+			(GLfloat)rgb.green,
+			(GLfloat)rgb.blue,
+			(GLfloat)alpha,
+			(GLint)leftX,
 			(GLint)topY,
 			(GLint)rightX,
 			(GLint)bottomY);
