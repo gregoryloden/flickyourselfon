@@ -55,8 +55,8 @@ int main(int argc, char* argv[]) {
 	Logger::log("Window set up /// Loading game state...");
 
 	//load the map and settings which don't depend on the render thread
-	MapState::buildMap();
 	Config::loadSettings();
+	MapState::buildMap();
 
 	//create our state queue
 	CircularStateQueue<GameState>* gameStateQueue = newCircularStateQueue(GameState, newGameState(), newGameState());
@@ -166,6 +166,7 @@ void renderLoop(CircularStateQueue<GameState>* gameStateQueue) {
 		Editor::loadButtons();
 	#endif
 	//load the initial state after loading all sprites
+	//this is technically supposed to be only a readable state, but the update thread expects us to load the initial state here
 	gameStateQueue->getNextReadableState()->loadInitialState((int)SDL_GetTicks());
 	Logger::log("Sprites and game state loaded /// Beginning render loop");
 

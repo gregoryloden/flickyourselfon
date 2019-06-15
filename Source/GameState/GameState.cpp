@@ -365,6 +365,7 @@ void GameState::loadInitialState(int ticksTime) {
 		camera = playerState.get();
 	} else
 		beginIntroAnimation(ticksTime);
+	playerState.get()->loadInitialZ();
 }
 //give the camera and player their intro animations
 void GameState::beginIntroAnimation(int ticksTime) {

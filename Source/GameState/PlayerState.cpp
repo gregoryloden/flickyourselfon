@@ -28,7 +28,6 @@ const float PlayerState::diagonalSpeedPerSecond = speedPerSecond * sqrt(0.5f);
 const float PlayerState::kickingDistanceLimit = 1.5f;
 const string PlayerState::playerXFilePrefix = "playerX ";
 const string PlayerState::playerYFilePrefix = "playerY ";
-const string PlayerState::playerZFilePrefix = "playerZ ";
 PlayerState::PlayerState(objCounterParameters())
 : EntityState(objCounterArguments())
 , xDirection(0)
@@ -38,11 +37,9 @@ PlayerState::PlayerState(objCounterParameters())
 , spriteDirection(SpriteDirection::Down)
 , hasBoot(false)
 , lastControlledX(0.0f)
-, lastControlledY(0.0f)
-, lastControlledZ(0) {
+, lastControlledY(0.0f) {
 	lastControlledX = x.get()->getValue(0);
 	lastControlledY = y.get()->getValue(0);
-	lastControlledZ = z;
 }
 PlayerState::~PlayerState() {}
 //initialize and return a PlayerState
@@ -99,7 +96,6 @@ void PlayerState::updateWithPreviousPlayerState(PlayerState* prev, int ticksTime
 	//copy the position to the save values
 	lastControlledX = x.get()->getValue(0);
 	lastControlledY = y.get()->getValue(0);
-	lastControlledZ = z;
 }
 //update the position of this player state by reading from the previous state
 void PlayerState::updatePositionWithPreviousPlayerState(PlayerState* prev, int ticksTime) {
@@ -836,7 +832,6 @@ void PlayerState::render(EntityState* camera, int ticksTime) {
 void PlayerState::saveState(ofstream& file) {
 	file << playerXFilePrefix << lastControlledX << "\n";
 	file << playerYFilePrefix << lastControlledY << "\n";
-	file << playerZFilePrefix << (int)lastControlledZ << "\n";
 }
 //try to load state from the line of the file, return whether state was loaded
 bool PlayerState::loadState(string& line) {
@@ -846,10 +841,14 @@ bool PlayerState::loadState(string& line) {
 	} else if (StringUtils::startsWith(line, playerYFilePrefix)) {
 		lastControlledY = (float)atof(line.c_str() + playerYFilePrefix.size());
 		y.set(newCompositeQuarticValue(lastControlledY, 0.0f, 0.0f, 0.0f, 0.0f));
-	} else if (StringUtils::startsWith(line, playerZFilePrefix)) {
-		lastControlledZ = (char)atoi(line.c_str() + playerZFilePrefix.size());
-		z = lastControlledZ;
 	} else
 		return false;
 	return true;
+}
+//set the initial z for the player after loading the position
+//this isn't technically loading anything from the file but it is part of setting the initial state
+void PlayerState::loadInitialZ() {
+	z = MapState::getHeight(
+		(int)x.get()->getValue(0) / MapState::tileSize,
+		(int)(y.get()->getValue(0) + boundingBoxCenterYOffset) / MapState::tileSize);
 }

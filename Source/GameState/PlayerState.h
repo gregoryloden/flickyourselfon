@@ -28,7 +28,6 @@ private:
 	static const float kickingDistanceLimit;
 	static const string playerXFilePrefix;
 	static const string playerYFilePrefix;
-	static const string playerZFilePrefix;
 
 	char xDirection;
 	char yDirection;
@@ -38,7 +37,6 @@ private:
 	bool hasBoot;
 	float lastControlledX;
 	float lastControlledY;
-	char lastControlledZ;
 
 public:
 	PlayerState(objCounterParameters());
@@ -68,4 +66,5 @@ public:
 	void render(EntityState* camera, int ticksTime);
 	void saveState(ofstream& file);
 	bool loadState(string& line);
+	void loadInitialZ();
 };
