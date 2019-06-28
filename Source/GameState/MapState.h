@@ -6,6 +6,11 @@ class MapState: public PooledReferenceCounter {
 public:
 	class Rail onlyInDebug(: public ObjCounter) {
 	public:
+		enum class SegmentRenderType: unsigned char {
+			Rail,
+			Shadow,
+			Group
+		};
 		//Should only be allocated within an object, on the stack, or as a static object
 		class Segment {
 		public:
@@ -27,13 +32,11 @@ public:
 		vector<char> groups;
 		char initialTileOffset;
 		char maxTileOffset;
+	public:
 		#ifdef EDITOR
-			char groupIndexToRender;
-		public:
 			bool isDeleted;
 		#endif
 
-	public:
 		Rail(objCounterParametersComma() int x, int y, char pBaseHeight, char pColor, char pInitialTileOffset);
 		~Rail();
 
@@ -48,8 +51,8 @@ public:
 		void reverseSegments();
 		void addGroup(char group);
 		void addSegment(int x, int y);
-		void render(int screenLeftWorldX, int screenTopWorldY, float tileOffset, bool renderShadow);
-		void renderSegment(int screenLeftWorldX, int screenTopWorldY, float tileOffset, Rail::Segment& segment);
+		void render(int screenLeftWorldX, int screenTopWorldY, float tileOffset, SegmentRenderType renderType);
+		void renderSegment(int screenLeftWorldX, int screenTopWorldY, float tileOffset, int segmentIndex);
 		#ifdef EDITOR
 			void removeGroup(char group);
 			void removeSegment(int x, int y);
@@ -104,7 +107,7 @@ public:
 		bool isAbovePlayerZ(char z) { return rail->getBaseHeight() - (char)(tileOffset + 0.5f) * 2 > z; }
 		void updateWithPreviousRailState(RailState* prev, int ticksTime);
 		void squareToggleOffset();
-		void render(int screenLeftWorldX, int screenTopWorldY, bool renderShadow);
+		void render(int screenLeftWorldX, int screenTopWorldY, Rail::SegmentRenderType renderType);
 		void loadState(float pTileOffset);
 		void reset();
 	};

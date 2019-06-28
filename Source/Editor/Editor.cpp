@@ -169,10 +169,8 @@
 		SDL_DestroyRenderer(floorRenderer);
 		SDL_FreeSurface(floorSurface);
 
-		//throw away the whole save file becuase rail/switch ids may have changed
-		ofstream file;
-		file.open(GameState::savedGameFileName);
-		file.close();
+		//request to save the game becuase rail/switch ids may have changed
+		needsGameStateSave = true;
 
 		saveButtonDisabled = true;
 	}
@@ -458,36 +456,63 @@
 	}
 	//raise or lower the tile at this position
 	void Editor::RaiseLowerTileButton::paintMap(int x, int y) {
-		//don't raise or lower this tile if it's a wall tile
+		//don't raise or lower this tile if it's a wall tile, or if we're dragging
 		char height = MapState::getHeight(x, y);
-		if (height % 2 != 0)
+		if (lastMouseDragAction == MouseDragAction::RaiseLowerTile || height % 2 != 0)
 			return;
 
 		char newFloorY;
 		char newHeight;
+		char replacementHeight;
 		if (isRaiseTileButton) {
 			if (height == MapState::highestFloorHeight)
 				return;
 			newFloorY = y - 1;
 			newHeight = height + 2;
-			MapState::setHeight(x, y, height + 1);
+			replacementHeight = height + 1;
 		} else {
 			if (height == 0)
 				return;
 			newFloorY = y + 1;
 			newHeight = height - 2;
-			MapState::setHeight(x, y, height - 1);
+
+			//if the top tile has a lower height than this one, match the height of the highest adjacent floor tile lower than
+			//	where this was
+			char topHeight = MapState::getHeight(x, y - 1);
+			if ((topHeight <= newHeight && topHeight % 2 == 0) || topHeight == MapState::emptySpaceHeight) {
+				replacementHeight = topHeight;
+				char sideHeights[] = { MapState::getHeight(x - 1, y), MapState::getHeight(x + 1, y) };
+				for (int i = 0; i < 2; i++) {
+					char sideHeight = sideHeights[i];
+					if (sideHeight <= newHeight
+							&& sideHeight % 2 == 0
+							&& (replacementHeight == MapState::emptySpaceHeight || sideHeight > replacementHeight))
+						replacementHeight = sideHeight;
+				}
+			//otherwise use the regular wall tile
+			} else
+				replacementHeight = height - 1;
 		}
+		MapState::setHeight(x, y, replacementHeight);
 		MapState::setHeight(x, newFloorY, newHeight);
-		MapState::setTile(x, y, MapState::defaultWallTile);
-		//set the heights for the old adjacent tiles
+
+		//we replaced the floor with a wall, just set the tile
+		if (replacementHeight % 2 != 0)
+			MapState::setTile(x, y, MapState::defaultWallTile);
+		//we copied an adjacent floor tile, set the right one
+		else
+			MapState::setAppropriateDefaultFloorTile(x, y, replacementHeight);
+		MapState::setAppropriateDefaultFloorTile(x, newFloorY, newHeight);
+		//set the heights for the old adjacent tiles, whether they match the replacement height or the old height
 		MapState::setAppropriateDefaultFloorTile(x - 1, y, height);
 		MapState::setAppropriateDefaultFloorTile(x + 1, y, height);
-		//set the heights for the new tiles, whether they match the new height or the old height
+		if (replacementHeight % 2 == 0) {
+			MapState::setAppropriateDefaultFloorTile(x - 1, y, replacementHeight);
+			MapState::setAppropriateDefaultFloorTile(x + 1, y, replacementHeight);
+		}
+		//set the heights for the new adjacent tiles, whether they match the new height or the old height
 		MapState::setAppropriateDefaultFloorTile(x - 1, newFloorY, height);
 		MapState::setAppropriateDefaultFloorTile(x - 1, newFloorY, newHeight);
-		MapState::setAppropriateDefaultFloorTile(x, newFloorY, height);
-		MapState::setAppropriateDefaultFloorTile(x, newFloorY, newHeight);
 		MapState::setAppropriateDefaultFloorTile(x + 1, newFloorY, height);
 		MapState::setAppropriateDefaultFloorTile(x + 1, newFloorY, newHeight);
 		//and also set the tile below if we lowered this tile and the one below is a floor tile
@@ -496,6 +521,10 @@
 			if (belowHeight % 2 == 0)
 				MapState::setAppropriateDefaultFloorTile(x, newFloorY + 1, belowHeight);
 		}
+	}
+	//set the drag action so that we don't raise/lower tiles while dragging
+	void Editor::RaiseLowerTileButton::postPaint() {
+		lastMouseDragAction = MouseDragAction::RaiseLowerTile;
 	}
 
 	//////////////////////////////// Editor::SwitchButton ////////////////////////////////
@@ -554,7 +583,15 @@
 	}
 	//set a rail at this position
 	void Editor::RailButton::paintMap(int x, int y) {
+		if (lastMouseDragAction == MouseDragAction::None)
+			lastMouseDragAction = MouseDragAction::AddRemoveRail;
+		//if we're dragging, don't do anything unless we clicked 1 tile away from the last tile
+		else if (MathUtils::abs(x - lastMouseDragMapX) + MathUtils::abs(y - lastMouseDragMapY) != 1)
+			return;
+
 		MapState::setRail(x, y, color, selectedRailSwitchGroupButton->getRailSwitchGroup());
+		lastMouseDragMapX = x;
+		lastMouseDragMapY = y;
 	}
 
 	//////////////////////////////// Editor::RailTileOffsetButton ////////////////////////////////
@@ -626,10 +663,14 @@
 	Editor::SwitchButton* Editor::lastSelectedSwitchButton = nullptr;
 	Editor::RailButton* Editor::lastSelectedRailButton = nullptr;
 	Editor::RailTileOffsetButton* Editor::lastSelectedRailTileOffsetButton = nullptr;
+	Editor::MouseDragAction Editor::lastMouseDragAction = Editor::MouseDragAction::None;
+	int Editor::lastMouseDragMapX = -1;
+	int Editor::lastMouseDragMapY = -1;
 	default_random_engine* Editor::randomEngine = nullptr;
 	discrete_distribution<int>* Editor::randomDistribution = nullptr;
 	bool Editor::saveButtonDisabled = true;
 	bool Editor::exportMapButtonDisabled = false;
+	bool Editor::needsGameStateSave = false;
 	//build all the editor buttons
 	void Editor::loadButtons() {
 		buttons.push_back(newSaveButton(Zone::Right, 5, 5));
@@ -712,7 +753,10 @@
 		*outMapY = (scaledMouseY + screenTopWorldY) / MapState::tileSize;
 	}
 	//see if we clicked on any buttons or the game screen
-	void Editor::handleClick(SDL_MouseButtonEvent& clickEvent, EntityState* camera, int ticksTime) {
+	void Editor::handleClick(SDL_MouseButtonEvent& clickEvent, bool isDrag, EntityState* camera, int ticksTime) {
+		if (!isDrag)
+			lastMouseDragAction = MouseDragAction::None;
+
 		int screenX = (int)((float)clickEvent.x / Config::currentPixelWidth);
 		int screenY = (int)((float)clickEvent.y / Config::currentPixelHeight);
 		for (Button* button : buttons) {
@@ -742,23 +786,24 @@
 			int mouseMapX;
 			int mouseMapY;
 			getMouseMapXY(screenLeftWorldX, screenTopWorldY, &mouseMapX, &mouseMapY);
+			int lowMapX = mouseMapX;
+			int lowMapY = mouseMapY;
+			int highMapX = mouseMapX;
+			int highMapY = mouseMapY;
 
-			int xRadius = 0;
-			int yRadius = 0;
 			if (selectedButton != lastSelectedSwitchButton
 				&& selectedButton != lastSelectedRailButton
 				&& selectedButton != lastSelectedRailTileOffsetButton)
 			{
-				xRadius = selectedPaintBoxXRadiusButton->getRadius();
-				yRadius = selectedPaintBoxYRadiusButton->getRadius();
+				int xRadius = selectedPaintBoxXRadiusButton->getRadius();
+				int yRadius = selectedPaintBoxYRadiusButton->getRadius();
+				lowMapX = MathUtils::max(mouseMapX - xRadius, 0);
+				lowMapY = MathUtils::max(mouseMapY - yRadius, 0);
+				highMapX = MathUtils::min(
+					mouseMapX + xRadius + (evenPaintBoxXRadiusButton->isSelected ? 1 : 0), MapState::mapWidth() - 1);
+				highMapY = MathUtils::min(
+					mouseMapY + yRadius + (evenPaintBoxYRadiusButton->isSelected ? 1 : 0), MapState::mapHeight() - 1);
 			}
-
-			int lowMapX = MathUtils::max(mouseMapX - xRadius, 0);
-			int lowMapY = MathUtils::max(mouseMapY - yRadius, 0);
-			int highMapX =
-				MathUtils::min(mouseMapX + xRadius + (evenPaintBoxXRadiusButton->isSelected ? 1 : 0), MapState::mapWidth() - 1);
-			int highMapY = MathUtils::min(
-				mouseMapY + yRadius + (evenPaintBoxYRadiusButton->isSelected ? 1 : 0), MapState::mapHeight() - 1);
 
 			//we need to iterate from bottom to top if we're lowering tiles,
 			//	otherwise changes in one row would overwrite changes in another row
@@ -775,6 +820,7 @@
 					}
 				}
 			}
+			selectedButton->postPaint();
 
 			saveButtonDisabled = false;
 			exportMapButtonDisabled = false;

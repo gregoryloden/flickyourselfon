@@ -1,5 +1,6 @@
 class MathUtils {
 public:
+	static int abs(int a) { return a < 0 ? -a : a; }
 	static int min(int a, int b) { return a < b ? a : b; }
 	static float fmin(float a, float b) { return a < b ? a : b; }
 	static int max(int a, int b) { return a > b ? a : b; }

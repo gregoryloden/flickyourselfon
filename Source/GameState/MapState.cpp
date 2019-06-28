@@ -37,7 +37,6 @@ baseHeight(pBaseHeight)
 //give a default tile offset extending to the lowest height
 , maxTileOffset(pBaseHeight / 2)
 #ifdef EDITOR
-	, groupIndexToRender(0)
 	, isDeleted(false)
 #endif
 {
@@ -124,37 +123,54 @@ void MapState::Rail::addSegment(int x, int y) {
 		lastEnd->spriteHorizontalIndex = endSegmentSpriteHorizontalIndex(end->x - lastEnd->x, end->y - lastEnd->y);
 }
 //render this rail at its position by rendering each segment
-void MapState::Rail::render(int screenLeftWorldX, int screenTopWorldY, float tileOffset, bool renderShadow) {
+void MapState::Rail::render(int screenLeftWorldX, int screenTopWorldY, float tileOffset, SegmentRenderType renderType) {
 	#ifdef EDITOR
 		if (isDeleted)
 			return;
-		groupIndexToRender = 0;
 	#endif
 	glEnable(GL_BLEND);
 
 	int lastSegmentIndex = (int)segments->size() - 1;
-	for (int i = 0; i <= lastSegmentIndex; i++) {
-		Segment& segment = (*segments)[i];
-		if (i == 0 || i == lastSegmentIndex) {
-			//no shadows for end segments
-			if (!renderShadow)
-				renderSegment(screenLeftWorldX, screenTopWorldY, 0.0f, segment);
-		} else {
-			if (!renderShadow)
-				renderSegment(screenLeftWorldX, screenTopWorldY, tileOffset, segment);
-			else if (segment.maxTileOffset > 0)
+	#ifdef EDITOR
+		if (renderType == SegmentRenderType::Group) {
+			if (groups.size() == 0)
+				return;
+
+			for (int i = 0; i <= lastSegmentIndex; i++) {
+				Segment& segment = (*segments)[i];
+				int drawLeftX = segment.x * tileSize - screenLeftWorldX;
+				int drawTopY = segment.y * tileSize - screenTopWorldY;
+				Editor::renderGroupRect(groups[i % groups.size()], drawLeftX + 2, drawTopY + 2, drawLeftX + 4, drawTopY + 4);
+			}
+			return;
+		}
+	#endif
+	if (renderType == SegmentRenderType::Shadow) {
+		for (int i = 0; i <= lastSegmentIndex; i++) {
+			Segment& segment = (*segments)[i];
+			//don't render a shadow for the end segments, or if this segment hides behind a platform
+			if (i != 0 && i != lastSegmentIndex && segment.maxTileOffset > 0)
 				SpriteRegistry::rails->renderSpriteAtScreenPosition(
 					segment.spriteHorizontalIndex + 10,
 					0,
 					(GLint)(segment.x * tileSize - screenLeftWorldX),
 					(GLint)((segment.y + (int)segment.maxTileOffset) * tileSize - screenTopWorldY));
 		}
+	//render rails if we aren't rendering shadows, because groups are only in the editor
+	} else {
+		for (int i = 0; i <= lastSegmentIndex; i++) {
+			if (i == 0 || i == lastSegmentIndex)
+				renderSegment(screenLeftWorldX, screenTopWorldY, 0.0f, i);
+			else
+				renderSegment(screenLeftWorldX, screenTopWorldY, tileOffset, i);
+		}
 	}
 }
 //render the rail segment at its position, clipping it if part of the map is higher than it
-void MapState::Rail::renderSegment(int screenLeftWorldX, int screenTopWorldY, float tileOffset, Rail::Segment& segment) {
-	int pixelOffset = (int)(tileOffset * (float)tileSize + 0.5f);
-	int topWorldY = segment.y * tileSize + pixelOffset;
+void MapState::Rail::renderSegment(int screenLeftWorldX, int screenTopWorldY, float tileOffset, int segmentIndex) {
+	Segment& segment = (*segments)[segmentIndex];
+	int yPixelOffset = (int)(tileOffset * (float)tileSize + 0.5f);
+	int topWorldY = segment.y * tileSize + yPixelOffset;
 	int bottomTileY = (topWorldY + tileSize - 1) / tileSize;
 	GLint drawLeftX = (GLint)(segment.x * tileSize - screenLeftWorldX);
 	GLint drawTopY = (GLint)(topWorldY - screenTopWorldY);
@@ -162,7 +178,7 @@ void MapState::Rail::renderSegment(int screenLeftWorldX, int screenTopWorldY, fl
 	char bottomTileHeight = getHeight(segment.x, bottomTileY);
 
 	#ifdef EDITOR
-		if (&segment == &segments->front() || &segment == &segments->back())
+		if (segmentIndex == 0 || segmentIndex == segments->size() - 1)
 			SpriteSheet::renderFilledRectangle(
 				(color == squareColor || color == sineColor) ? 0.75f : 0.0f,
 				(color == sawColor || color == sineColor) ? 0.75f : 0.0f,
@@ -175,10 +191,10 @@ void MapState::Rail::renderSegment(int screenLeftWorldX, int screenTopWorldY, fl
 	#endif
 	//this segment is completely visible
 	if (bottomTileHeight == emptySpaceHeight
-			|| bottomTileHeight <= baseHeight - (char)((pixelOffset + tileSize - 1) / tileSize) * 2)
+			|| bottomTileHeight <= baseHeight - (char)((yPixelOffset + tileSize - 1) / tileSize) * 2)
 		SpriteRegistry::rails->renderSpriteAtScreenPosition(segment.spriteHorizontalIndex, 0, drawLeftX, drawTopY);
 	//the top part of this segment is visible
-	else if (topTileHeight == emptySpaceHeight || topTileHeight <= baseHeight - (char)(pixelOffset / tileSize) * 2) {
+	else if (topTileHeight == emptySpaceHeight || topTileHeight <= baseHeight - (char)(yPixelOffset / tileSize) * 2) {
 		int spriteX = segment.spriteHorizontalIndex * tileSize;
 		int spriteHeight = bottomTileY * tileSize - topWorldY;
 		SpriteRegistry::rails->renderSpriteSheetRegionAtScreenRegion(
@@ -191,13 +207,6 @@ void MapState::Rail::renderSegment(int screenLeftWorldX, int screenTopWorldY, fl
 			drawLeftX + (GLint)tileSize,
 			drawTopY + (GLint)spriteHeight);
 	}
-	#ifdef EDITOR
-		if (groups.size() > 0) {
-			Editor::renderGroupRect(groups[groupIndexToRender], drawLeftX + 2, drawTopY + 2, drawLeftX + 4, drawTopY + 4);
-			glEnable(GL_BLEND);
-			groupIndexToRender = (groupIndexToRender + 1) % groups.size();
-		}
-	#endif
 }
 #ifdef EDITOR
 	//remove this group from the rail if it contains it
@@ -363,8 +372,8 @@ void MapState::RailState::squareToggleOffset() {
 	targetTileOffset = targetTileOffset == 0.0f ? rail->getMaxTileOffset() : 0.0f;
 }
 //render the rail
-void MapState::RailState::render(int screenLeftWorldX, int screenTopWorldY, bool renderShadow) {
-	rail->render(screenLeftWorldX, screenTopWorldY, tileOffset, renderShadow);
+void MapState::RailState::render(int screenLeftWorldX, int screenTopWorldY, Rail::SegmentRenderType renderType) {
+	rail->render(screenLeftWorldX, screenTopWorldY, tileOffset, renderType);
 }
 //set this rail to the initial tile offset, not moving
 void MapState::RailState::loadState(float pTileOffset) {
@@ -773,13 +782,17 @@ void MapState::render(EntityState* camera, char playerZ, int ticksTime) {
 		}
 	}
 
-	//draw rail shadows, rails (that are below the player, and switches
+	//draw rail shadows, rails (that are below the player), and switches
 	for (RailState* railState : railStates)
-		railState->render(screenLeftWorldX, screenTopWorldY, true);
+		railState->render(screenLeftWorldX, screenTopWorldY, Rail::SegmentRenderType::Shadow);
 	for (RailState* railState : railStates) {
 		if (!railState->isAbovePlayerZ(playerZ))
-			railState->render(screenLeftWorldX, screenTopWorldY, false);
+			railState->render(screenLeftWorldX, screenTopWorldY, Rail::SegmentRenderType::Rail);
 	}
+	#ifdef EDITOR
+		for (RailState* railState : railStates)
+			railState->render(screenLeftWorldX, screenTopWorldY, Rail::SegmentRenderType::Group);
+	#endif
 	for (SwitchState* switchState : switchStates)
 		switchState->render(
 			screenLeftWorldX,
@@ -813,13 +826,22 @@ void MapState::renderRailsAbovePlayer(EntityState* camera, char playerZ, int tic
 	int screenTopWorldY = getScreenTopWorldY(camera, ticksTime);
 	for (RailState* railState : railStates) {
 		if (railState->isAbovePlayerZ(playerZ))
-			railState->render(screenLeftWorldX, screenTopWorldY, false);
+			railState->render(screenLeftWorldX, screenTopWorldY, Rail::SegmentRenderType::Rail);
 	}
 }
 //save the map state to the file
 void MapState::saveState(ofstream& file) {
 	if (lastActivatedSwitchColor >= 0)
 		file << lastActivatedSwitchColorFilePrefix << (int)lastActivatedSwitchColor << "\n";
+
+	#ifdef EDITOR
+		//don't save the rail states if we're saving the floor file
+		//also write that we unlocked all the switches
+		if (Editor::needsGameStateSave) {
+			file << lastActivatedSwitchColorFilePrefix << "100\n";
+			return;
+		}
+	#endif
 	for (int i = 0; i < (int)railStates.size(); i++) {
 		RailState* railState = railStates[i];
 		char targetTileOffset = (char)railState->getTargetTileOffset();

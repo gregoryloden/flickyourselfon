@@ -10,6 +10,11 @@ private:
 		Right,
 		Bottom
 	};
+	enum class MouseDragAction: unsigned char {
+		None,
+		RaiseLowerTile,
+		AddRemoveRail
+	};
 	//Should only be allocated within an object, on the stack, or as a static object
 	class RGB {
 	public:
@@ -34,6 +39,8 @@ private:
 		Button(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY);
 		~Button();
 
+		//do anything that should happen only once after painting
+		virtual void postPaint() {}
 		void setWidthAndHeight(int width, int height);
 		bool tryHandleClick(int x, int y);
 		virtual void render();
@@ -182,6 +189,7 @@ private:
 		virtual void render();
 		virtual void doAction();
 		virtual void paintMap(int x, int y);
+		virtual void postPaint();
 	};
 	class SwitchButton: public Button {
 	public:
@@ -267,19 +275,23 @@ private:
 	static SwitchButton* lastSelectedSwitchButton;
 	static RailButton* lastSelectedRailButton;
 	static RailTileOffsetButton* lastSelectedRailTileOffsetButton;
+	static MouseDragAction lastMouseDragAction;
+	static int lastMouseDragMapX;
+	static int lastMouseDragMapY;
 	static default_random_engine* randomEngine;
 	static discrete_distribution<int>* randomDistribution;
 	static bool saveButtonDisabled;
 	static bool exportMapButtonDisabled;
-
 public:
+	static bool needsGameStateSave;
+
 	static void loadButtons();
 	static void unloadButtons();
 	static char getSelectedHeight();
 private:
 	static void getMouseMapXY(int screenLeftWorldX, int screenTopWorldY, int* outMapX, int* outMapY);
 public:
-	static void handleClick(SDL_MouseButtonEvent& clickEvent, EntityState* camera, int ticksTime);
+	static void handleClick(SDL_MouseButtonEvent& clickEvent, bool isDrag, EntityState* camera, int ticksTime);
 	static void render(EntityState* camera, int ticksTime);
 	static void renderGroupRect(char group, int leftX, int topY, int rightX, int bottomY);
 	static void renderRGBRect(const RGB& rgb, float alpha, int leftX, int topY, int rightX, int bottomY);
