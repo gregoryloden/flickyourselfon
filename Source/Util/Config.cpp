@@ -7,7 +7,8 @@ Config::KeyBindings::KeyBindings()
 , rightKey(SDL_SCANCODE_RIGHT)
 , downKey(SDL_SCANCODE_DOWN)
 , leftKey(SDL_SCANCODE_LEFT)
-, kickKey(SDL_SCANCODE_SPACE) {
+, kickKey(SDL_SCANCODE_SPACE)
+, showConnectionsKey(SDL_SCANCODE_LSHIFT) {
 }
 Config::KeyBindings::~KeyBindings() {}
 //copy the key bindings from the other KeyBindings
@@ -17,6 +18,7 @@ void Config::KeyBindings::set(const KeyBindings* other) {
 	downKey = other->downKey;
 	leftKey = other->leftKey;
 	kickKey = other->kickKey;
+	showConnectionsKey = other->showConnectionsKey;
 }
 
 //////////////////////////////// Config ////////////////////////////////
@@ -33,6 +35,7 @@ const string Config::rightKeyBindingFilePrefix = "rightKey ";
 const string Config::downKeyBindingFilePrefix = "downKey ";
 const string Config::leftKeyBindingFilePrefix = "leftKey ";
 const string Config::kickKeyBindingFilePrefix = "kickKey ";
+const string Config::showConnectionsKeyBindingFilePrefix = "showConnectionsKey ";
 float Config::currentPixelWidth = Config::defaultPixelWidth;
 float Config::currentPixelHeight = Config::defaultPixelHeight;
 int Config::refreshRate = 60;
@@ -52,6 +55,8 @@ void Config::saveSettings() {
 		file << leftKeyBindingFilePrefix << (int)keyBindings.leftKey << "\n";
 	if (keyBindings.kickKey != defaultKeyBindings.kickKey)
 		file << kickKeyBindingFilePrefix << (int)keyBindings.kickKey << "\n";
+	if (keyBindings.showConnectionsKey != defaultKeyBindings.showConnectionsKey)
+		file << showConnectionsKeyBindingFilePrefix << (int)keyBindings.showConnectionsKey << "\n";
 	file.close();
 }
 //load the key bindings from the save file, if it exists
@@ -70,6 +75,8 @@ void Config::loadSettings() {
 			keyBindings.leftKey = (SDL_Scancode)atoi(line.c_str() + leftKeyBindingFilePrefix.size());
 		else if (StringUtils::startsWith(line, kickKeyBindingFilePrefix))
 			keyBindings.kickKey = (SDL_Scancode)atoi(line.c_str() + kickKeyBindingFilePrefix.size());
+		else if (StringUtils::startsWith(line, showConnectionsKeyBindingFilePrefix))
+			keyBindings.showConnectionsKey = (SDL_Scancode)atoi(line.c_str() + showConnectionsKeyBindingFilePrefix.size());
 	}
 	file.close();
 }

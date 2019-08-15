@@ -1,4 +1,7 @@
 #include "GameState/EntityState.h"
+#ifdef EDITOR
+	#include <mutex>
+#endif
 
 #define newMapState() produceWithoutArgs(MapState)
 
@@ -6,11 +9,6 @@ class MapState: public PooledReferenceCounter {
 public:
 	class Rail onlyInDebug(: public ObjCounter) {
 	public:
-		enum class SegmentRenderType: unsigned char {
-			Rail,
-			Shadow,
-			Group
-		};
 		//Should only be allocated within an object, on the stack, or as a static object
 		class Segment {
 		public:
@@ -34,6 +32,7 @@ public:
 		char maxTileOffset;
 	public:
 		#ifdef EDITOR
+			mutex segmentsMutex;
 			bool isDeleted;
 		#endif
 
@@ -51,9 +50,13 @@ public:
 		void reverseSegments();
 		void addGroup(char group);
 		void addSegment(int x, int y);
-		void render(int screenLeftWorldX, int screenTopWorldY, float tileOffset, SegmentRenderType renderType);
+		void render(int screenLeftWorldX, int screenTopWorldY, float tileOffset);
+		void renderShadow(int screenLeftWorldX, int screenTopWorldY);
+		void renderGroups(int screenLeftWorldX, int screenTopWorldY);
+	private:
 		void renderSegment(int screenLeftWorldX, int screenTopWorldY, float tileOffset, int segmentIndex);
 		#ifdef EDITOR
+		public:
 			void removeGroup(char group);
 			void removeSegment(int x, int y);
 			void adjustInitialTileOffset(int x, int y, char tileOffset);
@@ -82,8 +85,10 @@ public:
 			int screenTopWorldY,
 			char lastActivatedSwitchColor,
 			int lastActivatedSwitchColorFadeInTicksOffset,
-			bool isOn);
+			bool isOn,
+			bool showGroup);
 		#ifdef EDITOR
+			void moveTo(int newLeftX, int newTopY);
 			char getFloorSaveData(int x, int y);
 		#endif
 	};
@@ -107,7 +112,9 @@ public:
 		bool isAbovePlayerZ(char z) { return rail->getBaseHeight() - (char)(tileOffset + 0.5f) * 2 > z; }
 		void updateWithPreviousRailState(RailState* prev, int ticksTime);
 		void squareToggleOffset();
-		void render(int screenLeftWorldX, int screenTopWorldY, Rail::SegmentRenderType renderType);
+		void render(int screenLeftWorldX, int screenTopWorld);
+		void renderShadow(int screenLeftWorldX, int screenTopWorldY);
+		void renderGroups(int screenLeftWorldX, int screenTopWorldY);
 		void loadState(float pTileOffset);
 		void reset();
 	};
@@ -130,6 +137,7 @@ public:
 			int screenTopWorldY,
 			char lastActivatedSwitchColor,
 			int lastActivatedSwitchColorFadeInTicksOffset,
+			bool showGroup,
 			int ticksTime);
 	};
 	class RadioWavesState: public EntityState {
@@ -179,6 +187,8 @@ public:
 	static const int defaultPlatformTopRightFloorTile = 28;
 	static const int defaultGroundLeftFloorTile = 29;
 	static const int defaultGroundRightFloorTile = 33;
+	static const int defaultPlatformTopGroundLeftFloorTile = 39;
+	static const int defaultPlatformTopGroundRightFloorTile = 40;
 	static const char squareColor = 0;
 	static const char triangleColor = 1;
 	static const char sawColor = 2;
@@ -263,8 +273,9 @@ public:
 	void setSwitchToFlip(short pSwitchToFlipId, int pSwitchFlipOffTicksTime, int pSwitchFlipOnTicksTime);
 	void startRadioWavesAnimation(int initialTicksDelay, int ticksTime);
 	void startSwitchesFadeInAnimation(int ticksTime);
-	void render(EntityState* camera, char playerZ, int ticksTime);
-	void renderRailsAbovePlayer(EntityState* camera, char playerZ, int ticksTime);
+	void render(EntityState* camera, char playerZ, bool showConnections, int ticksTime);
+	void renderRailsAbovePlayer(EntityState* camera, char playerZ, bool showConnections, int ticksTime);
+	static void renderGroupRect(char group, GLint leftX, GLint topY, GLint rightX, GLint bottomY);
 	void saveState(ofstream& file);
 	bool loadState(string& line);
 	void resetMap();

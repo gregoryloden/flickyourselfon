@@ -13,7 +13,8 @@ private:
 	enum class MouseDragAction: unsigned char {
 		None,
 		RaiseLowerTile,
-		AddRemoveRail
+		AddRemoveRail,
+		AddRemoveSwitch
 	};
 	//Should only be allocated within an object, on the stack, or as a static object
 	class RGB {
@@ -293,9 +294,9 @@ private:
 public:
 	static void handleClick(SDL_MouseButtonEvent& clickEvent, bool isDrag, EntityState* camera, int ticksTime);
 	static void render(EntityState* camera, int ticksTime);
-	static void renderGroupRect(char group, int leftX, int topY, int rightX, int bottomY);
-	static void renderRGBRect(const RGB& rgb, float alpha, int leftX, int topY, int rightX, int bottomY);
 private:
+	static void renderRGBRect(const RGB& rgb, float alpha, int leftX, int topY, int rightX, int bottomY);
 	static void addNoiseTile(char tile);
 	static void removeNoiseTile(char tile);
+	static bool clickedAdjacentTile(int x, int y, MouseDragAction mouseDragAction);
 };

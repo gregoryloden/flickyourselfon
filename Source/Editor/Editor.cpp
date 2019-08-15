@@ -458,7 +458,7 @@
 	void Editor::RaiseLowerTileButton::paintMap(int x, int y) {
 		//don't raise or lower this tile if it's a wall tile, or if we're dragging
 		char height = MapState::getHeight(x, y);
-		if (lastMouseDragAction == MouseDragAction::RaiseLowerTile || height % 2 != 0)
+		if (lastMouseDragAction != MouseDragAction::None || height % 2 != 0)
 			return;
 
 		char newFloorY;
@@ -476,22 +476,28 @@
 			newFloorY = y + 1;
 			newHeight = height - 2;
 
-			//if the top tile has a lower height than this one, match the height of the highest adjacent floor tile lower than
-			//	where this was
 			char topHeight = MapState::getHeight(x, y - 1);
-			if ((topHeight <= newHeight && topHeight % 2 == 0) || topHeight == MapState::emptySpaceHeight) {
-				replacementHeight = topHeight;
-				char sideHeights[] = { MapState::getHeight(x - 1, y), MapState::getHeight(x + 1, y) };
-				for (int i = 0; i < 2; i++) {
-					char sideHeight = sideHeights[i];
-					if (sideHeight <= newHeight
-							&& sideHeight % 2 == 0
-							&& (replacementHeight == MapState::emptySpaceHeight || sideHeight > replacementHeight))
-						replacementHeight = sideHeight;
-				}
-			//otherwise use the regular wall tile
-			} else
-				replacementHeight = height - 1;
+			//always match an empty space height
+			if (topHeight == MapState::emptySpaceHeight)
+				replacementHeight = MapState::emptySpaceHeight;
+			//the top tile is a floor tile
+			else if (topHeight % 2 == 0) {
+				//if it's below where this was, match it
+				if (topHeight < height)
+					replacementHeight = topHeight;
+				//otherwise use the wall below where this was
+				else
+					replacementHeight = height - 1;
+			//the top tile is a wall tile
+			} else {
+				//if it's a lower wall and it's one above a side floor tile, use that
+				if (topHeight < height &&
+						(topHeight - 1 == MapState::getHeight(x - 1, y) || topHeight - 1 == MapState::getHeight(x + 1, y)))
+					replacementHeight = topHeight - 1;
+				//otherwise use the wall below it, or the lowest floor for the lowest wall
+				else
+					replacementHeight = MathUtils::max(0, topHeight - 2);
+			}
 		}
 		MapState::setHeight(x, y, replacementHeight);
 		MapState::setHeight(x, newFloorY, newHeight);
@@ -550,7 +556,8 @@
 	}
 	//set a switch at this position
 	void Editor::SwitchButton::paintMap(int x, int y) {
-		MapState::setSwitch(x, y, color, selectedRailSwitchGroupButton->getRailSwitchGroup());
+		if (clickedAdjacentTile(x, y, MouseDragAction::AddRemoveSwitch))
+			MapState::setSwitch(x, y, color, selectedRailSwitchGroupButton->getRailSwitchGroup());
 	}
 
 	//////////////////////////////// Editor::RailButton ////////////////////////////////
@@ -583,15 +590,8 @@
 	}
 	//set a rail at this position
 	void Editor::RailButton::paintMap(int x, int y) {
-		if (lastMouseDragAction == MouseDragAction::None)
-			lastMouseDragAction = MouseDragAction::AddRemoveRail;
-		//if we're dragging, don't do anything unless we clicked 1 tile away from the last tile
-		else if (MathUtils::abs(x - lastMouseDragMapX) + MathUtils::abs(y - lastMouseDragMapY) != 1)
-			return;
-
-		MapState::setRail(x, y, color, selectedRailSwitchGroupButton->getRailSwitchGroup());
-		lastMouseDragMapX = x;
-		lastMouseDragMapY = y;
+		if (clickedAdjacentTile(x, y, MouseDragAction::AddRemoveRail))
+			MapState::setRail(x, y, color, selectedRailSwitchGroupButton->getRailSwitchGroup());
 	}
 
 	//////////////////////////////// Editor::RailTileOffsetButton ////////////////////////////////
@@ -638,7 +638,7 @@
 	//render the group above the button
 	void Editor::RailSwitchGroupButton::render() {
 		Button::render();
-		renderGroupRect(railSwitchGroup, leftX + 1, topY + 1, rightX - 1, bottomY - 1);
+		MapState::renderGroupRect(railSwitchGroup, (GLint)leftX + 1, (GLint)topY + 1, (GLint)rightX - 1, (GLint)bottomY - 1);
 	}
 	//select a group to use when painting switches or rails
 	void Editor::RailSwitchGroupButton::doAction() {
@@ -879,30 +879,6 @@
 		if (evenPaintBoxYRadiusButton->isSelected)
 			evenPaintBoxYRadiusButton->renderHighlightOutline();
 	}
-	//draw a graphic to represent this rail/switch group
-	void Editor::renderGroupRect(char group, int leftX, int topY, int rightX, int bottomY) {
-		GLint midX = (GLint)((leftX + rightX) / 2);
-		//bits 0-2
-		SpriteSheet::renderFilledRectangle(
-			(float)(group & 1),
-			(float)((group & 2) >> 1),
-			(float)((group & 4) >> 2),
-			1.0f,
-			(GLint)leftX,
-			(GLint)topY,
-			midX,
-			(GLint)bottomY);
-		//bits 3-5
-		SpriteSheet::renderFilledRectangle(
-			(float)((group & 8) >> 3),
-			(float)((group & 16) >> 4),
-			(float)((group & 32) >> 5),
-			1.0f,
-			midX,
-			(GLint)topY,
-			(GLint)rightX,
-			(GLint)bottomY);
-	}
 	//render a rectangle of the given color in the given region;
 	void Editor::renderRGBRect(const RGB& rgb, float alpha, int leftX, int topY, int rightX, int bottomY) {
 		SpriteSheet::renderFilledRectangle(
@@ -962,5 +938,17 @@
 			button->count = 0;
 			button->tile = -1;
 		}
+	}
+	//returns true iff we clicked on a tile or dragged onto a new adjacent tile
+	bool Editor::clickedAdjacentTile(int x, int y, MouseDragAction clickedAction) {
+		if (lastMouseDragAction == MouseDragAction::None)
+			lastMouseDragAction = clickedAction;
+		//if we're dragging, don't do anything unless we clicked 1 tile away from the last tile
+		else if (abs(x - lastMouseDragMapX) + abs(y - lastMouseDragMapY) != 1)
+			return false;
+
+		lastMouseDragMapX = x;
+		lastMouseDragMapY = y;
+		return true;
 	}
 #endif

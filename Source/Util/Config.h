@@ -10,6 +10,7 @@ public:
 		SDL_Scancode downKey;
 		SDL_Scancode leftKey;
 		SDL_Scancode kickKey;
+		SDL_Scancode showConnectionsKey;
 
 		KeyBindings();
 		~KeyBindings();
@@ -42,6 +43,7 @@ public:
 	static const string downKeyBindingFilePrefix;
 	static const string leftKeyBindingFilePrefix;
 	static const string kickKeyBindingFilePrefix;
+	static const string showConnectionsKeyBindingFilePrefix;
 
 	static float currentPixelWidth;
 	static float currentPixelHeight;

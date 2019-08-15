@@ -76,7 +76,8 @@ private:
 			Right,
 			Down,
 			Left,
-			Kick
+			Kick,
+			ShowConnections
 		};
 
 	private:

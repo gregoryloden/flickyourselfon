@@ -207,6 +207,7 @@ string PauseState::KeyBindingOption::getBoundKeyActionText(BoundKey pBoundKey) {
 		case BoundKey::Down: return "down:";
 		case BoundKey::Left: return "left:";
 		case BoundKey::Kick: return "kick:";
+		case BoundKey::ShowConnections: return "show connections:";
 		default: return "";
 	}
 }
@@ -218,6 +219,7 @@ SDL_Scancode PauseState::KeyBindingOption::getBoundKeyScancode() {
 		case BoundKey::Down: return Config::editingKeyBindings.downKey;
 		case BoundKey::Left: return Config::editingKeyBindings.leftKey;
 		case BoundKey::Kick: return Config::editingKeyBindings.kickKey;
+		case BoundKey::ShowConnections: return Config::editingKeyBindings.showConnectionsKey;
 		default: return SDL_SCANCODE_UNKNOWN;
 	}
 }
@@ -231,6 +233,7 @@ void PauseState::KeyBindingOption::setBoundKeyScancode(SDL_Scancode keyScancode)
 		case BoundKey::Down: Config::editingKeyBindings.downKey = keyScancode; break;
 		case BoundKey::Left: Config::editingKeyBindings.leftKey = keyScancode; break;
 		case BoundKey::Kick: Config::editingKeyBindings.kickKey = keyScancode; break;
+		case BoundKey::ShowConnections: Config::editingKeyBindings.showConnectionsKey = keyScancode; break;
 		default: break;
 	}
 }
@@ -327,6 +330,7 @@ void PauseState::loadMenu() {
 						newKeyBindingOption(KeyBindingOption::BoundKey::Down) COMMA
 						newKeyBindingOption(KeyBindingOption::BoundKey::Left) COMMA
 						newKeyBindingOption(KeyBindingOption::BoundKey::Kick) COMMA
+						newKeyBindingOption(KeyBindingOption::BoundKey::ShowConnections) COMMA
 						newDefaultKeyBindingsOption() COMMA
 						newAcceptKeyBindingsOption() COMMA
 						newNavigationOption("back", nullptr)

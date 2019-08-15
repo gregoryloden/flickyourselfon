@@ -1,0 +1,46 @@
+Puzzle 1:
+A:a-@  2
+B:1-a  1
+C:1-2  1,2
+
+Step:	0	1	2	3
+
+	None	1	2	1
+A	Low	Low	High	High
+B	High	Low	Low	High
+C	Low	High	Low	High
+
+Puzzle 2a:
+A:1-2  1
+B:2-3  2,3
+C:a-b  2,3
+D:b-4  1,2,3
+E:3-1  3
+
+Step:	0	1	2	3	4	5	6	7	8	9	10
+
+	None	1	2	3	1	2	4	1	3	2	1
+A	Low	High	High	High	Low	Low
+B	Low	Low	High	Low	Low	High
+C	Low	Low	High	High	High	Low
+D	Low	High	Low	High	Low	High
+E	Low	Low	Low	High	High	High
+
+-  1234
+1  XX.. 1
+2  X.X? 12
+3  X??? 123
+1  XX?? 23
+2  X??? 3
+4  X??? 34
+1  X??? 134
+3  X??? 14
+2  X??? 124
+1  X??? 24
+
+1  -----------------
+2  1@1, 23@1, 14@3
+3  12@2, 134@1
+4  3@2
+
+end: 13U 2D 4D

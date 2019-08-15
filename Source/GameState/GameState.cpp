@@ -243,10 +243,11 @@ void GameState::startRadioTowerAnimation(int ticksTime) {
 //render this state, which was deemed to be the last state to need rendering
 void GameState::render(int ticksTime) {
 	int gameTicksTime = (pauseState.get() != nullptr ? pauseStartTicksTime : ticksTime) - gameTimeOffsetTicksDuration;
+	bool showConnections = SDL_GetKeyboardState(nullptr)[Config::keyBindings.showConnectionsKey] != 0;
 	int playerZ = playerState.get()->getZ();
-	mapState.get()->render(camera, playerZ, gameTicksTime);
+	mapState.get()->render(camera, playerZ, showConnections, gameTicksTime);
 	playerState.get()->render(camera, gameTicksTime);
-	mapState.get()->renderRailsAbovePlayer(camera, playerZ, gameTicksTime);
+	mapState.get()->renderRailsAbovePlayer(camera, playerZ, showConnections, gameTicksTime);
 
 	if (camera == dynamicCameraAnchor.get())
 		dynamicCameraAnchor.get()->render(gameTicksTime);
@@ -359,18 +360,18 @@ void GameState::loadInitialState(int ticksTime) {
 	}
 	file.close();
 
+	//and finally, setup any remaining initial state
+	playerState.get()->loadInitialZ();
+
 	#ifdef EDITOR
-		//always skip the intro animation for the editor, this may stick the player in the top-left corner (0, 0)
+		//always skip the intro animation for the editor, jump straight into walking
 		sawIntroAnimation = true;
 	#endif
-
-	//and finally, setup the initial state
 	if (sawIntroAnimation) {
 		playerState.get()->obtainBoot();
 		camera = playerState.get();
 	} else
 		beginIntroAnimation(ticksTime);
-	playerState.get()->loadInitialZ();
 }
 //give the camera and player their intro animations
 void GameState::beginIntroAnimation(int ticksTime) {
