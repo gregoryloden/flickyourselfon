@@ -15,6 +15,7 @@
 #include "Sprites/SpriteSheet.h"
 #include "Sprites/Text.h"
 
+const int maxExtraAddedStates = 4;
 SDL_Window* window = nullptr;
 SDL_GLContext glContext = nullptr;
 bool renderThreadReadyForUpdates = false;
@@ -78,6 +79,7 @@ int main(int argc, char* argv[]) {
 	int updateDelay = -1;
 	int startTime = 0;
 	int updateNum = 0;
+	int extraStatesAdded = 0;
 	while (true) {
 		//if we missed an update or haven't begun the loop, reset the update number and time
 		if (updateDelay <= 0) {
@@ -87,16 +89,22 @@ int main(int argc, char* argv[]) {
 			SDL_Delay((Uint32)updateDelay);
 
 		GameState* gameState = gameStateQueue->getNextWritableState();
-		if (gameState == nullptr) {
+		//add a new state if there isn't one we can write to and we haven't reached our limit
+		if (gameState == nullptr && extraStatesAdded < maxExtraAddedStates) {
 			Logger::log("Adding additional GameState");
 			gameState = newGameState();
 			gameStateQueue->addWritableState(gameState);
+			extraStatesAdded++;
 		}
-		gameState->updateWithPreviousGameState(prevGameState, (int)SDL_GetTicks());
-		gameStateQueue->finishWritingToState();
-		prevGameState = gameState;
-		if (gameState->getShouldQuitGame())
-			break;
+
+		//skip the update if we couldn't get a state to render to, leave prevGameState as it was
+		if (gameState != nullptr) {
+			gameState->updateWithPreviousGameState(prevGameState, (int)SDL_GetTicks());
+			gameStateQueue->finishWritingToState();
+			prevGameState = gameState;
+			if (gameState->getShouldQuitGame())
+				break;
+		}
 
 		updateNum++;
 		updateDelay = Config::ticksPerSecond * updateNum / Config::updatesPerSecond - ((int)SDL_GetTicks() - startTime);

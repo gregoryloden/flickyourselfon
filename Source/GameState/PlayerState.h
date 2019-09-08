@@ -66,5 +66,5 @@ public:
 	void render(EntityState* camera, int ticksTime);
 	void saveState(ofstream& file);
 	bool loadState(string& line);
-	void loadInitialZ();
+	void setInitialZ();
 };

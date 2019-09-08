@@ -97,19 +97,22 @@ public:
 		static const float tileOffsetPerTick;
 
 		Rail* rail;
+		int railIndex;
 		float tileOffset;
 		float targetTileOffset;
 		int lastUpdateTicksTime;
 
 	public:
-		RailState(objCounterParametersComma() Rail* pRail);
+		RailState(objCounterParametersComma() Rail* pRail, int pRailIndex);
 		~RailState();
 
 		Rail* getRail() { return rail; }
+		int getRailIndex() { return railIndex; }
 		float getTargetTileOffset() { return targetTileOffset; }
 		bool canRide() { return tileOffset == 0.0f; }
-		// say the last 1/2 tile of offset is below the player
-		bool isAbovePlayerZ(char z) { return rail->getBaseHeight() - (char)(tileOffset + 0.5f) * 2 > z; }
+		float getEffectiveHeight() { return rail->getBaseHeight() - tileOffset * 2; }
+		// say 1.5 tiles is where the rail goes from below to above the player
+		bool isAbovePlayerZ(char z) { return getEffectiveHeight() > (float)z + 1.5f; }
 		void updateWithPreviousRailState(RailState* prev, int ticksTime);
 		void squareToggleOffset();
 		void render(int screenLeftWorldX, int screenTopWorld);
@@ -174,21 +177,29 @@ public:
 	static const int firstLevelTileOffsetY = 63;
 	static const int radioTowerLeftXOffset = 324 + firstLevelTileOffsetX * tileSize;
 	static const int radioTowerTopYOffset = -106 + firstLevelTileOffsetY * tileSize;
-	static const char introAnimationBootTile = 37;
 	static const int introAnimationBootTileX = 29 + firstLevelTileOffsetX;
 	static const int introAnimationBootTileY = 26 + firstLevelTileOffsetY;
 	static const int switchesFadeInDuration = 1000;
-	static const int defaultFloorTile = 0;
-	static const int defaultWallTile = 9;
-	static const int defaultPlatformRightFloorTile = 15;
-	static const int defaultPlatformLeftFloorTile = 19;
-	static const int defaultPlatformTopFloorTile = 23;
-	static const int defaultPlatformTopLeftFloorTile = 27;
-	static const int defaultPlatformTopRightFloorTile = 28;
-	static const int defaultGroundLeftFloorTile = 29;
-	static const int defaultGroundRightFloorTile = 33;
-	static const int defaultPlatformTopGroundLeftFloorTile = 39;
-	static const int defaultPlatformTopGroundRightFloorTile = 40;
+	static const char tileFloorFirst = 0;
+	static const char tileFloorLast = 8;
+	static const char tileWallFirst = 9;
+	static const char tileWallLast = 14;
+	static const char tilePlatformRightFloorFirst = 15;
+	static const char tilePlatformRightFloorLast = 18;
+	static const char tilePlatformLeftFloorFirst = 19;
+	static const char tilePlatformLeftFloorLast = 22;
+	static const char tilePlatformTopFloorFirst = 23;
+	static const char tilePlatformTopFloorLast = 26;
+	static const char tilePlatformTopLeftFloor = 27;
+	static const char tilePlatformTopRightFloor = 28;
+	static const char tileGroundLeftFloorFirst = 29;
+	static const char tileGroundLeftFloorLast = 32;
+	static const char tileGroundRightFloorFirst = 33;
+	static const char tileGroundRightFloorLast = 36;
+	static const char tileBoot = 37;
+	static const char tilePuzzleEnd = 38;
+	static const char tilePlatformTopGroundLeftFloor = 39;
+	static const char tilePlatformTopGroundRightFloor = 40;
 	static const char squareColor = 0;
 	static const char triangleColor = 1;
 	static const char sawColor = 2;
@@ -226,8 +237,13 @@ private:
 	static vector<Switch*> switches;
 	static int width;
 	static int height;
+	#ifdef EDITOR
+		static int nonTilesHidingState;
+	#endif
 
 	vector<RailState*> railStates;
+	vector<RailState*> railStatesByHeight;
+	int railsBelowPlayerZ;
 	vector<SwitchState*> switchStates;
 	short switchToFlipId;
 	int switchFlipOffTicksTime;
@@ -270,6 +286,7 @@ public:
 	static char horizontalTilesHeight(int lowMapX, int highMapX, int mapY);
 	static void setIntroAnimationBootTile(bool showBootTile);
 	void updateWithPreviousMapState(MapState* prev, int ticksTime);
+	void insertRailByHeight(RailState* railState);
 	void setSwitchToFlip(short pSwitchToFlipId, int pSwitchFlipOffTicksTime, int pSwitchFlipOnTicksTime);
 	void startRadioWavesAnimation(int initialTicksDelay, int ticksTime);
 	void startSwitchesFadeInAnimation(int ticksTime);
@@ -278,6 +295,7 @@ public:
 	static void renderGroupRect(char group, GLint leftX, GLint topY, GLint rightX, GLint bottomY);
 	void saveState(ofstream& file);
 	bool loadState(string& line);
+	void sortInitialRails();
 	void resetMap();
 	#ifdef EDITOR
 		static void setAppropriateDefaultFloorTile(int x, int y, char expectedFloorHeight);

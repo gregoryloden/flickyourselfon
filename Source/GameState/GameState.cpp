@@ -254,10 +254,9 @@ void GameState::render(int ticksTime) {
 	renderTitleAnimation(gameTicksTime);
 
 	//TODO: real win condition
-	if (playerState.get()->getZ() == 6
-		&& playerState.get()->getRenderCenterWorldX(gameTicksTime)
-			<= (float)((31 + MapState::firstLevelTileOffsetX) * MapState::tileSize))
-	{
+	float px = playerState.get()->getRenderCenterWorldX(gameTicksTime);
+	float py = playerState.get()->getRenderCenterWorldY(gameTicksTime);
+	if (playerState.get()->getZ() == 6 && px >= 260 && px <= 270 && py >= 240 && py <= 255) {
 		const char* win = "Win!";
 		Text::Metrics winMetrics = Text::getMetrics(win, 2.0f);
 		Text::render(win, 10.0f, 10.0f + winMetrics.aboveBaseline, 2.0f);
@@ -361,7 +360,8 @@ void GameState::loadInitialState(int ticksTime) {
 	file.close();
 
 	//and finally, setup any remaining initial state
-	playerState.get()->loadInitialZ();
+	playerState.get()->setInitialZ();
+	mapState.get()->sortInitialRails();
 
 	#ifdef EDITOR
 		//always skip the intro animation for the editor, jump straight into walking

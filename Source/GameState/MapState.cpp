@@ -12,7 +12,7 @@
 #define newRail(x, y, baseHeight, color, initialTileOffset) \
 	newWithArgs(MapState::Rail, x, y, baseHeight, color, initialTileOffset)
 #define newSwitch(leftX, topY, color, group) newWithArgs(MapState::Switch, leftX, topY, color, group)
-#define newRailState(rail) newWithArgs(MapState::RailState, rail)
+#define newRailState(rail, railIndex) newWithArgs(MapState::RailState, rail, railIndex)
 #define newSwitchState(switch0) newWithArgs(MapState::SwitchState, switch0)
 #define newRadioWavesState() produceWithoutArgs(MapState::RadioWavesState)
 
@@ -366,9 +366,10 @@ void MapState::Switch::render(
 
 //////////////////////////////// MapState::RailState ////////////////////////////////
 const float MapState::RailState::tileOffsetPerTick = 3.0f / (float)Config::ticksPerSecond;
-MapState::RailState::RailState(objCounterParametersComma() Rail* pRail)
+MapState::RailState::RailState(objCounterParametersComma() Rail* pRail, int pRailIndex)
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
 rail(pRail)
+, railIndex(pRailIndex)
 , tileOffset((float)pRail->getInitialTileOffset())
 , targetTileOffset(0.0f)
 , lastUpdateTicksTime(0) {
@@ -527,11 +528,16 @@ vector<MapState::Rail*> MapState::rails;
 vector<MapState::Switch*> MapState::switches;
 int MapState::width = 1;
 int MapState::height = 1;
+#ifdef EDITOR
+	int MapState::nonTilesHidingState = 1;
+#endif
 const string MapState::railOffsetFilePrefix = "rail ";
 const string MapState::lastActivatedSwitchColorFilePrefix = "lastActivatedSwitchColor ";
 MapState::MapState(objCounterParameters())
 : PooledReferenceCounter(objCounterArguments())
 , railStates()
+, railStatesByHeight()
+, railsBelowPlayerZ(0)
 , switchStates()
 , switchToFlipId(absentRailSwitchId)
 , switchFlipOffTicksTime(-1)
@@ -540,8 +546,8 @@ MapState::MapState(objCounterParameters())
 , switchesAnimationFadeInStartTicksTime(0)
 , shouldPlayRadioTowerAnimation(false)
 , radioWavesState(nullptr) {
-	for (Rail* rail : rails)
-		railStates.push_back(newRailState(rail));
+	for (int i = 0; i < (int)rails.size(); i++)
+		railStates.push_back(newRailState(rails[i], i));
 	for (Switch* switch0 : switches)
 		switchStates.push_back(newSwitchState(switch0));
 
@@ -713,22 +719,27 @@ char MapState::horizontalTilesHeight(int lowMapX, int highMapX, int mapY) {
 //change one of the tiles to be the boot tile
 void MapState::setIntroAnimationBootTile(bool showBootTile) {
 	//if we're not showing the boot tile, just show a default tile instead of showing the tile from the floor file
-	tiles[introAnimationBootTileY * width + introAnimationBootTileX] = showBootTile ? introAnimationBootTile : defaultFloorTile;
+	tiles[introAnimationBootTileY * width + introAnimationBootTileX] = showBootTile ? tileBoot : tileFloorFirst;
 }
 //update the rails and switches
 void MapState::updateWithPreviousMapState(MapState* prev, int ticksTime) {
 	lastActivatedSwitchColor = prev->lastActivatedSwitchColor;
 	shouldPlayRadioTowerAnimation = false;
 	switchesAnimationFadeInStartTicksTime = prev->switchesAnimationFadeInStartTicksTime;
-	for (int i = 0; i < (int)railStates.size(); i++)
-		railStates[i]->updateWithPreviousRailState(prev->railStates[i], ticksTime);
+
+	railStatesByHeight.clear();
+	for (RailState* otherRailState : prev->railStatesByHeight) {
+		RailState* railState = railStates[otherRailState->getRailIndex()];
+		railState->updateWithPreviousRailState(otherRailState, ticksTime);
+		insertRailByHeight(railState);
+	}
 	for (int i = 0; i < (int)switchStates.size(); i++)
 		switchStates[i]->updateWithPreviousSwitchState(prev->switchStates[i]);
 	#ifdef EDITOR
 		//since the editor can add switches and rails, make sure we update our list to track them
 		//we won't connect rail states to switch states since we can't kick switches in the editor
 		while (railStates.size() < rails.size())
-			railStates.push_back(newRailState(rails[railStates.size()]));
+			railStates.push_back(newRailState(rails[railStates.size()], railStates.size()));
 		while (switchStates.size() < switches.size())
 			switchStates.push_back(newSwitchState(switches[switchStates.size()]));
 	#endif
@@ -755,6 +766,25 @@ void MapState::updateWithPreviousMapState(MapState* prev, int ticksTime) {
 	}
 
 	radioWavesState.get()->updateWithPreviousRadioWavesState(prev->radioWavesState.get(), ticksTime);
+}
+//via insertion sort, add a rail state to the list of above- or below-player rail states
+//compare starting at the end since we expect the rails to mostly be already sorted
+void MapState::insertRailByHeight(RailState* railState) {
+	float effectiveHeight = railState->getEffectiveHeight();
+	//no insertion needed if there are no higher rails
+	if (railStatesByHeight.size() == 0 || railStatesByHeight.back()->getEffectiveHeight() <= effectiveHeight) {
+		railStatesByHeight.push_back(railState);
+		return;
+	}
+	int insertionIndex = railStatesByHeight.size() - 1;
+	railStatesByHeight.push_back(railStatesByHeight.back());
+	for (; insertionIndex > 0; insertionIndex--) {
+		RailState* other = railStatesByHeight[insertionIndex - 1];
+		if (other->getEffectiveHeight() <= effectiveHeight)
+			break;
+		railStatesByHeight[insertionIndex] = other;
+	}
+	railStatesByHeight[insertionIndex] = railState;
 }
 //set that we should flip a switch in the future
 void MapState::setSwitchToFlip(short pSwitchToFlipId, int pSwitchFlipOffTicksTime, int pSwitchFlipOnTicksTime) {
@@ -818,16 +848,30 @@ void MapState::render(EntityState* camera, char playerZ, bool showConnections, i
 		}
 	}
 
+	#ifdef EDITOR
+		if (showConnections == (nonTilesHidingState % 2 == 1))
+			nonTilesHidingState = (nonTilesHidingState + 1) % 6;
+		//by default, show the connections
+		if (nonTilesHidingState / 2 == 0)
+			showConnections = true;
+		//on the first press of the show-connections button, hide the connections
+		else if (nonTilesHidingState / 2 == 1)
+			showConnections = false;
+		//on the 2nd press of the show-connections button, hide everything other than the tiles
+		else
+			return;
+	#endif
+
 	//draw rail shadows, rails (that are below the player), and switches
 	for (RailState* railState : railStates)
 		railState->renderShadow(screenLeftWorldX, screenTopWorldY);
-	for (RailState* railState : railStates) {
-		if (!railState->isAbovePlayerZ(playerZ))
-			railState->render(screenLeftWorldX, screenTopWorldY);
+	railsBelowPlayerZ = 0;
+	for (RailState* railState : railStatesByHeight) {
+		if (railState->isAbovePlayerZ(playerZ))
+			break;
+		railsBelowPlayerZ++;
+		railState->render(screenLeftWorldX, screenTopWorldY);
 	}
-	#ifdef EDITOR
-		showConnections = true;
-	#endif
 	for (SwitchState* switchState : switchStates)
 		switchState->render(
 			screenLeftWorldX,
@@ -858,15 +902,22 @@ void MapState::render(EntityState* camera, char playerZ, bool showConnections, i
 }
 //draw any rails that are above the player
 void MapState::renderRailsAbovePlayer(EntityState* camera, char playerZ, bool showConnections, int ticksTime) {
+	#ifdef EDITOR
+		//by default, show the connections
+		if (nonTilesHidingState / 2 == 0)
+			showConnections = true;
+		//on the first press of the show-connections button, hide the connections
+		else if (nonTilesHidingState / 2 == 1)
+			showConnections = false;
+		//on the 2nd press of the show-connections button, hide everything other than the tiles
+		else
+			return;
+	#endif
+
 	int screenLeftWorldX = getScreenLeftWorldX(camera, ticksTime);
 	int screenTopWorldY = getScreenTopWorldY(camera, ticksTime);
-	for (RailState* railState : railStates) {
-		if (railState->isAbovePlayerZ(playerZ))
-			railState->render(screenLeftWorldX, screenTopWorldY);
-	}
-	#ifdef EDITOR
-		showConnections = true;
-	#endif
+	for (int i = railsBelowPlayerZ; i < (int)railStatesByHeight.size(); i++)
+		railStatesByHeight[i]->render(screenLeftWorldX, screenTopWorldY);
 	if (showConnections) {
 		for (RailState* railState : railStates)
 			railState->renderGroups(screenLeftWorldX, screenTopWorldY);
@@ -915,6 +966,11 @@ bool MapState::loadState(string& line) {
 		return false;
 	return true;
 }
+//we don't have previous rails to update from so sort the rails from our base list
+void MapState::sortInitialRails() {
+	for (RailState* railState : railStates)
+		insertRailByHeight(railState);
+}
 //reset the rails and switches
 void MapState::resetMap() {
 	lastActivatedSwitchColor = -1;
@@ -942,27 +998,27 @@ void MapState::resetMap() {
 		char topHeight = getHeight(x, y - 1);
 		if (height > topHeight || topHeight == emptySpaceHeight) {
 			if (leftIsAbove)
-				setTile(x, y, defaultPlatformTopGroundLeftFloorTile);
+				setTile(x, y, tilePlatformTopGroundLeftFloor);
 			else if (leftIsBelow)
-				setTile(x, y, defaultPlatformTopLeftFloorTile);
+				setTile(x, y, tilePlatformTopLeftFloor);
 			else if (rightIsAbove)
-				setTile(x, y, defaultPlatformTopGroundRightFloorTile);
+				setTile(x, y, tilePlatformTopGroundRightFloor);
 			else if (rightIsBelow)
-				setTile(x, y, defaultPlatformTopRightFloorTile);
+				setTile(x, y, tilePlatformTopRightFloor);
 			else
-				setTile(x, y, defaultPlatformTopFloorTile);
+				setTile(x, y, tilePlatformTopFloorFirst);
 		//this tile is the same height or lower than the one above it
 		} else {
 			if (leftIsAbove)
-				setTile(x, y, defaultGroundLeftFloorTile);
+				setTile(x, y, tileGroundLeftFloorFirst);
 			else if (leftIsBelow)
-				setTile(x, y, defaultPlatformLeftFloorTile);
+				setTile(x, y, tilePlatformLeftFloorFirst);
 			else if (rightIsAbove)
-				setTile(x, y, defaultGroundRightFloorTile);
+				setTile(x, y, tileGroundRightFloorFirst);
 			else if (rightIsBelow)
-				setTile(x, y, defaultPlatformRightFloorTile);
+				setTile(x, y, tilePlatformRightFloorFirst);
 			else
-				setTile(x, y, defaultFloorTile);
+				setTile(x, y, tileFloorFirst);
 		}
 	}
 	//check to see if there is a floor tile at this x that is effectively "above" an adjacent tile at the given y

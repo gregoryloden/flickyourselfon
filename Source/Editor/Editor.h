@@ -49,7 +49,7 @@ private:
 		void renderHighlightOutline();
 		virtual void paintMap(int x, int y);
 		//this button was clicked, do its associated action
-		virtual void doAction() = 0;
+		virtual void onClick() = 0;
 	};
 	class TextButton: public Button {
 	private:
@@ -74,7 +74,7 @@ private:
 		~SaveButton();
 
 		virtual void render();
-		virtual void doAction();
+		virtual void onClick();
 	};
 	class ExportMapButton: public TextButton {
 	private:
@@ -85,7 +85,7 @@ private:
 		~ExportMapButton();
 
 		virtual void render();
-		virtual void doAction();
+		virtual void onClick();
 	};
 	class TileButton: public Button {
 	public:
@@ -99,7 +99,7 @@ private:
 		~TileButton();
 
 		virtual void render();
-		virtual void doAction();
+		virtual void onClick();
 		virtual void paintMap(int x, int y);
 	};
 	class HeightButton: public Button {
@@ -116,7 +116,7 @@ private:
 
 		char getHeight() { return height; }
 		virtual void render();
-		virtual void doAction();
+		virtual void onClick();
 		virtual void paintMap(int x, int y);
 	};
 	class PaintBoxRadiusButton: public Button {
@@ -134,7 +134,7 @@ private:
 
 		char getRadius() { return radius; }
 		virtual void render();
-		virtual void doAction();
+		virtual void onClick();
 	};
 	class EvenPaintBoxRadiusButton: public Button {
 	public:
@@ -151,14 +151,14 @@ private:
 		~EvenPaintBoxRadiusButton();
 
 		virtual void render();
-		virtual void doAction();
+		virtual void onClick();
 	};
 	class NoiseButton: public TextButton {
 	public:
 		NoiseButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY);
 		~NoiseButton();
 
-		virtual void doAction();
+		virtual void onClick();
 		virtual void paintMap(int x, int y);
 	};
 	class NoiseTileButton: public Button {
@@ -173,7 +173,7 @@ private:
 		~NoiseTileButton();
 
 		virtual void render();
-		virtual void doAction();
+		virtual void onClick();
 	};
 	class RaiseLowerTileButton: public Button {
 	public:
@@ -188,9 +188,22 @@ private:
 		~RaiseLowerTileButton();
 
 		virtual void render();
-		virtual void doAction();
+		virtual void onClick();
 		virtual void paintMap(int x, int y);
 		virtual void postPaint();
+	};
+	class ShuffleTileButton: public Button {
+	public:
+		static const RGB arrowRGB;
+		static const int buttonWidth;
+		static const int buttonHeight;
+
+		ShuffleTileButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY);
+		~ShuffleTileButton();
+
+		virtual void render();
+		virtual void onClick();
+		virtual void paintMap(int x, int y);
 	};
 	class SwitchButton: public Button {
 	public:
@@ -204,7 +217,7 @@ private:
 		~SwitchButton();
 
 		virtual void render();
-		virtual void doAction();
+		virtual void onClick();
 		virtual void paintMap(int x, int y);
 	};
 	class RailButton: public Button {
@@ -219,7 +232,7 @@ private:
 		~RailButton();
 
 		virtual void render();
-		virtual void doAction();
+		virtual void onClick();
 		virtual void paintMap(int x, int y);
 	};
 	class RailTileOffsetButton: public Button {
@@ -234,7 +247,7 @@ private:
 		~RailTileOffsetButton();
 
 		virtual void render();
-		virtual void doAction();
+		virtual void onClick();
 		virtual void paintMap(int x, int y);
 	};
 	class RailSwitchGroupButton: public Button {
@@ -252,7 +265,7 @@ private:
 
 		char getRailSwitchGroup() { return railSwitchGroup; }
 		virtual void render();
-		virtual void doAction();
+		virtual void onClick();
 	};
 
 	static const int paintBoxMaxRadius = 7;
@@ -280,7 +293,14 @@ private:
 	static int lastMouseDragMapX;
 	static int lastMouseDragMapY;
 	static default_random_engine* randomEngine;
-	static discrete_distribution<int>* randomDistribution;
+	static discrete_distribution<int>* noiseTilesDistribution;
+	static discrete_distribution<int> floorTileDistribution;
+	static uniform_int_distribution<int> wallTileDistribution;
+	static uniform_int_distribution<int> platformRightFloorTileDistribution;
+	static uniform_int_distribution<int> platformLeftFloorTileDistribution;
+	static uniform_int_distribution<int> platformTopFloorTileDistribution;
+	static uniform_int_distribution<int> groundLeftFloorTileDistribution;
+	static uniform_int_distribution<int> groundRightFloorTileDistribution;
 	static bool saveButtonDisabled;
 	static bool exportMapButtonDisabled;
 public:

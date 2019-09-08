@@ -847,7 +847,7 @@ bool PlayerState::loadState(string& line) {
 }
 //set the initial z for the player after loading the position
 //this isn't technically loading anything from the file but it is part of setting the initial state
-void PlayerState::loadInitialZ() {
+void PlayerState::setInitialZ() {
 	#ifdef EDITOR
 		z = MapState::highestFloorHeight;
 	#else

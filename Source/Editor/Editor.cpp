@@ -19,6 +19,7 @@
 	#define newNoiseTileButton(zone, leftX, topY) newWithArgs(Editor::NoiseTileButton, zone, leftX, topY)
 	#define newRaiseLowerTileButton(zone, leftX, topY, isRaiseTileButton) \
 		newWithArgs(Editor::RaiseLowerTileButton, zone, leftX, topY, isRaiseTileButton)
+	#define newShuffleTileButton(zone, leftX, topY) newWithArgs(Editor::ShuffleTileButton, zone, leftX, topY)
 	#define newSwitchButton(zone, leftX, topY, color) newWithArgs(Editor::SwitchButton, zone, leftX, topY, color)
 	#define newRailButton(zone, leftX, topY, color) newWithArgs(Editor::RailButton, zone, leftX, topY, color)
 	#define newRailTileOffsetButton(zone, leftX, topY, tileOffset) \
@@ -57,7 +58,7 @@
 	bool Editor::Button::tryHandleClick(int x, int y) {
 		if (x < leftX || x >= rightX || y < topY || y >= bottomY)
 			return false;
-		doAction();
+		onClick();
 		return true;
 	}
 	//render the button background
@@ -120,7 +121,7 @@
 			renderFadedOverlay();
 	}
 	//save the floor image
-	void Editor::SaveButton::doAction() {
+	void Editor::SaveButton::onClick() {
 		if (saveButtonDisabled)
 			return;
 
@@ -188,7 +189,7 @@
 			renderFadedOverlay();
 	}
 	//export the map
-	void Editor::ExportMapButton::doAction() {
+	void Editor::ExportMapButton::onClick() {
 		if (exportMapButtonDisabled)
 			return;
 
@@ -247,7 +248,7 @@
 	}
 	//if noisy tile selection is off, highlight this tile for tile painting
 	//if noisy tile selection is on, add this tile to the noisy tile list
-	void Editor::TileButton::doAction() {
+	void Editor::TileButton::onClick() {
 		if (selectedButton == this)
 			selectedButton = nullptr;
 		else if (selectedButton != noiseButton)
@@ -292,7 +293,7 @@
 		}
 	}
 	//select a height as the painting action
-	void Editor::HeightButton::doAction() {
+	void Editor::HeightButton::onClick() {
 		selectedButton = selectedButton == this ? nullptr : this;
 		lastSelectedHeightButton = this;
 	}
@@ -330,7 +331,7 @@
 		}
 	}
 	//select a radius to use when painting
-	void Editor::PaintBoxRadiusButton::doAction() {
+	void Editor::PaintBoxRadiusButton::onClick() {
 		if (isXRadius)
 			selectedPaintBoxXRadiusButton = this;
 		else
@@ -373,7 +374,7 @@
 		}
 	}
 	//add or remove an extra row below/to the right of the paint box
-	void Editor::EvenPaintBoxRadiusButton::doAction() {
+	void Editor::EvenPaintBoxRadiusButton::onClick() {
 		isSelected = !isSelected;
 	}
 
@@ -383,12 +384,12 @@
 	}
 	Editor::NoiseButton::~NoiseButton() {}
 	//toggle noisy tile selection
-	void Editor::NoiseButton::doAction() {
+	void Editor::NoiseButton::onClick() {
 		selectedButton = selectedButton == this ? nullptr : this;
 	}
 	//set the tile at this position
 	void Editor::NoiseButton::paintMap(int x, int y) {
-		discrete_distribution<int>& d = *randomDistribution;
+		discrete_distribution<int>& d = *noiseTilesDistribution;
 		MapState::setTile(x, y, noiseTileButtons[d(*randomEngine)]->tile);
 	}
 
@@ -422,7 +423,7 @@
 				0.0f, 0.0f, 0.0f, 1.0f, (GLint)leftX + 1, (GLint)topY + 1, (GLint)rightX - 1, (GLint)bottomY - 1);
 	}
 	//remove a count from this button
-	void Editor::NoiseTileButton::doAction() {
+	void Editor::NoiseTileButton::onClick() {
 		if (tile >= 0)
 			removeNoiseTile(tile);
 	}
@@ -437,7 +438,7 @@
 		setWidthAndHeight(buttonWidth, buttonHeight);
 	}
 	Editor::RaiseLowerTileButton::~RaiseLowerTileButton() {}
-	//render the a raised or lowered platform above the button
+	//render a raised or lowered platform above the button
 	void Editor::RaiseLowerTileButton::render() {
 		Button::render();
 		SpriteSheet::renderFilledRectangle(
@@ -451,7 +452,7 @@
 		}
 	}
 	//select raising or lowering as the painting action
-	void Editor::RaiseLowerTileButton::doAction() {
+	void Editor::RaiseLowerTileButton::onClick() {
 		selectedButton = selectedButton == this ? nullptr : this;
 	}
 	//raise or lower the tile at this position
@@ -504,7 +505,7 @@
 
 		//we replaced the floor with a wall, just set the tile
 		if (replacementHeight % 2 != 0)
-			MapState::setTile(x, y, MapState::defaultWallTile);
+			MapState::setTile(x, y, MapState::tileWallFirst);
 		//we copied an adjacent floor tile, set the right one
 		else
 			MapState::setAppropriateDefaultFloorTile(x, y, replacementHeight);
@@ -533,6 +534,64 @@
 		lastMouseDragAction = MouseDragAction::RaiseLowerTile;
 	}
 
+	//////////////////////////////// Editor::ShuffleTileButton ////////////////////////////////
+	const Editor::RGB Editor::ShuffleTileButton::arrowRGB (0.75f, 0.75f, 0.75f);
+	const int Editor::ShuffleTileButton::buttonWidth = 14;
+	const int Editor::ShuffleTileButton::buttonHeight = 11;
+	Editor::ShuffleTileButton::ShuffleTileButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY)
+	: Button(objCounterArgumentsComma() zone, zoneLeftX, zoneTopY) {
+		setWidthAndHeight(buttonWidth, buttonHeight);
+	}
+	Editor::ShuffleTileButton::~ShuffleTileButton() {}
+	//render floor and wall tiles with arrows pointing between tthem
+	void Editor::ShuffleTileButton::render() {
+		Button::render();
+		SpriteSheet::renderFilledRectangle(
+			0.0f, 0.0f, 0.0f, 1.0f, (GLint)leftX + 1, (GLint)topY + 1, (GLint)rightX - 1, (GLint)bottomY - 1);
+		renderRGBRect(heightFloorRGB, 1.0f, leftX + 2, topY + 2, leftX + 5, topY + 5);
+		renderRGBRect(heightFloorRGB, 1.0f, rightX - 5, topY + 2, rightX - 2, topY + 5);
+		renderRGBRect(heightWallRGB, 1.0f, leftX + 2, bottomY - 5, leftX + 5, bottomY - 2);
+		renderRGBRect(heightWallRGB, 1.0f, rightX - 5, bottomY - 5, rightX - 2, bottomY - 2);
+		renderRGBRect(arrowRGB, 1.0f, leftX + 6, topY + 2, leftX + 7, topY + 5);
+		renderRGBRect(arrowRGB, 1.0f, leftX + 7, topY + 3, leftX + 8, topY + 4);
+		renderRGBRect(arrowRGB, 1.0f, leftX + 6, bottomY - 4, leftX + 7, bottomY - 3);
+		renderRGBRect(arrowRGB, 1.0f, leftX + 7, bottomY - 5, leftX + 8, bottomY - 2);
+	}
+	//select tile shuffling as the painting action
+	void Editor::ShuffleTileButton::onClick() {
+		selectedButton = selectedButton == this ? nullptr : this;
+	}
+	//assign a random tile from the sane tile group that this tile is in
+	void Editor::ShuffleTileButton::paintMap(int x, int y) {
+		//if we're only painting one tile, ensure it changes
+		int attempts =
+			selectedPaintBoxXRadiusButton->getRadius() == 0 && selectedPaintBoxYRadiusButton->getRadius() == 0 ? 1000 : 1;
+		for (; attempts > 0; attempts--) {
+			char oldTile = MapState::getTile(x, y);
+			char newTile;
+			if (oldTile >= MapState::tileFloorFirst && oldTile <= MapState::tileFloorLast)
+				newTile = (char)floorTileDistribution(*randomEngine);
+			else if (oldTile >= MapState::tileWallFirst && oldTile <= MapState::tileWallLast)
+				newTile = (char)wallTileDistribution(*randomEngine);
+			else if (oldTile >= MapState::tilePlatformRightFloorFirst && oldTile <= MapState::tilePlatformRightFloorLast)
+				newTile = (char)platformRightFloorTileDistribution(*randomEngine);
+			else if (oldTile >= MapState::tilePlatformLeftFloorFirst && oldTile <= MapState::tilePlatformLeftFloorLast)
+				newTile = (char)platformLeftFloorTileDistribution(*randomEngine);
+			else if (oldTile >= MapState::tilePlatformTopFloorFirst && oldTile <= MapState::tilePlatformTopFloorLast)
+				newTile = (char)platformTopFloorTileDistribution(*randomEngine);
+			else if (oldTile >= MapState::tileGroundLeftFloorFirst && oldTile <= MapState::tileGroundLeftFloorLast)
+				newTile = (char)groundLeftFloorTileDistribution(*randomEngine);
+			else if (oldTile >= MapState::tileGroundRightFloorFirst && oldTile <= MapState::tileGroundRightFloorLast)
+				newTile = (char)groundRightFloorTileDistribution(*randomEngine);
+			else
+				return;
+			if (newTile != oldTile) {
+				MapState::setTile(x, y, newTile);
+				return;
+			}
+		}
+	}
+
 	//////////////////////////////// Editor::SwitchButton ////////////////////////////////
 	const int Editor::SwitchButton::buttonSize = MapState::switchSize + 2;
 	Editor::SwitchButton::SwitchButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY, char pColor)
@@ -550,7 +609,7 @@
 		SpriteRegistry::switches->renderSpriteAtScreenPosition((int)(color * 2 + 1), 0, (GLint)leftX + 1, (GLint)topY + 1);
 	}
 	//select this switch as the painting action
-	void Editor::SwitchButton::doAction() {
+	void Editor::SwitchButton::onClick() {
 		selectedButton = selectedButton == this ? nullptr : this;
 		lastSelectedSwitchButton = this;
 	}
@@ -584,7 +643,7 @@
 		SpriteRegistry::rails->renderSpriteAtScreenPosition(0, 0, (GLint)leftX + 1, (GLint)topY + 1);
 	}
 	//select this rail as the painting action
-	void Editor::RailButton::doAction() {
+	void Editor::RailButton::onClick() {
 		selectedButton = selectedButton == this ? nullptr : this;
 		lastSelectedRailButton = this;
 	}
@@ -618,7 +677,7 @@
 			0.75f, 0.75f, 0.75f, 1.0f, (GLint)leftX + 2, arrowTopY2, (GLint)rightX - 2, arrowTopY2 + 1);
 	}
 	//select this rail tile offset as the painting action
-	void Editor::RailTileOffsetButton::doAction() {
+	void Editor::RailTileOffsetButton::onClick() {
 		selectedButton = selectedButton == this ? nullptr : this;
 		lastSelectedRailTileOffsetButton = this;
 	}
@@ -641,7 +700,7 @@
 		MapState::renderGroupRect(railSwitchGroup, (GLint)leftX + 1, (GLint)topY + 1, (GLint)rightX - 1, (GLint)bottomY - 1);
 	}
 	//select a group to use when painting switches or rails
-	void Editor::RailSwitchGroupButton::doAction() {
+	void Editor::RailSwitchGroupButton::onClick() {
 		selectedRailSwitchGroupButton = this;
 	}
 
@@ -667,7 +726,19 @@
 	int Editor::lastMouseDragMapX = -1;
 	int Editor::lastMouseDragMapY = -1;
 	default_random_engine* Editor::randomEngine = nullptr;
-	discrete_distribution<int>* Editor::randomDistribution = nullptr;
+	discrete_distribution<int>* Editor::noiseTilesDistribution = nullptr;
+	discrete_distribution<int> Editor::floorTileDistribution ({ 5, 5, 5, 5, 1, 1, 1, 1, 1 });
+	uniform_int_distribution<int> Editor::wallTileDistribution (MapState::tileWallFirst, MapState::tileWallLast);
+	uniform_int_distribution<int> Editor::platformRightFloorTileDistribution (
+		MapState::tilePlatformRightFloorFirst, MapState::tilePlatformRightFloorLast);
+	uniform_int_distribution<int> Editor::platformLeftFloorTileDistribution (
+		MapState::tilePlatformLeftFloorFirst, MapState::tilePlatformLeftFloorLast);
+	uniform_int_distribution<int> Editor::platformTopFloorTileDistribution (
+		MapState::tilePlatformTopFloorFirst, MapState::tilePlatformTopFloorLast);
+	uniform_int_distribution<int> Editor::groundLeftFloorTileDistribution (
+		MapState::tileGroundLeftFloorFirst, MapState::tileGroundLeftFloorLast);
+	uniform_int_distribution<int> Editor::groundRightFloorTileDistribution (
+		MapState::tileGroundRightFloorFirst, MapState::tileGroundRightFloorLast);
 	bool Editor::saveButtonDisabled = true;
 	bool Editor::exportMapButtonDisabled = false;
 	bool Editor::needsGameStateSave = false;
@@ -712,6 +783,7 @@
 		buttons.push_back(newRaiseLowerTileButton(Zone::Right, 76, 58, true));
 		lowerTileButton = newRaiseLowerTileButton(Zone::Right, 92, 58, false);
 		buttons.push_back(lowerTileButton);
+		buttons.push_back(newShuffleTileButton(Zone::Right, 81, 95));
 		for (char i = 0; i < 4; i++)
 			buttons.push_back(newSwitchButton(Zone::Right, 5 + SwitchButton::buttonSize * i, 108, i));
 		for (char i = 0; i < 4; i++)
@@ -733,8 +805,8 @@
 		buttons.clear();
 		delete randomEngine;
 		randomEngine = nullptr;
-		delete randomDistribution;
-		randomDistribution = nullptr;
+		delete noiseTilesDistribution;
+		noiseTilesDistribution = nullptr;
 	}
 	//return the height of the selected height button, or -1 if it's not selected
 	char Editor::getSelectedHeight() {
@@ -770,17 +842,6 @@
 			&& selectedButton != nullptr
 			&& (selectedButton != noiseButton || noiseTileButtons[0]->tile != -1))
 		{
-			if (selectedButton == noiseButton) {
-				delete randomEngine;
-				randomEngine = new default_random_engine(ticksTime);
-
-				vector<double> tilesDistribution;
-				for (int i = 0; i < noiseTileButtonMaxCount; i++)
-					tilesDistribution.push_back((double)(noiseTileButtons[i]->count));
-				delete randomDistribution;
-				randomDistribution = new discrete_distribution<int>(tilesDistribution.begin(), tilesDistribution.end());
-			}
-
 			int screenLeftWorldX = MapState::getScreenLeftWorldX(camera, ticksTime);
 			int screenTopWorldY = MapState::getScreenTopWorldY(camera, ticksTime);
 			int mouseMapX;
@@ -804,6 +865,16 @@
 				highMapY = MathUtils::min(
 					mouseMapY + yRadius + (evenPaintBoxYRadiusButton->isSelected ? 1 : 0), MapState::mapHeight() - 1);
 			}
+
+			if (selectedButton == noiseButton) {
+				vector<double> tilesDistribution;
+				for (int i = 0; i < noiseTileButtonMaxCount; i++)
+					tilesDistribution.push_back((double)(noiseTileButtons[i]->count));
+				delete noiseTilesDistribution;
+				noiseTilesDistribution = new discrete_distribution<int>(tilesDistribution.begin(), tilesDistribution.end());
+			}
+			if (randomEngine == nullptr)
+				randomEngine = new default_random_engine((ticksTime << 16) | (screenLeftWorldX << 8) | screenTopWorldY);
 
 			//we need to iterate from bottom to top if we're lowering tiles,
 			//	otherwise changes in one row would overwrite changes in another row
