@@ -27,7 +27,7 @@
 		#ifdef LOG_OBJ_ADD_OR_REMOVE
 			stringstream logMessage;
 			logMessage << "  Added " << (void*)this << " " << objType << " " << objID << ", obj count: " << objCount;
-			Logger::logString(logMessage.str());
+			Logger::debugLogger.logString(logMessage.str());
 		#endif
 		#ifdef TRACK_OBJ_IDS
 			if (tailObjCounter != nullptr)
@@ -43,7 +43,7 @@
 		#ifdef LOG_OBJ_ADD_OR_REMOVE
 			stringstream logMessage;
 			logMessage << "Deleted " << (void*)this << " " << objType << " " << objID << ", obj count: " << objCount;
-			Logger::logString(logMessage.str());
+			Logger::debugLogger.logString(logMessage.str());
 		#endif
 		#ifdef TRACK_OBJ_IDS
 			if (nextObjCounter != nullptr)
@@ -77,14 +77,14 @@
 					<< " " << headObjCounter->objID
 					<< ", line " << headObjCounter->objLine
 					<< " file " << headObjCounter->objFile;
-				Logger::logString(logMessage.str());
+				Logger::debugLogger.logString(logMessage.str());
 			}
 		#endif
 		logMessage.str("");
 		logMessage << "Total remaining objects: " << (objCount - untrackedObjCount);
-		Logger::logString(logMessage.str());
+		Logger::debugLogger.logString(logMessage.str());
 		logMessage.str("");
 		logMessage << "Total objects used: " << (nextObjID - untrackedObjCount) << " + " << untrackedObjCount << " untracked";
-		Logger::logString(logMessage.str());
+		Logger::debugLogger.logString(logMessage.str());
 	}
 #endif

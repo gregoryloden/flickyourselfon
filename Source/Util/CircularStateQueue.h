@@ -20,11 +20,13 @@ private:
 	Node* readHead;
 	//signals whether the read head has already been read
 	bool lastStateWasRead;
+	int statesCount;
 
 public:
 	CircularStateQueue(objCounterParametersComma() Type* writeHeadState, Type* nextState);
 	~CircularStateQueue();
 
+	int getStatesCount() { return statesCount; }
 	Type* getNextWritableState();
 	void addWritableState(Type* state);
 	void finishWritingToState();

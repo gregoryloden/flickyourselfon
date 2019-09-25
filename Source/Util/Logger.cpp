@@ -3,86 +3,175 @@
 #include "Util/Config.h"
 
 #define newMessage() newWithoutArgs(Logger::Message)
+#define newLogQueueStack(logQueue, next) newWithArgs(Logger::LogQueueStack, logQueue, next)
 
 //////////////////////////////// Logger::Message ////////////////////////////////
 Logger::Message::Message(objCounterParameters())
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
 message()
-, timestamp(0) {
+, timestamp(0)
+, owningLogger(nullptr) {
 }
-Logger::Message::~Message() {}
+Logger::Message::~Message() {
+	//don't delete the logger, it's owned somewhere else
+}
+
+//////////////////////////////// Logger::LogQueueStack ////////////////////////////////
+Logger::LogQueueStack::LogQueueStack(objCounterParametersComma() CircularStateQueue<Message>* pLogQueue, LogQueueStack* pNext)
+: onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
+logQueue(pLogQueue)
+, next(pNext) {
+}
+Logger::LogQueueStack::~LogQueueStack() {
+	delete logQueue;
+	delete next;
+}
+
+//////////////////////////////// Logger::PendingMessage ////////////////////////////////
+Logger::PendingMessage::PendingMessage(stringstream* pMessage, Logger* pOwningLogger, PendingMessage* pNext)
+: message(pMessage)
+, owningLogger(pOwningLogger)
+, next(pNext) {
+}
+Logger::PendingMessage::~PendingMessage() {
+	//don't delete the logger or the next pending message, they're owned somewhere else
+}
 
 //////////////////////////////// Logger ////////////////////////////////
-ofstream* Logger::file = nullptr;
-bool Logger::queueLogMessages = false;
-thread_local stringstream* Logger::currentMessageStringstream = nullptr;
 thread_local CircularStateQueue<Logger::Message>* Logger::currentThreadLogQueue = nullptr;
-CircularStateQueue<Logger::Message>* Logger::mainLogQueue = nullptr;
-CircularStateQueue<Logger::Message>* Logger::renderLogQueue = nullptr;
+thread_local Logger::PendingMessage* Logger::currentPendingMessage = nullptr;
 bool Logger::threadRunning = false;
 thread* Logger::logThread = nullptr;
-//open the file for writing on a single thread
-void Logger::beginLogging() {
-	file = new ofstream();
-	file->open("fyo_log.txt", ios::out | ios::trunc);
-	queueLogMessages = false;
+Logger::LogQueueStack* Logger::logQueueStack = nullptr;
+vector<Logger*> Logger::loggers;
+Logger Logger::debugLogger ("fyo_debug.log", ios::out | ios::trunc);
+Logger Logger::gameplayLogger ("fyo_gameplay.log", ios::out | ios::app);
+Logger::Logger(const char* pFileName, int pFileFlags)
+: fileName(pFileName)
+, file(nullptr)
+, fileFlags(pFileFlags)
+, preQueueMessages()
+, messagesToWrite()
+, hasMessagesToWrite(false) {
 }
-//build the log queues and start the logging thread
+Logger::~Logger() {
+	//don't delete the file, assume it was already closed
+}
+//open the file for writing on a single thread and add this to the list of loggers
+void Logger::beginLogging() {
+	#ifdef EDITOR
+		if (this != &debugLogger)
+			return;
+	#endif
+	file = new ofstream();
+	file->open(fileName, fileFlags);
+	loggers.push_back(this);
+}
+//start the logging thread
 //this should only be called on the main thread
 void Logger::beginMultiThreadedLogging() {
-	mainLogQueue = newCircularStateQueue(Message, newMessage(), newMessage());
-	renderLogQueue = newCircularStateQueue(Message, newMessage(), newMessage());
-	currentThreadLogQueue = mainLogQueue;
-	queueLogMessages = true;
 	threadRunning = true;
 	logThread = new thread(logLoop);
 }
-//stop the logging thread and delete the queues, but leave the file open for single threaded logging
+//create the log queue for this thread
+//does not lock- callers are responsible for ensuring only one thread runs this at a time
+void Logger::setupLogQueue() {
+	//create our new objects, these may cause logs so don't assign them to the static values yet
+	int preQueueTimestamp = (int)SDL_GetTicks();
+	CircularStateQueue<Message>* newThreadLogQueue = newCircularStateQueue(Message, newMessage(), newMessage());
+	LogQueueStack* newLogQueueStack = newLogQueueStack(newThreadLogQueue, logQueueStack);
+
+	//add states until we have enough that we know we won't be adding any messages
+	int statesInQueue = newThreadLogQueue->getStatesCount();
+	for (Logger* logger : loggers) {
+		if (statesInQueue > 0)
+			statesInQueue--;
+		else
+			currentThreadLogQueue->addWritableState(newMessage());
+	}
+
+	//now set the queue values and write the messages because we know we won't create any new objects/debug logs
+	currentThreadLogQueue = newThreadLogQueue;
+	logQueueStack = newLogQueueStack;
+	for (Logger* logger : loggers) {
+		logger->queueMessage(&logger->preQueueMessages, preQueueTimestamp);
+	}
+}
+//stop the logging thread and delete the queues, but leave the files open for single threaded logging
 void Logger::endMultiThreadedLogging() {
 	threadRunning = false;
 	logThread->join();
 	delete logThread;
-	queueLogMessages = false;
 	//run the log loop once more to make sure all the queued messages are written
 	logLoop();
-	delete mainLogQueue;
-	delete renderLogQueue;
+	currentThreadLogQueue = nullptr;
+	delete logQueueStack;
+	logQueueStack = nullptr;
 }
-//finally close the file
+//finally close the file and remove this from the list of loggers
 void Logger::endLogging() {
+	#ifdef EDITOR
+		if (this != &debugLogger)
+			return;
+	#endif
+	for (int i = 0; i < (int)loggers.size(); i++) {
+		if (loggers[i] == this) {
+			loggers.erase(loggers.begin() + i);
+			break;
+		}
+	}
 	file->close();
 	delete file;
 }
 //loop and process any log messages that were written in another thread
 void Logger::logLoop() {
+	Logger* lastWrittenLogger = &debugLogger;
 	while (true) {
-		Message* mainLogMessage = mainLogQueue->getNextReadableState();
-		Message* renderLogMessage = renderLogQueue->getNextReadableState();
+		//group all messages into their appropriate logger
 		while (true) {
-			if (mainLogMessage != nullptr
-				&& (renderLogMessage == nullptr || mainLogMessage->timestamp <= renderLogMessage->timestamp))
+			Message* oldestMessage = nullptr;
+			CircularStateQueue<Message>* oldestMessageLogQueue = nullptr;
+			for (LogQueueStack* checkLogQueueStack = logQueueStack;
+				checkLogQueueStack != nullptr;
+				checkLogQueueStack = checkLogQueueStack->next)
 			{
-				*file << mainLogMessage->message;
-				mainLogMessage->message.clear();
-				mainLogQueue->finishReadingFromState();
-				mainLogMessage = mainLogQueue->getNextReadableState();
-			} else if (renderLogMessage != nullptr) {
-				*file << renderLogMessage->message;
-				renderLogMessage->message.clear();
-				renderLogQueue->finishReadingFromState();
-				renderLogMessage = renderLogQueue->getNextReadableState();
-			} else
+				CircularStateQueue<Message>* logQueue = checkLogQueueStack->logQueue;
+				Message* message = logQueue->getNextReadableState();
+				if (message != nullptr && (oldestMessage == nullptr || message->timestamp <= oldestMessage->timestamp)) {
+					oldestMessage = message;
+					oldestMessageLogQueue = logQueue;
+				}
+			}
+
+			if (oldestMessage == nullptr)
 				break;
+
+			oldestMessage->owningLogger->messagesToWrite << oldestMessage->message;
+			oldestMessage->message.clear();
+			oldestMessage->owningLogger->hasMessagesToWrite = true;
+			oldestMessageLogQueue->finishReadingFromState();
 		}
+
+		//write messages from their logger to the file
+		if (lastWrittenLogger->hasMessagesToWrite) {
+			*lastWrittenLogger->file << lastWrittenLogger->messagesToWrite.str();
+			lastWrittenLogger->hasMessagesToWrite = false;
+			lastWrittenLogger->messagesToWrite.str(string());
+		}
+		for (Logger* logger : loggers) {
+			if (!logger->hasMessagesToWrite)
+				continue;
+
+			*logger->file << logger->messagesToWrite.str();
+			logger->hasMessagesToWrite = false;
+			logger->messagesToWrite.str(string());
+			lastWrittenLogger = logger;
+		}
+
 		if (!threadRunning)
 			return;
-		else
-			SDL_Delay(1);
+		SDL_Delay(1);
 	}
-}
-//use the render log queue for the current thread
-void Logger::setupLoggingForRenderThread() {
-	currentThreadLogQueue = renderLogQueue;
 }
 //log a message to the current thread's log queue
 void Logger::log(const char* message) {
@@ -90,6 +179,10 @@ void Logger::log(const char* message) {
 }
 //log a message to the current thread's log queue
 void Logger::logString(string& message) {
+	#ifdef EDITOR
+		if (this != &debugLogger)
+			return;
+	#endif
 	int timestamp = (int)SDL_GetTicks();
 	stringstream messageWithTimestamp;
 	messageWithTimestamp
@@ -98,26 +191,43 @@ void Logger::logString(string& message) {
 		<< setw(3) << setfill('0') << (timestamp % Config::ticksPerSecond)
 		<< setw(1) << "  " << message << '\n';
 
-	//we might get logs before we've had time to set up our log queue
-	//if that happens, write directly to the file
-	//we don't have to worry about multithreading since this should only happen when only one thread is running
-	if (!queueLogMessages) {
-		*file << messageWithTimestamp.str();
-		return;
-	//if we're logging this in the middle of logging something else, append this to our other message
-	} else if (currentMessageStringstream != nullptr) {
-		*currentMessageStringstream << messageWithTimestamp.str();
+	//we might get logs before we've initialized our log queue
+	if (currentThreadLogQueue == nullptr) {
+		//if the log thread is running, add this message to the pre-queue messages
+		if (threadRunning)
+			preQueueMessages << messageWithTimestamp.str();
+		//if not, write directly to the file
+		else
+			*file << messageWithTimestamp.str();
 		return;
 	}
 
-	currentMessageStringstream = &messageWithTimestamp;
+	//if we're in the middle of writing to this logger already, append to the pending message
+	for (PendingMessage* checkPendingMessage = currentPendingMessage;
+		checkPendingMessage != nullptr;
+		checkPendingMessage = checkPendingMessage->next)
+	{
+		if (checkPendingMessage->owningLogger == this) {
+			*(checkPendingMessage->message) << messageWithTimestamp.str();
+			return;
+		}
+	}
+
+	queueMessage(&messageWithTimestamp, timestamp);
+}
+//add a message to the queue, creating a new Message if necessary
+void Logger::queueMessage(stringstream* message, int timestamp) {
 	Message* writableMessage = currentThreadLogQueue->getNextWritableState();
+	//if we don't have any matching pending messages and we don't have any writable messages, make a new one
 	if (writableMessage == nullptr) {
+		PendingMessage pendingMessage (message, this, currentPendingMessage);
+		currentPendingMessage = &pendingMessage;
 		writableMessage = newMessage();
 		currentThreadLogQueue->addWritableState(writableMessage);
+		currentPendingMessage = nullptr;
 	}
-	writableMessage->message = messageWithTimestamp.str();
+	writableMessage->message = message->str();
 	writableMessage->timestamp = timestamp;
+	writableMessage->owningLogger = this;
 	currentThreadLogQueue->finishWritingToState();
-	currentMessageStringstream = nullptr;
 }

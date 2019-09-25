@@ -7,6 +7,7 @@
 #include "Sprites/SpriteRegistry.h"
 #include "Sprites/SpriteSheet.h"
 #include "Util/Config.h"
+#include "Util/Logger.h"
 #include "Util/StringUtils.h"
 
 #define newRail(x, y, baseHeight, color, initialTileOffset) \
@@ -932,6 +933,49 @@ void MapState::renderGroupRect(char group, GLint leftX, GLint topY, GLint rightX
 	//bits 3-5
 	SpriteSheet::renderFilledRectangle(
 		(float)((group & 8) >> 3), (float)((group & 16) >> 4), (float)((group & 32) >> 5), 1.0f, midX, topY, rightX, bottomY);
+}
+//log the colors of the group to the message
+void MapState::logGroup(char group, stringstream* message) {
+	for (int i = 0; i < 2; i++) {
+		if (i > 0)
+			*message << " ";
+		switch (group % 8) {
+			case 0: *message << "black"; break;
+			case 1: *message << "red"; break;
+			case 2: *message << "green"; break;
+			case 3: *message << "yellow"; break;
+			case 4: *message << "blue"; break;
+			case 5: *message << "magenta"; break;
+			case 6: *message << "cyan"; break;
+			case 7: *message << "white"; break;
+		}
+		group /= 8;
+	}
+}
+//log that the switch was kicked
+void MapState::logSwitchKick(short switchId) {
+	short switchIndex = switchId & railSwitchIndexBitmask;
+	stringstream message;
+	message << "  switch " << switchIndex << " (";
+	logGroup(switches[switchIndex]->getGroup(), &message);
+	message << ")";
+	Logger::gameplayLogger.logString(message.str());
+}
+//log that the switch was kicked
+void MapState::logRailRide(short railId, int playerX, int playerY) {
+	short railIndex = railId & railSwitchIndexBitmask;
+	stringstream message;
+	message << "  rail " << railIndex << " (";
+	bool skipComma = true;
+	for (char group : rails[railIndex]->getGroups()) {
+		if (skipComma)
+			skipComma = false;
+		else
+			message << ", ";
+		logGroup(group, &message);
+	}
+	message << ")" << " " << playerX << " " << playerY;
+	Logger::gameplayLogger.logString(message.str());
 }
 //save the map state to the file
 void MapState::saveState(ofstream& file) {

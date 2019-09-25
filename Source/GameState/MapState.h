@@ -293,6 +293,9 @@ public:
 	void render(EntityState* camera, char playerZ, bool showConnections, int ticksTime);
 	void renderRailsAbovePlayer(EntityState* camera, char playerZ, bool showConnections, int ticksTime);
 	static void renderGroupRect(char group, GLint leftX, GLint topY, GLint rightX, GLint bottomY);
+	static void logGroup(char group, stringstream* message);
+	static void logSwitchKick(short switchId);
+	static void logRailRide(short railId, int playerX, int playerY);
 	void saveState(ofstream& file);
 	bool loadState(string& line);
 	void sortInitialRails();

@@ -12,6 +12,7 @@
 #include "Sprites/SpriteSheet.h"
 #include "Sprites/Text.h"
 #include "Util/Config.h"
+#include "Util/Logger.h"
 #include "Util/StringUtils.h"
 
 const float GameState::squareSwitchesAnimationCenterWorldX =
@@ -68,11 +69,14 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 
 		if (nextPauseState != nullptr) {
 			int endPauseDecision = nextPauseState->getEndPauseDecision();
-			if ((endPauseDecision & (int)PauseState::EndPauseDecision::Save) != 0)
+			if ((endPauseDecision & (int)PauseState::EndPauseDecision::Save) != 0) {
+				Logger::gameplayLogger.log("  save state");
 				saveState();
+			}
 			//don't reset the game in editor mode
 			#ifndef EDITOR
 				if ((endPauseDecision & (int)PauseState::EndPauseDecision::Reset) != 0) {
+					Logger::gameplayLogger.log("  reset game");
 					resetGame(ticksTime);
 					//don't check for Exit, just return here
 					return;
@@ -351,13 +355,19 @@ void GameState::loadInitialState(int ticksTime) {
 	ifstream file;
 	file.open(savedGameFileName);
 	string line;
+	bool loadedState = false;
 	while (getline(file, line)) {
 		if (StringUtils::startsWith(line, sawIntroAnimationFilePrefix))
 			sawIntroAnimation = strcmp(line.c_str() + sawIntroAnimationFilePrefix.size(), "true") == 0;
+		else if (playerState.get()->loadState(line) || mapState.get()->loadState(line))
+			;
 		else
-			playerState.get()->loadState(line) || mapState.get()->loadState(line);
+			continue;
+		loadedState = true;
 	}
 	file.close();
+	if (loadedState)
+		Logger::gameplayLogger.log("  load state");
 
 	//and finally, setup any remaining initial state
 	playerState.get()->setInitialZ();

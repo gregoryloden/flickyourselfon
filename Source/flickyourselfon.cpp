@@ -11,11 +11,12 @@
 #include "Util/CircularStateQueue.h"
 #include "Util/Config.h"
 #include "Util/Logger.h"
+#include "Util/TimeUtils.h"
 #include "Sprites/SpriteRegistry.h"
 #include "Sprites/SpriteSheet.h"
 #include "Sprites/Text.h"
 
-const int maxExtraAddedStates = 4;
+const int maxGameStates = 6;
 SDL_Window* window = nullptr;
 SDL_GLContext glContext = nullptr;
 bool renderThreadReadyForUpdates = false;
@@ -32,10 +33,12 @@ int main(int argc, char* argv[]) {
 	#ifdef DEBUG
 		ObjCounter::start();
 	#endif
-	Logger::beginLogging();
+	Logger::debugLogger.beginLogging();
+	Logger::gameplayLogger.beginLogging();
 	Logger::beginMultiThreadedLogging();
+	Logger::setupLogQueue();
 
-	Logger::log("SDL set up /// Setting up window...");
+	Logger::debugLogger.log("SDL set up /// Setting up window...");
 
 	//create a window
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
@@ -53,33 +56,37 @@ int main(int argc, char* argv[]) {
 	SDL_GetCurrentDisplayMode(SDL_GetWindowDisplayIndex(window), &displayMode);
 	if (displayMode.refresh_rate > 0)
 		Config::refreshRate = displayMode.refresh_rate;
-	Logger::log("Window set up /// Loading game state...");
+	Logger::debugLogger.log("Window set up /// Loading game state...");
 
 	//load the map and settings which don't depend on the render thread
 	Config::loadSettings();
 	MapState::buildMap();
 
 	//create our state queue
+	//the render thread has to handle updating our initial state because states store the SpriteSheets they use, which requires
+	//	the sprites to have been loaded, which requires an OpenGL context, which has to be initialized on the render thread
+	stringstream beginGameplayMessage;
+	beginGameplayMessage << "---- begin gameplay ---- ";
+	TimeUtils::appendTimestamp(&beginGameplayMessage);
+	Logger::gameplayLogger.logString(beginGameplayMessage.str());
 	CircularStateQueue<GameState>* gameStateQueue = newCircularStateQueue(GameState, newGameState(), newGameState());
-	//the render thread will handle updating our initial state
-	gameStateQueue->finishWritingToState();
-	GameState* prevGameState = gameStateQueue->getNextReadableState();
-	Logger::log("Game state loaded");
+	//the render thread will finish writing to this state
+	GameState* prevGameState = gameStateQueue->getNextWritableState();
+	Logger::debugLogger.log("Game state loaded");
 
 	//now that our initial state is ready, start the render thread
 	thread renderLoopThread (renderLoop, gameStateQueue);
 
 	//wait for the render thread to sync up
-	Logger::log("Render thread created, waiting for it to be ready for updates...");
+	Logger::debugLogger.log("Render thread created, waiting for it to be ready for updates...");
 	while (!renderThreadReadyForUpdates)
 		SDL_Delay(1);
-	Logger::log("Beginning update loop");
+	Logger::debugLogger.log("Beginning update loop");
 
 	//begin the update loop
 	int updateDelay = -1;
 	int startTime = 0;
 	int updateNum = 0;
-	int extraStatesAdded = 0;
 	while (true) {
 		//if we missed an update or haven't begun the loop, reset the update number and time
 		if (updateDelay <= 0) {
@@ -90,11 +97,10 @@ int main(int argc, char* argv[]) {
 
 		GameState* gameState = gameStateQueue->getNextWritableState();
 		//add a new state if there isn't one we can write to and we haven't reached our limit
-		if (gameState == nullptr && extraStatesAdded < maxExtraAddedStates) {
-			Logger::log("Adding additional GameState");
+		if (gameState == nullptr && gameStateQueue->getStatesCount() < maxGameStates) {
+			Logger::debugLogger.log("Adding additional GameState");
 			gameState = newGameState();
 			gameStateQueue->addWritableState(gameState);
-			extraStatesAdded++;
 		}
 
 		//skip the update if we couldn't get a state to render to, leave prevGameState as it was
@@ -112,7 +118,8 @@ int main(int argc, char* argv[]) {
 
 	//the render thread will quit once it reaches the game state that signalled that we should quit
 	renderLoopThread.join();
-	//stop the logging thread but keep the file open
+	//stop the logging thread but keep the files open
+	Logger::gameplayLogger.log("----   end gameplay ----");
 	Logger::endMultiThreadedLogging();
 
 	//cleanup
@@ -143,8 +150,9 @@ int main(int argc, char* argv[]) {
 		ObjectPool<EntityAnimation::SwitchToPlayerCamera>::clearPool();
 		ObjCounter::end();
 	#endif
-	Logger::log("Game exit");
-	Logger::endLogging();
+	Logger::gameplayLogger.endLogging();
+	Logger::debugLogger.log("Game exit");
+	Logger::debugLogger.endLogging();
 	//end SDL after we end logging since we use SDL_GetTicks for logging
 	#ifdef DEBUG
 		SDL_GL_DeleteContext(glContext);
@@ -156,17 +164,17 @@ int main(int argc, char* argv[]) {
 }
 //main render loop for the game
 void renderLoop(CircularStateQueue<GameState>* gameStateQueue) {
-	Logger::setupLoggingForRenderThread();
+	Logger::setupLogQueue();
 
 	//setup opengl
-	Logger::log("Render thread began /// Setting up OpenGL...");
+	Logger::debugLogger.log("Render thread began /// Setting up OpenGL...");
 	glContext = SDL_GL_CreateContext(window);
 	SDL_GL_SetSwapInterval(1);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glOrtho(0, (GLdouble)Config::windowScreenWidth, (GLdouble)Config::windowScreenHeight, 0, -1, 1);
 
 	//load all the sprites now that our context has been created
-	Logger::log("OpenGL set up /// Loading sprites and game state...");
+	Logger::debugLogger.log("OpenGL set up /// Loading sprites and game state...");
 	Text::loadFont();
 	SpriteRegistry::loadAll();
 	PauseState::loadMenu();
@@ -174,9 +182,12 @@ void renderLoop(CircularStateQueue<GameState>* gameStateQueue) {
 		Editor::loadButtons();
 	#endif
 	//load the initial state after loading all sprites
-	//this is technically supposed to be only a readable state, but the update thread expects us to load the initial state here
-	gameStateQueue->getNextReadableState()->loadInitialState((int)SDL_GetTicks());
-	Logger::log("Sprites and game state loaded /// Beginning render loop");
+	//the render thread normally shouldn't be writing updates to states, but because we load SpriteSheets here, we have to load
+	//	the state here too. The update thread is currently waiting for this to finish so we don't have to worry about threads
+	//	both writing to the same state.
+	gameStateQueue->getNextWritableState()->loadInitialState((int)SDL_GetTicks());
+	gameStateQueue->finishWritingToState();
+	Logger::debugLogger.log("Sprites and game state loaded /// Beginning render loop");
 
 	//begin the render loop
 	int lastWindowWidth = 0;
@@ -217,5 +228,5 @@ void renderLoop(CircularStateQueue<GameState>* gameStateQueue) {
 		if (remainingDelay >= 2)
 			SDL_Delay(remainingDelay);
 	}
-	Logger::log("Render thread ended");
+	Logger::debugLogger.log("Render thread ended");
 }

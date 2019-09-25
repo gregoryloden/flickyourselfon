@@ -803,6 +803,8 @@
 		for (Button* button : buttons)
 			delete button;
 		buttons.clear();
+		delete[] noiseTileButtons;
+		noiseTileButtons = nullptr;
 		delete randomEngine;
 		randomEngine = nullptr;
 		delete noiseTilesDistribution;

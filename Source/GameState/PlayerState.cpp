@@ -459,6 +459,10 @@ void PlayerState::kickAir(int ticksTime) {
 }
 //begin a kicking animation and climb up to the next tile to the north
 void PlayerState::kickClimb(float yMoveDistance, int ticksTime) {
+	stringstream message;
+	message << "  climb " << (int)(x.get()->getValue(0)) << " " << (int)(y.get()->getValue(0));
+	Logger::gameplayLogger.logString(message.str());
+
 	int moveDuration =
 		SpriteRegistry::playerKickingAnimation->getTotalTicksDuration() - SpriteRegistry::playerKickingAnimationTicksPerFrame;
 	float floatMoveDuration = (float)moveDuration;
@@ -493,6 +497,10 @@ void PlayerState::kickClimb(float yMoveDistance, int ticksTime) {
 }
 //begin a kicking animation and fall in whatever direction we're facing
 void PlayerState::kickFall(float xMoveDistance, float yMoveDistance, char fallHeight, int ticksTime) {
+	stringstream message;
+	message << "  fall " << (int)(x.get()->getValue(0)) << " " << (int)(y.get()->getValue(0));
+	Logger::gameplayLogger.logString(message.str());
+
 	//start by stopping the player and delaying until the leg-sticking-out frame
 	vector<ReferenceCounterHolder<EntityAnimation::Component>> kickingAnimationComponents ({
 		newEntityAnimationSetVelocity(
@@ -512,6 +520,7 @@ void PlayerState::kickFall(float xMoveDistance, float yMoveDistance, char fallHe
 		//it also goes through (c,#) such that dy/dt has roots at c (trough) and i (crest) (and arbitrary multiplier d)
 		//vy = d(t-c)(t-i) = d(t^2-(c+i)t+ci)   (d < 0)
 		//y = d(t^3/3-(c+i)t^2/2+cit) = dt^3/3-d(c+i)t^2/2+dcit
+		//plug in 1,1 and i,j, solve for d
 		//1 = d(1^3/3-(c+i)1^2/2+ci1) = d(1/3-(c+i)/2+ci)
 		//	d = 1/(1/3-(c+i)/2+ci) = 6/(2-3c-3i+6ci)
 		//j = d(i^3/3-(c+i)i^2/2+cii) = d(i^3/3-ci^2/2-i^3/2+ci^2) = d(-i^3/6+ci^2/2)
@@ -606,6 +615,8 @@ bool PlayerState::kickRail(MapState* mapState, float xPosition, float yPosition,
 			return false;
 	}
 
+	MapState::logRailRide(
+		MapState::getRailSwitchId(railMapX, railMapY), (int)(x.get()->getValue(0)), (int)(y.get()->getValue(0)));
 	MapState::RailState* railState = mapState->getRailState(railMapX, railMapY);
 	MapState::Rail* rail = railState->getRail();
 	int endSegmentIndex = rail->getSegmentCount() - 1;
@@ -797,6 +808,7 @@ bool PlayerState::kickSwitch(MapState* mapState, float xPosition, float yPositio
 	if (switchId == MapState::absentRailSwitchId)
 		return false;
 
+	MapState::logSwitchKick(switchId);
 	kickAir(ticksTime);
 	mapState->setSwitchToFlip(
 		switchId,

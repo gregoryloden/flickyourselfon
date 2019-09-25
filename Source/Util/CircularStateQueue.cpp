@@ -24,7 +24,8 @@ template <class Type> CircularStateQueue<Type>::CircularStateQueue(
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
 writeHead(newNode(writeHeadState))
 , readHead(nullptr)
-, lastStateWasRead(true) {
+, lastStateWasRead(true)
+, statesCount(2) {
 	Node* next = newNode(nextState);
 	writeHead->next = next;
 	next->next = writeHead;
@@ -48,6 +49,7 @@ template <class Type> void CircularStateQueue<Type>::addWritableState(Type* stat
 	Node* nextWritableNode = newNode(state);
 	nextWritableNode->next = writeHead->next;
 	writeHead->next = nextWritableNode;
+	statesCount++;
 }
 //advance the write head to the next state and set the read head if necessary
 template <class Type> void CircularStateQueue<Type>::finishWritingToState() {
