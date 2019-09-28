@@ -1,4 +1,4 @@
-﻿#include "PauseState.h"
+#include "PauseState.h"
 #include "Sprites/SpriteSheet.h"
 #include "Util/Config.h"
 
@@ -52,7 +52,7 @@ void PauseState::PauseMenu::render(int selectedOption, KeyBindingOption* selecti
 	Text::render(title.c_str(), screenCenterX - titleMetrics.charactersWidth * 0.5f, optionsBaseline, titleFontScale);
 	Text::Metrics* lastMetrics = &titleMetrics;
 
-	int optionsCount = options.size();
+	int optionsCount = (int)options.size();
 	for (int i = 0; i < optionsCount; i++) {
 		PauseOption* option = options[i];
 		Text::Metrics& optionMetrics = optionsMetrics[i];
@@ -308,7 +308,7 @@ PauseState* PauseState::produce(
 }
 //return a new pause state at the base menu
 PauseState* PauseState::produce(objCounterParameters()) {
-	return produce(objCounterArgumentsComma() nullptr, baseMenu, 0, false, 0);
+	return produce(objCounterArgumentsComma() nullptr, baseMenu, 0, nullptr, 0);
 }
 pooledReferenceCounterDefineRelease(PauseState)
 //release the parent state before this is returned to the pool

@@ -7,7 +7,7 @@
 #include "GameState/PlayerState.h"
 
 #define instantiateObjectPool(className) \
-	template class ObjectPool<className>; vector<className*> ObjectPool<className>::pool;
+	template class ObjectPool<className>; template<> vector<className*> ObjectPool<className>::pool;
 #define instantiateObjectPoolAndReferenceCounterHolder(className) \
 	instantiateObjectPool(className) template class ReferenceCounterHolder<className>;
 

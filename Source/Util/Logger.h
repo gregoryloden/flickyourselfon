@@ -64,7 +64,7 @@ private:
 	static void logLoop();
 public:
 	void log(const char* message);
-	void logString(string& message);
+	void logString(const string& message);
 private:
 	void queueMessage(stringstream* message, int timestamp);
 };

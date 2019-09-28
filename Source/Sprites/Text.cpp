@@ -173,7 +173,7 @@ Text::Glyph* Text::getNextGlyph(const char* text, int* inOutCharIndexPointer) {
 	//low equals the lowest index row that could contain it
 	//high equals the highest index row that could contain it
 	int glyphRowLow = 0;
-	int glyphRowHigh = glyphRows.size() - 1;
+	int glyphRowHigh = (int)glyphRows.size() - 1;
 	while (glyphRowLow < glyphRowHigh) {
 		int glyphRowMid = (glyphRowLow + glyphRowHigh) / 2;
 		//this row ends after our glyph, so search for an earlier row

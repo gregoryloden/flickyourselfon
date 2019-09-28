@@ -81,14 +81,9 @@ void Logger::setupLogQueue() {
 	CircularStateQueue<Message>* newThreadLogQueue = newCircularStateQueue(Message, newMessage(), newMessage());
 	LogQueueStack* newLogQueueStack = newLogQueueStack(newThreadLogQueue, logQueueStack);
 
-	//add states until we have enough that we know we won't be adding any messages
-	int statesInQueue = newThreadLogQueue->getStatesCount();
-	for (Logger* logger : loggers) {
-		if (statesInQueue > 0)
-			statesInQueue--;
-		else
-			currentThreadLogQueue->addWritableState(newMessage());
-	}
+	//add states until we have at least one per logger, enough that we know we won't be adding any messages
+	for (int statesNeeded = (int)loggers.size() - newThreadLogQueue->getStatesCount(); statesNeeded > 0; statesNeeded--)
+		currentThreadLogQueue->addWritableState(newMessage());
 
 	//now set the queue values and write the messages because we know we won't create any new objects/debug logs
 	currentThreadLogQueue = newThreadLogQueue;
@@ -178,7 +173,7 @@ void Logger::log(const char* message) {
 	logString(string(message));
 }
 //log a message to the current thread's log queue
-void Logger::logString(string& message) {
+void Logger::logString(const string& message) {
 	#ifdef EDITOR
 		if (this != &debugLogger)
 			return;

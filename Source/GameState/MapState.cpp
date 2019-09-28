@@ -65,7 +65,7 @@ int MapState::Rail::endSegmentSpriteHorizontalIndex(int xExtents, int yExtents) 
 //reverse the order of the segments
 void MapState::Rail::reverseSegments() {
 	vector<Segment>* newSegments = new vector<Segment>();
-	for (int i = segments->size() - 1; i >= 0; i--)
+	for (int i = (int)segments->size() - 1; i >= 0; i--)
 		newSegments->push_back((*segments)[i]);
 	delete segments;
 	segments = newSegments;
@@ -777,7 +777,7 @@ void MapState::insertRailByHeight(RailState* railState) {
 		railStatesByHeight.push_back(railState);
 		return;
 	}
-	int insertionIndex = railStatesByHeight.size() - 1;
+	int insertionIndex = (int)railStatesByHeight.size() - 1;
 	railStatesByHeight.push_back(railStatesByHeight.back());
 	for (; insertionIndex > 0; insertionIndex--) {
 		RailState* other = railStatesByHeight[insertionIndex - 1];

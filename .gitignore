@@ -9,3 +9,5 @@ Release/*
 *.vcxproj*
 *.dll
 *.LICENSE
+.DS_Store
+*.xcodeproj/*

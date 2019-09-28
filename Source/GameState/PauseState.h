@@ -30,7 +30,7 @@ private:
 		PauseMenu(objCounterParametersComma() string pTitle, vector<PauseOption*> pOptions);
 		~PauseMenu();
 
-		int getOptionsCount() { return options.size(); }
+		int getOptionsCount() { return (int)options.size(); }
 		PauseOption* getOption(int optionIndex) { return options[optionIndex]; }
 		void render(int selectedOption, KeyBindingOption* selectingKeyBindingOption);
 	};

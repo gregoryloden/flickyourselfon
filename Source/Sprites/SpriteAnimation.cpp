@@ -19,7 +19,7 @@ sprite(pSprite)
 , frameSearchPredecingTicksDurations(new int[pFrames.size()])
 , totalTicksDuration(0)
 , loopAnimation(true) {
-	int frameCount = pFrames.size();
+	int frameCount = (int)pFrames.size();
 	int frameSearchPredecingTicksDuration = 0;
 	for (int i = 0; i < frameCount; i++) {
 		frameSearchPredecingTicksDurations[i] = frameSearchPredecingTicksDuration;
@@ -41,7 +41,7 @@ SpriteAnimation::Frame* SpriteAnimation::findFrame(int animationTicksElapsed) {
 
 	animationTicksElapsed %= totalTicksDuration;
 	int low = 0;
-	int high = frames.size();
+	int high = (int)frames.size();
 	while (low + 1 < high) {
 		int mid = (low + high) / 2;
 		//this frame hasn't happened yet
