@@ -4,9 +4,6 @@
 
 #define newNode(state) newWithArgs(CircularStateQueue::Node, state)
 
-template class CircularStateQueue<GameState>;
-template class CircularStateQueue<Logger::Message>;
-
 //////////////////////////////// CircularStateQueue::Node ////////////////////////////////
 template <class Type> CircularStateQueue<Type>::Node::Node(objCounterParametersComma() Type* pState)
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
@@ -81,3 +78,6 @@ template <class Type> Type* CircularStateQueue<Type>::advanceToLastReadableState
 	}
 	return state;
 }
+
+template class CircularStateQueue<GameState>;
+template class CircularStateQueue<Logger::Message>;

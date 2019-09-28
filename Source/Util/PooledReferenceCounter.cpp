@@ -6,28 +6,8 @@
 #include "GameState/PauseState.h"
 #include "GameState/PlayerState.h"
 
-#define instantiateObjectPool(className) \
-	template class ObjectPool<className>; template<> vector<className*> ObjectPool<className>::pool;
 #define instantiateObjectPoolAndReferenceCounterHolder(className) \
-	instantiateObjectPool(className) template class ReferenceCounterHolder<className>;
-
-instantiateObjectPool(CompositeQuarticValue)
-instantiateObjectPool(EntityAnimation::Delay)
-instantiateObjectPool(EntityAnimation::SetPosition)
-instantiateObjectPool(EntityAnimation::SetScreenOverlayColor)
-instantiateObjectPool(EntityAnimation::SetSpriteAnimation)
-instantiateObjectPool(EntityAnimation::SetSpriteDirection)
-instantiateObjectPool(EntityAnimation::SetVelocity)
-instantiateObjectPool(EntityAnimation::SwitchToPlayerCamera)
-instantiateObjectPoolAndReferenceCounterHolder(DynamicCameraAnchor)
-instantiateObjectPoolAndReferenceCounterHolder(EntityAnimation)
-instantiateObjectPoolAndReferenceCounterHolder(MapState)
-instantiateObjectPoolAndReferenceCounterHolder(PauseState)
-instantiateObjectPoolAndReferenceCounterHolder(PlayerState)
-instantiateObjectPoolAndReferenceCounterHolder(MapState::RadioWavesState)
-template class ReferenceCounterHolder<DynamicValue>;
-template class ReferenceCounterHolder<EntityAnimation::Component>;
-template class ReferenceCounterHolder<EntityState>;
+	template class ObjectPool<className>; template class ReferenceCounterHolder<className>;
 
 //////////////////////////////// PooledReferenceCounter ////////////////////////////////
 PooledReferenceCounter::PooledReferenceCounter(objCounterParameters())
@@ -89,6 +69,7 @@ ReferenceCounterHolder<ReferenceCountedObject>& ReferenceCounterHolder<Reference
 }
 
 //////////////////////////////// ObjectPool ////////////////////////////////
+template <class PooledObject> vector<PooledObject*> ObjectPool<PooledObject>::pool;
 //if we have objects in the pool then remove one and return it, otherwise make a new object
 template <class PooledObject> PooledObject* ObjectPool<PooledObject>::newFromPool(objCounterParameters()) {
 	if (pool.size() > 0) {
@@ -109,3 +90,21 @@ template <class PooledObject> void ObjectPool<PooledObject>::clearPool() {
 	}
 	pool.clear();
 }
+
+template class ObjectPool<CompositeQuarticValue>;
+template class ObjectPool<EntityAnimation::Delay>;
+template class ObjectPool<EntityAnimation::SetPosition>;
+template class ObjectPool<EntityAnimation::SetScreenOverlayColor>;
+template class ObjectPool<EntityAnimation::SetSpriteAnimation>;
+template class ObjectPool<EntityAnimation::SetSpriteDirection>;
+template class ObjectPool<EntityAnimation::SetVelocity>;
+template class ObjectPool<EntityAnimation::SwitchToPlayerCamera>;
+template class ReferenceCounterHolder<DynamicValue>;
+template class ReferenceCounterHolder<EntityAnimation::Component>;
+template class ReferenceCounterHolder<EntityState>;
+instantiateObjectPoolAndReferenceCounterHolder(DynamicCameraAnchor)
+instantiateObjectPoolAndReferenceCounterHolder(EntityAnimation)
+instantiateObjectPoolAndReferenceCounterHolder(MapState)
+instantiateObjectPoolAndReferenceCounterHolder(PauseState)
+instantiateObjectPoolAndReferenceCounterHolder(PlayerState)
+instantiateObjectPoolAndReferenceCounterHolder(MapState::RadioWavesState)
