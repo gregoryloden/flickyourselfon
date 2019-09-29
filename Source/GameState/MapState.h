@@ -20,7 +20,7 @@ public:
 			char maxTileOffset;
 
 			Segment(int pX, int pY, char pMaxTileOffset);
-			~Segment();
+			virtual ~Segment();
 		};
 
 	private:
@@ -37,7 +37,7 @@ public:
 		#endif
 
 		Rail(objCounterParametersComma() int x, int y, char pBaseHeight, char pColor, char pInitialTileOffset);
-		~Rail();
+		virtual ~Rail();
 
 		char getBaseHeight() { return baseHeight; }
 		char getColor() { return color; }
@@ -76,7 +76,7 @@ public:
 
 	public:
 		Switch(objCounterParametersComma() int pLeftX, int pTopY, char pColor, char pGroup);
-		~Switch();
+		virtual ~Switch();
 
 		char getColor() { return color; }
 		char getGroup() { return group; }
@@ -104,7 +104,7 @@ public:
 
 	public:
 		RailState(objCounterParametersComma() Rail* pRail, int pRailIndex);
-		~RailState();
+		virtual ~RailState();
 
 		Rail* getRail() { return rail; }
 		int getRailIndex() { return railIndex; }
@@ -129,7 +129,7 @@ public:
 
 	public:
 		SwitchState(objCounterParametersComma() Switch* pSwitch0);
-		~SwitchState();
+		virtual ~SwitchState();
 
 		Switch* getSwitch() { return switch0; }
 		void addConnectedRailState(RailState* railState);
@@ -153,7 +153,7 @@ public:
 
 	public:
 		RadioWavesState(objCounterParameters());
-		~RadioWavesState();
+		virtual ~RadioWavesState();
 
 		static RadioWavesState* produce(objCounterParameters());
 		void copyRadioWavesState(RadioWavesState* other);
@@ -255,7 +255,7 @@ private:
 
 public:
 	MapState(objCounterParameters());
-	~MapState();
+	virtual ~MapState();
 
 	static char getTile(int x, int y) { return tiles[y * width + x]; }
 	static char getHeight(int x, int y) { return heights[y * width + x]; }

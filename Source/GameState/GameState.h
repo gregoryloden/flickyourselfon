@@ -58,7 +58,7 @@ private:
 
 public:
 	GameState(objCounterParameters());
-	~GameState();
+	virtual ~GameState();
 
 	//return whether updates and renders should stop
 	bool getShouldQuitGame() { return shouldQuitGame; }

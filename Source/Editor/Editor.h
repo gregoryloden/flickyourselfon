@@ -24,7 +24,7 @@ private:
 		float blue;
 
 		RGB(float pRed, float pGreen, float pBlue);
-		~RGB();
+		virtual ~RGB();
 	};
 	class Button onlyInDebug(: public ObjCounter) {
 	private:
@@ -38,7 +38,7 @@ private:
 
 	public:
 		Button(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY);
-		~Button();
+		virtual ~Button();
 
 		//do anything that should happen only once after painting
 		virtual void postPaint() {}
@@ -64,14 +64,14 @@ private:
 
 	public:
 		TextButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY, string pText);
-		~TextButton();
+		virtual ~TextButton();
 
 		virtual void render();
 	};
 	class SaveButton: public TextButton {
 	public:
 		SaveButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY);
-		~SaveButton();
+		virtual ~SaveButton();
 
 		virtual void render();
 		virtual void onClick();
@@ -82,7 +82,7 @@ private:
 
 	public:
 		ExportMapButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY);
-		~ExportMapButton();
+		virtual ~ExportMapButton();
 
 		virtual void render();
 		virtual void onClick();
@@ -96,7 +96,7 @@ private:
 
 	public:
 		TileButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY, char pTile);
-		~TileButton();
+		virtual ~TileButton();
 
 		virtual void render();
 		virtual void onClick();
@@ -112,7 +112,7 @@ private:
 
 	public:
 		HeightButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY, char pHeight);
-		~HeightButton();
+		virtual ~HeightButton();
 
 		char getHeight() { return height; }
 		virtual void render();
@@ -130,7 +130,7 @@ private:
 
 	public:
 		PaintBoxRadiusButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY, char pRadius, bool pIsXRadius);
-		~PaintBoxRadiusButton();
+		virtual ~PaintBoxRadiusButton();
 
 		char getRadius() { return radius; }
 		virtual void render();
@@ -148,7 +148,7 @@ private:
 		bool isSelected;
 
 		EvenPaintBoxRadiusButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY, bool pIsXEvenRadius);
-		~EvenPaintBoxRadiusButton();
+		virtual ~EvenPaintBoxRadiusButton();
 
 		virtual void render();
 		virtual void onClick();
@@ -156,7 +156,7 @@ private:
 	class NoiseButton: public TextButton {
 	public:
 		NoiseButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY);
-		~NoiseButton();
+		virtual ~NoiseButton();
 
 		virtual void onClick();
 		virtual void paintMap(int x, int y);
@@ -170,7 +170,7 @@ private:
 		int count;
 
 		NoiseTileButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY);
-		~NoiseTileButton();
+		virtual ~NoiseTileButton();
 
 		virtual void render();
 		virtual void onClick();
@@ -185,7 +185,7 @@ private:
 
 	public:
 		RaiseLowerTileButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY, bool pIsRaiseTileButton);
-		~RaiseLowerTileButton();
+		virtual ~RaiseLowerTileButton();
 
 		virtual void render();
 		virtual void onClick();
@@ -199,7 +199,7 @@ private:
 		static const int buttonHeight;
 
 		ShuffleTileButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY);
-		~ShuffleTileButton();
+		virtual ~ShuffleTileButton();
 
 		virtual void render();
 		virtual void onClick();
@@ -214,7 +214,7 @@ private:
 
 	public:
 		SwitchButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY, char pColor);
-		~SwitchButton();
+		virtual ~SwitchButton();
 
 		virtual void render();
 		virtual void onClick();
@@ -229,7 +229,7 @@ private:
 
 	public:
 		RailButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY, char pColor);
-		~RailButton();
+		virtual ~RailButton();
 
 		virtual void render();
 		virtual void onClick();
@@ -244,7 +244,7 @@ private:
 
 	public:
 		RailTileOffsetButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY, char pTileOffset);
-		~RailTileOffsetButton();
+		virtual ~RailTileOffsetButton();
 
 		virtual void render();
 		virtual void onClick();
@@ -261,7 +261,7 @@ private:
 
 	public:
 		RailSwitchGroupButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY, char pRailSwitchGroup);
-		~RailSwitchGroupButton();
+		virtual ~RailSwitchGroupButton();
 
 		char getRailSwitchGroup() { return railSwitchGroup; }
 		virtual void render();

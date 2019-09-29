@@ -18,7 +18,7 @@ protected:
 
 public:
 	PooledReferenceCounter(objCounterParameters());
-	~PooledReferenceCounter();
+	virtual ~PooledReferenceCounter();
 
 protected:
 	virtual void prepareReturnToPool() {}
@@ -35,7 +35,7 @@ public:
 	ReferenceCounterHolder(ReferenceCountedObject* pObject);
 	ReferenceCounterHolder(const ReferenceCounterHolder<ReferenceCountedObject>& other);
 	ReferenceCounterHolder(ReferenceCounterHolder<ReferenceCountedObject>&& other);
-	~ReferenceCounterHolder();
+	virtual ~ReferenceCounterHolder();
 
 	ReferenceCountedObject* get() { return object; }
 	void set(ReferenceCountedObject* pObject);

@@ -22,7 +22,7 @@ public:
 	class Component: public PooledReferenceCounter {
 	public:
 		Component(objCounterParameters());
-		~Component();
+		virtual ~Component();
 
 		//return how long this component should last; only Delay overrides this
 		virtual int getDelayTicksDuration() { return 0; }
@@ -35,7 +35,7 @@ public:
 
 	public:
 		Delay(objCounterParameters());
-		~Delay();
+		virtual ~Delay();
 
 		virtual int getDelayTicksDuration() { return ticksDuration; }
 		static Delay* produce(objCounterParametersComma() int pTicksDuration);
@@ -49,7 +49,7 @@ public:
 
 	public:
 		SetPosition(objCounterParameters());
-		~SetPosition();
+		virtual ~SetPosition();
 
 		static SetPosition* produce(objCounterParametersComma() float pX, float pY);
 		virtual void release();
@@ -62,7 +62,7 @@ public:
 
 	public:
 		SetVelocity(objCounterParameters());
-		~SetVelocity();
+		virtual ~SetVelocity();
 
 		static SetVelocity* produce(objCounterParametersComma() DynamicValue* pVx, DynamicValue* pVy);
 		virtual void release();
@@ -78,7 +78,7 @@ public:
 
 	public:
 		SetSpriteAnimation(objCounterParameters());
-		~SetSpriteAnimation();
+		virtual ~SetSpriteAnimation();
 
 		static SetSpriteAnimation* produce(objCounterParametersComma() SpriteAnimation* pAnimation);
 		virtual void release();
@@ -90,7 +90,7 @@ public:
 
 	public:
 		SetSpriteDirection(objCounterParameters());
-		~SetSpriteDirection();
+		virtual ~SetSpriteDirection();
 
 		static SetSpriteDirection* produce(objCounterParametersComma() SpriteDirection pDirection);
 		virtual void release();
@@ -105,7 +105,7 @@ public:
 
 	public:
 		SetScreenOverlayColor(objCounterParameters());
-		~SetScreenOverlayColor();
+		virtual ~SetScreenOverlayColor();
 
 		static SetScreenOverlayColor* produce(
 			objCounterParametersComma() DynamicValue* pR, DynamicValue* pG, DynamicValue* pB, DynamicValue* pA);
@@ -115,7 +115,7 @@ public:
 	class SwitchToPlayerCamera: public Component {
 	public:
 		SwitchToPlayerCamera(objCounterParameters());
-		~SwitchToPlayerCamera();
+		virtual ~SwitchToPlayerCamera();
 
 		static SwitchToPlayerCamera* produce(objCounterParameters());
 		virtual void release();
@@ -129,7 +129,7 @@ private:
 
 public:
 	EntityAnimation(objCounterParameters());
-	~EntityAnimation();
+	virtual ~EntityAnimation();
 
 	static EntityAnimation* produce(
 		objCounterParametersComma() int pStartTicksTime, vector<ReferenceCounterHolder<Component>> pComponents);

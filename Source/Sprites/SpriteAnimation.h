@@ -16,7 +16,7 @@ public:
 
 	public:
 		Frame(objCounterParametersComma() int pSpriteHorizontalIndex, int pSpriteVerticalIndex, int pTicksDuration);
-		~Frame();
+		virtual ~Frame();
 
 		int getSpriteHorizontalIndex() { return spriteHorizontalIndex; }
 		int getSpriteVerticalIndex() { return spriteVerticalIndex; }
@@ -32,7 +32,7 @@ private:
 
 public:
 	SpriteAnimation(objCounterParametersComma() SpriteSheet* pSprite, vector<Frame*> pFrames);
-	~SpriteAnimation();
+	virtual ~SpriteAnimation();
 
 	int getTotalTicksDuration() { return totalTicksDuration; }
 	void disableLooping() { loopAnimation = false; }

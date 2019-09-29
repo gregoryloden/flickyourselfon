@@ -13,7 +13,7 @@ public:
 		SDL_Scancode showConnectionsKey;
 
 		KeyBindings();
-		~KeyBindings();
+		virtual ~KeyBindings();
 
 		void set(const KeyBindings* other);
 	};

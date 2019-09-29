@@ -17,7 +17,7 @@ private:
 
 public:
 	SpriteSheet(objCounterParametersComma() SDL_Surface* imageSurface, int horizontalSpriteCount, int verticalSpriteCount);
-	~SpriteSheet();
+	virtual ~SpriteSheet();
 
 	int getSpriteSheetWidth() { return spriteSheetWidth; }
 	int getSpriteSheetHeight() { return spriteSheetHeight; }

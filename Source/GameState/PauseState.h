@@ -28,7 +28,7 @@ private:
 
 	public:
 		PauseMenu(objCounterParametersComma() string pTitle, vector<PauseOption*> pOptions);
-		~PauseMenu();
+		virtual ~PauseMenu();
 
 		int getOptionsCount() { return (int)options.size(); }
 		PauseOption* getOption(int optionIndex) { return options[optionIndex]; }
@@ -42,7 +42,7 @@ private:
 		static const float displayTextFontScale;
 
 		PauseOption(objCounterParametersComma() string pDisplayText);
-		~PauseOption();
+		virtual ~PauseOption();
 
 		//get the metrics of the text that this option will render
 		//PauseOption caches the metrics of the regular display text and will return it, subclasses can override this and return
@@ -58,14 +58,14 @@ private:
 
 	public:
 		NavigationOption(objCounterParametersComma() string pDisplayText, PauseMenu* pSubMenu);
-		~NavigationOption();
+		virtual ~NavigationOption();
 
 		virtual PauseState* handle(PauseState* currentState);
 	};
 	class ControlsNavigationOption: public NavigationOption {
 	public:
 		ControlsNavigationOption(objCounterParametersComma() PauseMenu* pSubMenu);
-		~ControlsNavigationOption();
+		virtual ~ControlsNavigationOption();
 
 		virtual PauseState* handle(PauseState* currentState);
 	};
@@ -95,7 +95,7 @@ private:
 
 	public:
 		KeyBindingOption(objCounterParametersComma() BoundKey pBoundKey);
-		~KeyBindingOption();
+		virtual ~KeyBindingOption();
 
 		virtual Text::Metrics getDisplayTextMetrics();
 		Text::Metrics getSelectingDisplayTextMetrics(bool selecting);
@@ -112,14 +112,14 @@ private:
 	class DefaultKeyBindingsOption: public PauseOption {
 	public:
 		DefaultKeyBindingsOption(objCounterParameters());
-		~DefaultKeyBindingsOption();
+		virtual ~DefaultKeyBindingsOption();
 
 		virtual PauseState* handle(PauseState* currentState);
 	};
 	class AcceptKeyBindingsOption: public PauseOption {
 	public:
 		AcceptKeyBindingsOption(objCounterParameters());
-		~AcceptKeyBindingsOption();
+		virtual ~AcceptKeyBindingsOption();
 
 		virtual PauseState* handle(PauseState* currentState);
 	};
@@ -129,7 +129,7 @@ private:
 
 	public:
 		EndPauseOption(objCounterParametersComma() int pEndPauseDecision);
-		~EndPauseOption();
+		virtual ~EndPauseOption();
 
 		int getEndPauseDecision() { return endPauseDecision; }
 		virtual PauseState* handle(PauseState* currentState);
@@ -145,7 +145,7 @@ private:
 
 public:
 	PauseState(objCounterParameters());
-	~PauseState();
+	virtual ~PauseState();
 
 private:
 	static PauseState* produce(

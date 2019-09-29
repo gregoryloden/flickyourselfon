@@ -16,7 +16,7 @@ private:
 
 	public:
 		Glyph(objCounterParametersComma() int pSpriteX, int pSpriteY, int pSpriteWidth, int pSpriteHeight, int pBaselineOffset);
-		~Glyph();
+		virtual ~Glyph();
 
 		int getWidth() { return spriteWidth; }
 		int getHeight() { return spriteHeight; }
@@ -32,7 +32,7 @@ private:
 
 	public:
 		GlyphRow(objCounterParametersComma() int pUnicodeStart, Glyph* firstGlyph);
-		~GlyphRow();
+		virtual ~GlyphRow();
 
 		void addGlyph(Glyph* glyph);
 		bool endsAfter(int unicodeValue);
@@ -50,7 +50,7 @@ public:
 		float fontScale;
 
 		Metrics();
-		~Metrics();
+		virtual ~Metrics();
 
 		float getTotalHeight() { return topPadding + aboveBaseline + belowBaseline + bottomPadding; }
 		float getBaselineDistanceBelow(Metrics* aboveMetrics) {

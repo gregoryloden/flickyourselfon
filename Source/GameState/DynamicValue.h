@@ -9,7 +9,7 @@
 class DynamicValue: public PooledReferenceCounter {
 public:
 	DynamicValue(objCounterParameters());
-	~DynamicValue();
+	virtual ~DynamicValue();
 
 	//copy this DynamicValue such that at 0 ticks elapsed, it equals the provided constant value
 	virtual DynamicValue* copyWithConstantValue(float pConstantValue) = 0;
@@ -26,7 +26,7 @@ private:
 
 public:
 	CompositeQuarticValue(objCounterParameters());
-	~CompositeQuarticValue();
+	virtual ~CompositeQuarticValue();
 
 	static CompositeQuarticValue* produce(
 		objCounterParametersComma()

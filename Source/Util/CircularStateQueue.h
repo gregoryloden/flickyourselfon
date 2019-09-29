@@ -10,7 +10,7 @@ private:
 		Type* state;
 
 		Node(objCounterParametersComma() Type* pState);
-		~Node();
+		virtual ~Node();
 	};
 
 	//writeHead always points to the most recently written state
@@ -24,7 +24,7 @@ private:
 
 public:
 	CircularStateQueue(objCounterParametersComma() Type* writeHeadState, Type* nextState);
-	~CircularStateQueue();
+	virtual ~CircularStateQueue();
 
 	int getStatesCount() { return statesCount; }
 	Type* getNextWritableState();

@@ -27,7 +27,7 @@ protected:
 
 public:
 	EntityState(objCounterParameters());
-	~EntityState();
+	virtual ~EntityState();
 
 	char getZ() { return z; }
 	//begin a sprite animation if applicable
@@ -63,7 +63,7 @@ private:
 
 public:
 	DynamicCameraAnchor(objCounterParameters());
-	~DynamicCameraAnchor();
+	virtual ~DynamicCameraAnchor();
 
 	virtual void setShouldSwitchToPlayerCamera() { shouldSwitchToPlayerCamera = true; }
 	static DynamicCameraAnchor* produce(objCounterParameters());

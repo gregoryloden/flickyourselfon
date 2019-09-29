@@ -24,7 +24,7 @@
 		mutex* m;
 	public:
 		MutexLocker(mutex& pM): m(&pM) { pM.lock(); }
-		~MutexLocker() { m->unlock(); }
+		virtual ~MutexLocker() { m->unlock(); }
 	};
 #endif
 

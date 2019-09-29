@@ -40,7 +40,7 @@ private:
 
 public:
 	PlayerState(objCounterParameters());
-	~PlayerState();
+	virtual ~PlayerState();
 
 	virtual void setSpriteDirection(SpriteDirection pSpriteDirection) { spriteDirection = pSpriteDirection; }
 	void obtainBoot() { hasBoot = true; }

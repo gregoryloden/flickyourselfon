@@ -13,7 +13,7 @@ private:
 		Logger* owningLogger;
 
 		Message(objCounterParameters());
-		~Message();
+		virtual ~Message();
 	};
 	class LogQueueStack onlyInDebug(: public ObjCounter) {
 	public:
@@ -21,7 +21,7 @@ private:
 		LogQueueStack* next;
 
 		LogQueueStack(objCounterParametersComma() CircularStateQueue<Message>* pLogQueue, LogQueueStack* pNext);
-		~LogQueueStack();
+		virtual ~LogQueueStack();
 	};
 	//Should only be allocated within an object, on the stack, or as a static object
 	class PendingMessage {
@@ -31,7 +31,7 @@ private:
 		PendingMessage* next;
 
 		PendingMessage(stringstream* pMessage, Logger* pOwningLogger, PendingMessage* pNext);
-		~PendingMessage();
+		virtual ~PendingMessage();
 	};
 
 	static thread_local CircularStateQueue<Message>* currentThreadLogQueue;
@@ -53,7 +53,7 @@ private:
 	bool hasMessagesToWrite;
 
 	Logger(const char* pFileName, int pFileFlags);
-	~Logger();
+	virtual ~Logger();
 public:
 	void beginLogging();
 	static void beginMultiThreadedLogging();
