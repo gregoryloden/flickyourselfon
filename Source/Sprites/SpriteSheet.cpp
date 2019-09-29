@@ -18,8 +18,13 @@ textureId(0)
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
+	#ifdef WIN32
+		GLenum texFormat = GL_RGBA;
+	#else
+		GLenum texFormat = GL_BGRA;
+	#endif
 	glTexImage2D(
-		GL_TEXTURE_2D, 0, GL_RGBA, imageSurface->w, imageSurface->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, imageSurface->pixels);
+		GL_TEXTURE_2D, 0, GL_RGBA, imageSurface->w, imageSurface->h, 0, texFormat, GL_UNSIGNED_BYTE, imageSurface->pixels);
 }
 SpriteSheet::~SpriteSheet() {}
 //load the surface at the image path and then build a SpriteSheet
