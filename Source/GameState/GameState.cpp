@@ -156,9 +156,12 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 void GameState::setPlayerCamera() {
 	camera = playerState.get();
 
-	//since we only set the player camera once we get the boot, reset the tile
-	sawIntroAnimation = true;
-	MapState::setIntroAnimationBootTile(false);
+	//the intro animation happens to call this when it ends, so we'll do cleanup here
+	if (!sawIntroAnimation) {
+		sawIntroAnimation = true;
+		MapState::setIntroAnimationBootTile(false);
+		playerState.get()->setInitialZ();
+	}
 }
 //set our camera to the dynamic camera anchor
 void GameState::setDynamicCamera() {

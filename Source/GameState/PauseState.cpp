@@ -1,4 +1,4 @@
-#include "PauseState.h"
+﻿#include "PauseState.h"
 #include "Sprites/SpriteSheet.h"
 #include "Util/Config.h"
 
@@ -206,7 +206,7 @@ string PauseState::KeyBindingOption::getBoundKeyActionText(BoundKey pBoundKey) {
 		case BoundKey::Right: return "right:";
 		case BoundKey::Down: return "down:";
 		case BoundKey::Left: return "left:";
-		case BoundKey::Kick: return "kick:";
+		case BoundKey::Kick: return "kick/climb/fall:";
 		case BoundKey::ShowConnections: return "show connections:";
 		default: return "";
 	}
