@@ -1,5 +1,6 @@
 #include "Text.h"
 #include "Sprites/SpriteSheet.h"
+#include "Util/FileUtils.h"
 
 #define newGlyph(spriteX, spriteY, spriteWidth, spriteHeight, baselineOffset) \
 	newWithArgs(Text::Glyph, spriteX, spriteY, spriteWidth, spriteHeight, baselineOffset)
@@ -56,14 +57,16 @@ Text::Metrics::Metrics()
 Text::Metrics::~Metrics() {}
 
 //////////////////////////////// Text ////////////////////////////////
+const char* Text::fontFileName = "font.png";
+const char* Text::keyBackgroundFileName = "keybackground.png";
 SpriteSheet* Text::font = nullptr;
 SpriteSheet* Text::keyBackground = nullptr;
 vector<Text::GlyphRow*> Text::glyphRows;
 //load the font sprite sheet and find which glyphs we have
 void Text::loadFont() {
-	SDL_Surface* fontSurface = IMG_Load("images/font.png");
+	SDL_Surface* fontSurface = FileUtils::loadImage(fontFileName);
 	font = newSpriteSheet(fontSurface, 1, 1);
-	keyBackground = newSpriteSheetWithImagePath("images/keybackground.png", 1, 1);
+	keyBackground = newSpriteSheetWithImagePath(keyBackgroundFileName, 1, 1);
 	int imageWidth = fontSurface->w;
 
 	int* pixels = static_cast<int*>(fontSurface->pixels);

@@ -1,4 +1,5 @@
 #include "Config.h"
+#include "Util/FileUtils.h"
 #include "Util/StringUtils.h"
 
 //////////////////////////////// Config::KeyBindings ////////////////////////////////
@@ -44,7 +45,7 @@ Config::KeyBindings Config::editingKeyBindings;
 //save the key bindings to the save file
 void Config::saveSettings() {
 	ofstream file;
-	file.open(optionsFileName);
+	FileUtils::openFileForWrite(&file, optionsFileName, ios::out | ios::trunc);
 	if (keyBindings.upKey != defaultKeyBindings.upKey)
 		file << upKeyBindingFilePrefix << (int)keyBindings.upKey << "\n";
 	if (keyBindings.rightKey != defaultKeyBindings.rightKey)
@@ -62,7 +63,7 @@ void Config::saveSettings() {
 //load the key bindings from the save file, if it exists
 void Config::loadSettings() {
 	ifstream file;
-	file.open(optionsFileName);
+	FileUtils::openFileForRead(&file, optionsFileName);
 	string line;
 	while (getline(file, line)) {
 		if (StringUtils::startsWith(line, upKeyBindingFilePrefix))

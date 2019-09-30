@@ -46,13 +46,13 @@ public:
 
 private:
 	const char* fileName;
-	int fileFlags;
+	ios_base::openmode fileFlags;
 	ofstream* file;
 	stringstream preQueueMessages;
 	stringstream messagesToWrite;
 	bool hasMessagesToWrite;
 
-	Logger(const char* pFileName, int pFileFlags);
+	Logger(const char* pFileName, ios_base::openmode pFileFlags);
 	virtual ~Logger();
 public:
 	void beginLogging();

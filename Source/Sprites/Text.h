@@ -62,6 +62,8 @@ private:
 	static const int defaultTopPadding = 1;
 	static const int defaultBottomPadding = 1;
 	static const int defaultInterCharacterSpacing = 1;
+	static const char* fontFileName;
+	static const char* keyBackgroundFileName;
 
 	static SpriteSheet* font;
 	static SpriteSheet* keyBackground;

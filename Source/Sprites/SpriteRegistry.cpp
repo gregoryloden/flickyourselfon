@@ -2,13 +2,14 @@
 #include "GameState/MapState.h"
 #include "Sprites/SpriteAnimation.h"
 #include "Sprites/SpriteSheet.h"
+#include "Util/FileUtils.h"
 
-const char* SpriteRegistry::playerFileName = "images/player.png";
-const char* SpriteRegistry::tilesFileName = "images/tiles.png";
-const char* SpriteRegistry::radioTowerFileName = "images/radiotower.png";
-const char* SpriteRegistry::railsFileName = "images/rails.png";
-const char* SpriteRegistry::switchesFileName = "images/switches.png";
-const char* SpriteRegistry::radioWavesFileName = "images/radiowaves.png";
+const char* SpriteRegistry::playerFileName = "player.png";
+const char* SpriteRegistry::tilesFileName = "tiles.png";
+const char* SpriteRegistry::radioTowerFileName = "radiotower.png";
+const char* SpriteRegistry::railsFileName = "rails.png";
+const char* SpriteRegistry::switchesFileName = "switches.png";
+const char* SpriteRegistry::radioWavesFileName = "radiowaves.png";
 SpriteSheet* SpriteRegistry::player = nullptr;
 SpriteSheet* SpriteRegistry::tiles = nullptr;
 SpriteSheet* SpriteRegistry::radioTower = nullptr;

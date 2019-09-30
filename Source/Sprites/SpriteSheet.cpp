@@ -1,4 +1,5 @@
 #include "SpriteSheet.h"
+#include "Util/FileUtils.h"
 
 SpriteSheet::SpriteSheet(
 	objCounterParametersComma() SDL_Surface* imageSurface, int horizontalSpriteCount, int verticalSpriteCount)
@@ -31,7 +32,7 @@ SpriteSheet::~SpriteSheet() {}
 SpriteSheet* SpriteSheet::produce(
 	objCounterParametersComma() const char* imagePath, int horizontalSpriteCount, int verticalSpriteCount)
 {
-	SDL_Surface* surface = IMG_Load(imagePath);
+	SDL_Surface* surface = FileUtils::loadImage(imagePath);
 	SpriteSheet* spriteSheet = newSpriteSheet(surface, horizontalSpriteCount, verticalSpriteCount);
 	SDL_FreeSurface(surface);
 	return spriteSheet;

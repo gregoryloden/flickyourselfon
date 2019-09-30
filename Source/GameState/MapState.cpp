@@ -7,6 +7,7 @@
 #include "Sprites/SpriteRegistry.h"
 #include "Sprites/SpriteSheet.h"
 #include "Util/Config.h"
+#include "Util/FileUtils.h"
 #include "Util/Logger.h"
 #include "Util/StringUtils.h"
 
@@ -518,7 +519,7 @@ void MapState::RadioWavesState::render(EntityState* camera, int ticksTime) {
 }
 
 //////////////////////////////// MapState ////////////////////////////////
-const char* MapState::floorFileName = "images/floor.png";
+const char* MapState::floorFileName = "floor.png";
 const float MapState::smallDistance = 1.0f / 256.0f;
 const float MapState::introAnimationCameraCenterX = (float)(MapState::tileSize * introAnimationBootTileX) + 4.5f;
 const float MapState::introAnimationCameraCenterY = (float)(MapState::tileSize * introAnimationBootTileY) - 4.5f;
@@ -584,7 +585,7 @@ void MapState::prepareReturnToPool() {
 }
 //load the map and extract all the map data from it
 void MapState::buildMap() {
-	SDL_Surface* floor = IMG_Load(floorFileName);
+	SDL_Surface* floor = FileUtils::loadImage(floorFileName);
 	width = floor->w;
 	height = floor->h;
 	int totalTiles = width * height;

@@ -12,6 +12,7 @@
 #include "Sprites/SpriteSheet.h"
 #include "Sprites/Text.h"
 #include "Util/Config.h"
+#include "Util/FileUtils.h"
 #include "Util/Logger.h"
 #include "Util/StringUtils.h"
 
@@ -340,7 +341,7 @@ void GameState::renderTitleAnimation(int gameTicksTime) {
 //save the state to a file
 void GameState::saveState() {
 	ofstream file;
-	file.open(savedGameFileName);
+	FileUtils::openFileForWrite(&file, savedGameFileName, ios::out | ios::trunc);
 	if (sawIntroAnimation)
 		file << sawIntroAnimationFilePrefix << "true\n";
 	playerState.get()->saveState(file);
@@ -356,7 +357,7 @@ void GameState::loadInitialState(int ticksTime) {
 
 	//next, load state if we can
 	ifstream file;
-	file.open(savedGameFileName);
+	FileUtils::openFileForRead(&file, savedGameFileName);
 	string line;
 	bool loadedState = false;
 	while (getline(file, line)) {

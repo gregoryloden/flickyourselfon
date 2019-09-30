@@ -1,6 +1,7 @@
 #include "Logger.h"
 #include "Util/CircularStateQueue.h"
 #include "Util/Config.h"
+#include "Util/FileUtils.h"
 
 #define newMessage() newWithoutArgs(Logger::Message)
 #define newLogQueueStack(logQueue, next) newWithArgs(Logger::LogQueueStack, logQueue, next)
@@ -46,7 +47,7 @@ Logger::LogQueueStack* Logger::logQueueStack = nullptr;
 vector<Logger*> Logger::loggers;
 Logger Logger::debugLogger ("fyo_debug.log", ios::out | ios::trunc);
 Logger Logger::gameplayLogger ("fyo_gameplay.log", ios::out | ios::app);
-Logger::Logger(const char* pFileName, int pFileFlags)
+Logger::Logger(const char* pFileName, ios_base::openmode pFileFlags)
 : fileName(pFileName)
 , file(nullptr)
 , fileFlags(pFileFlags)
@@ -64,7 +65,7 @@ void Logger::beginLogging() {
 			return;
 	#endif
 	file = new ofstream();
-	file->open(fileName, fileFlags);
+	FileUtils::openFileForWrite(file, fileName, fileFlags);
 	loggers.push_back(this);
 }
 //start the logging thread

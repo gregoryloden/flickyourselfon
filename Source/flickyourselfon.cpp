@@ -24,7 +24,7 @@ bool renderThreadReadyForUpdates = false;
 #ifdef __cplusplus
 extern "C"
 #endif
-int main(int argc, char* argv[]) {
+int gameMain() {
 	//initialize SDL before we do anything else, we need it to log timestamps
 	int initResult = SDL_Init(SDL_INIT_EVERYTHING);
 	if (initResult < 0)
