@@ -5,8 +5,8 @@
 #define newDynamicCameraAnchor() produceWithoutArgs(DynamicCameraAnchor)
 
 class DynamicValue;
-class GameState;
 class EntityAnimation;
+class GameState;
 class SpriteAnimation;
 
 enum class SpriteDirection: int {

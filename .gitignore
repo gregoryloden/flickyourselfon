@@ -11,3 +11,10 @@ Release/*
 *.LICENSE
 .DS_Store
 *.xcodeproj/*
+images/old/*
+fyo.sav
+fyo_gameplay.log
+fyo_debug.log
+Source/Windows/flickyourselfon.aps
+Source/Windows/flickyourselfon.rc
+Source/Windows/resource.h

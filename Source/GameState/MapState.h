@@ -164,6 +164,7 @@ public:
 		virtual void setNextCamera(GameState* nextGameState, int ticksTime) {}
 	};
 
+	//map state
 	static const int tileCount = 64; // tile = green / 4
 	static const int tileDivisor = 256 / tileCount;
 	static const int heightCount = 16; // height = blue / 16
@@ -172,7 +173,11 @@ public:
 	static const int highestFloorHeight = heightCount - 2;
 	static const int tileSize = 6;
 	static const int switchSize = 12;
+	static const int switchSideInset = 2;
+	static const int switchTopInset = 1;
+	static const int switchBottomInset = 2;
 	static const char invalidHeight = -1;
+	//animations
 	static const int firstLevelTileOffsetX = 40;
 	static const int firstLevelTileOffsetY = 63;
 	static const int radioTowerLeftXOffset = 324 + firstLevelTileOffsetX * tileSize;
@@ -180,6 +185,7 @@ public:
 	static const int introAnimationBootTileX = 29 + firstLevelTileOffsetX;
 	static const int introAnimationBootTileY = 26 + firstLevelTileOffsetY;
 	static const int switchesFadeInDuration = 1000;
+	//tile sections
 	static const char tileFloorFirst = 0;
 	static const char tileFloorLast = 8;
 	static const char tileWallFirst = 9;
@@ -200,10 +206,12 @@ public:
 	static const char tilePuzzleEnd = 38;
 	static const char tilePlatformTopGroundLeftFloor = 39;
 	static const char tilePlatformTopGroundRightFloor = 40;
+	//switch colors
 	static const char squareColor = 0;
 	static const char triangleColor = 1;
 	static const char sawColor = 2;
 	static const char sineColor = 3;
+	//rail/switch state serialization
 	static const short absentRailSwitchId = 0;
 	static const short railIdBitmask = 1 << 12;
 	static const short switchIdBitmask = railIdBitmask << 1;
@@ -221,6 +229,7 @@ public:
 	static const int floorRailSwitchAndHeadValue = floorIsRailSwitchHeadBitmask | floorIsRailSwitchBitmask;
 	static const int floorRailHeadValue = floorRailSwitchAndHeadValue;
 	static const int floorSwitchHeadValue = floorIsSwitchBitmask | floorRailSwitchAndHeadValue;
+	//other
 	static const char* floorFileName;
 	static const float smallDistance;
 	static const float introAnimationCameraCenterX;

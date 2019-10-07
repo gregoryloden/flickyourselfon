@@ -1,7 +1,7 @@
 #include "General/General.h"
 
-class GameState;
 template <class Type> class CircularStateQueue;
+class GameState;
 
 #ifdef __cplusplus
 extern "C"

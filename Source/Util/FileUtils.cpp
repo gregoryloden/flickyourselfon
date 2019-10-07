@@ -6,13 +6,14 @@
 	#include <unistd.h>
 #endif
 
+const string FileUtils::imagesFolder = "images/";
 #ifdef __APPLE__
 	const char* FileUtils::fileIoIntermediatePath = "/Library/Application Support/flickyourselfon";
 #endif
 //load an image
 SDL_Surface* FileUtils::loadImage(const char *imagePath) {
 	#ifdef WIN32
-		string fullPath = string("images/") + imagePath;
+		string fullPath = imagesFolder + imagePath;
 		return IMG_Load(fullPath.c_str());
 	#else
 		CFBundleRef mainBundle = CFBundleGetMainBundle();
@@ -27,6 +28,11 @@ SDL_Surface* FileUtils::loadImage(const char *imagePath) {
 		CFRelease(cfImagePath);
 		return image;
 	#endif
+}
+//save an image
+void FileUtils::saveImage(SDL_Surface* image, const char* imagePath) {
+	string fullPath = imagesFolder + imagePath;
+	IMG_SavePNG(image, fullPath.c_str());
 }
 //open a file for read
 void FileUtils::openFileForRead(ifstream* file, const char* filePath) {

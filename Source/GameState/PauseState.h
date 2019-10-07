@@ -7,8 +7,8 @@
 //PauseStates are added when entering a child and released when exiting, using the same parent instance
 class PauseState: public PooledReferenceCounter {
 private:
-	class PauseOption;
 	class KeyBindingOption;
+	class PauseOption;
 
 public:
 	enum class EndPauseDecision: int {

@@ -5,6 +5,7 @@
 #include "Sprites/SpriteRegistry.h"
 #include "Sprites/SpriteSheet.h"
 #include "Util/Config.h"
+#include "Util/FileUtils.h"
 
 #ifdef EDITOR
 	#define newSaveButton(zone, leftX, topY) newWithArgs(Editor::SaveButton, zone, leftX, topY)
@@ -166,7 +167,7 @@
 			}
 		}
 
-		IMG_SavePNG(floorSurface, MapState::floorFileName);
+		FileUtils::saveImage(floorSurface, MapState::floorFileName);
 		SDL_DestroyRenderer(floorRenderer);
 		SDL_FreeSurface(floorSurface);
 
@@ -196,7 +197,7 @@
 		int mapWidth = MapState::mapWidth();
 		int mapHeight = MapState::mapHeight();
 
-		SDL_Surface* tilesSurface = IMG_Load(SpriteRegistry::tilesFileName);
+		SDL_Surface* tilesSurface = FileUtils::loadImage(SpriteRegistry::tilesFileName);
 		SDL_Surface* mapSurface = SDL_CreateRGBSurface(
 			0,
 			mapWidth * MapState::tileSize,
@@ -223,7 +224,7 @@
 			}
 		}
 
-		IMG_SavePNG(mapSurface, mapFileName);
+		FileUtils::saveImage(mapSurface, mapFileName);
 		SDL_DestroyTexture(tilesTexture);
 		SDL_DestroyRenderer(mapRenderer);
 		SDL_FreeSurface(mapSurface);
@@ -727,7 +728,7 @@
 	int Editor::lastMouseDragMapY = -1;
 	default_random_engine* Editor::randomEngine = nullptr;
 	discrete_distribution<int>* Editor::noiseTilesDistribution = nullptr;
-	discrete_distribution<int> Editor::floorTileDistribution ({ 5, 5, 5, 5, 1, 1, 1, 1, 1 });
+	discrete_distribution<int> Editor::floorTileDistribution ({ 6.25, 6.25, 6.25, 6.25, 1, 1, 1, 1, 1 });
 	uniform_int_distribution<int> Editor::wallTileDistribution (MapState::tileWallFirst, MapState::tileWallLast);
 	uniform_int_distribution<int> Editor::platformRightFloorTileDistribution (
 		MapState::tilePlatformRightFloorFirst, MapState::tilePlatformRightFloorLast);

@@ -90,13 +90,13 @@ DynamicCameraAnchor::DynamicCameraAnchor(objCounterParameters())
 DynamicCameraAnchor::~DynamicCameraAnchor() {}
 //initialize and return a DynamicCameraAnchor
 DynamicCameraAnchor* DynamicCameraAnchor::produce(objCounterParameters()) {
-	initializeWithNewFromPool(s, DynamicCameraAnchor)
-	s->screenOverlayR.set(newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f));
-	s->screenOverlayG.set(newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f));
-	s->screenOverlayB.set(newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f));
-	s->screenOverlayA.set(newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f));
-	s->shouldSwitchToPlayerCamera = false;
-	return s;
+	initializeWithNewFromPool(d, DynamicCameraAnchor)
+	d->screenOverlayR.set(newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f));
+	d->screenOverlayG.set(newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f));
+	d->screenOverlayB.set(newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f));
+	d->screenOverlayA.set(newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f));
+	d->shouldSwitchToPlayerCamera = false;
+	return d;
 }
 //copy the other state
 void DynamicCameraAnchor::copyDynamicCameraAnchor(DynamicCameraAnchor* other) {

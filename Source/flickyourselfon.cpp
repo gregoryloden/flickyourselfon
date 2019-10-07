@@ -2,6 +2,7 @@
 #ifdef EDITOR
 	#include "Editor/Editor.h"
 #endif
+#include "GameState/CollisionRect.h"
 #include "GameState/DynamicValue.h"
 #include "GameState/EntityAnimation.h"
 #include "GameState/EntityState.h"
@@ -148,6 +149,7 @@ int gameMain() {
 		ObjectPool<EntityAnimation::SetSpriteAnimation>::clearPool();
 		ObjectPool<EntityAnimation::SetSpriteDirection>::clearPool();
 		ObjectPool<EntityAnimation::SwitchToPlayerCamera>::clearPool();
+		ObjectPool<CollisionRect>::clearPool();
 		ObjCounter::end();
 	#endif
 	Logger::gameplayLogger.endLogging();

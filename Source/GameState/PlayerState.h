@@ -2,10 +2,11 @@
 
 #define newPlayerState() produceWithoutArgs(PlayerState)
 
-class PositionState;
-class SpriteAnimation;
+class CollisionRect;
 class EntityAnimation;
+class PositionState;
 class MapState;
+class SpriteAnimation;
 
 class PlayerState: public EntityState {
 private:
@@ -31,6 +32,9 @@ private:
 
 	char xDirection;
 	char yDirection;
+	float lastXMovedDelta;
+	float lastYMovedDelta;
+	CollisionRect* collisionRect;
 	SpriteAnimation* spriteAnimation;
 	int spriteAnimationStartTicksTime;
 	SpriteDirection spriteDirection;
@@ -52,7 +56,14 @@ public:
 	void updateWithPreviousPlayerState(PlayerState* prev, int ticksTime);
 private:
 	void updatePositionWithPreviousPlayerState(PlayerState* prev, int ticksTime);
+	void setXAndUpdateCollisionRect(DynamicValue* newX);
+	void setYAndUpdateCollisionRect(DynamicValue* newY);
 	void collideWithEnvironmentWithPreviousPlayerState(PlayerState* prev);
+	void addMapCollisions(
+		int mapX, int mapY, vector<ReferenceCounterHolder<CollisionRect>>& collidedRects, vector<short> seenSwitchIds);
+	float netCollisionDuration(CollisionRect* other);
+	float xCollisionDuration(CollisionRect* other);
+	float yCollisionDuration(CollisionRect* other);
 	void updateSpriteWithPreviousPlayerState(PlayerState* prev, int ticksTime, bool usePreviousStateSpriteAnimation);
 public:
 	void beginKicking(MapState* mapState, int ticksTime);

@@ -1,7 +1,7 @@
 #include "General/General.h"
 
-class SpriteSheet;
 class SpriteAnimation;
+class SpriteSheet;
 
 class SpriteRegistry {
 public:

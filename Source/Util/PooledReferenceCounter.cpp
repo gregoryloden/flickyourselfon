@@ -1,4 +1,5 @@
 #include "PooledReferenceCounter.h"
+#include "GameState/CollisionRect.h"
 #include "GameState/DynamicValue.h"
 #include "GameState/EntityAnimation.h"
 #include "GameState/EntityState.h"
@@ -102,6 +103,7 @@ template class ObjectPool<EntityAnimation::SwitchToPlayerCamera>;
 template class ReferenceCounterHolder<DynamicValue>;
 template class ReferenceCounterHolder<EntityAnimation::Component>;
 template class ReferenceCounterHolder<EntityState>;
+instantiateObjectPoolAndReferenceCounterHolder(CollisionRect)
 instantiateObjectPoolAndReferenceCounterHolder(DynamicCameraAnchor)
 instantiateObjectPoolAndReferenceCounterHolder(EntityAnimation)
 instantiateObjectPoolAndReferenceCounterHolder(MapState)

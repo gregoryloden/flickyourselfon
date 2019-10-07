@@ -1,4 +1,5 @@
 #include "PlayerState.h"
+#include "GameState/CollisionRect.h"
 #include "GameState/DynamicValue.h"
 #include "GameState/GameState.h"
 #include "GameState/EntityAnimation.h"
@@ -32,6 +33,9 @@ PlayerState::PlayerState(objCounterParameters())
 : EntityState(objCounterArguments())
 , xDirection(0)
 , yDirection(0)
+, lastXMovedDelta(0)
+, lastYMovedDelta(0)
+, collisionRect(newCollisionRect(boundingBoxLeftOffset, boundingBoxTopOffset, boundingBoxRightOffset, boundingBoxBottomOffset))
 , spriteAnimation(nullptr)
 , spriteAnimationStartTicksTime(-1)
 , spriteDirection(SpriteDirection::Down)
@@ -41,7 +45,9 @@ PlayerState::PlayerState(objCounterParameters())
 	lastControlledX = x.get()->getValue(0);
 	lastControlledY = y.get()->getValue(0);
 }
-PlayerState::~PlayerState() {}
+PlayerState::~PlayerState() {
+	delete collisionRect;
+}
 //initialize and return a PlayerState
 PlayerState* PlayerState::produce(objCounterParameters()) {
 	initializeWithNewFromPool(p, PlayerState)
@@ -54,6 +60,9 @@ void PlayerState::copyPlayerState(PlayerState* other) {
 	copyEntityState(other);
 	xDirection = other->xDirection;
 	yDirection = other->yDirection;
+	lastXMovedDelta = other->lastXMovedDelta;
+	lastYMovedDelta = other->lastYMovedDelta;
+	//don't copy collisionRect, it will get updated when needed
 	spriteAnimation = other->spriteAnimation;
 	spriteAnimationStartTicksTime = other->spriteAnimationStartTicksTime;
 	spriteDirection = other->spriteDirection;
@@ -110,172 +119,148 @@ void PlayerState::updatePositionWithPreviousPlayerState(PlayerState* prev, int t
 	#endif
 
 	int ticksSinceLastUpdate = ticksTime - prev->lastUpdateTicksTime;
-	x.set(
-		newCompositeQuarticValue(
-			prev->x.get()->getValue(ticksSinceLastUpdate), (float)xDirection * speedPerTick, 0.0f, 0.0f, 0.0f));
-	y.set(
-		newCompositeQuarticValue(
-			prev->y.get()->getValue(ticksSinceLastUpdate), (float)yDirection * speedPerTick, 0.0f, 0.0f, 0.0f));
+	DynamicValue* prevX = prev->x.get();
+	DynamicValue* prevY = prev->y.get();
+	float newX = prevX->getValue(ticksSinceLastUpdate);
+	float newY = prevY->getValue(ticksSinceLastUpdate);
+	setXAndUpdateCollisionRect(newCompositeQuarticValue(newX, (float)xDirection * speedPerTick, 0.0f, 0.0f, 0.0f));
+	setYAndUpdateCollisionRect(newCompositeQuarticValue(newY, (float)yDirection * speedPerTick, 0.0f, 0.0f, 0.0f));
+	lastXMovedDelta = newX - prevX->getValue(0);
+	lastYMovedDelta = newY - prevY->getValue(0);
 	lastUpdateTicksTime = ticksTime;
 	renderInterpolatedX = true;
 	renderInterpolatedY = true;
 	z = prev->z;
 }
+//set the new value and update the left and right
+void PlayerState::setXAndUpdateCollisionRect(DynamicValue* newX) {
+	x.set(newX);
+	float xPosition = x.get()->getValue(0);
+	collisionRect->left = xPosition + boundingBoxLeftOffset;
+	collisionRect->right = xPosition + boundingBoxRightOffset;
+}
+//set the new value and update the top and bottom
+void PlayerState::setYAndUpdateCollisionRect(DynamicValue* newY) {
+	y.set(newY);
+	float yPosition = y.get()->getValue(0);
+	collisionRect->top = yPosition + boundingBoxTopOffset;
+	collisionRect->bottom = yPosition + boundingBoxBottomOffset;
+}
 //check if we moved onto map tiles of a different height, using the previous move direction to figure out where to look
 //if we did, move the player and don't render interpolated positions
 void PlayerState::collideWithEnvironmentWithPreviousPlayerState(PlayerState* prev) {
 	//find the row and column of tiles that we could collide with
-	float xPosition = x.get()->getValue(0);
-	float yPosition = y.get()->getValue(0);
-	float playerLeftEdge = xPosition + boundingBoxLeftOffset;
-	float playerRightEdge = xPosition + boundingBoxRightOffset;
-	float playerTopEdge = yPosition + boundingBoxTopOffset;
-	float playerBottomEdge = yPosition + boundingBoxBottomOffset;
-	int lowMapX = (int)playerLeftEdge / MapState::tileSize;
-	int highMapX = (int)playerRightEdge / MapState::tileSize;
-	int lowMapY = (int)playerTopEdge / MapState::tileSize;
-	int highMapY = (int)playerBottomEdge / MapState::tileSize;
+	int lowMapX = (int)collisionRect->left / MapState::tileSize;
+	int highMapX = (int)collisionRect->right / MapState::tileSize;
+	int lowMapY = (int)collisionRect->top / MapState::tileSize;
+	int highMapY = (int)collisionRect->bottom / MapState::tileSize;
 	int collisionMapX = prev->xDirection < 0 ? lowMapX : highMapX;
 	int collisionMapY = prev->yDirection < 0 ? lowMapY : highMapY;
-	float wallX = (float)((prev->xDirection < 0 ? collisionMapX + 1 : collisionMapX) * MapState::tileSize);
-	float wallY = (float)((prev->yDirection < 0 ? collisionMapY + 1 : collisionMapY) * MapState::tileSize);
-	bool hasXCollision = false;
-	bool hasYCollision = false;
 
-	//check for horizontal collisions, excluding the corner if we're moving diagonally
-	int switchCollisionXOffset = 0;
+	vector<ReferenceCounterHolder<CollisionRect>> collidedRects;
+	vector<short> seenSwitchIds;
+	//check for horizontal collisions, including the corner if we're moving diagonally
 	if (prev->xDirection != 0) {
-		//don't check the corner
-		int iterLowMapY = prev->yDirection < 0 ? lowMapY + 1 : lowMapY;
-		int iterHighMapY = prev->yDirection > 0 ? highMapY - 1 : highMapY;
-		for (int currentMapY = iterLowMapY; currentMapY <= iterHighMapY; currentMapY++) {
-			if (MapState::getHeight(collisionMapX, currentMapY) != z) {
-				hasXCollision = true;
-				break;
-			}
-			if (MapState::tileHasSwitch(collisionMapX, currentMapY) &&
-				(MapState::getRailSwitchId(collisionMapX, currentMapY)
-						== MapState::getRailSwitchId(collisionMapX, currentMapY + 1)
-					//looking at the top of the switch, only collide if our bottom edge is past the top of the switch
-					? playerBottomEdge >= (float)(currentMapY * MapState::tileSize + 1)
-					//looking at the bottom of the switch, only collide if our top edge is past the bottom of the switch
-					: playerTopEdge <= (float)((currentMapY + 1) * MapState::tileSize - 2)))
-			{
-				//we went left, check if the player is far enough into the switch right side
-				if (prev->xDirection < 0) {
-					if (playerLeftEdge <= (float)((collisionMapX + 1) * MapState::tileSize - 2))
-						switchCollisionXOffset = -2;
-				//we went right, check if the player is far enough into the switch left side
-				} else {
-					if (playerRightEdge >= (float)(collisionMapX * MapState::tileSize + 2))
-						switchCollisionXOffset = 2;
-				}
-			}
-		}
-		if (hasXCollision)
-			switchCollisionXOffset = 0;
-		else if (switchCollisionXOffset != 0)
-			hasXCollision = true;
+		for (int currentMapY = lowMapY; currentMapY <= highMapY; currentMapY++)
+			addMapCollisions(collisionMapX, currentMapY, collidedRects, seenSwitchIds);
 	}
 	//check for vertical collisions, excluding the corner if we're moving diagonally
-	int switchCollisionYOffset = 0;
 	if (prev->yDirection != 0) {
-		//don't check the corner
 		int iterLowMapX = prev->xDirection < 0 ? lowMapX + 1 : lowMapX;
 		int iterHighMapX = prev->xDirection > 0 ? highMapX - 1 : highMapX;
-		for (int currentMapX = iterLowMapX; currentMapX <= iterHighMapX; currentMapX++) {
-			if (MapState::getHeight(currentMapX, collisionMapY) != z) {
-				hasYCollision = true;
-				break;
-			}
-			if (MapState::tileHasSwitch(currentMapX, collisionMapY) &&
-				(MapState::getRailSwitchId(currentMapX, collisionMapY)
-						== MapState::getRailSwitchId(currentMapX + 1, collisionMapY)
-					//looking at the left of the switch, only collide if our right edge is past the left of the switch
-					? playerRightEdge >= (float)(currentMapX * MapState::tileSize + 2)
-					//looking at the right of the switch, only collide if our left edge is past the right of the switch
-					: playerLeftEdge <= (float)((currentMapX + 1) * MapState::tileSize - 2)))
-			{
-				//we went up, check if the player is far enough into the switch bottom
-				if (prev->yDirection < 0) {
-					if (playerTopEdge <= (float)((collisionMapY + 1) * MapState::tileSize - 2))
-						switchCollisionYOffset = -2;
-				//we went down, check if the player is far enough into the switch top
-				} else {
-					if (playerBottomEdge >= (float)(collisionMapY * MapState::tileSize + 1))
-						switchCollisionYOffset = 1;
-				}
-			}
-		}
-		if (hasYCollision)
-			switchCollisionYOffset = 0;
-		else if (switchCollisionYOffset != 0)
-			hasYCollision = true;
+		for (int currentMapX = iterLowMapX; currentMapX <= iterHighMapX; currentMapX++)
+			addMapCollisions(currentMapX, collisionMapY, collidedRects, seenSwitchIds);
 	}
 
-	//if we haven't collided with any walls yet and we're moving diagonally, try to collide with the corner
-	if ((!hasXCollision || switchCollisionXOffset != 0)
-		&& (!hasYCollision || switchCollisionYOffset != 0)
-		&& prev->xDirection != 0
-		&& prev->yDirection != 0)
-	{
-		//if the heights differ then we have a collision, if not then check for a switch if we didn't already collide with one
-		bool hasCornerCollision = MapState::getHeight(collisionMapX, collisionMapY) != z;
-		if (!hasCornerCollision && !hasXCollision && !hasYCollision && MapState::tileHasSwitch(collisionMapX, collisionMapY)) {
-			//the corner has a switch, this is only a collision if both the x and y are in it
-			if (prev->xDirection < 0) {
-				if (playerLeftEdge <= (float)((collisionMapX + 1) * MapState::tileSize - 2))
-					switchCollisionXOffset = -2;
-			} else {
-				if (playerRightEdge >= (float)(collisionMapX * MapState::tileSize + 2))
-					switchCollisionXOffset = 2;
-			}
-			if (prev->yDirection < 0) {
-				if (playerTopEdge <= (float)((collisionMapY + 1) * MapState::tileSize - 2))
-					switchCollisionYOffset = -2;
-			} else {
-				if (playerBottomEdge >= (float)(collisionMapY * MapState::tileSize + 1))
-					switchCollisionYOffset = 1;
-			}
-			if (switchCollisionXOffset != 0 && switchCollisionYOffset != 0) {
-				wallX += (float)switchCollisionXOffset;
-				wallY += (float)switchCollisionYOffset;
-				switchCollisionXOffset = 0;
-				switchCollisionYOffset = 0;
-				hasCornerCollision = true;
+	//now go through all the rects and collide with them in chronological order from when the player collided with them
+	while (!collidedRects.empty()) {
+		int mostCollidedRectIndex = -1;
+		float mostCollidedRectDuration = 0;
+		for (int i = 0; i < (int)collidedRects.size(); i++) {
+			CollisionRect* collidedRect = collidedRects[i].get();
+			if (!collisionRect->intersects(collidedRect))
+				continue;
+
+			float collisionDuration = netCollisionDuration(collidedRect);
+			if (mostCollidedRectIndex == -1 || collisionDuration > mostCollidedRectDuration) {
+				mostCollidedRectIndex = i;
+				mostCollidedRectDuration = collisionDuration;
 			}
 		}
-		if (hasCornerCollision) {
-			//move in whichever direction makes us move less
-			float xCollisionDistance = prev->xDirection < 0 ? wallX - playerLeftEdge : playerRightEdge - wallX;
-			float yCollisionDistance = prev->yDirection < 0 ? wallY - playerTopEdge : playerBottomEdge - wallY;
-			if (xCollisionDistance < yCollisionDistance)
-				hasXCollision = true;
-			else
-				hasYCollision = true;
+
+		//no collision
+		if (mostCollidedRectIndex == -1)
+			break;
+
+		//we got a collision, find out where we collided and move away from there
+		CollisionRect* collidedRect = collidedRects[mostCollidedRectIndex].get();
+		//we hit this rect from the side
+		if (xCollisionDuration(collidedRect) < yCollisionDuration(collidedRect)) {
+			renderInterpolatedX = false;
+			setXAndUpdateCollisionRect(
+				x.get()->copyWithConstantValue(prev->xDirection < 0
+					? collidedRect->right + MapState::smallDistance - boundingBoxLeftOffset
+					: collidedRect->left - MapState::smallDistance - boundingBoxRightOffset));
+		//we hit this rect from the top or bottom
+		} else {
+			renderInterpolatedY = false;
+			setYAndUpdateCollisionRect(
+				y.get()->copyWithConstantValue(prev->yDirection < 0
+					? collidedRect->bottom + MapState::smallDistance - boundingBoxTopOffset
+					: collidedRect->top - MapState::smallDistance - boundingBoxBottomOffset));
 		}
+		collidedRects.erase(collidedRects.begin() + mostCollidedRectIndex);
 	}
-
-	//now add the switch offsets
-	//in the event that we collided with a switch corner, wall x and y were already offset and the offsets were reset to 0
-	wallX += (float)switchCollisionXOffset;
-	wallY += (float)switchCollisionYOffset;
-
-	//adjust our position if we collided
-	if (hasXCollision) {
-		renderInterpolatedX = false;
-		x.set(
-			x.get()->copyWithConstantValue(prev->xDirection < 0
-				? wallX + MapState::smallDistance - boundingBoxLeftOffset
-				: wallX - MapState::smallDistance - boundingBoxRightOffset));
+}
+//check for collisions at the map tile, either because of a different height or because there's a new switch there
+void PlayerState::addMapCollisions(
+	int mapX, int mapY, vector<ReferenceCounterHolder<CollisionRect>>& collidedRects, vector<short> seenSwitchIds)
+{
+	if (MapState::getHeight(mapX, mapY) != z)
+		collidedRects.push_back(
+			newCollisionRect(
+				(float)(mapX * MapState::tileSize),
+				(float)(mapY * MapState::tileSize),
+				(float)((mapX + 1) * MapState::tileSize),
+				(float)((mapY + 1) * MapState::tileSize)));
+	else if (MapState::tileHasSwitch(mapX, mapY)) {
+		//make sure we haven't already seen this switch yet
+		short switchId = MapState::getRailSwitchId(mapX, mapY);
+		for (short seenSwitchId : seenSwitchIds) {
+			if (seenSwitchId == switchId)
+				return;
+		}
+		//get the top-left corner of the switch
+		if (MapState::getRailSwitchId(mapX - 1, mapY) == switchId)
+			mapX--;
+		if (MapState::getRailSwitchId(mapX, mapY - 1) == switchId)
+			mapY--;
+		//now add the switch rect and id
+		collidedRects.push_back(
+			newCollisionRect(
+				(float)(mapX * MapState::tileSize + MapState::switchSideInset),
+				(float)(mapY * MapState::tileSize + MapState::switchTopInset),
+				(float)((mapX + 2) * MapState::tileSize - MapState::switchSideInset),
+				(float)((mapY + 2) * MapState::tileSize - MapState::switchBottomInset)));
+		seenSwitchIds.push_back(switchId);
 	}
-	if (hasYCollision) {
-		renderInterpolatedY = false;
-		y.set(
-			y.get()->copyWithConstantValue(prev->yDirection < 0
-				? wallY + MapState::smallDistance - boundingBoxTopOffset
-				: wallY - MapState::smallDistance - boundingBoxBottomOffset));
-	}
+}
+//returns the fraction of the update spent within the bounds of the given rect; since a collision only happens once the player
+//	is within the bounds in both directions, this is the min of the two collision durations
+float PlayerState::netCollisionDuration(CollisionRect* other) {
+	return MathUtils::fmin(xCollisionDuration(other), yCollisionDuration(other));
+}
+//returns the fraction of the update spent within the x bounds of the given rect, based on the velocity this frame
+float PlayerState::xCollisionDuration(CollisionRect* other) {
+	return lastXMovedDelta < 0
+		? (collisionRect->left - other->right) / lastXMovedDelta
+		: (collisionRect->right - other->left) / lastXMovedDelta;
+}
+//returns the fraction of the update spent within the y bounds of the given rect, based on the velocity this frame
+float PlayerState::yCollisionDuration(CollisionRect* other) {
+	return lastYMovedDelta < 0
+		? (collisionRect->top - other->bottom) / lastYMovedDelta
+		: (collisionRect->bottom - other->top) / lastYMovedDelta;
 }
 //update the sprite (and possibly the animation) of this player state by reading from the previous state
 void PlayerState::updateSpriteWithPreviousPlayerState(PlayerState* prev, int ticksTime, bool usePreviousStateSpriteAnimation) {
