@@ -418,6 +418,7 @@ void GameState::beginIntroAnimation(int ticksTime) {
 	EntityAnimation* playerEntityAnimation = newEntityAnimation(
 		ticksTime,
 		{
+			stopMoving COMMA
 			newEntityAnimationSetPosition(
 				PlayerState::introAnimationPlayerCenterX, PlayerState::introAnimationPlayerCenterY) COMMA
 			newEntityAnimationDelay(introAnimationStartTicksTime) COMMA
@@ -559,7 +560,9 @@ void GameState::resetGame(int ticksTime) {
 	sawIntroAnimation = false;
 	gameTimeOffsetTicksDuration = 0;
 	pauseState.set(nullptr);
-	playerState.set(newPlayerState());
+	PlayerState* resetPlayerState = newPlayerState();
+	resetPlayerState->copyPlayerState(playerState.get());
+	playerState.set(resetPlayerState);
 	mapState.set(newMapState());
 	dynamicCameraAnchor.set(newDynamicCameraAnchor());
 
