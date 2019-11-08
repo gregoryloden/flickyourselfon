@@ -7,6 +7,7 @@
 class DynamicValue;
 class EntityAnimation;
 class GameState;
+class Holder_EntityAnimationComponentVector;
 class SpriteAnimation;
 
 enum class SpriteDirection: int {
@@ -34,6 +35,8 @@ public:
 	virtual void setSpriteAnimation(SpriteAnimation* spriteAnimation, int pAnimationStartTicksTime) {}
 	//set the direction for this state's sprite, if it has one
 	virtual void setSpriteDirection(SpriteDirection pSpriteDirection) {}
+	//set the position of a ghost sprite that this entity state should render
+	virtual void setGhostSprite(bool show, float x, float y, int ticksTime) {}
 	//mark that the player camera should be used as the next camera
 	virtual void setShouldSwitchToPlayerCamera() {}
 	//set a dynamic color that should be used to render an overlay over the screen
@@ -41,15 +44,20 @@ public:
 		DynamicValue* r, DynamicValue* g, DynamicValue* b, DynamicValue* a, int pLastUpdateTicksTime)
 	{
 	}
+	//tell the map to kick a switch at the given time
+	virtual void mapKickSwitch(short switchId, bool allowRadioTowerAnimation, int ticksTime) {}
 	void copyEntityState(EntityState* other);
 	float getRenderCenterWorldX(int ticksTime);
 	float getRenderCenterWorldY(int ticksTime);
 	float getRenderCenterScreenX(EntityState* camera, int ticksTime);
+	static float getRenderCenterScreenXFromWorldX(float worldX, EntityState* camera, int ticksTime);
 	float getRenderCenterScreenY(EntityState* camera, int ticksTime);
+	static float getRenderCenterScreenYFromWorldY(float worldX, EntityState* camera, int ticksTime);
 	int getAnimationTicksDuration();
+	static SpriteDirection getSpriteDirection(float x, float y);
 	void setPosition(float pX, float pY, int pLastUpdateTicksTime);
 	void setVelocity(DynamicValue* vx, DynamicValue* vy, int pLastUpdateTicksTime);
-	void beginEntityAnimation(EntityAnimation* pEntityAnimation, int ticksTime);
+	void beginEntityAnimation(Holder_EntityAnimationComponentVector* componentsHolder, int ticksTime);
 	//set the camera on the next game state, based on this being the previous game state's camera
 	virtual void setNextCamera(GameState* nextGameState, int ticksTime) = 0;
 };

@@ -6,7 +6,10 @@
 #define newEntityAnimationSetVelocity(vx, vy) produceWithArgs(EntityAnimation::SetVelocity, vx, vy)
 #define newEntityAnimationSetSpriteAnimation(animation) produceWithArgs(EntityAnimation::SetSpriteAnimation, animation)
 #define newEntityAnimationSetSpriteDirection(direction) produceWithArgs(EntityAnimation::SetSpriteDirection, direction)
+#define newEntityAnimationSetGhostSprite(show, x, y) produceWithArgs(EntityAnimation::SetGhostSprite, show, x, y)
 #define newEntityAnimationSetScreenOverlayColor(r, g, b, a) produceWithArgs(EntityAnimation::SetScreenOverlayColor, r, g, b, a)
+#define newEntityAnimationMapKickSwitch(switchId, allowRadioTowerAnimation) \
+	produceWithArgs(EntityAnimation::MapKickSwitch, switchId, allowRadioTowerAnimation)
 #define newEntityAnimationSwitchToPlayerCamera() produceWithoutArgs(EntityAnimation::SwitchToPlayerCamera)
 
 class DynamicValue;
@@ -96,6 +99,20 @@ public:
 		virtual void release();
 		virtual bool handle(EntityState* entityState, int ticksTime);
 	};
+	class SetGhostSprite: public Component {
+	private:
+		bool show;
+		float x;
+		float y;
+
+	public:
+		SetGhostSprite(objCounterParameters());
+		virtual ~SetGhostSprite();
+
+		static SetGhostSprite* produce(objCounterParametersComma() bool pShow, float pX, float pY);
+		virtual void release();
+		virtual bool handle(EntityState* entityState, int ticksTime);
+	};
 	class SetScreenOverlayColor: public Component {
 	private:
 		ReferenceCounterHolder<DynamicValue> r;
@@ -109,6 +126,19 @@ public:
 
 		static SetScreenOverlayColor* produce(
 			objCounterParametersComma() DynamicValue* pR, DynamicValue* pG, DynamicValue* pB, DynamicValue* pA);
+		virtual void release();
+		virtual bool handle(EntityState* entityState, int ticksTime);
+	};
+	class MapKickSwitch: public Component {
+	private:
+		short switchId;
+		bool allowRadioTowerAnimation;
+
+	public:
+		MapKickSwitch(objCounterParameters());
+		virtual ~MapKickSwitch();
+
+		static MapKickSwitch* produce(objCounterParametersComma() short pSwitchId, bool pAllowRadioTowerAnimation);
 		virtual void release();
 		virtual bool handle(EntityState* entityState, int ticksTime);
 	};
@@ -132,7 +162,7 @@ public:
 	virtual ~EntityAnimation();
 
 	static EntityAnimation* produce(
-		objCounterParametersComma() int pStartTicksTime, vector<ReferenceCounterHolder<Component>> pComponents);
+		objCounterParametersComma() int pStartTicksTime, vector<ReferenceCounterHolder<Component>>* pComponents);
 	virtual void release();
 protected:
 	virtual void prepareReturnToPool();
@@ -140,4 +170,12 @@ public:
 	bool update(EntityState* entityState, int ticksTime);
 	static int getComponentTotalTicksDuration(vector<ReferenceCounterHolder<Component>>& pComponents);
 	int getTotalTicksDuration();
+};
+//Should only be allocated within an object, on the stack, or as a static object
+class Holder_EntityAnimationComponentVector {
+public:
+	vector<ReferenceCounterHolder<EntityAnimation::Component>>* val;
+
+	Holder_EntityAnimationComponentVector(vector<ReferenceCounterHolder<EntityAnimation::Component>>* pVal);
+	virtual ~Holder_EntityAnimationComponentVector();
 };

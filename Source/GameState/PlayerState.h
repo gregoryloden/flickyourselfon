@@ -1,11 +1,13 @@
 #include "GameState/EntityState.h"
 
-#define newPlayerState() produceWithoutArgs(PlayerState)
+#define newPlayerState(mapState) produceWithArgs(PlayerState, mapState)
 
 class CollisionRect;
 class EntityAnimation;
-class PositionState;
+class Holder_EntityAnimationComponentVector;
+class Holder_MapStateRail;
 class MapState;
+class PositionState;
 class SpriteAnimation;
 
 class PlayerState: public EntityState {
@@ -39,8 +41,12 @@ private:
 	int spriteAnimationStartTicksTime;
 	SpriteDirection spriteDirection;
 	bool hasBoot;
+	ReferenceCounterHolder<DynamicValue> ghostSpriteX;
+	ReferenceCounterHolder<DynamicValue> ghostSpriteY;
+	int ghostSpriteStartTicksTime;
 	float lastControlledX;
 	float lastControlledY;
+	ReferenceCounterHolder<MapState> mapState;
 
 public:
 	PlayerState(objCounterParameters());
@@ -48,11 +54,13 @@ public:
 
 	virtual void setSpriteDirection(SpriteDirection pSpriteDirection) { spriteDirection = pSpriteDirection; }
 	void obtainBoot() { hasBoot = true; }
-	static PlayerState* produce(objCounterParameters());
+	static PlayerState* produce(objCounterParametersComma() MapState* mapState);
 	void copyPlayerState(PlayerState* other);
 	virtual void release();
 	virtual void setNextCamera(GameState* nextGameState, int ticksTime);
 	virtual void setSpriteAnimation(SpriteAnimation* pSpriteAnimation, int pSpriteAnimationStartTicksTime);
+	virtual void setGhostSprite(bool show, float x, float y, int ticksTime);
+	virtual void mapKickSwitch(short switchId, bool allowRadioTowerAnimation, int ticksTime);
 	void updateWithPreviousPlayerState(PlayerState* prev, int ticksTime);
 private:
 	void updatePositionWithPreviousPlayerState(PlayerState* prev, int ticksTime);
@@ -66,16 +74,41 @@ private:
 	float yCollisionDuration(CollisionRect* other);
 	void updateSpriteWithPreviousPlayerState(PlayerState* prev, int ticksTime, bool usePreviousStateSpriteAnimation);
 public:
-	void beginKicking(MapState* mapState, int ticksTime);
+	void beginKicking(int ticksTime);
 private:
 	void kickAir(int ticksTime);
 	void kickClimb(float yMoveDistance, int ticksTime);
 	void kickFall(float xMoveDistance, float yMoveDistance, char fallHeight, int ticksTime);
-	bool kickRail(MapState* mapState, float xPosition, float yPosition, int ticksTime);
-	bool kickSwitch(MapState* mapState, float xPosition, float yPosition, int ticksTime);
+	bool kickRail(float xPosition, float yPosition, int ticksTime);
+	static bool addRailRideComponents(
+		Holder_MapStateRail* railHolder,
+		Holder_EntityAnimationComponentVector* componentsHolder,
+		float xPosition,
+		float yPosition,
+		int railMapX,
+		int railMapY,
+		float* outFinalXPosition,
+		float* outFinalYPosition);
 public:
+	#ifdef DEBUG
+		static void addNearestRailRideComponents(
+			int railIndex,
+			Holder_EntityAnimationComponentVector* componentsHolder,
+			float xPosition,
+			float yPosition,
+			float* outFinalXPosition,
+			float* outFinalYPosition);
+	#endif
+private:
+	bool kickSwitch(float xPosition, float yPosition, int ticksTime);
+public:
+	static void addKickSwitchComponents(
+		short switchId, Holder_EntityAnimationComponentVector* componentsHolder, bool allowRadioTowerAnimation);
 	void render(EntityState* camera, int ticksTime);
 	void saveState(ofstream& file);
 	bool loadState(string& line);
 	void setInitialZ();
+	#ifdef DEBUG
+		void setHighestZ();
+	#endif
 };

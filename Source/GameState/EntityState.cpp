@@ -37,19 +37,33 @@ float EntityState::getRenderCenterWorldY(int ticksTime) {
 }
 //return the entity's screen x coordinate at the given time
 float EntityState::getRenderCenterScreenX(EntityState* camera, int ticksTime) {
+	return getRenderCenterScreenXFromWorldX(getRenderCenterWorldX(ticksTime), camera, ticksTime);
+}
+//return the screen x coordinate at the given time from the given world x coordinate
+float EntityState::getRenderCenterScreenXFromWorldX(float worldX, EntityState* camera, int ticksTime) {
 	//convert these to ints first to align with the map in case the camera is not this entity
-	int screenXOffset = (int)getRenderCenterWorldX(ticksTime) - (int)camera->getRenderCenterWorldX(ticksTime);
+	int screenXOffset = (int)worldX - (int)camera->getRenderCenterWorldX(ticksTime);
 	return (float)screenXOffset + (float)Config::gameScreenWidth * 0.5f;
 }
 //return the entity's screen y coordinate at the given time
 float EntityState::getRenderCenterScreenY(EntityState* camera, int ticksTime) {
+	return getRenderCenterScreenYFromWorldY(getRenderCenterWorldY(ticksTime), camera, ticksTime);
+}
+//return the screen y coordinate at the given time from the given world y coordinate
+float EntityState::getRenderCenterScreenYFromWorldY(float worldY, EntityState* camera, int ticksTime) {
 	//convert these to ints first to align with the map in case the camera is not this entity
-	int screenYOffset = (int)getRenderCenterWorldY(ticksTime) - (int)camera->getRenderCenterWorldY(ticksTime);
+	int screenYOffset = (int)worldY - (int)camera->getRenderCenterWorldY(ticksTime);
 	return (float)screenYOffset + (float)Config::gameScreenHeight * 0.5f;
 }
 //get the duration of our entity animation, if we have one
 int EntityState::getAnimationTicksDuration() {
 	return entityAnimation.get() != nullptr ? entityAnimation.get()->getTotalTicksDuration() : 0;
+}
+//get a sprite direction based on movement velocity
+SpriteDirection EntityState::getSpriteDirection(float x, float y) {
+	return abs(y) >= abs(x)
+		? y >= 0 ? SpriteDirection::Down : SpriteDirection::Up
+		: x >= 0 ? SpriteDirection::Right : SpriteDirection::Left;
 }
 //set the position to the given position at the given time, preserving the velocity
 void EntityState::setPosition(float pX, float pY, int pLastUpdateTicksTime) {
@@ -72,8 +86,8 @@ void EntityState::setVelocity(DynamicValue* vx, DynamicValue* vy, int pLastUpdat
 	lastUpdateTicksTime = pLastUpdateTicksTime;
 }
 //start the given entity animation
-void EntityState::beginEntityAnimation(EntityAnimation* pEntityAnimation, int ticksTime) {
-	entityAnimation.set(pEntityAnimation);
+void EntityState::beginEntityAnimation(Holder_EntityAnimationComponentVector* componentsHolder, int ticksTime) {
+	entityAnimation.set(newEntityAnimation(ticksTime, componentsHolder->val));
 	//update it once to get it started
 	entityAnimation.get()->update(this, ticksTime);
 }

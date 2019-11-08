@@ -38,6 +38,14 @@ MapState::Rail::Segment::Segment(int pX, int pY, char pMaxTileOffset)
 , maxTileOffset(pMaxTileOffset) {
 }
 MapState::Rail::Segment::~Segment() {}
+//get the center x of the tile that this segment is on (when raised)
+float MapState::Rail::Segment::tileCenterX() {
+	return (float)(x * tileSize) + (float)tileSize * 0.5f;
+}
+//get the center y of the tile that this segment is on (when raised)
+float MapState::Rail::Segment::tileCenterY() {
+	return (float)(y * tileSize) + (float)tileSize * 0.5f;
+}
 
 //////////////////////////////// MapState::Rail ////////////////////////////////
 MapState::Rail::Rail(objCounterParametersComma() int x, int y, char pBaseHeight, char pColor, char pInitialTileOffset)
@@ -541,9 +549,6 @@ MapState::MapState(objCounterParameters())
 , railStatesByHeight()
 , railsBelowPlayerZ(0)
 , switchStates()
-, switchToFlipId(absentRailSwitchId)
-, switchFlipOffTicksTime(-1)
-, switchFlipOnTicksTime(-1)
 , lastActivatedSwitchColor(-1)
 , switchesAnimationFadeInStartTicksTime(0)
 , shouldPlayRadioTowerAnimation(false)
@@ -701,11 +706,25 @@ int MapState::getScreenTopWorldY(EntityState* camera, int ticksTime) {
 	//(see getScreenLeftWorldX)
 	return (int)(camera->getRenderCenterWorldY(ticksTime)) - Config::gameScreenHeight / 2;
 }
+//find the switch for the given index and write its top left corner
+//does not write map coordinates if it doesn't find any
+void MapState::getSwitchMapTopLeft(short switchIndex, int* outMapLeftX, int* outMapTopY) {
+	short targetSwitchId = switchIndex | switchIdBitmask;
+	for (int mapY = 0; mapY < height; mapY++) {
+		for (int mapX = 0; mapX < width; mapX++) {
+			if (getRailSwitchId(mapX, mapY) == targetSwitchId) {
+				*outMapLeftX = mapX;
+				*outMapTopY = mapY;
+				return;
+			}
+		}
+	}
+}
 //get the center x of the radio tower antenna
 float MapState::antennaCenterWorldX() {
 	return (float)(radioTowerLeftXOffset + SpriteRegistry::radioTower->getSpriteSheetWidth() / 2);
 }
-//get the center x of the radio tower antenna
+//get the center y of the radio tower antenna
 float MapState::antennaCenterWorldY() {
 	return (float)(radioTowerTopYOffset + 2);
 }
@@ -746,27 +765,6 @@ void MapState::updateWithPreviousMapState(MapState* prev, int ticksTime) {
 			switchStates.push_back(newSwitchState(switches[switchStates.size()]));
 	#endif
 
-	//no switch to flip
-	if (prev->switchToFlipId == absentRailSwitchId)
-		switchToFlipId = absentRailSwitchId;
-	//not time to flip the switch yet
-	else if (ticksTime < prev->switchFlipOffTicksTime) {
-		switchFlipOffTicksTime = prev->switchFlipOffTicksTime;
-		switchToFlipId = prev->switchToFlipId;
-	//flip the switch, it's time
-	} else {
-		SwitchState* switchState = switchStates[prev->switchToFlipId & railSwitchIndexBitmask];
-		Switch* switch0 = switchState->getSwitch();
-		//this is a turn-on-other-switches switch, flip it if we haven't done so already
-		if (switch0->getGroup() == 0) {
-			if (lastActivatedSwitchColor < switch0->getColor())
-				shouldPlayRadioTowerAnimation = true;
-		//this is just a regular switch and we've turned on the parent switch, flip it
-		} else if (lastActivatedSwitchColor >= switch0->getColor())
-			switchState->flip(switchFlipOnTicksTime);
-		switchToFlipId = absentRailSwitchId;
-	}
-
 	radioWavesState.get()->updateWithPreviousRadioWavesState(prev->radioWavesState.get(), ticksTime);
 }
 //via insertion sort, add a rail state to the list of above- or below-player rail states
@@ -789,27 +787,35 @@ void MapState::insertRailByHeight(RailState* railState) {
 	railStatesByHeight[insertionIndex] = railState;
 }
 //set that we should flip a switch in the future
-void MapState::setSwitchToFlip(short pSwitchToFlipId, int pSwitchFlipOffTicksTime, int pSwitchFlipOnTicksTime) {
-	switchToFlipId = pSwitchToFlipId;
-	switchFlipOffTicksTime = pSwitchFlipOffTicksTime;
-	switchFlipOnTicksTime = pSwitchFlipOnTicksTime;
+void MapState::flipSwitch(short switchId, bool allowRadioTowerAnimation, int ticksTime) {
+	SwitchState* switchState = switchStates[switchId & railSwitchIndexBitmask];
+	Switch* switch0 = switchState->getSwitch();
+	//this is a turn-on-other-switches switch, flip it if we haven't done so already
+	if (switch0->getGroup() == 0) {
+		if (lastActivatedSwitchColor < switch0->getColor()) {
+			if (allowRadioTowerAnimation)
+				shouldPlayRadioTowerAnimation = true;
+			else
+				lastActivatedSwitchColor++;
+		}
+	//this is just a regular switch and we've turned on the parent switch, flip it
+	} else if (lastActivatedSwitchColor >= switch0->getColor())
+		switchState->flip(ticksTime);
 }
 //begin a radio waves animation
 void MapState::startRadioWavesAnimation(int initialTicksDelay, int ticksTime) {
-	radioWavesState.get()->beginEntityAnimation(
-		newEntityAnimation(
-			ticksTime,
-			{
-				newEntityAnimationDelay(initialTicksDelay) COMMA
-				newEntityAnimationSetSpriteAnimation(SpriteRegistry::radioWavesAnimation) COMMA
-				newEntityAnimationDelay(SpriteRegistry::radioWavesAnimation->getTotalTicksDuration()) COMMA
-				newEntityAnimationSetSpriteAnimation(nullptr) COMMA
-				newEntityAnimationDelay(RadioWavesState::interRadioWavesAnimationTicks) COMMA
-				newEntityAnimationSetSpriteAnimation(SpriteRegistry::radioWavesAnimation) COMMA
-				newEntityAnimationDelay(SpriteRegistry::radioWavesAnimation->getTotalTicksDuration()) COMMA
-				newEntityAnimationSetSpriteAnimation(nullptr)
-			}),
-		ticksTime);
+	vector<ReferenceCounterHolder<EntityAnimation::Component>> radioWavesAnimationComponents ({
+		newEntityAnimationDelay(initialTicksDelay) COMMA
+		newEntityAnimationSetSpriteAnimation(SpriteRegistry::radioWavesAnimation) COMMA
+		newEntityAnimationDelay(SpriteRegistry::radioWavesAnimation->getTotalTicksDuration()) COMMA
+		newEntityAnimationSetSpriteAnimation(nullptr) COMMA
+		newEntityAnimationDelay(RadioWavesState::interRadioWavesAnimationTicks) COMMA
+		newEntityAnimationSetSpriteAnimation(SpriteRegistry::radioWavesAnimation) COMMA
+		newEntityAnimationDelay(SpriteRegistry::radioWavesAnimation->getTotalTicksDuration()) COMMA
+		newEntityAnimationSetSpriteAnimation(nullptr)
+	});
+	Holder_EntityAnimationComponentVector radioWavesAnimationComponentsHolder (&radioWavesAnimationComponents);
+	radioWavesState.get()->beginEntityAnimation(&radioWavesAnimationComponentsHolder, ticksTime);
 }
 //activate the next switch color and set the start of the animation
 void MapState::startSwitchesFadeInAnimation(int ticksTime) {
@@ -1274,3 +1280,11 @@ void MapState::resetMap() {
 			return 0;
 	}
 #endif
+
+//////////////////////////////// Holder_MapStateRail ////////////////////////////////
+Holder_MapStateRail::Holder_MapStateRail(MapState::Rail* pVal)
+: val(pVal) {
+}
+Holder_MapStateRail::~Holder_MapStateRail() {
+	//don't delete the rail, it's owned by something else
+}

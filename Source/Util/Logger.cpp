@@ -149,18 +149,12 @@ void Logger::logLoop() {
 		}
 
 		//write messages from their logger to the file
-		if (lastWrittenLogger->hasMessagesToWrite) {
-			*lastWrittenLogger->file << lastWrittenLogger->messagesToWrite.str();
-			lastWrittenLogger->hasMessagesToWrite = false;
-			lastWrittenLogger->messagesToWrite.str(string());
-		}
+		if (lastWrittenLogger->hasMessagesToWrite)
+			lastWrittenLogger->writePendingMessages();
 		for (Logger* logger : loggers) {
 			if (!logger->hasMessagesToWrite)
 				continue;
-
-			*logger->file << logger->messagesToWrite.str();
-			logger->hasMessagesToWrite = false;
-			logger->messagesToWrite.str(string());
+			lastWrittenLogger->writePendingMessages();
 			lastWrittenLogger = logger;
 		}
 
@@ -226,4 +220,10 @@ void Logger::queueMessage(stringstream* message, int timestamp) {
 	writableMessage->timestamp = timestamp;
 	writableMessage->owningLogger = this;
 	currentThreadLogQueue->finishWritingToState();
+}
+//write any pending messages to the file
+void Logger::writePendingMessages() {
+	*file << messagesToWrite.str();
+	messagesToWrite.str(string());
+	hasMessagesToWrite = false;
 }

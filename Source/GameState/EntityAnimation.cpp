@@ -137,6 +137,31 @@ bool EntityAnimation::SetSpriteDirection::handle(EntityState* entityState, int t
 	return true;
 }
 
+//////////////////////////////// EntityAnimation::SetGhostSprite ////////////////////////////////
+EntityAnimation::SetGhostSprite::SetGhostSprite(objCounterParameters())
+: Component(objCounterArguments())
+, show(true)
+, x(0.0f)
+, y(0.0f) {
+}
+EntityAnimation::SetGhostSprite::~SetGhostSprite() {}
+//initialize and return a SetGhostSprite
+EntityAnimation::SetGhostSprite* EntityAnimation::SetGhostSprite::produce(
+	objCounterParametersComma() bool pShow, float pX, float pY)
+{
+	initializeWithNewFromPool(s, EntityAnimation::SetGhostSprite)
+	s->show = pShow;
+	s->x = pX;
+	s->y = pY;
+	return s;
+}
+pooledReferenceCounterDefineRelease(EntityAnimation::SetGhostSprite)
+//return that the animation should continue updating after setting the ghost sprite on the entity state
+bool EntityAnimation::SetGhostSprite::handle(EntityState* entityState, int ticksTime) {
+	entityState->setGhostSprite(show, x, y, ticksTime);
+	return true;
+}
+
 //////////////////////////////// EntityAnimation::SetScreenOverlayColor ////////////////////////////////
 EntityAnimation::SetScreenOverlayColor::SetScreenOverlayColor(objCounterParameters())
 : Component(objCounterArguments())
@@ -161,6 +186,28 @@ pooledReferenceCounterDefineRelease(EntityAnimation::SetScreenOverlayColor)
 //return that the animation should continue updating after setting the screen overlay color on the entity state
 bool EntityAnimation::SetScreenOverlayColor::handle(EntityState* entityState, int ticksTime) {
 	entityState->setScreenOverlayColor(r.get(), g.get(), b.get(), a.get(), ticksTime);
+	return true;
+}
+
+//////////////////////////////// EntityAnimation::MapKickSwitch ////////////////////////////////
+EntityAnimation::MapKickSwitch::MapKickSwitch(objCounterParameters())
+: Component(objCounterArguments())
+, switchId(0) {
+}
+EntityAnimation::MapKickSwitch::~MapKickSwitch() {}
+//initialize and return a MapKickSwitch
+EntityAnimation::MapKickSwitch* EntityAnimation::MapKickSwitch::produce(
+	objCounterParametersComma() short pSwitchId, bool pAllowRadioTowerAnimation)
+{
+	initializeWithNewFromPool(m, EntityAnimation::MapKickSwitch)
+	m->switchId = pSwitchId;
+	m->allowRadioTowerAnimation = pAllowRadioTowerAnimation;
+	return m;
+}
+pooledReferenceCounterDefineRelease(EntityAnimation::MapKickSwitch)
+//return that the animation should continue updating after telling the map to kick the switch
+bool EntityAnimation::MapKickSwitch::handle(EntityState* entityState, int ticksTime) {
+	entityState->mapKickSwitch(switchId, allowRadioTowerAnimation, ticksTime);
 	return true;
 }
 
@@ -191,11 +238,11 @@ EntityAnimation::EntityAnimation(objCounterParameters())
 EntityAnimation::~EntityAnimation() {}
 //initialize and return an EntityAnimation
 EntityAnimation* EntityAnimation::produce(
-	objCounterParametersComma() int pStartTicksTime, vector<ReferenceCounterHolder<Component>> pComponents)
+	objCounterParametersComma() int pStartTicksTime, vector<ReferenceCounterHolder<Component>>* pComponents)
 {
 	initializeWithNewFromPool(e, EntityAnimation)
 	e->lastUpdateTicksTime = pStartTicksTime;
-	e->components = pComponents;
+	e->components = *pComponents;
 	e->nextComponentIndex = 0;
 	return e;
 }
@@ -235,4 +282,13 @@ int EntityAnimation::getComponentTotalTicksDuration(vector<ReferenceCounterHolde
 //get the total ticks duration of this animation's components
 int EntityAnimation::getTotalTicksDuration() {
 	return getComponentTotalTicksDuration(components);
+}
+
+//////////////////////////////// Holder_EntityAnimationComponentVector ////////////////////////////////
+Holder_EntityAnimationComponentVector::Holder_EntityAnimationComponentVector(
+	vector<ReferenceCounterHolder<EntityAnimation::Component>>* pVal)
+: val(pVal) {
+}
+Holder_EntityAnimationComponentVector::~Holder_EntityAnimationComponentVector() {
+	//don't delete the vector, it's owned by something else
 }

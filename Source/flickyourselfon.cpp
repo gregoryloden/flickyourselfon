@@ -146,9 +146,11 @@ int gameMain() {
 		ObjectPool<CompositeQuarticValue>::clearPool();
 		ObjectPool<EntityAnimation::Delay>::clearPool();
 		ObjectPool<EntityAnimation::SetPosition>::clearPool();
+		ObjectPool<EntityAnimation::SetGhostSprite>::clearPool();
 		ObjectPool<EntityAnimation::SetSpriteAnimation>::clearPool();
 		ObjectPool<EntityAnimation::SetSpriteDirection>::clearPool();
 		ObjectPool<EntityAnimation::SwitchToPlayerCamera>::clearPool();
+		ObjectPool<EntityAnimation::MapKickSwitch>::clearPool();
 		ObjectPool<CollisionRect>::clearPool();
 		ObjCounter::end();
 	#endif

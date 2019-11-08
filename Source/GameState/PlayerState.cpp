@@ -1,8 +1,8 @@
 #include "PlayerState.h"
 #include "GameState/CollisionRect.h"
 #include "GameState/DynamicValue.h"
-#include "GameState/GameState.h"
 #include "GameState/EntityAnimation.h"
+#include "GameState/GameState.h"
 #include "GameState/MapState.h"
 #include "Sprites/SpriteAnimation.h"
 #include "Sprites/SpriteRegistry.h"
@@ -21,7 +21,8 @@ const float PlayerState::boundingBoxLeftOffset = PlayerState::playerWidth * -0.5
 const float PlayerState::boundingBoxRightOffset = PlayerState::boundingBoxLeftOffset + PlayerState::playerWidth;
 const float PlayerState::boundingBoxTopOffset = 4.5f;
 const float PlayerState::boundingBoxBottomOffset = PlayerState::boundingBoxTopOffset + PlayerState::playerHeight;
-const float PlayerState::boundingBoxCenterYOffset = PlayerState::boundingBoxTopOffset + PlayerState::playerHeight * 0.5f;
+const float PlayerState::boundingBoxCenterYOffset =
+	(PlayerState::boundingBoxTopOffset + PlayerState::boundingBoxBottomOffset) * 0.5f;
 const float PlayerState::introAnimationPlayerCenterX = 70.5f + (float)(MapState::firstLevelTileOffsetX * MapState::tileSize);
 const float PlayerState::introAnimationPlayerCenterY = 106.5f + (float)(MapState::firstLevelTileOffsetY * MapState::tileSize);
 const float PlayerState::speedPerSecond = 40.0f;
@@ -40,8 +41,12 @@ PlayerState::PlayerState(objCounterParameters())
 , spriteAnimationStartTicksTime(-1)
 , spriteDirection(SpriteDirection::Down)
 , hasBoot(false)
+, ghostSpriteX(nullptr)
+, ghostSpriteY(nullptr)
+, ghostSpriteStartTicksTime(0)
 , lastControlledX(0.0f)
-, lastControlledY(0.0f) {
+, lastControlledY(0.0f)
+, mapState(nullptr) {
 	lastControlledX = x.get()->getValue(0);
 	lastControlledY = y.get()->getValue(0);
 }
@@ -49,10 +54,11 @@ PlayerState::~PlayerState() {
 	delete collisionRect;
 }
 //initialize and return a PlayerState
-PlayerState* PlayerState::produce(objCounterParameters()) {
+PlayerState* PlayerState::produce(objCounterParametersComma() MapState* mapState) {
 	initializeWithNewFromPool(p, PlayerState)
 	p->z = 0;
 	p->hasBoot = false;
+	p->mapState.set(mapState);
 	return p;
 }
 //copy the other state
@@ -67,6 +73,12 @@ void PlayerState::copyPlayerState(PlayerState* other) {
 	spriteAnimationStartTicksTime = other->spriteAnimationStartTicksTime;
 	spriteDirection = other->spriteDirection;
 	hasBoot = other->hasBoot;
+	ghostSpriteX.set(other->ghostSpriteX.get());
+	ghostSpriteY.set(other->ghostSpriteY.get());
+	ghostSpriteStartTicksTime = other->ghostSpriteStartTicksTime;
+	lastControlledX = other->lastControlledX;
+	lastControlledY = other->lastControlledY;
+	//don't copy map state, it was provided when this player state was produced
 }
 pooledReferenceCounterDefineRelease(PlayerState)
 //use the player as the next camera anchor, we will handle switching to a different camera somewhere else
@@ -77,6 +89,21 @@ void PlayerState::setNextCamera(GameState* nextGameState, int ticksTime) {
 void PlayerState::setSpriteAnimation(SpriteAnimation* pSpriteAnimation, int pSpriteAnimationStartTicksTime) {
 	spriteAnimation = pSpriteAnimation;
 	spriteAnimationStartTicksTime = pSpriteAnimationStartTicksTime;
+}
+//set the position of the ghost sprite, or clear it
+void PlayerState::setGhostSprite(bool show, float x, float y, int ticksTime) {
+	if (show) {
+		ghostSpriteX.set(newCompositeQuarticValue(x, 0.0f, 0.0f, 0.0f, 0.0f));
+		ghostSpriteY.set(newCompositeQuarticValue(y, 0.0f, 0.0f, 0.0f, 0.0f));
+		ghostSpriteStartTicksTime = ticksTime;
+	} else {
+		ghostSpriteX.set(nullptr);
+		ghostSpriteY.set(nullptr);
+	}
+}
+//tell the map to kick a switch
+void PlayerState::mapKickSwitch(short switchId, bool allowRadioTowerAnimation, int ticksTime) {
+	mapState.get()->flipSwitch(switchId, allowRadioTowerAnimation, ticksTime);
 }
 //update this player state by reading from the previous state
 void PlayerState::updateWithPreviousPlayerState(PlayerState* prev, int ticksTime) {
@@ -297,7 +324,7 @@ void PlayerState::updateSpriteWithPreviousPlayerState(PlayerState* prev, int tic
 }
 //if we don't have a kicking animation, start one
 //this should be called after the player has been updated
-void PlayerState::beginKicking(MapState* mapState, int ticksTime) {
+void PlayerState::beginKicking(int ticksTime) {
 	if (entityAnimation.get() != nullptr)
 		return;
 
@@ -318,7 +345,7 @@ void PlayerState::beginKicking(MapState* mapState, int ticksTime) {
 	int lowMapX = (int)(xPosition + boundingBoxLeftOffset) / MapState::tileSize;
 	int highMapX = (int)(xPosition + boundingBoxRightOffset) / MapState::tileSize;
 
-	if (kickRail(mapState, xPosition, yPosition, ticksTime) || kickSwitch(mapState, xPosition, yPosition, ticksTime))
+	if (kickRail(xPosition, yPosition, ticksTime) || kickSwitch(xPosition, yPosition, ticksTime))
 		return;
 
 	if (spriteDirection == SpriteDirection::Up) {
@@ -430,17 +457,15 @@ void PlayerState::kickAir(int ticksTime) {
 	SpriteAnimation* kickingSpriteAnimation = hasBoot
 		? SpriteRegistry::playerKickingAnimation
 		: SpriteRegistry::playerLegLiftAnimation;
-	beginEntityAnimation(
-		newEntityAnimation(
-			ticksTime,
-			{
-				newEntityAnimationSetVelocity(
-					newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
-					newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)) COMMA
-				newEntityAnimationSetSpriteAnimation(kickingSpriteAnimation) COMMA
-				newEntityAnimationDelay(kickingSpriteAnimation->getTotalTicksDuration())
-			}),
-		ticksTime);
+	vector<ReferenceCounterHolder<EntityAnimation::Component>> kickAnimationComponents ({
+		newEntityAnimationSetVelocity(
+			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
+			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)) COMMA
+		newEntityAnimationSetSpriteAnimation(kickingSpriteAnimation) COMMA
+		newEntityAnimationDelay(kickingSpriteAnimation->getTotalTicksDuration())
+	});
+	Holder_EntityAnimationComponentVector kickAnimationComponentsHolder (&kickAnimationComponents);
+	beginEntityAnimation(&kickAnimationComponentsHolder, ticksTime);
 }
 //begin a kicking animation and climb up to the next tile to the north
 void PlayerState::kickClimb(float yMoveDistance, int ticksTime) {
@@ -477,7 +502,8 @@ void PlayerState::kickClimb(float yMoveDistance, int ticksTime) {
 			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f), newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f))
 	});
 
-	beginEntityAnimation(newEntityAnimation(ticksTime, kickingAnimationComponents), ticksTime);
+	Holder_EntityAnimationComponentVector kickingAnimationComponentsHolder (&kickingAnimationComponents);
+	beginEntityAnimation(&kickingAnimationComponentsHolder, ticksTime);
 	z += 2;
 }
 //begin a kicking animation and fall in whatever direction we're facing
@@ -559,14 +585,13 @@ void PlayerState::kickFall(float xMoveDistance, float yMoveDistance, char fallHe
 				newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f), newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f))
 		});
 
-	beginEntityAnimation(newEntityAnimation(ticksTime, kickingAnimationComponents), ticksTime);
+	Holder_EntityAnimationComponentVector kickingAnimationComponentsHolder (&kickingAnimationComponents);
+	beginEntityAnimation(&kickingAnimationComponentsHolder, ticksTime);
 	z = fallHeight;
 }
 //check if we're kicking the end of a rail, and if so, begin a kicking animation and ride it
 //returns whether we handled a rail kick
-bool PlayerState::kickRail(MapState* mapState, float xPosition, float yPosition, int ticksTime) {
-	const float halfTileSize = (float)MapState::tileSize * 0.5f;
-
+bool PlayerState::kickRail(float xPosition, float yPosition, int ticksTime) {
 	float railCheckXPosition;
 	float railCheckYPosition;
 	if (spriteDirection == SpriteDirection::Up || spriteDirection == SpriteDirection::Down) {
@@ -582,6 +607,7 @@ bool PlayerState::kickRail(MapState* mapState, float xPosition, float yPosition,
 	int railMapY = (int)railCheckYPosition / MapState::tileSize;
 	//the player didn't kick on a rail
 	if (!MapState::tileHasRail(railMapX, railMapY)) {
+		const float halfTileSize = (float)MapState::tileSize * 0.5f;
 		//if the player kicked within a half tile of a rail, don't let them fall
 		bool kickedNearRail;
 		if (spriteDirection == SpriteDirection::Up || spriteDirection == SpriteDirection::Down) {
@@ -600,10 +626,40 @@ bool PlayerState::kickRail(MapState* mapState, float xPosition, float yPosition,
 			return false;
 	}
 
-	MapState::logRailRide(
-		MapState::getRailSwitchId(railMapX, railMapY), (int)(x.get()->getValue(0)), (int)(y.get()->getValue(0)));
-	MapState::RailState* railState = mapState->getRailState(railMapX, railMapY);
+	MapState::logRailRide(MapState::getRailSwitchId(railMapX, railMapY), (int)xPosition, (int)yPosition);
+	MapState::RailState* railState = mapState.get()->getRailState(railMapX, railMapY);
 	MapState::Rail* rail = railState->getRail();
+	//if it's lowered, we can't ride it but don't try to fall
+	if (!railState->canRide()) {
+		kickAir(ticksTime);
+		return true;
+	}
+
+	vector<ReferenceCounterHolder<EntityAnimation::Component>> ridingRailAnimationComponents;
+	Holder_MapStateRail railHolder (rail);
+	Holder_EntityAnimationComponentVector ridingRailAnimationComponentsHolder (&ridingRailAnimationComponents);
+	if (addRailRideComponents(
+		&railHolder, &ridingRailAnimationComponentsHolder, xPosition, yPosition, railMapX, railMapY, nullptr, nullptr))
+	{
+		beginEntityAnimation(&ridingRailAnimationComponentsHolder, ticksTime);
+		return true;
+	} else
+		return false;
+}
+//add the components for a rail-riding animation, if our position matches the start or end of a rail
+//returns whether components were added
+bool PlayerState::addRailRideComponents(
+	Holder_MapStateRail* railHolder,
+	Holder_EntityAnimationComponentVector* componentsHolder,
+	float xPosition,
+	float yPosition,
+	int railMapX,
+	int railMapY,
+	float* outFinalXPosition,
+	float* outFinalYPosition)
+{
+	MapState::Rail* rail = railHolder->val;
+	vector<ReferenceCounterHolder<EntityAnimation::Component>>* components = componentsHolder->val;
 	int endSegmentIndex = rail->getSegmentCount() - 1;
 	MapState::Rail::Segment* startSegment = rail->getSegment(0);
 	MapState::Rail::Segment* endSegment = rail->getSegment(endSegmentIndex);
@@ -619,20 +675,13 @@ bool PlayerState::kickRail(MapState* mapState, float xPosition, float yPosition,
 	} else
 		return false;
 
-	//if it's lowered, we can't ride it but don't try to fall
-	if (!railState->canRide()) {
-		kickAir(ticksTime);
-		return true;
-	}
-
 	const float bootLiftDuration = (float)SpriteRegistry::playerKickingAnimationTicksPerFrame;
 	const float floatRailToRailTicksDuration = (float)railToRailTicksDuration;
 	const float railToRailTicksDurationSquared = floatRailToRailTicksDuration * floatRailToRailTicksDuration;
 
-	vector<ReferenceCounterHolder<EntityAnimation::Component>> ridingRailAnimationComponents ({
-		newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerBootLiftAnimation)
-	});
+	components->push_back(newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerBootLiftAnimation));
 
+	const float halfTileSize = (float)MapState::tileSize * 0.5f;
 	MapState::Rail::Segment* nextSegment = rail->getSegment(firstSegmentIndex);
 	int nextSegmentIndex = firstSegmentIndex;
 	bool firstMove = true;
@@ -645,8 +694,8 @@ bool PlayerState::kickRail(MapState* mapState, float xPosition, float yPosition,
 		MapState::Rail::Segment* currentSegment = nextSegment;
 		nextSegment = rail->getSegment(nextSegmentIndex);
 
-		targetXPosition = (float)(currentSegment->x * MapState::tileSize) + halfTileSize;
-		targetYPosition = (float)(currentSegment->y * MapState::tileSize) + halfTileSize - boundingBoxBottomOffset;
+		targetXPosition = currentSegment->tileCenterX();
+		targetYPosition = currentSegment->tileCenterY() - boundingBoxBottomOffset;
 		bool fromSide = lastYPosition == targetYPosition;
 		bool toSide = false;
 		SpriteDirection nextSpriteDirection;
@@ -674,8 +723,8 @@ bool PlayerState::kickRail(MapState* mapState, float xPosition, float yPosition,
 		float yMoveDistance = targetYPosition - lastYPosition;
 		//we haven't done a move yet, get to the initial position
 		if (firstMove) {
-			ridingRailAnimationComponents.insert(
-				ridingRailAnimationComponents.end(),
+			components->insert(
+				components->end(),
 				{
 					newEntityAnimationSetVelocity(
 						newCompositeQuarticValue(0.0f, xMoveDistance / bootLiftDuration, 0.0f, 0.0f, 0.0f),
@@ -687,8 +736,8 @@ bool PlayerState::kickRail(MapState* mapState, float xPosition, float yPosition,
 			firstMove = false;
 		//straight section
 		} else if (fromSide == toSide) {
-			ridingRailAnimationComponents.insert(
-				ridingRailAnimationComponents.end(),
+			components->insert(
+				components->end(),
 				{
 					newEntityAnimationSetVelocity(
 						newCompositeQuarticValue(0.0f, xMoveDistance / floatRailToRailTicksDuration, 0.0f, 0.0f, 0.0f),
@@ -699,7 +748,7 @@ bool PlayerState::kickRail(MapState* mapState, float xPosition, float yPosition,
 		} else {
 			//curved section going from side to top/bottom
 			if (fromSide)
-				ridingRailAnimationComponents.push_back(
+				components->push_back(
 					newEntityAnimationSetVelocity(
 						newCompositeQuarticValue(
 							0.0f,
@@ -710,7 +759,7 @@ bool PlayerState::kickRail(MapState* mapState, float xPosition, float yPosition,
 						newCompositeQuarticValue(0.0f, 0.0f, yMoveDistance / railToRailTicksDurationSquared, 0.0f, 0.0f)));
 			//curved section going from top/bottom to side
 			else
-				ridingRailAnimationComponents.push_back(
+				components->push_back(
 					newEntityAnimationSetVelocity(
 						newCompositeQuarticValue(0.0f, 0.0f, xMoveDistance / railToRailTicksDurationSquared, 0.0f, 0.0f),
 						newCompositeQuarticValue(
@@ -720,8 +769,8 @@ bool PlayerState::kickRail(MapState* mapState, float xPosition, float yPosition,
 							0.0f,
 							0.0f)));
 			const int halfRailToRailTicksDuration = railToRailTicksDuration / 2;
-			ridingRailAnimationComponents.insert(
-				ridingRailAnimationComponents.end(),
+			components->insert(
+				components->end(),
 				{
 					newEntityAnimationDelay(halfRailToRailTicksDuration) COMMA
 					newEntityAnimationSetSpriteDirection(nextSpriteDirection) COMMA
@@ -731,8 +780,8 @@ bool PlayerState::kickRail(MapState* mapState, float xPosition, float yPosition,
 	}
 
 	//move to the last tile
-	float finalXPosition = (float)(nextSegment->x * MapState::tileSize) + halfTileSize;
-	float finalYPosition = (float)(nextSegment->y * MapState::tileSize) + halfTileSize - boundingBoxBottomOffset;
+	float finalXPosition = nextSegment->tileCenterX();
+	float finalYPosition = nextSegment->tileCenterY() - boundingBoxBottomOffset;
 	if (finalXPosition == targetXPosition + halfTileSize) {
 		finalXPosition += -halfTileSize - boundingBoxLeftOffset + MapState::smallDistance;
 		finalYPosition += 2.0f;
@@ -744,8 +793,8 @@ bool PlayerState::kickRail(MapState* mapState, float xPosition, float yPosition,
 		finalYPosition += 2.0f;
 	} else
 		finalXPosition -= 0.5f;
-	ridingRailAnimationComponents.insert(
-		ridingRailAnimationComponents.end(),
+	components->insert(
+		components->end(),
 		{
 			newEntityAnimationSetVelocity(
 				newCompositeQuarticValue(0.0f, (finalXPosition - targetXPosition) / bootLiftDuration, 0.0f, 0.0f, 0.0f),
@@ -756,12 +805,47 @@ bool PlayerState::kickRail(MapState* mapState, float xPosition, float yPosition,
 				newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f), newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f))
 		});
 
-	beginEntityAnimation(newEntityAnimation(ticksTime, ridingRailAnimationComponents), ticksTime);
+	if (outFinalXPosition != nullptr)
+		*outFinalXPosition = finalXPosition;
+	if (outFinalYPosition != nullptr)
+		*outFinalYPosition = finalYPosition;
 	return true;
 }
+#ifdef DEBUG
+	//add the components for a rail-riding animation for the given rail, starting at whichever end is nearest
+	void PlayerState::addNearestRailRideComponents(
+		int railIndex,
+		Holder_EntityAnimationComponentVector* componentsHolder,
+		float xPosition,
+		float yPosition,
+		float* outFinalXPosition,
+		float* outFinalYPosition)
+	{
+		MapState::Rail* rail = MapState::getRailByIndex(railIndex);
+		Holder_MapStateRail railHolder (rail);
+		float feetYPosition = yPosition + boundingBoxCenterYOffset;
+		MapState::Rail::Segment* startSegment = rail->getSegment(0);
+		MapState::Rail::Segment* endSegment = rail->getSegment(rail->getSegmentCount() - 1);
+
+		//define the distance to the segment as the manhattan distance of the center of the player bounding box to the center of
+		//	the tile that the segment is on
+		float startDist = abs(xPosition - startSegment->tileCenterX()) + abs(feetYPosition - startSegment->tileCenterY());
+		float endDist = abs(xPosition - endSegment->tileCenterX()) + abs(feetYPosition - endSegment->tileCenterY());
+		MapState::Rail::Segment* nearestSegment = startDist <= endDist ? startSegment : endSegment;
+		addRailRideComponents(
+			&railHolder,
+			componentsHolder,
+			xPosition,
+			yPosition,
+			nearestSegment->x,
+			nearestSegment->y,
+			outFinalXPosition,
+			outFinalYPosition);
+	}
+#endif
 //check if we're kicking a switch, and if so, begin a kicking animation and set the switch to flip
 //returns whether we handled a switch kick
-bool PlayerState::kickSwitch(MapState* mapState, float xPosition, float yPosition, int ticksTime) {
+bool PlayerState::kickSwitch(float xPosition, float yPosition, int ticksTime) {
 	//no switch kicking when facing down
 	if (spriteDirection == SpriteDirection::Down)
 		return false;
@@ -794,15 +878,45 @@ bool PlayerState::kickSwitch(MapState* mapState, float xPosition, float yPositio
 		return false;
 
 	MapState::logSwitchKick(switchId);
-	kickAir(ticksTime);
-	mapState->setSwitchToFlip(
-		switchId,
-		ticksTime + SpriteRegistry::playerKickingAnimationTicksPerFrame,
-		ticksTime + SpriteRegistry::playerKickingAnimation->getTotalTicksDuration());
+	vector<ReferenceCounterHolder<EntityAnimation::Component>> kickAnimationComponents;
+	Holder_EntityAnimationComponentVector kickAnimationComponentsHolder (&kickAnimationComponents);
+	addKickSwitchComponents(switchId, &kickAnimationComponentsHolder, true);
+	beginEntityAnimation(&kickAnimationComponentsHolder, ticksTime);
 	return true;
+}
+//add the animation components for a kicking animation
+void PlayerState::addKickSwitchComponents(
+	short switchId, Holder_EntityAnimationComponentVector* componentsHolder, bool allowRadioTowerAnimation)
+{
+	vector<ReferenceCounterHolder<EntityAnimation::Component>>* components = componentsHolder->val;
+	components->insert(
+		components->end(),
+		{
+			newEntityAnimationSetVelocity(
+				newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
+				newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)) COMMA
+			newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerKickingAnimation) COMMA
+			newEntityAnimationDelay(SpriteRegistry::playerKickingAnimationTicksPerFrame) COMMA
+			newEntityAnimationMapKickSwitch(switchId, allowRadioTowerAnimation) COMMA
+			newEntityAnimationDelay(
+				SpriteRegistry::playerKickingAnimation->getTotalTicksDuration()
+					- SpriteRegistry::playerKickingAnimationTicksPerFrame)
+		});
 }
 //render this player state, which was deemed to be the last state to need rendering
 void PlayerState::render(EntityState* camera, int ticksTime) {
+	if (ghostSpriteX.get() != nullptr && ghostSpriteY.get() != nullptr) {
+		float ghostRenderCenterX = getRenderCenterScreenXFromWorldX(
+			ghostSpriteX.get()->getValue(ticksTime - ghostSpriteStartTicksTime), camera, ticksTime);
+		float ghostRenderCenterY = getRenderCenterScreenYFromWorldY(
+			ghostSpriteY.get()->getValue(ticksTime - ghostSpriteStartTicksTime), camera, ticksTime);
+
+		glColor4f(1.0f, 1.0f, 1.0f, 0.5f);
+		SpriteRegistry::player->renderSpriteCenteredAtScreenPosition(
+			hasBoot ? 4 : 0, (int)(SpriteDirection::Down), ghostRenderCenterX, ghostRenderCenterY);
+		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+	}
+
 	float renderCenterX = getRenderCenterScreenX(camera,  ticksTime);
 	float renderCenterY = getRenderCenterScreenY(camera,  ticksTime);
 	glEnable(GL_BLEND);
@@ -845,11 +959,12 @@ bool PlayerState::loadState(string& line) {
 //set the initial z for the player after loading the position
 //this isn't technically loading anything from the file but it is part of setting the initial state
 void PlayerState::setInitialZ() {
-	#ifdef EDITOR
-		z = MapState::highestFloorHeight;
-	#else
-		z = MapState::getHeight(
-			(int)x.get()->getValue(0) / MapState::tileSize,
-			(int)(y.get()->getValue(0) + boundingBoxCenterYOffset) / MapState::tileSize);
-	#endif
+	z = MapState::getHeight(
+		(int)x.get()->getValue(0) / MapState::tileSize,
+		(int)(y.get()->getValue(0) + boundingBoxCenterYOffset) / MapState::tileSize);
 }
+#ifdef DEBUG
+	void PlayerState::setHighestZ() {
+		z = MapState::highestFloorHeight;
+	}
+#endif

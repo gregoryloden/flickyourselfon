@@ -2,6 +2,7 @@
 
 class DynamicCameraAnchor;
 class EntityState;
+class Holder_EntityAnimationComponentVector;
 class MapState;
 class PauseState;
 class PlayerState;
@@ -39,6 +40,9 @@ private:
 	static const char* titleCreditsLine1;
 	static const char* titleCreditsLine2;
 	static const char* titlePostCreditsMessage;
+	#ifdef DEBUG
+		static const char* replayFileName;
+	#endif
 public:
 	static const char* savedGameFileName;
 private:
@@ -70,6 +74,16 @@ public:
 	void renderTitleAnimation(int gameTicksTime);
 	void saveState();
 	void loadInitialState(int ticksTime);
+	#ifdef DEBUG
+		bool loadReplay();
+		void addMoveWithGhost(
+			Holder_EntityAnimationComponentVector* replayComponentsHolder,
+			float startX,
+			float startY,
+			float endX,
+			float endY,
+			int ticksDuration);
+	#endif
 	void beginIntroAnimation(int ticksTime);
 	void resetGame(int ticksTime);
 };

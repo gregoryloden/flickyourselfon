@@ -70,7 +70,7 @@
 		stringstream logMessage;
 		#ifdef TRACK_OBJ_IDS
 			for (; headObjCounter != nullptr; headObjCounter = headObjCounter->nextObjCounter) {
-				logMessage.str("");
+				logMessage.str(string());
 				logMessage
 					<< "      Remaining object: " << (void*)headObjCounter
 					<< " " << headObjCounter->objType
@@ -80,10 +80,10 @@
 				Logger::debugLogger.logString(logMessage.str());
 			}
 		#endif
-		logMessage.str("");
+		logMessage.str(string());
 		logMessage << "Total remaining objects: " << (objCount - untrackedObjCount);
 		Logger::debugLogger.logString(logMessage.str());
-		logMessage.str("");
+		logMessage.str(string());
 		logMessage << "Total objects used: " << (nextObjID - untrackedObjCount) << " + " << untrackedObjCount << " untracked";
 		Logger::debugLogger.logString(logMessage.str());
 	}

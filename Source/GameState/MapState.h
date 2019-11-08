@@ -21,6 +21,8 @@ public:
 
 			Segment(int pX, int pY, char pMaxTileOffset);
 			virtual ~Segment();
+			float tileCenterX();
+			float tileCenterY();
 		};
 
 	private:
@@ -254,9 +256,6 @@ private:
 	vector<RailState*> railStatesByHeight;
 	int railsBelowPlayerZ;
 	vector<SwitchState*> switchStates;
-	short switchToFlipId;
-	int switchFlipOffTicksTime;
-	int switchFlipOnTicksTime;
 	char lastActivatedSwitchColor;
 	int switchesAnimationFadeInStartTicksTime;
 	bool shouldPlayRadioTowerAnimation;
@@ -269,6 +268,8 @@ public:
 	static char getTile(int x, int y) { return tiles[y * width + x]; }
 	static char getHeight(int x, int y) { return heights[y * width + x]; }
 	static short getRailSwitchId(int x, int y) { return railSwitchIds[y * width + x]; }
+	static Rail* getRailByIndex(int railIndex) { return rails[railIndex]; }
+	static short getIdFromSwitchIndex(short switchIndex) { return switchIndex | switchIdBitmask; }
 	static int mapWidth() { return width; }
 	static int mapHeight() { return height; }
 	static bool tileHasRailOrSwitch(int x, int y) { return getRailSwitchId(x, y) != 0; }
@@ -290,13 +291,16 @@ public:
 	static void deleteMap();
 	static int getScreenLeftWorldX(EntityState* camera, int ticksTime);
 	static int getScreenTopWorldY(EntityState* camera, int ticksTime);
+	static void getSwitchMapTopLeft(short switchIndex, int* outMapLeftX, int* outMapTopY);
 	static float antennaCenterWorldX();
 	static float antennaCenterWorldY();
 	static char horizontalTilesHeight(int lowMapX, int highMapX, int mapY);
 	static void setIntroAnimationBootTile(bool showBootTile);
 	void updateWithPreviousMapState(MapState* prev, int ticksTime);
+private:
 	void insertRailByHeight(RailState* railState);
-	void setSwitchToFlip(short pSwitchToFlipId, int pSwitchFlipOffTicksTime, int pSwitchFlipOnTicksTime);
+public:
+	void flipSwitch(short switchId, bool allowRadioTowerAnimation, int ticksTime);
 	void startRadioWavesAnimation(int initialTicksDelay, int ticksTime);
 	void startSwitchesFadeInAnimation(int ticksTime);
 	void render(EntityState* camera, char playerZ, bool showConnections, int ticksTime);
@@ -317,4 +321,12 @@ public:
 		static void adjustRailInitialTileOffset(int x, int y, char tileOffset);
 		static char getRailSwitchFloorSaveData(int x, int y);
 	#endif
+};
+//Should only be allocated within an object, on the stack, or as a static object
+class Holder_MapStateRail {
+public:
+	MapState::Rail* val;
+
+	Holder_MapStateRail(MapState::Rail* pVal);
+	virtual ~Holder_MapStateRail();
 };

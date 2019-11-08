@@ -67,4 +67,5 @@ public:
 	void logString(const string& message);
 private:
 	void queueMessage(stringstream* message, int timestamp);
+	void writePendingMessages();
 };
