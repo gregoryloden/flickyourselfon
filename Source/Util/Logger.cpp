@@ -154,7 +154,7 @@ void Logger::logLoop() {
 		for (Logger* logger : loggers) {
 			if (!logger->hasMessagesToWrite)
 				continue;
-			lastWrittenLogger->writePendingMessages();
+			logger->writePendingMessages();
 			lastWrittenLogger = logger;
 		}
 

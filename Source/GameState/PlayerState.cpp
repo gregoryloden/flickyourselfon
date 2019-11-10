@@ -626,7 +626,6 @@ bool PlayerState::kickRail(float xPosition, float yPosition, int ticksTime) {
 			return false;
 	}
 
-	MapState::logRailRide(MapState::getRailSwitchId(railMapX, railMapY), (int)xPosition, (int)yPosition);
 	MapState::RailState* railState = mapState.get()->getRailState(railMapX, railMapY);
 	MapState::Rail* rail = railState->getRail();
 	//if it's lowered, we can't ride it but don't try to fall
@@ -641,6 +640,7 @@ bool PlayerState::kickRail(float xPosition, float yPosition, int ticksTime) {
 	if (addRailRideComponents(
 		&railHolder, &ridingRailAnimationComponentsHolder, xPosition, yPosition, railMapX, railMapY, nullptr, nullptr))
 	{
+		MapState::logRailRide(MapState::getRailSwitchId(railMapX, railMapY), (int)xPosition, (int)yPosition);
 		beginEntityAnimation(&ridingRailAnimationComponentsHolder, ticksTime);
 		return true;
 	} else
