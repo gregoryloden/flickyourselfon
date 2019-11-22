@@ -36,6 +36,12 @@ private:
 	static const int switchesToPlayerAnimationTicks = 2000;
 	static const float squareSwitchesAnimationCenterWorldX;
 	static const float squareSwitchesAnimationCenterWorldY;
+	static const float triangleSwitchesAnimationCenterWorldX;
+	static const float triangleSwitchesAnimationCenterWorldY;
+	static const float sawSwitchesAnimationCenterWorldX;
+	static const float sawSwitchesAnimationCenterWorldY;
+	static const float sineSwitchesAnimationCenterWorldX;
+	static const float sineSwitchesAnimationCenterWorldY;
 	static const char* titleGameName;
 	static const char* titleCreditsLine1;
 	static const char* titleCreditsLine2;

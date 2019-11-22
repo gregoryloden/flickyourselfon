@@ -20,6 +20,12 @@ const float GameState::squareSwitchesAnimationCenterWorldX =
 	280.0f + (float)(MapState::firstLevelTileOffsetX * MapState::tileSize);
 const float GameState::squareSwitchesAnimationCenterWorldY =
 	80.0f + (float)(MapState::firstLevelTileOffsetY * MapState::tileSize);
+const float GameState::triangleSwitchesAnimationCenterWorldX = 100.0f; //todo: pick a position
+const float GameState::triangleSwitchesAnimationCenterWorldY = 100.0f; //todo: pick a position
+const float GameState::sawSwitchesAnimationCenterWorldX = 100.0f; //todo: pick a position
+const float GameState::sawSwitchesAnimationCenterWorldY = 100.0f; //todo: pick a position
+const float GameState::sineSwitchesAnimationCenterWorldX = 100.0f; //todo: pick a position
+const float GameState::sineSwitchesAnimationCenterWorldY = 100.0f; //todo: pick a position
 const char* GameState::titleGameName = "Flick Yourself On";
 const char* GameState::titleCreditsLine1 = "A game by";
 const char* GameState::titleCreditsLine2 = "Gregory Loden";
@@ -179,6 +185,24 @@ void GameState::startRadioTowerAnimation(int ticksTime) {
 	float radioTowerAntennaY = MapState::antennaCenterWorldY();
 	EntityAnimation::SetVelocity* stopMoving = newEntityAnimationSetVelocity(
 		newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f), newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f));
+	float switchesAnimationCenterWorldX = squareSwitchesAnimationCenterWorldX;
+	float switchesAnimationCenterWorldY = squareSwitchesAnimationCenterWorldY;
+	switch (mapState.get()->getLastActivatedSwitchColor()) {
+		case MapState::triangleColor:
+			switchesAnimationCenterWorldX = triangleSwitchesAnimationCenterWorldX;
+			switchesAnimationCenterWorldY = triangleSwitchesAnimationCenterWorldY;
+			break;
+		case MapState::sawColor:
+			switchesAnimationCenterWorldX = sawSwitchesAnimationCenterWorldX;
+			switchesAnimationCenterWorldY = sawSwitchesAnimationCenterWorldY;
+			break;
+		case MapState::sineColor:
+			switchesAnimationCenterWorldX = sineSwitchesAnimationCenterWorldX;
+			switchesAnimationCenterWorldY = sineSwitchesAnimationCenterWorldY;
+			break;
+		default:
+			break;
+	}
 
 	//build the animation until right before the radio waves animation
 	vector<ReferenceCounterHolder<EntityAnimation::Component>> dynamicCameraAnchorAnimationComponents ({
@@ -205,8 +229,8 @@ void GameState::startRadioTowerAnimation(int ticksTime) {
 		{
 			newEntityAnimationDelay(radioWavesAnimationTicksDuration + postRadioWavesAnimationTicks) COMMA
 			EntityAnimation::SetVelocity::cubicInterpolation(
-				squareSwitchesAnimationCenterWorldX - radioTowerAntennaX,
-				squareSwitchesAnimationCenterWorldY - radioTowerAntennaY,
+				switchesAnimationCenterWorldX - radioTowerAntennaX,
+				switchesAnimationCenterWorldY - radioTowerAntennaY,
 				(float)radioTowerToSwitchesAnimationTicks) COMMA
 			newEntityAnimationDelay(radioTowerToSwitchesAnimationTicks) COMMA
 			stopMoving COMMA
@@ -225,8 +249,8 @@ void GameState::startRadioTowerAnimation(int ticksTime) {
 			newEntityAnimationDelay(MapState::switchesFadeInDuration) COMMA
 			newEntityAnimationDelay(postSwitchesFadeInAnimationTicks) COMMA
 			EntityAnimation::SetVelocity::cubicInterpolation(
-				playerX - squareSwitchesAnimationCenterWorldX,
-				playerY - squareSwitchesAnimationCenterWorldY,
+				playerX - switchesAnimationCenterWorldX,
+				playerY - switchesAnimationCenterWorldY,
 				(float)switchesToPlayerAnimationTicks) COMMA
 			newEntityAnimationDelay(switchesToPlayerAnimationTicks) COMMA
 			stopMoving COMMA

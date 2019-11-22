@@ -152,11 +152,26 @@ void MapState::Rail::render(int screenLeftWorldX, int screenTopWorldY, float til
 		MutexLocker mutexLocker (segmentsMutex);
 	#endif
 
+	const float nonColorIntensity = 9.0f / 16.0f;
+	const float sineColorIntensity = 14.0f / 16.0f;
+	float redColor = sineColorIntensity;
+	float greenColor = sineColorIntensity;
+	float blueColor = sineColorIntensity;
+	if (color != sineColor) {
+		redColor = color == squareColor ? 1.0f : nonColorIntensity;
+		greenColor = color == sawColor ? 1.0f : nonColorIntensity;
+		blueColor = color == triangleColor ? 1.0f : nonColorIntensity;
+	}
+	const float maxRailHeightColorScaleReduction = 3.0f / 8.0f;
+	float railHeightColorScale = 1.0f - maxRailHeightColorScaleReduction * MathUtils::fmin(1.0f, tileOffset / 3.0f);
+	glColor4f(railHeightColorScale * redColor, railHeightColorScale * greenColor, railHeightColorScale * blueColor, 1.0f);
 	int lastSegmentIndex = (int)segments->size() - 1;
 	for (int i = 1; i < lastSegmentIndex; i++)
 		renderSegment(screenLeftWorldX, screenTopWorldY, tileOffset, i);
+	glColor4f(redColor, greenColor, blueColor, 1.0f);
 	renderSegment(screenLeftWorldX, screenTopWorldY, 0.0f, 0);
 	renderSegment(screenLeftWorldX, screenTopWorldY, 0.0f, lastSegmentIndex);
+	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 }
 //render the shadow below the rail
 void MapState::Rail::renderShadow(int screenLeftWorldX, int screenTopWorldY) {
@@ -208,25 +223,18 @@ void MapState::Rail::renderSegment(int screenLeftWorldX, int screenTopWorldY, fl
 	GLint drawTopY = (GLint)(topWorldY - screenTopWorldY);
 	char topTileHeight = getHeight(segment.x, topWorldY / tileSize);
 	char bottomTileHeight = getHeight(segment.x, bottomTileY);
+	bool topShadow = false;
+	bool bottomShadow = false;
 
-	#ifdef EDITOR
-		if (segmentIndex == 0 || segmentIndex == segments->size() - 1)
-			SpriteSheet::renderFilledRectangle(
-				(color == squareColor || color == sineColor) ? 0.75f : 0.0f,
-				(color == sawColor || color == sineColor) ? 0.75f : 0.0f,
-				(color == triangleColor || color == sineColor) ? 0.75f : 0.0f,
-				0.75f,
-				drawLeftX + 1,
-				drawTopY + 1,
-				drawLeftX + 5,
-				drawTopY + 5);
-	#endif
 	//this segment is completely visible
 	if (bottomTileHeight == emptySpaceHeight
-			|| bottomTileHeight <= baseHeight - (char)((yPixelOffset + tileSize - 1) / tileSize) * 2)
+		|| bottomTileHeight <= baseHeight - (char)((yPixelOffset + tileSize - 1) / tileSize) * 2)
+	{
 		SpriteRegistry::rails->renderSpriteAtScreenPosition(segment.spriteHorizontalIndex, 0, drawLeftX, drawTopY);
+		topShadow = topTileHeight % 2 == 1;
+		bottomShadow = bottomTileHeight % 2 == 1;
 	//the top part of this segment is visible
-	else if (topTileHeight == emptySpaceHeight || topTileHeight <= baseHeight - (char)(yPixelOffset / tileSize) * 2) {
+	} else if (topTileHeight == emptySpaceHeight || topTileHeight <= baseHeight - (char)(yPixelOffset / tileSize) * 2) {
 		int spriteX = segment.spriteHorizontalIndex * tileSize;
 		int spriteHeight = bottomTileY * tileSize - topWorldY;
 		SpriteRegistry::rails->renderSpriteSheetRegionAtScreenRegion(
@@ -238,6 +246,27 @@ void MapState::Rail::renderSegment(int screenLeftWorldX, int screenTopWorldY, fl
 			drawTopY,
 			drawLeftX + (GLint)tileSize,
 			drawTopY + (GLint)spriteHeight);
+		topShadow = topTileHeight % 2 == 1;
+	}
+
+	if (topShadow || bottomShadow) {
+		#ifdef EDITOR
+			if (segment.spriteHorizontalIndex > 6)
+				return;
+		#endif
+		int topSpriteHeight = bottomTileY * tileSize - topWorldY;
+		int spriteX = (segment.spriteHorizontalIndex + 16) * tileSize;
+		int spriteTop = topShadow ? 0 : topSpriteHeight;
+		int spriteBottom = bottomShadow ? tileSize : topSpriteHeight;
+		SpriteRegistry::rails->renderSpriteSheetRegionAtScreenRegion(
+			spriteX,
+			spriteTop,
+			spriteX + tileSize,
+			spriteBottom,
+			drawLeftX,
+			drawTopY + (GLint)spriteTop,
+			drawLeftX + (GLint)tileSize,
+			drawTopY + (GLint)spriteBottom);
 	}
 }
 #ifdef EDITOR
@@ -748,14 +777,6 @@ void MapState::updateWithPreviousMapState(MapState* prev, int ticksTime) {
 	shouldPlayRadioTowerAnimation = false;
 	switchesAnimationFadeInStartTicksTime = prev->switchesAnimationFadeInStartTicksTime;
 
-	railStatesByHeight.clear();
-	for (RailState* otherRailState : prev->railStatesByHeight) {
-		RailState* railState = railStates[otherRailState->getRailIndex()];
-		railState->updateWithPreviousRailState(otherRailState, ticksTime);
-		insertRailByHeight(railState);
-	}
-	for (int i = 0; i < (int)switchStates.size(); i++)
-		switchStates[i]->updateWithPreviousSwitchState(prev->switchStates[i]);
 	#ifdef EDITOR
 		//since the editor can add switches and rails, make sure we update our list to track them
 		//we won't connect rail states to switch states since we can't kick switches in the editor
@@ -763,6 +784,21 @@ void MapState::updateWithPreviousMapState(MapState* prev, int ticksTime) {
 			railStates.push_back(newRailState(rails[railStates.size()], railStates.size()));
 		while (switchStates.size() < switches.size())
 			switchStates.push_back(newSwitchState(switches[switchStates.size()]));
+	#endif
+	for (int i = 0; i < (int)prev->switchStates.size(); i++)
+		switchStates[i]->updateWithPreviousSwitchState(prev->switchStates[i]);
+	railStatesByHeight.clear();
+	for (RailState* otherRailState : prev->railStatesByHeight) {
+		RailState* railState = railStates[otherRailState->getRailIndex()];
+		railState->updateWithPreviousRailState(otherRailState, ticksTime);
+		insertRailByHeight(railState);
+	}
+	#ifdef EDITOR
+		//if we added rail states this update, add them to the height list too
+		//we know they're the last set of rails in the list
+		//if we added them in a previous state, they'll already be sorted
+		while (railStatesByHeight.size() < railStates.size())
+			railStatesByHeight.push_back(railStates[railStatesByHeight.size()]);
 	#endif
 
 	radioWavesState.get()->updateWithPreviousRadioWavesState(prev->radioWavesState.get(), ticksTime);
@@ -793,10 +829,9 @@ void MapState::flipSwitch(short switchId, bool allowRadioTowerAnimation, int tic
 	//this is a turn-on-other-switches switch, flip it if we haven't done so already
 	if (switch0->getGroup() == 0) {
 		if (lastActivatedSwitchColor < switch0->getColor()) {
+			lastActivatedSwitchColor++;
 			if (allowRadioTowerAnimation)
 				shouldPlayRadioTowerAnimation = true;
-			else
-				lastActivatedSwitchColor++;
 		}
 	//this is just a regular switch and we've turned on the parent switch, flip it
 	} else if (lastActivatedSwitchColor >= switch0->getColor())
@@ -820,7 +855,6 @@ void MapState::startRadioWavesAnimation(int initialTicksDelay, int ticksTime) {
 //activate the next switch color and set the start of the animation
 void MapState::startSwitchesFadeInAnimation(int ticksTime) {
 	shouldPlayRadioTowerAnimation = false;
-	lastActivatedSwitchColor++;
 	switchesAnimationFadeInStartTicksTime = ticksTime;
 }
 //draw the map

@@ -277,6 +277,7 @@ public:
 	static bool tileHasSwitch(int x, int y) { return (getRailSwitchId(x, y) & switchIdBitmask) != 0; }
 	RailState* getRailState(int x, int y) { return railStates[getRailSwitchId(x, y) & railSwitchIndexBitmask]; }
 	bool getShouldPlayRadioTowerAnimation() { return shouldPlayRadioTowerAnimation; }
+	char getLastActivatedSwitchColor() { return lastActivatedSwitchColor; }
 	int getRadioWavesAnimationTicksDuration() { return radioWavesState.get()->getAnimationTicksDuration(); }
 	#ifdef EDITOR
 		static void setTile(int x, int y, char tile) { tiles[y * width + x] = tile; }

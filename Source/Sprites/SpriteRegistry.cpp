@@ -30,7 +30,7 @@ void SpriteRegistry::loadAll() {
 	tiles = newSpriteSheetWithImagePath(tilesFileName, MapState::tileCount, 1);
 	tiles->removeBottomRightPixelBorder();
 	radioTower = newSpriteSheetWithImagePath(radioTowerFileName, 1, 1);
-	rails = newSpriteSheetWithImagePath(railsFileName, 16, 1);
+	rails = newSpriteSheetWithImagePath(railsFileName, 22, 1);
 	rails->removeBottomRightPixelBorder();
 	switches = newSpriteSheetWithImagePath(switchesFileName, 9, 1);
 	switches->removeBottomRightPixelBorder();
