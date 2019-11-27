@@ -862,6 +862,16 @@ bool PlayerState::kickSwitch(float xPosition, float yPosition, int ticksTime) {
 			switchId = MapState::getRailSwitchId(switchCenterMapX, switchTopMapY);
 		else if (MapState::tileHasSwitch(switchRightMapX, switchTopMapY))
 			switchId = MapState::getRailSwitchId(switchRightMapX, switchTopMapY);
+		//for the switches on the radio tower, accept a slightly further kick so that players who are too far can still trigger
+		//	the switch
+		else {
+			switchTopMapY = (int)(yPosition + boundingBoxTopOffset - 0.5f) / MapState::tileSize;
+			if (MapState::tileHasSwitch(switchCenterMapX, switchTopMapY)) {
+				MapState::SwitchState* switchState = mapState.get()->getSwitchState(switchCenterMapX, switchTopMapY);
+				if (switchState->getSwitch()->getGroup() == 0)
+					switchId = MapState::getRailSwitchId(switchCenterMapX, switchTopMapY);
+			}
+		}
 	} else {
 		float kickingXOffset = spriteDirection == SpriteDirection::Left
 			? boundingBoxLeftOffset + 2.0f - kickingDistanceLimit

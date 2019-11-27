@@ -276,6 +276,7 @@ public:
 	static bool tileHasRail(int x, int y) { return (getRailSwitchId(x, y) & railIdBitmask) != 0; }
 	static bool tileHasSwitch(int x, int y) { return (getRailSwitchId(x, y) & switchIdBitmask) != 0; }
 	RailState* getRailState(int x, int y) { return railStates[getRailSwitchId(x, y) & railSwitchIndexBitmask]; }
+	SwitchState* getSwitchState(int x, int y) { return switchStates[getRailSwitchId(x, y) & railSwitchIndexBitmask]; }
 	bool getShouldPlayRadioTowerAnimation() { return shouldPlayRadioTowerAnimation; }
 	char getLastActivatedSwitchColor() { return lastActivatedSwitchColor; }
 	int getRadioWavesAnimationTicksDuration() { return radioWavesState.get()->getAnimationTicksDuration(); }

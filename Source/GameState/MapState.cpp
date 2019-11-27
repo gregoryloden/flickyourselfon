@@ -829,7 +829,7 @@ void MapState::flipSwitch(short switchId, bool allowRadioTowerAnimation, int tic
 	//this is a turn-on-other-switches switch, flip it if we haven't done so already
 	if (switch0->getGroup() == 0) {
 		if (lastActivatedSwitchColor < switch0->getColor()) {
-			lastActivatedSwitchColor++;
+			lastActivatedSwitchColor = switch0->getColor();
 			if (allowRadioTowerAnimation)
 				shouldPlayRadioTowerAnimation = true;
 		}
