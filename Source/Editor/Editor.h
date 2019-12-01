@@ -250,6 +250,18 @@ private:
 		virtual void onClick();
 		virtual void paintMap(int x, int y);
 	};
+	class ResetSwitchButton: public Button {
+	public:
+		static const int buttonWidth;
+		static const int buttonHeight;
+
+		ResetSwitchButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY);
+		virtual ~ResetSwitchButton();
+
+		virtual void render();
+		virtual void onClick();
+		virtual void paintMap(int x, int y);
+	};
 	class RailSwitchGroupButton: public Button {
 	public:
 		static const int groupSquareSize = 6;
@@ -289,6 +301,7 @@ private:
 	static SwitchButton* lastSelectedSwitchButton;
 	static RailButton* lastSelectedRailButton;
 	static RailTileOffsetButton* lastSelectedRailTileOffsetButton;
+	static ResetSwitchButton* lastSelectedResetSwitchButton;
 	static MouseDragAction lastMouseDragAction;
 	static int lastMouseDragMapX;
 	static int lastMouseDragMapY;

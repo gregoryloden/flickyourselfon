@@ -215,9 +215,10 @@ public:
 	static const char sineColor = 3;
 	//rail/switch state serialization
 	static const short absentRailSwitchId = 0;
-	static const short railIdBitmask = 1 << 12;
-	static const short switchIdBitmask = railIdBitmask << 1;
-	static const short railSwitchIndexBitmask = railIdBitmask - 1;
+	static const short railSwitchIdBitmask = 3 << 12;
+	static const short railIdValue = 1 << 12;
+	static const short switchIdValue = 2 << 12;
+	static const short railSwitchIndexBitmask = railIdValue - 1;
 	static const int floorIsRailSwitchBitmask = 1;
 	static const int floorIsRailSwitchHeadBitmask = 2;
 	static const int floorIsRailSwitchAndHeadBitmask = floorIsRailSwitchHeadBitmask | floorIsRailSwitchBitmask;
@@ -269,12 +270,12 @@ public:
 	static char getHeight(int x, int y) { return heights[y * width + x]; }
 	static short getRailSwitchId(int x, int y) { return railSwitchIds[y * width + x]; }
 	static Rail* getRailByIndex(int railIndex) { return rails[railIndex]; }
-	static short getIdFromSwitchIndex(short switchIndex) { return switchIndex | switchIdBitmask; }
+	static short getIdFromSwitchIndex(short switchIndex) { return switchIndex | switchIdValue; }
 	static int mapWidth() { return width; }
 	static int mapHeight() { return height; }
 	static bool tileHasRailOrSwitch(int x, int y) { return getRailSwitchId(x, y) != 0; }
-	static bool tileHasRail(int x, int y) { return (getRailSwitchId(x, y) & railIdBitmask) != 0; }
-	static bool tileHasSwitch(int x, int y) { return (getRailSwitchId(x, y) & switchIdBitmask) != 0; }
+	static bool tileHasRail(int x, int y) { return (getRailSwitchId(x, y) & railSwitchIdBitmask) == railIdValue; }
+	static bool tileHasSwitch(int x, int y) { return (getRailSwitchId(x, y) & railSwitchIdBitmask) == switchIdValue; }
 	RailState* getRailState(int x, int y) { return railStates[getRailSwitchId(x, y) & railSwitchIndexBitmask]; }
 	SwitchState* getSwitchState(int x, int y) { return switchStates[getRailSwitchId(x, y) & railSwitchIndexBitmask]; }
 	bool getShouldPlayRadioTowerAnimation() { return shouldPlayRadioTowerAnimation; }
@@ -290,10 +291,15 @@ protected:
 	virtual void prepareReturnToPool();
 public:
 	static void buildMap();
+private:
+	static vector<int> parseRail(int* pixels, int redShift, int segmentIndex, int railSwitchId);
+public:
 	static void deleteMap();
 	static int getScreenLeftWorldX(EntityState* camera, int ticksTime);
 	static int getScreenTopWorldY(EntityState* camera, int ticksTime);
-	static void getSwitchMapTopLeft(short switchIndex, int* outMapLeftX, int* outMapTopY);
+	#ifdef DEBUG
+		static void getSwitchMapTopLeft(short switchIndex, int* outMapLeftX, int* outMapTopY);
+	#endif
 	static float antennaCenterWorldX();
 	static float antennaCenterWorldY();
 	static char horizontalTilesHeight(int lowMapX, int highMapX, int mapY);
@@ -320,6 +326,7 @@ public:
 		static bool hasFloorTileCreatingShadowForHeight(int x, int y, char height);
 		static void setSwitch(int leftX, int topY, char color, char group);
 		static void setRail(int x, int y, char color, char group);
+		static void setResetSwitch(int x, int bottomY);
 		static void adjustRailInitialTileOffset(int x, int y, char tileOffset);
 		static char getRailSwitchFloorSaveData(int x, int y);
 	#endif

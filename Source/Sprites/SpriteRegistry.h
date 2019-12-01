@@ -14,6 +14,7 @@ public:
 	static const char* railsFileName;
 	static const char* switchesFileName;
 	static const char* radioWavesFileName;
+	static const char* resetSwitchFileName;
 
 	static SpriteSheet* player;
 	static SpriteSheet* tiles;
@@ -21,6 +22,7 @@ public:
 	static SpriteSheet* rails;
 	static SpriteSheet* switches;
 	static SpriteSheet* radioWaves;
+	static SpriteSheet* resetSwitch;
 	static SpriteAnimation* playerWalkingAnimation;
 	static SpriteAnimation* playerLegLiftAnimation;
 	static SpriteAnimation* playerBootWalkingAnimation;

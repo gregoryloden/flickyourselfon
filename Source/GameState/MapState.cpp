@@ -667,7 +667,7 @@ void MapState::buildMap() {
 		if ((railSwitchValue & floorIsSwitchBitmask) != 0) {
 			char switchByte2 = (char)((pixels[i + 1] & redMask) >> redShift);
 			char group = (switchByte2 >> floorRailSwitchGroupDataShift) & floorRailSwitchGroupPostShiftBitmask;
-			short newSwitchId = (short)switches.size() | switchIdBitmask;
+			short newSwitchId = (short)switches.size() | switchIdValue;
 			//add the switch and set all the ids
 			switches.push_back(newSwitch(i % width, i / width, color, group));
 			for (int yOffset = 0; yOffset <= 1; yOffset++) {
@@ -677,40 +677,49 @@ void MapState::buildMap() {
 			}
 		//rails can extend in any direction after this head byte tile
 		} else {
-			short newRailId = (short)rails.size() | railIdBitmask;
+			short newRailId = (short)rails.size() | railIdValue;
 			char initialTileOffset =
 				(railSwitchValue >> floorRailInitialTileOffsetDataShift) & floorRailInitialTileOffsetPostShiftBitmask;
 			Rail* rail = newRail(i % width, i / width, heights[i], color, initialTileOffset);
 			rails.push_back(rail);
 			railSwitchIds[i] = newRailId;
-			int railI = i;
-			//cache shift values so that we can iterate the floor data quicker
-			int floorIsRailSwitchAndHeadShiftedBitmask = floorIsRailSwitchAndHeadBitmask << redShift;
-			int floorRailSwitchTailShiftedValue = floorIsRailSwitchBitmask << redShift;
+			vector<int> railIndices = parseRail(pixels, redShift, i, newRailId);
 			int floorRailGroupShiftedShift = redShift + floorRailSwitchGroupDataShift;
-			while (true) {
-				if ((pixels[railI + 1] & floorIsRailSwitchAndHeadShiftedBitmask) == floorRailSwitchTailShiftedValue
-						&& railSwitchIds[railI + 1] == 0)
-					railI++;
-				else if ((pixels[railI - 1] & floorIsRailSwitchAndHeadShiftedBitmask) == floorRailSwitchTailShiftedValue
-						&& railSwitchIds[railI - 1] == 0)
-					railI--;
-				else if ((pixels[railI + width] & floorIsRailSwitchAndHeadShiftedBitmask) == floorRailSwitchTailShiftedValue
-						&& railSwitchIds[railI + width] == 0)
-					railI += width;
-				else if ((pixels[railI - width] & floorIsRailSwitchAndHeadShiftedBitmask) == floorRailSwitchTailShiftedValue
-						&& railSwitchIds[railI - width] == 0)
-					railI -= width;
-				else
-					break;
-				rail->addSegment(railI % width, railI / width);
-				rail->addGroup((char)(pixels[railI] >> floorRailGroupShiftedShift) & floorRailSwitchGroupPostShiftBitmask);
-				railSwitchIds[railI] = newRailId;
+			for (int railIndex : railIndices) {
+				rail->addSegment(railIndex % width, railIndex / width);
+				rail->addGroup((char)(pixels[railIndex] >> floorRailGroupShiftedShift) & floorRailSwitchGroupPostShiftBitmask);
 			}
 		}
 	}
 
 	SDL_FreeSurface(floor);
+}
+//go along the path and add rail segment indices to a list, and set the given id over those tiles
+//the given rail index is assumed to already have its tile marked
+//returns the indices of the parsed segments
+vector<int> MapState::parseRail(int* pixels, int redShift, int segmentIndex, int railSwitchId) {
+	//cache shift values so that we can iterate the floor data quicker
+	int floorIsRailSwitchAndHeadShiftedBitmask = floorIsRailSwitchAndHeadBitmask << redShift;
+	int floorRailSwitchTailShiftedValue = floorIsRailSwitchBitmask << redShift;
+	vector<int> segmentIndices;
+	while (true) {
+		if ((pixels[segmentIndex + 1] & floorIsRailSwitchAndHeadShiftedBitmask) == floorRailSwitchTailShiftedValue
+				&& railSwitchIds[segmentIndex + 1] == 0)
+			segmentIndex++;
+		else if ((pixels[segmentIndex - 1] & floorIsRailSwitchAndHeadShiftedBitmask) == floorRailSwitchTailShiftedValue
+				&& railSwitchIds[segmentIndex - 1] == 0)
+			segmentIndex--;
+		else if ((pixels[segmentIndex + width] & floorIsRailSwitchAndHeadShiftedBitmask) == floorRailSwitchTailShiftedValue
+				&& railSwitchIds[segmentIndex + width] == 0)
+			segmentIndex += width;
+		else if ((pixels[segmentIndex - width] & floorIsRailSwitchAndHeadShiftedBitmask) == floorRailSwitchTailShiftedValue
+				&& railSwitchIds[segmentIndex - width] == 0)
+			segmentIndex -= width;
+		else
+			return segmentIndices;
+		segmentIndices.push_back(segmentIndex);
+		railSwitchIds[segmentIndex] = railSwitchId;
+	}
 }
 //delete the resources used to handle the map
 void MapState::deleteMap() {
@@ -735,20 +744,22 @@ int MapState::getScreenTopWorldY(EntityState* camera, int ticksTime) {
 	//(see getScreenLeftWorldX)
 	return (int)(camera->getRenderCenterWorldY(ticksTime)) - Config::gameScreenHeight / 2;
 }
-//find the switch for the given index and write its top left corner
-//does not write map coordinates if it doesn't find any
-void MapState::getSwitchMapTopLeft(short switchIndex, int* outMapLeftX, int* outMapTopY) {
-	short targetSwitchId = switchIndex | switchIdBitmask;
-	for (int mapY = 0; mapY < height; mapY++) {
-		for (int mapX = 0; mapX < width; mapX++) {
-			if (getRailSwitchId(mapX, mapY) == targetSwitchId) {
-				*outMapLeftX = mapX;
-				*outMapTopY = mapY;
-				return;
+#ifdef DEBUG
+	//find the switch for the given index and write its top left corner
+	//does not write map coordinates if it doesn't find any
+	void MapState::getSwitchMapTopLeft(short switchIndex, int* outMapLeftX, int* outMapTopY) {
+		short targetSwitchId = switchIndex | switchIdValue;
+		for (int mapY = 0; mapY < height; mapY++) {
+			for (int mapX = 0; mapX < width; mapX++) {
+				if (getRailSwitchId(mapX, mapY) == targetSwitchId) {
+					*outMapLeftX = mapX;
+					*outMapTopY = mapY;
+					return;
+				}
 			}
 		}
 	}
-}
+#endif
 //get the center x of the radio tower antenna
 float MapState::antennaCenterWorldX() {
 	return (float)(radioTowerLeftXOffset + SpriteRegistry::radioTower->getSpriteSheetWidth() / 2);
@@ -1125,7 +1136,7 @@ void MapState::resetMap() {
 		if (leftX - 1 < 0 || topY - 1 < 0 || leftX + 3 > width || topY + 3 > height)
 			return;
 
-		short newSwitchId = (short)switches.size() | switchIdBitmask;
+		short newSwitchId = (short)switches.size() | switchIdValue;
 		Switch* matchedSwitch = nullptr;
 		int matchedSwitchX = -1;
 		int matchedSwitchY = -1;
@@ -1135,9 +1146,9 @@ void MapState::resetMap() {
 				if (!tileHasRailOrSwitch(checkX, checkY))
 					continue;
 
-				//this is a rail, not a switch, we can't delete, move, or place a switch here
+				//this is not a switch, we can't delete, move, or place a switch here
 				short otherRailSwitchId = getRailSwitchId(checkX, checkY);
-				if ((otherRailSwitchId & switchIdBitmask) == 0)
+				if ((otherRailSwitchId & railSwitchIdBitmask) != switchIdValue)
 					return;
 
 				//there is a switch here but we won't delete it because it isn't exactly the same as the switch we're placing
@@ -1226,9 +1237,9 @@ void MapState::resetMap() {
 				if (!tileHasRailOrSwitch(checkX, checkY))
 					continue;
 
-				//this is a switch, not a rail, we can't place a new rail here
+				//this is not a rail, we can't place a new rail here
 				short otherRailSwitchId = getRailSwitchId(checkX, checkY);
-				if ((otherRailSwitchId & railIdBitmask) == 0)
+				if ((otherRailSwitchId & railSwitchIdBitmask) != railIdValue)
 					return;
 
 				if (editingRailId == -1) {
@@ -1292,23 +1303,28 @@ void MapState::resetMap() {
 				railSwitchIds[railSwitchIndex] = 0;
 			//add a new rail here
 			} else {
-				railSwitchIds[railSwitchIndex] = (short)rails.size() | railIdBitmask;
+				railSwitchIds[railSwitchIndex] = (short)rails.size() | railIdValue;
 				rails.push_back(newRail(x, y, getHeight(x, y), color, 0));
 			}
 		}
 	}
+	//set a reset switch, or delete one if we can
+	void MapState::setResetSwitch(int x, int bottomY) {
+		//todo
+	}
 	//adjust the tile offset of the rail here, if there is one
 	void MapState::adjustRailInitialTileOffset(int x, int y, char tileOffset) {
 		int railSwitchId = getRailSwitchId(x, y);
-		if ((railSwitchId & railIdBitmask) != 0)
+		if ((railSwitchId & railSwitchIdBitmask) == railIdValue)
 			rails[railSwitchId & railSwitchIndexBitmask]->adjustInitialTileOffset(x, y, tileOffset);
 	}
 	//check if we're saving a rail or switch to the floor file, and if so get the data we need at this tile
 	char MapState::getRailSwitchFloorSaveData(int x, int y) {
 		int railSwitchId = getRailSwitchId(x, y);
-		if ((railSwitchId & railIdBitmask) != 0)
+		int railSwitchIdValue = railSwitchId & railSwitchIdBitmask;
+		if (railSwitchIdValue == railIdValue)
 			return rails[railSwitchId & railSwitchIndexBitmask]->getFloorSaveData(x, y);
-		else if ((railSwitchId & switchIdBitmask) != 0)
+		else if (railSwitchIdValue == switchIdValue)
 			return switches[railSwitchId & railSwitchIndexBitmask]->getFloorSaveData(x, y);
 		else
 			return 0;

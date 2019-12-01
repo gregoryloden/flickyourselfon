@@ -25,6 +25,7 @@
 	#define newRailButton(zone, leftX, topY, color) newWithArgs(Editor::RailButton, zone, leftX, topY, color)
 	#define newRailTileOffsetButton(zone, leftX, topY, tileOffset) \
 		newWithArgs(Editor::RailTileOffsetButton, zone, leftX, topY, tileOffset)
+	#define newResetSwitchButton(zone, leftX, topY) newWithArgs(Editor::ResetSwitchButton, zone, leftX, topY)
 	#define newRailSwitchGroupButton(zone, leftX, topY, railSwitchGroup) \
 		newWithArgs(Editor::RailSwitchGroupButton, zone, leftX, topY, railSwitchGroup)
 
@@ -687,6 +688,32 @@
 		MapState::adjustRailInitialTileOffset(x, y, tileOffset);
 	}
 
+	//////////////////////////////// Editor::ResetSwitchButton ////////////////////////////////
+	const int Editor::ResetSwitchButton::buttonWidth = MapState::tileSize + 2;
+	const int Editor::ResetSwitchButton::buttonHeight = MapState::tileSize * 2 + 2;
+	Editor::ResetSwitchButton::ResetSwitchButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY)
+	: Button(objCounterArgumentsComma() zone, zoneLeftX, zoneTopY) {
+		setWidthAndHeight(buttonWidth, buttonHeight);
+	}
+	Editor::ResetSwitchButton::~ResetSwitchButton() {}
+	//render the reset switch above the button
+	void Editor::ResetSwitchButton::render() {
+		Button::render();
+		SpriteSheet::renderFilledRectangle(
+			0.0f, 0.0f, 0.0f, 1.0f, (GLint)leftX + 1, (GLint)topY + 1, (GLint)rightX - 1, (GLint)bottomY - 1);
+		glEnable(GL_BLEND);
+		SpriteRegistry::resetSwitch->renderSpriteAtScreenPosition(0, 0, (GLint)leftX + 1, (GLint)topY + 1);
+	}
+	//select the reset switch as the painting action
+	void Editor::ResetSwitchButton::onClick() {
+		selectedButton = selectedButton == this ? nullptr : this;
+		lastSelectedResetSwitchButton = this;
+	}
+	//adjust the tile offset of the rail at this position
+	void Editor::ResetSwitchButton::paintMap(int x, int y) {
+		MapState::setResetSwitch(x, y);
+	}
+
 	//////////////////////////////// Editor::RailSwitchGroupButton ////////////////////////////////
 	Editor::RailSwitchGroupButton::RailSwitchGroupButton(
 		objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY, char pRailSwitchGroup)
@@ -723,6 +750,7 @@
 	Editor::SwitchButton* Editor::lastSelectedSwitchButton = nullptr;
 	Editor::RailButton* Editor::lastSelectedRailButton = nullptr;
 	Editor::RailTileOffsetButton* Editor::lastSelectedRailTileOffsetButton = nullptr;
+	Editor::ResetSwitchButton* Editor::lastSelectedResetSwitchButton = nullptr;
 	Editor::MouseDragAction Editor::lastMouseDragAction = Editor::MouseDragAction::None;
 	int Editor::lastMouseDragMapX = -1;
 	int Editor::lastMouseDragMapY = -1;
@@ -791,6 +819,7 @@
 			buttons.push_back(newRailButton(Zone::Right, 64 + RailButton::buttonSize * i, 114, i));
 		for (char i = -1; i <= 1; i += 2)
 			buttons.push_back(newRailTileOffsetButton(Zone::Right, 103 + RailTileOffsetButton::buttonSize * i / 2, 114, i));
+		buttons.push_back(newResetSwitchButton(Zone::Right, 118, 108));
 		for (char i = 0; i < (char)railSwitchGroupCount; i++) {
 			RailSwitchGroupButton* button = newRailSwitchGroupButton(
 				Zone::Right, 5 + TileButton::buttonSize * (i % 16), 125 + TileButton::buttonSize * (i / 16), i);
@@ -922,6 +951,10 @@
 			} else if (selectedButton == lastSelectedRailButton || selectedButton == lastSelectedRailTileOffsetButton) {
 				boxMapWidth = 1;
 				boxMapHeight = 1;
+			} else if (selectedButton == lastSelectedResetSwitchButton) {
+				boxMapWidth = 1;
+				boxMapHeight = 2;
+				boxTopMapOffset = 1;
 			} else {
 				boxLeftMapOffset = (int)selectedPaintBoxXRadiusButton->getRadius();
 				boxTopMapOffset = (int)selectedPaintBoxYRadiusButton->getRadius();
