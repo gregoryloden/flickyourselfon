@@ -231,8 +231,8 @@ void MapState::Rail::renderSegment(int screenLeftWorldX, int screenTopWorldY, fl
 		|| bottomTileHeight <= baseHeight - (char)((yPixelOffset + tileSize - 1) / tileSize) * 2)
 	{
 		SpriteRegistry::rails->renderSpriteAtScreenPosition(segment.spriteHorizontalIndex, 0, drawLeftX, drawTopY);
-		topShadow = topTileHeight % 2 == 1;
-		bottomShadow = bottomTileHeight % 2 == 1;
+		topShadow = topTileHeight % 2 == 1 && topTileHeight != emptySpaceHeight;
+		bottomShadow = bottomTileHeight % 2 == 1 && bottomTileHeight != emptySpaceHeight;
 	//the top part of this segment is visible
 	} else if (topTileHeight == emptySpaceHeight || topTileHeight <= baseHeight - (char)(yPixelOffset / tileSize) * 2) {
 		int spriteX = segment.spriteHorizontalIndex * tileSize;
@@ -246,7 +246,7 @@ void MapState::Rail::renderSegment(int screenLeftWorldX, int screenTopWorldY, fl
 			drawTopY,
 			drawLeftX + (GLint)tileSize,
 			drawTopY + (GLint)spriteHeight);
-		topShadow = topTileHeight % 2 == 1;
+		topShadow = topTileHeight % 2 == 1 && topTileHeight != emptySpaceHeight;
 	}
 
 	if (topShadow || bottomShadow) {
