@@ -71,12 +71,11 @@ public:
 		int topY;
 		char color;
 		char group;
-	#ifdef EDITOR
 	public:
-		bool isDeleted;
-	#endif
+		#ifdef EDITOR
+			bool isDeleted;
+		#endif
 
-	public:
 		Switch(objCounterParametersComma() int pLeftX, int pTopY, char pColor, char pGroup);
 		virtual ~Switch();
 
@@ -92,6 +91,42 @@ public:
 		#ifdef EDITOR
 			void moveTo(int newLeftX, int newTopY);
 			char getFloorSaveData(int x, int y);
+		#endif
+	};
+	class ResetSwitch onlyInDebug(: public ObjCounter) {
+	public:
+		//Should only be allocated within an object, on the stack, or as a static object
+		class Segment {
+		public:
+			int x;
+			int y;
+			char color;
+			char group;
+
+			Segment(int pX, int pY, char pColor, char pGroup);
+			virtual ~Segment();
+
+			void render(int screenLeftWorldX, int screenTopWorldY, bool showGroups);
+		};
+
+	private:
+		int x;
+		int bottomY;
+	public:
+		vector<Segment> leftSegments;
+		vector<Segment> bottomSegments;
+		vector<Segment> rightSegments;
+		#ifdef EDITOR
+			bool isDeleted;
+		#endif
+
+		ResetSwitch(objCounterParametersComma() int pX, int pBottomY);
+		virtual ~ResetSwitch();
+
+		void render(int screenLeftWorldX, int screenTopWorldY, bool isOn, bool showGroups);
+		#ifdef EDITOR
+			public:
+				char getFloorSaveData(int x, int y);
 		#endif
 	};
 	class RailState onlyInDebug(: public ObjCounter) {
@@ -144,6 +179,18 @@ public:
 			int lastActivatedSwitchColorFadeInTicksOffset,
 			bool showGroup,
 			int ticksTime);
+	};
+	class ResetSwitchState onlyInDebug(: public ObjCounter) {
+	private:
+		ResetSwitch* resetSwitch;
+		int flipOffTicksTime;
+
+	public:
+		ResetSwitchState(objCounterParametersComma() ResetSwitch* pResetSwitch);
+		virtual ~ResetSwitchState();
+
+		void updateWithPreviousResetSwitchState(ResetSwitchState* prev);
+		void render(int screenLeftWorldX, int screenTopWorldY, bool showGroups, int ticksTime);
 	};
 	class RadioWavesState: public EntityState {
 	public:
@@ -218,6 +265,7 @@ public:
 	static const short railSwitchIdBitmask = 3 << 12;
 	static const short railIdValue = 1 << 12;
 	static const short switchIdValue = 2 << 12;
+	static const short resetSwitchIdValue = 3 << 12;
 	static const short railSwitchIndexBitmask = railIdValue - 1;
 	static const int floorIsRailSwitchBitmask = 1;
 	static const int floorIsRailSwitchHeadBitmask = 2;
@@ -247,6 +295,7 @@ private:
 	static short* railSwitchIds;
 	static vector<Rail*> rails;
 	static vector<Switch*> switches;
+	static vector<ResetSwitch*> resetSwitches;
 	static int width;
 	static int height;
 	#ifdef EDITOR
@@ -257,6 +306,7 @@ private:
 	vector<RailState*> railStatesByHeight;
 	int railsBelowPlayerZ;
 	vector<SwitchState*> switchStates;
+	vector<ResetSwitchState*> resetSwitchStates;
 	char lastActivatedSwitchColor;
 	int switchesAnimationFadeInStartTicksTime;
 	bool shouldPlayRadioTowerAnimation;

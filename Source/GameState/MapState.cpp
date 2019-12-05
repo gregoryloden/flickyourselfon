@@ -14,8 +14,10 @@
 #define newRail(x, y, baseHeight, color, initialTileOffset) \
 	newWithArgs(MapState::Rail, x, y, baseHeight, color, initialTileOffset)
 #define newSwitch(leftX, topY, color, group) newWithArgs(MapState::Switch, leftX, topY, color, group)
+#define newResetSwitch(x, bottomY) newWithArgs(MapState::ResetSwitch, x, bottomY)
 #define newRailState(rail, railIndex) newWithArgs(MapState::RailState, rail, railIndex)
 #define newSwitchState(switch0) newWithArgs(MapState::SwitchState, switch0)
+#define newResetSwitchState(resetSwitch) newWithArgs(MapState::ResetSwitchState, resetSwitch)
 #define newRadioWavesState() produceWithoutArgs(MapState::RadioWavesState)
 
 #ifdef EDITOR
@@ -403,6 +405,59 @@ void MapState::Switch::render(
 	}
 #endif
 
+//////////////////////////////// MapState::ResetSwitch::Segment ////////////////////////////////
+MapState::ResetSwitch::Segment::Segment(int pX, int pY, char pColor, char pGroup)
+: x(pX)
+, y(pY)
+, color(pColor)
+, group(pGroup) {
+}
+MapState::ResetSwitch::Segment::~Segment() {}
+//render this reset switch segment
+void MapState::ResetSwitch::Segment::render(int screenLeftWorldX, int screenTopWorldY, bool showGroups) {
+	//todo
+}
+
+//////////////////////////////// MapState::ResetSwitch ////////////////////////////////
+MapState::ResetSwitch::ResetSwitch(objCounterParametersComma() int pX, int pBottomY)
+: onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
+x(pX)
+, bottomY(pBottomY)
+, leftSegments()
+, bottomSegments()
+, rightSegments()
+#ifdef EDITOR
+	, isDeleted(false)
+#endif
+{
+}
+MapState::ResetSwitch::~ResetSwitch() {}
+//render the reset switch
+void MapState::ResetSwitch::render(int screenLeftWorldX, int screenTopWorldY, bool isOn, bool showGroups) {
+	#ifdef EDITOR
+		if (isDeleted)
+			return;
+	#endif
+
+	glEnable(GL_BLEND);
+	GLint drawLeftX = (GLint)(x * tileSize - screenLeftWorldX);
+	GLint drawTopY = (GLint)((bottomY - 1) * tileSize - screenTopWorldY);
+	SpriteRegistry::resetSwitch->renderSpriteAtScreenPosition(isOn ? 1 : 0, 0, drawLeftX, drawTopY);
+	for (Segment& segment : leftSegments)
+		segment.render(screenLeftWorldX, screenTopWorldY, showGroups);
+	for (Segment& segment : bottomSegments)
+		segment.render(screenLeftWorldX, screenTopWorldY, showGroups);
+	for (Segment& segment : rightSegments)
+		segment.render(screenLeftWorldX, screenTopWorldY, showGroups);
+}
+#ifdef EDITOR
+	//we're saving this switch to the floor file, get the data we need at this tile
+	char MapState::ResetSwitch::getFloorSaveData(int x, int y) {
+		//todo
+		return 0;
+	}
+#endif
+
 //////////////////////////////// MapState::RailState ////////////////////////////////
 const float MapState::RailState::tileOffsetPerTick = 3.0f / (float)Config::ticksPerSecond;
 MapState::RailState::RailState(objCounterParametersComma() Rail* pRail, int pRailIndex)
@@ -484,7 +539,7 @@ void MapState::SwitchState::flip(int pFlipOnTicksTime) {
 	}
 	flipOnTicksTime = pFlipOnTicksTime;
 }
-//activate rails if this switch was kicked
+//save the time that this switch should turn back on
 void MapState::SwitchState::updateWithPreviousSwitchState(SwitchState* prev) {
 	flipOnTicksTime = prev->flipOnTicksTime;
 }
@@ -504,6 +559,22 @@ void MapState::SwitchState::render(
 		lastActivatedSwitchColorFadeInTicksOffset,
 		ticksTime >= flipOnTicksTime,
 		showGroup);
+}
+
+//////////////////////////////// MapState::ResetSwitchState ////////////////////////////////
+MapState::ResetSwitchState::ResetSwitchState(objCounterParametersComma() ResetSwitch* pResetSwitch)
+: onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
+resetSwitch(pResetSwitch)
+, flipOffTicksTime(0) {
+}
+MapState::ResetSwitchState::~ResetSwitchState() {}
+//save the time that this reset switch should turn back off
+void MapState::ResetSwitchState::updateWithPreviousResetSwitchState(ResetSwitchState* prev) {
+	flipOffTicksTime = prev->flipOffTicksTime;
+}
+//render the reset switch
+void MapState::ResetSwitchState::render(int screenLeftWorldX, int screenTopWorldY, bool showGroups, int ticksTime) {
+	resetSwitch->render(screenLeftWorldX, screenTopWorldY, ticksTime < flipOffTicksTime, showGroups);
 }
 
 //////////////////////////////// MapState::RadioWavesState ////////////////////////////////
@@ -565,6 +636,7 @@ char* MapState::heights = nullptr;
 short* MapState::railSwitchIds = nullptr;
 vector<MapState::Rail*> MapState::rails;
 vector<MapState::Switch*> MapState::switches;
+vector<MapState::ResetSwitch*> MapState::resetSwitches;
 int MapState::width = 1;
 int MapState::height = 1;
 #ifdef EDITOR
@@ -578,6 +650,7 @@ MapState::MapState(objCounterParameters())
 , railStatesByHeight()
 , railsBelowPlayerZ(0)
 , switchStates()
+, resetSwitchStates()
 , lastActivatedSwitchColor(-1)
 , switchesAnimationFadeInStartTicksTime(0)
 , shouldPlayRadioTowerAnimation(false)
@@ -586,6 +659,8 @@ MapState::MapState(objCounterParameters())
 		railStates.push_back(newRailState(rails[i], i));
 	for (Switch* switch0 : switches)
 		switchStates.push_back(newSwitchState(switch0));
+	for (ResetSwitch* resetSwitch : resetSwitches)
+		resetSwitchStates.push_back(newResetSwitchState(resetSwitch));
 
 	//add all the rail states to their appropriate switch states
 	vector<SwitchState*> switchStatesByGroup;
@@ -605,6 +680,8 @@ MapState::~MapState() {
 		delete railState;
 	for (SwitchState* switchState : switchStates)
 		delete switchState;
+	for (ResetSwitchState* resetSwitchState : resetSwitchStates)
+		delete resetSwitchState;
 }
 //initialize and return a MapState
 MapState* MapState::produce(objCounterParameters()) {
@@ -732,6 +809,9 @@ void MapState::deleteMap() {
 	for (Switch* switch0 : switches)
 		delete switch0;
 	switches.clear();
+	for (ResetSwitch* resetSwitch : resetSwitches)
+		delete resetSwitch;
+	resetSwitches.clear();
 }
 //get the world position of the left edge of the screen using the camera as the center of the screen
 int MapState::getScreenLeftWorldX(EntityState* camera, int ticksTime) {
@@ -795,9 +875,13 @@ void MapState::updateWithPreviousMapState(MapState* prev, int ticksTime) {
 			railStates.push_back(newRailState(rails[railStates.size()], railStates.size()));
 		while (switchStates.size() < switches.size())
 			switchStates.push_back(newSwitchState(switches[switchStates.size()]));
+		while (resetSwitchStates.size() < resetSwitches.size())
+			resetSwitchStates.push_back(newResetSwitchState(resetSwitches[resetSwitchStates.size()]));
 	#endif
 	for (int i = 0; i < (int)prev->switchStates.size(); i++)
 		switchStates[i]->updateWithPreviousSwitchState(prev->switchStates[i]);
+	for (int i = 0; i < (int)prev->resetSwitchStates.size(); i++)
+		resetSwitchStates[i]->updateWithPreviousResetSwitchState(prev->resetSwitchStates[i]);
 	railStatesByHeight.clear();
 	for (RailState* otherRailState : prev->railStatesByHeight) {
 		RailState* railState = railStates[otherRailState->getRailIndex()];
@@ -933,6 +1017,8 @@ void MapState::render(EntityState* camera, char playerZ, bool showConnections, i
 			ticksTime - switchesAnimationFadeInStartTicksTime,
 			showConnections,
 			ticksTime);
+	for (ResetSwitchState* resetSwitchState : resetSwitchStates)
+		resetSwitchState->render(screenLeftWorldX, screenTopWorldY, showConnections, ticksTime);
 
 	//draw the radio tower after drawing everything else
 	glEnable(GL_BLEND);
@@ -1133,15 +1219,15 @@ void MapState::resetMap() {
 	//set a switch if there's room, or delete a switch if we can
 	void MapState::setSwitch(int leftX, int topY, char color, char group) {
 		//a switch occupies a 2x2 square, and must be surrounded by a 1-tile ring of no-swich-or-rail tiles
-		if (leftX - 1 < 0 || topY - 1 < 0 || leftX + 3 > width || topY + 3 > height)
+		if (leftX - 1 < 0 || topY - 1 < 0 || leftX + 2 >= width || topY + 2 >= height)
 			return;
 
 		short newSwitchId = (short)switches.size() | switchIdValue;
 		Switch* matchedSwitch = nullptr;
 		int matchedSwitchX = -1;
 		int matchedSwitchY = -1;
-		for (int checkY = topY - 1; checkY < topY + 3; checkY++) {
-			for (int checkX = leftX - 1; checkX < leftX + 3; checkX++) {
+		for (int checkY = topY - 1; checkY <= topY + 2; checkY++) {
+			for (int checkX = leftX - 1; checkX <= leftX + 2; checkX++) {
 				//no rail or switch here, keep looking
 				if (!tileHasRailOrSwitch(checkX, checkY))
 					continue;
@@ -1188,20 +1274,21 @@ void MapState::resetMap() {
 				}
 			}
 			matchedSwitch->moveTo(leftX, topY);
-		//we setting a new switch, unless we already have a switch exactly like this one
-		} else if (newSwitchId != 0) {
+		//we're deleting a switch, remove this group from any matching rails
+		} else if (newSwitchId == 0) {
+			for (Rail* rail : rails) {
+				if (rail->getColor() == color)
+					rail->removeGroup(group);
+			}
+		//we're setting a new switch
+		} else {
+			//but don't set it if we already have a switch exactly like this one
 			for (int i = 0; i < (int)switches.size(); i++) {
 				Switch* switch0 = switches[i];
 				if (switch0->getColor() == color && switch0->getGroup() == group && !switch0->isDeleted)
 					return;
 			}
 			switches.push_back(newSwitch(leftX, topY, color, group));
-		//we're deleting a switch, remove this group from any matching rails
-		} else {
-			for (Rail* rail : rails) {
-				if (rail->getColor() == color)
-					rail->removeGroup(group);
-			}
 		}
 
 		//go through and set the new switch ID, whether we're adding, moving, or removing a switch
@@ -1224,7 +1311,10 @@ void MapState::resetMap() {
 			}
 			if (!foundMatchingSwitch)
 				return;
-		}
+		//a rail can't go along the edge of the map
+		} else if (x - 1 < 0 || y - 1 < 0 || x + 1 >= width || y + 1 >= height)
+			return;
+
 
 		short editingRailId = -1;
 		Rail* editingRail = nullptr;
@@ -1310,7 +1400,45 @@ void MapState::resetMap() {
 	}
 	//set a reset switch, or delete one if we can
 	void MapState::setResetSwitch(int x, int bottomY) {
-		//todo
+		//a reset switch occupies a 1x2 square, and must be surrounded by a 1-tile ring of no-swich-or-rail tiles
+		if (x - 1 < 0 || bottomY - 2 < 0 || x + 1 >= width || bottomY + 1 >= height)
+			return;
+
+		short newResetSwitchId = (short)resetSwitches.size() | resetSwitchIdValue;
+		for (int checkY = bottomY - 2; checkY <= bottomY + 1; checkY++) {
+			for (int checkX = x - 1; checkX <= x + 1; checkX++) {
+				//no rail or switch here, keep looking
+				if (!tileHasRailOrSwitch(checkX, checkY))
+					continue;
+
+				//this is not a reset switch, we can't place a new rail here
+				short otherRailSwitchId = getRailSwitchId(checkX, checkY);
+				if ((otherRailSwitchId & railSwitchIdBitmask) != resetSwitchIdValue)
+					return;
+
+				ResetSwitch* resetSwitch = resetSwitches[otherRailSwitchId & railSwitchIndexBitmask];
+				//we clicked on a reset switch in the same spot as the one we're placing, mark it as deleted and set
+				//	newResetSwitchId to 0 so that we can use the regular reset-switch-placing logic to clear the reset switch
+				if (checkX == x && checkY == bottomY - 1) {
+					//but if it has segments, don't do anything to it
+					if (resetSwitch->leftSegments.size() > 0
+							|| resetSwitch->bottomSegments.size() > 0
+							|| resetSwitch->rightSegments.size() > 0)
+						return;
+					resetSwitch->isDeleted = true;
+					newResetSwitchId = 0;
+					checkY = bottomY + 2;
+					break;
+				//we didn't click on a reset switch in the same spot as this one, don't try to place a new one
+				} else
+					return;
+			}
+		}
+
+		railSwitchIds[bottomY * width + x] = newResetSwitchId;
+		railSwitchIds[(bottomY - 1) * width + x] = newResetSwitchId;
+		if (newResetSwitchId != 0)
+			resetSwitches.push_back(newResetSwitch(x, bottomY));
 	}
 	//adjust the tile offset of the rail here, if there is one
 	void MapState::adjustRailInitialTileOffset(int x, int y, char tileOffset) {
@@ -1326,6 +1454,8 @@ void MapState::resetMap() {
 			return rails[railSwitchId & railSwitchIndexBitmask]->getFloorSaveData(x, y);
 		else if (railSwitchIdValue == switchIdValue)
 			return switches[railSwitchId & railSwitchIndexBitmask]->getFloorSaveData(x, y);
+		else if (railSwitchIdValue == resetSwitchIdValue)
+			return resetSwitches[railSwitchId & railSwitchIndexBitmask]->getFloorSaveData(x, y);
 		else
 			return 0;
 	}
