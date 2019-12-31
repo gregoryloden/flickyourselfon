@@ -14,7 +14,8 @@ private:
 		None,
 		RaiseLowerTile,
 		AddRemoveRail,
-		AddRemoveSwitch
+		AddRemoveSwitch,
+		AddRemoveResetSwitch
 	};
 	//Should only be allocated within an object, on the stack, or as a static object
 	class RGB {

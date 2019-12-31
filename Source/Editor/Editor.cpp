@@ -711,7 +711,10 @@
 	}
 	//adjust the tile offset of the rail at this position
 	void Editor::ResetSwitchButton::paintMap(int x, int y) {
-		MapState::setResetSwitch(x, y);
+		if (lastMouseDragAction == MouseDragAction::None) {
+			lastMouseDragAction = MouseDragAction::AddRemoveResetSwitch;
+			MapState::setResetSwitch(x, y);
+		}
 	}
 
 	//////////////////////////////// Editor::RailSwitchGroupButton ////////////////////////////////
