@@ -49,6 +49,8 @@ public:
 		int getSegmentCount() { return (int)(segments->size()); }
 		Segment* getSegment(int i) { return &(*segments)[i]; }
 		static int endSegmentSpriteHorizontalIndex(int xExtents, int yExtents);
+		static int middleSegmentSpriteHorizontalIndex(int prevX, int prevY, int x, int y, int nextX, int nextY);
+		static void setSegmentColor(float colorScale, int railColor);
 		void reverseSegments();
 		void addGroup(char group);
 		void addSegment(int x, int y);
@@ -102,11 +104,12 @@ public:
 			int y;
 			char color;
 			char group;
+			int spriteHorizontalIndex;
 
-			Segment(int pX, int pY, char pColor, char pGroup);
+			Segment(int pX, int pY, char pColor, char pGroup, int pSpriteHorizontalIndex);
 			virtual ~Segment();
 
-			void render(int screenLeftWorldX, int screenTopWorldY, bool showGroups);
+			void render(int screenLeftWorldX, int screenTopWorldY, bool showGroup);
 		};
 
 	private:
@@ -123,6 +126,8 @@ public:
 		ResetSwitch(objCounterParametersComma() int pX, int pBottomY);
 		virtual ~ResetSwitch();
 
+		int getX() { return x; }
+		int getBottomY() { return bottomY; }
 		void render(int screenLeftWorldX, int screenTopWorldY, bool isOn, bool showGroups);
 		#ifdef EDITOR
 			public:
@@ -376,6 +381,18 @@ public:
 		static bool hasFloorTileCreatingShadowForHeight(int x, int y, char height);
 		static void setSwitch(int leftX, int topY, char color, char group);
 		static void setRail(int x, int y, char color, char group);
+		static bool updateResetSwitchGroups(
+			int x,
+			int y,
+			char color,
+			char group,
+			short resetSwitchId,
+			int resetSwitchIndex,
+			int baseX,
+			int baseY,
+			int newRailGroupX,
+			int newRailGroupY,
+			vector<ResetSwitch::Segment>& segments);
 		static void setResetSwitch(int x, int bottomY);
 		static void adjustRailInitialTileOffset(int x, int y, char tileOffset);
 		static char getRailSwitchFloorSaveData(int x, int y);
