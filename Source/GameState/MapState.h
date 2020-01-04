@@ -50,6 +50,7 @@ public:
 		Segment* getSegment(int i) { return &(*segments)[i]; }
 		static int endSegmentSpriteHorizontalIndex(int xExtents, int yExtents);
 		static int middleSegmentSpriteHorizontalIndex(int prevX, int prevY, int x, int y, int nextX, int nextY);
+		static int extentSegmentSpriteHorizontalIndex(int prevX, int prevY, int x, int y);
 		static void setSegmentColor(float colorScale, int railColor);
 		void reverseSegments();
 		void addGroup(char group);
@@ -113,7 +114,7 @@ public:
 		};
 
 	private:
-		int x;
+		int centerX;
 		int bottomY;
 	public:
 		vector<Segment> leftSegments;
@@ -123,15 +124,17 @@ public:
 			bool isDeleted;
 		#endif
 
-		ResetSwitch(objCounterParametersComma() int pX, int pBottomY);
+		ResetSwitch(objCounterParametersComma() int pCenterX, int pBottomY);
 		virtual ~ResetSwitch();
 
-		int getX() { return x; }
+		int getCenterX() { return centerX; }
 		int getBottomY() { return bottomY; }
 		void render(int screenLeftWorldX, int screenTopWorldY, bool isOn, bool showGroups);
 		#ifdef EDITOR
 			public:
 				char getFloorSaveData(int x, int y);
+			private:
+				char getSegmentFloorSaveData(int x, int y, vector<Segment>& segments);
 		#endif
 	};
 	class RailState onlyInDebug(: public ObjCounter) {
@@ -276,6 +279,8 @@ public:
 	static const int floorIsRailSwitchHeadBitmask = 2;
 	static const int floorIsRailSwitchAndHeadBitmask = floorIsRailSwitchHeadBitmask | floorIsRailSwitchBitmask;
 	static const int floorIsSwitchBitmask = 4;
+	static const int floorIsResetSwitchBitmask = 0x20;
+	static const int floorIsSwitchAndResetSwitchBitmask = floorIsSwitchBitmask | floorIsResetSwitchBitmask;
 	static const char floorRailSwitchColorPostShiftBitmask = 0x3;
 	static const char floorRailSwitchGroupPostShiftBitmask = 0x3F;
 	static const char floorRailInitialTileOffsetPostShiftBitmask = 0x7;
@@ -283,8 +288,10 @@ public:
 	static const int floorRailSwitchGroupDataShift = 2;
 	static const int floorRailInitialTileOffsetDataShift = 5;
 	static const int floorRailSwitchAndHeadValue = floorIsRailSwitchHeadBitmask | floorIsRailSwitchBitmask;
+	static const int floorRailSwitchTailValue = floorIsRailSwitchBitmask;
 	static const int floorRailHeadValue = floorRailSwitchAndHeadValue;
-	static const int floorSwitchHeadValue = floorIsSwitchBitmask | floorRailSwitchAndHeadValue;
+	static const int floorSwitchHeadValue = floorRailSwitchAndHeadValue | floorIsSwitchBitmask;
+	static const int floorResetSwitchHeadValue = floorSwitchHeadValue | floorIsResetSwitchBitmask;
 	//other
 	static const char* floorFileName;
 	static const float smallDistance;
@@ -348,6 +355,14 @@ public:
 	static void buildMap();
 private:
 	static vector<int> parseRail(int* pixels, int redShift, int segmentIndex, int railSwitchId);
+	static void addResetSwitchSegments(
+		int* pixels,
+		int redShift,
+		int resetSwitchX,
+		int resetSwitchBottomY,
+		int firstSegmentIndex,
+		int resetSwitchId,
+		vector<ResetSwitch::Segment>& segments);
 public:
 	static void deleteMap();
 	static int getScreenLeftWorldX(EntityState* camera, int ticksTime);

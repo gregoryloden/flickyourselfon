@@ -14,7 +14,7 @@
 #define newRail(x, y, baseHeight, color, initialTileOffset) \
 	newWithArgs(MapState::Rail, x, y, baseHeight, color, initialTileOffset)
 #define newSwitch(leftX, topY, color, group) newWithArgs(MapState::Switch, leftX, topY, color, group)
-#define newResetSwitch(x, bottomY) newWithArgs(MapState::ResetSwitch, x, bottomY)
+#define newResetSwitch(centerX, bottomY) newWithArgs(MapState::ResetSwitch, centerX, bottomY)
 #define newRailState(rail, railIndex) newWithArgs(MapState::RailState, rail, railIndex)
 #define newSwitchState(switch0) newWithArgs(MapState::SwitchState, switch0)
 #define newResetSwitchState(resetSwitch) newWithArgs(MapState::ResetSwitchState, resetSwitch)
@@ -87,6 +87,10 @@ int MapState::Rail::middleSegmentSpriteHorizontalIndex(int prevX, int prevY, int
 		int yExtentsSum = prevY - y + nextY - y;
 		return 3 - yExtentsSum + (1 - xExtentsSum) / 2;
 	}
+}
+//get the sprite index that extends straight from the previous segment
+int MapState::Rail::extentSegmentSpriteHorizontalIndex(int prevX, int prevY, int x, int y) {
+	return middleSegmentSpriteHorizontalIndex(prevX, prevY, x, y, x + (x - prevX), y + (y - prevY));
 }
 //set the color mask for segments of the given rail color
 void MapState::Rail::setSegmentColor(float colorScale, int railColor) {
@@ -330,7 +334,7 @@ void MapState::Rail::renderSegment(int screenLeftWorldX, int screenTopWorldY, fl
 			}
 		}
 		//no data but still part of this rail
-		return floorIsRailSwitchBitmask;
+		return floorRailSwitchTailValue;
 	}
 #endif
 
@@ -412,7 +416,7 @@ void MapState::Switch::render(
 			return (group << floorRailSwitchGroupDataShift) | floorIsRailSwitchBitmask;
 		//no data but still part of this switch
 		else
-			return floorIsRailSwitchBitmask;
+			return floorRailSwitchTailValue;
 	}
 #endif
 
@@ -437,9 +441,9 @@ void MapState::ResetSwitch::Segment::render(int screenLeftWorldX, int screenTopW
 }
 
 //////////////////////////////// MapState::ResetSwitch ////////////////////////////////
-MapState::ResetSwitch::ResetSwitch(objCounterParametersComma() int pX, int pBottomY)
+MapState::ResetSwitch::ResetSwitch(objCounterParametersComma() int pCenterX, int pBottomY)
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
-x(pX)
+centerX(pCenterX)
 , bottomY(pBottomY)
 , leftSegments()
 , bottomSegments()
@@ -458,7 +462,7 @@ void MapState::ResetSwitch::render(int screenLeftWorldX, int screenTopWorldY, bo
 	#endif
 
 	glEnable(GL_BLEND);
-	GLint drawLeftX = (GLint)(x * tileSize - screenLeftWorldX);
+	GLint drawLeftX = (GLint)(centerX * tileSize - screenLeftWorldX);
 	GLint drawTopY = (GLint)((bottomY - 1) * tileSize - screenTopWorldY);
 	SpriteRegistry::resetSwitch->renderSpriteAtScreenPosition(isOn ? 1 : 0, 0, drawLeftX, drawTopY);
 	for (Segment& segment : leftSegments)
@@ -471,7 +475,30 @@ void MapState::ResetSwitch::render(int screenLeftWorldX, int screenTopWorldY, bo
 #ifdef EDITOR
 	//we're saving this switch to the floor file, get the data we need at this tile
 	char MapState::ResetSwitch::getFloorSaveData(int x, int y) {
-		//todo
+		if (x == centerX && y == bottomY)
+			return floorResetSwitchHeadValue;
+		char leftFloorSaveData = getSegmentFloorSaveData(x, y, leftSegments);
+		if (leftFloorSaveData != 0)
+			return leftFloorSaveData;
+		char bottomFloorSaveData = getSegmentFloorSaveData(x, y, bottomSegments);
+		if (bottomFloorSaveData != 0)
+			return bottomFloorSaveData;
+		return getSegmentFloorSaveData(x, y, rightSegments);
+	}
+	//get the save value for this tile if the coordinates match one of the given segments
+	char MapState::ResetSwitch::getSegmentFloorSaveData(int x, int y, vector<Segment>& segments) {
+		for (int i = 0; i < (int)segments.size(); i++) {
+			Segment& segment = segments[i];
+			if (segment.x != x || segment.y != y)
+				continue;
+			return i == 0
+				//segment 0 combines the first and last colors
+				? floorIsRailSwitchBitmask
+					| (segment.color << floorRailSwitchGroupDataShift)
+					| (segments.back().color << (floorRailSwitchGroupDataShift + 2))
+				//everything else sets its group
+				: floorIsRailSwitchBitmask | (segment.group << floorRailSwitchGroupDataShift);
+		}
 		return 0;
 	}
 #endif
@@ -748,36 +775,50 @@ void MapState::buildMap() {
 		//head bytes that start a rail/switch have bit 1 set, we only build rails/switches when we get to one of these
 		if ((railSwitchValue & floorIsRailSwitchAndHeadBitmask) != floorRailSwitchAndHeadValue)
 			continue;
+		int headX = i % width;
+		int headY = i / width;
 
 		//head byte 1:
 		//	bit 1: 1 (indicates head byte)
 		//	bit 2 indicates rail (0) vs switch (1)
 		//	bits 3-4: color (R/B/G/W)
+		//	switch bit 5 indicates switch (0) vs reset switch (1)
 		//	rail bits 5-7: initial tile offset
 		//tail byte 2+:
 		//	bit 1: 0 (indicates tail byte)
 		//	bits 2-7: group number
 		char color = (railSwitchValue >> floorRailSwitchColorDataShift) & floorRailSwitchColorPostShiftBitmask;
-		//switches have only 2 bytes, head byte 1 at its top-left tile, and tail byte 2 at its top-right tile
-		if ((railSwitchValue & floorIsSwitchBitmask) != 0) {
+		//this is a reset switch
+		if ((railSwitchValue & floorIsSwitchAndResetSwitchBitmask) == floorIsSwitchAndResetSwitchBitmask) {
+			short newResetSwitchId = (short)resetSwitches.size() | resetSwitchIdValue;
+			ResetSwitch* resetSwitch = newResetSwitch(headX, headY);
+			resetSwitches.push_back(resetSwitch);
+			railSwitchIds[i - width] = newResetSwitchId;
+			railSwitchIds[i] = newResetSwitchId;
+			addResetSwitchSegments(pixels, redShift, headX, headY, i - 1, newResetSwitchId, resetSwitch->leftSegments);
+			addResetSwitchSegments(pixels, redShift, headX, headY, i + width, newResetSwitchId, resetSwitch->bottomSegments);
+			addResetSwitchSegments(pixels, redShift, headX, headY, i + 1, newResetSwitchId, resetSwitch->rightSegments);
+		//this is a regular switch
+		} else if ((railSwitchValue & floorIsSwitchBitmask) != 0) {
 			char switchByte2 = (char)((pixels[i + 1] & redMask) >> redShift);
 			char group = (switchByte2 >> floorRailSwitchGroupDataShift) & floorRailSwitchGroupPostShiftBitmask;
 			short newSwitchId = (short)switches.size() | switchIdValue;
 			//add the switch and set all the ids
-			switches.push_back(newSwitch(i % width, i / width, color, group));
+			switches.push_back(newSwitch(headX, headY, color, group));
 			for (int yOffset = 0; yOffset <= 1; yOffset++) {
 				for (int xOffset = 0; xOffset <= 1; xOffset++) {
 					railSwitchIds[i + xOffset + yOffset * width] = newSwitchId;
 				}
 			}
-		//rails can extend in any direction after this head byte tile
+		//this is a rail
 		} else {
 			short newRailId = (short)rails.size() | railIdValue;
 			char initialTileOffset =
 				(railSwitchValue >> floorRailInitialTileOffsetDataShift) & floorRailInitialTileOffsetPostShiftBitmask;
-			Rail* rail = newRail(i % width, i / width, heights[i], color, initialTileOffset);
+			Rail* rail = newRail(headX, headY, heights[i], color, initialTileOffset);
 			rails.push_back(rail);
 			railSwitchIds[i] = newRailId;
+			//rails can extend in any direction after this head byte tile
 			vector<int> railIndices = parseRail(pixels, redShift, i, newRailId);
 			int floorRailGroupShiftedShift = redShift + floorRailSwitchGroupDataShift;
 			for (int railIndex : railIndices) {
@@ -814,6 +855,55 @@ vector<int> MapState::parseRail(int* pixels, int redShift, int segmentIndex, int
 			return segmentIndices;
 		segmentIndices.push_back(segmentIndex);
 		railSwitchIds[segmentIndex] = railSwitchId;
+	}
+}
+//read rail groups starting from the given tile, if there is a rail there
+void MapState::addResetSwitchSegments(
+	int* pixels,
+	int redShift,
+	int resetSwitchX,
+	int resetSwitchBottomY,
+	int firstSegmentIndex,
+	int resetSwitchId,
+	vector<ResetSwitch::Segment>& segments)
+{
+	int resetSwitchValue = pixels[firstSegmentIndex] >> redShift;
+	//no rails here
+	if ((resetSwitchValue & floorIsRailSwitchAndHeadBitmask) != floorRailSwitchTailValue)
+		return;
+
+	//in each direction (down, left, or right), the first byte indicates colors, 1 or 2:
+	//	bits 2-3 indicate the first color and bits 4-5 indicate the second color (if there is one)
+	//	rail groups belong to the first color until group 0 is read, at which point groups are now the second color
+	char color1 = (char)((resetSwitchValue >> floorRailSwitchGroupDataShift) & floorRailSwitchColorPostShiftBitmask);
+	char color2 = (char)((resetSwitchValue >> (floorRailSwitchGroupDataShift + 2)) & floorRailSwitchColorPostShiftBitmask);
+	railSwitchIds[firstSegmentIndex] = resetSwitchId;
+	int lastSegmentX = resetSwitchX;
+	int lastSegmentY = resetSwitchBottomY;
+	int segmentX = firstSegmentIndex % width;
+	int segmentY = firstSegmentIndex / width;
+	int firstSegmentSpriteHorizontalIndex =
+		Rail::extentSegmentSpriteHorizontalIndex(lastSegmentX, lastSegmentY, segmentX, segmentY);
+	segments.push_back(ResetSwitch::Segment(segmentX, segmentY, color1, 0, firstSegmentSpriteHorizontalIndex));
+
+	char segmentColor = color1;
+	vector<int> railIndices = parseRail(pixels, redShift, firstSegmentIndex, resetSwitchId);
+	for (int segmentIndex : railIndices) {
+		int secondLastSegmentX = lastSegmentX;
+		int secondLastSegmentY = lastSegmentY;
+		lastSegmentX = segmentX;
+		lastSegmentY = segmentY;
+		segmentX = segmentIndex % width;
+		segmentY = segmentIndex / width;
+		segments.back().spriteHorizontalIndex = Rail::middleSegmentSpriteHorizontalIndex(
+			secondLastSegmentX, secondLastSegmentY, lastSegmentX, lastSegmentY, segmentX, segmentY);
+
+		char group = (char)((pixels[segmentIndex] >> floorRailSwitchGroupDataShift) & floorRailSwitchGroupPostShiftBitmask);
+		if (group == 0)
+			segmentColor = color2;
+		int segmentSpriteHorizontalIndex =
+			Rail::extentSegmentSpriteHorizontalIndex(lastSegmentX, lastSegmentY, segmentX, segmentY);
+		segments.push_back(ResetSwitch::Segment(segmentX, segmentY, segmentColor, group, segmentSpriteHorizontalIndex));
 	}
 }
 //delete the resources used to handle the map
@@ -1414,7 +1504,7 @@ void MapState::resetMap() {
 		//we're editing a reset switch
 		} else if (editingRailSwitchIdValue == resetSwitchIdValue) {
 			ResetSwitch* editingResetSwitch = resetSwitches[editingRailSwitchId & railSwitchIndexBitmask];
-			int editingResetSwitchX = editingResetSwitch->getX();
+			int editingResetSwitchX = editingResetSwitch->getCenterX();
 			int editingResetSwitchBottomY = editingResetSwitch->getBottomY();
 			//don't do anything if we the reset switch isn't adjacent to this, or if the adjacent reset switch spans more than 2
 			//	in both directions (a 1x3 rect is fine if we clicked next to the reset switch with a rail below it, and if it's
@@ -1532,8 +1622,7 @@ void MapState::resetMap() {
 			lastEnd.spriteHorizontalIndex =
 				Rail::middleSegmentSpriteHorizontalIndex(secondLastX, secondLastY, lastEndX, lastEndY, x, y);
 		}
-		end.spriteHorizontalIndex =
-			Rail::middleSegmentSpriteHorizontalIndex(lastEndX, lastEndY, x, y, x + (x - lastEndX), y + (y - lastEndY));
+		end.spriteHorizontalIndex = Rail::extentSegmentSpriteHorizontalIndex(lastEndX, lastEndY, x, y);
 		return true;
 	}
 	//set a reset switch, or delete one if we can
