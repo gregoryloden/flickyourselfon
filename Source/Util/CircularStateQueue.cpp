@@ -51,14 +51,20 @@ template <class Type> void CircularStateQueue<Type>::addWritableState(Type* stat
 //advance the write head to the next state and set the read head if necessary
 template <class Type> void CircularStateQueue<Type>::finishWritingToState() {
 	writeHead = writeHead->next;
-	if (lastStateWasRead) {
+}
+//if there is a state we can read from, return it
+template <class Type> Type* CircularStateQueue<Type>::getNextReadableState() {
+	//we haven't read from the read head yet, return the state
+	if (!lastStateWasRead)
+		return readHead->state;
+	//we already read from the read head, but there's another state available, advance to it and return it
+	else if (readHead != writeHead) {
 		readHead = readHead->next;
 		lastStateWasRead = false;
-	}
-}
-//if we haven't read our state yet, return it
-template <class Type> Type* CircularStateQueue<Type>::getNextReadableState() {
-	return !lastStateWasRead ? readHead->state : nullptr;
+		return readHead->state;
+	//we already read from the read head and there is no other state available
+	} else
+		return nullptr;
 }
 //advance the read head if there are more readable states
 template <class Type> void CircularStateQueue<Type>::finishReadingFromState() {
