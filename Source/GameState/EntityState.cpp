@@ -1,7 +1,7 @@
 #include "EntityState.h"
 #include "GameState/DynamicValue.h"
-#include "GameState/GameState.h"
 #include "GameState/EntityAnimation.h"
+#include "GameState/GameState.h"
 #include "Sprites/SpriteSheet.h"
 #include "Util/Config.h"
 

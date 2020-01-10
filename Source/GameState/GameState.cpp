@@ -4,9 +4,9 @@
 #endif
 #include "GameState/DynamicValue.h"
 #include "GameState/EntityAnimation.h"
-#include "GameState/MapState.h"
 #include "GameState/PauseState.h"
 #include "GameState/PlayerState.h"
+#include "GameState/MapState/MapState.h"
 #include "Sprites/SpriteAnimation.h"
 #include "Sprites/SpriteRegistry.h"
 #include "Sprites/SpriteSheet.h"

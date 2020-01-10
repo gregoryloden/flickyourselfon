@@ -1,8 +1,8 @@
 #include "FileUtils.h"
 #ifdef __APPLE__
 	#include <CoreFoundation/CFBundle.h>
-	#include <sys/stat.h>
 	#include <pwd.h>
+	#include <sys/stat.h>
 	#include <unistd.h>
 #endif
 

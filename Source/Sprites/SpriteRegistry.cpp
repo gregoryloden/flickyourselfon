@@ -1,5 +1,5 @@
 #include "SpriteRegistry.h"
-#include "GameState/MapState.h"
+#include "GameState/MapState/MapState.h"
 #include "Sprites/SpriteAnimation.h"
 #include "Sprites/SpriteSheet.h"
 #include "Util/FileUtils.h"

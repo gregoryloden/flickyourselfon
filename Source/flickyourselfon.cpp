@@ -8,7 +8,7 @@
 #include "GameState/EntityState.h"
 #include "GameState/GameState.h"
 #include "GameState/PauseState.h"
-#include "GameState/MapState.h"
+#include "GameState/MapState/MapState.h"
 #include "Util/CircularStateQueue.h"
 #include "Util/Config.h"
 #include "Util/Logger.h"

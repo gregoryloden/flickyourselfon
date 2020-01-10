@@ -3,7 +3,9 @@
 #include "GameState/DynamicValue.h"
 #include "GameState/EntityAnimation.h"
 #include "GameState/GameState.h"
-#include "GameState/MapState.h"
+#include "GameState/MapState/MapState.h"
+#include "GameState/MapState/Rail.h"
+#include "GameState/MapState/Switch.h"
 #include "Sprites/SpriteAnimation.h"
 #include "Sprites/SpriteRegistry.h"
 #include "Sprites/SpriteSheet.h"
@@ -626,8 +628,8 @@ bool PlayerState::kickRail(float xPosition, float yPosition, int ticksTime) {
 			return false;
 	}
 
-	MapState::RailState* railState = mapState.get()->getRailState(railMapX, railMapY);
-	MapState::Rail* rail = railState->getRail();
+	RailState* railState = mapState.get()->getRailState(railMapX, railMapY);
+	Rail* rail = railState->getRail();
 	//if it's lowered, we can't ride it but don't try to fall
 	if (!railState->canRide()) {
 		kickAir(ticksTime);
@@ -635,10 +637,9 @@ bool PlayerState::kickRail(float xPosition, float yPosition, int ticksTime) {
 	}
 
 	vector<ReferenceCounterHolder<EntityAnimation::Component>> ridingRailAnimationComponents;
-	Holder_MapStateRail railHolder (rail);
 	Holder_EntityAnimationComponentVector ridingRailAnimationComponentsHolder (&ridingRailAnimationComponents);
 	if (addRailRideComponents(
-		&railHolder, &ridingRailAnimationComponentsHolder, xPosition, yPosition, railMapX, railMapY, nullptr, nullptr))
+		rail, &ridingRailAnimationComponentsHolder, xPosition, yPosition, railMapX, railMapY, nullptr, nullptr))
 	{
 		MapState::logRailRide(MapState::getRailSwitchId(railMapX, railMapY), (int)xPosition, (int)yPosition);
 		beginEntityAnimation(&ridingRailAnimationComponentsHolder, ticksTime);
@@ -649,7 +650,7 @@ bool PlayerState::kickRail(float xPosition, float yPosition, int ticksTime) {
 //add the components for a rail-riding animation, if our position matches the start or end of a rail
 //returns whether components were added
 bool PlayerState::addRailRideComponents(
-	Holder_MapStateRail* railHolder,
+	Rail* rail,
 	Holder_EntityAnimationComponentVector* componentsHolder,
 	float xPosition,
 	float yPosition,
@@ -658,11 +659,10 @@ bool PlayerState::addRailRideComponents(
 	float* outFinalXPosition,
 	float* outFinalYPosition)
 {
-	MapState::Rail* rail = railHolder->val;
 	vector<ReferenceCounterHolder<EntityAnimation::Component>>* components = componentsHolder->val;
 	int endSegmentIndex = rail->getSegmentCount() - 1;
-	MapState::Rail::Segment* startSegment = rail->getSegment(0);
-	MapState::Rail::Segment* endSegment = rail->getSegment(endSegmentIndex);
+	Rail::Segment* startSegment = rail->getSegment(0);
+	Rail::Segment* endSegment = rail->getSegment(endSegmentIndex);
 	int firstSegmentIndex = 0;
 	int lastSegmentIndex = 0;
 	int segmentIndexIncrement;
@@ -682,7 +682,7 @@ bool PlayerState::addRailRideComponents(
 	components->push_back(newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerBootLiftAnimation));
 
 	const float halfTileSize = (float)MapState::tileSize * 0.5f;
-	MapState::Rail::Segment* nextSegment = rail->getSegment(firstSegmentIndex);
+	Rail::Segment* nextSegment = rail->getSegment(firstSegmentIndex);
 	int nextSegmentIndex = firstSegmentIndex;
 	bool firstMove = true;
 	float targetXPosition = xPosition;
@@ -691,7 +691,7 @@ bool PlayerState::addRailRideComponents(
 		float lastXPosition = targetXPosition;
 		float lastYPosition = targetYPosition;
 		nextSegmentIndex += segmentIndexIncrement;
-		MapState::Rail::Segment* currentSegment = nextSegment;
+		Rail::Segment* currentSegment = nextSegment;
 		nextSegment = rail->getSegment(nextSegmentIndex);
 
 		targetXPosition = currentSegment->tileCenterX();
@@ -821,19 +821,18 @@ bool PlayerState::addRailRideComponents(
 		float* outFinalXPosition,
 		float* outFinalYPosition)
 	{
-		MapState::Rail* rail = MapState::getRailByIndex(railIndex);
-		Holder_MapStateRail railHolder (rail);
+		Rail* rail = MapState::getRailByIndex(railIndex);
 		float feetYPosition = yPosition + boundingBoxCenterYOffset;
-		MapState::Rail::Segment* startSegment = rail->getSegment(0);
-		MapState::Rail::Segment* endSegment = rail->getSegment(rail->getSegmentCount() - 1);
+		Rail::Segment* startSegment = rail->getSegment(0);
+		Rail::Segment* endSegment = rail->getSegment(rail->getSegmentCount() - 1);
 
 		//define the distance to the segment as the manhattan distance of the center of the player bounding box to the center of
 		//	the tile that the segment is on
 		float startDist = abs(xPosition - startSegment->tileCenterX()) + abs(feetYPosition - startSegment->tileCenterY());
 		float endDist = abs(xPosition - endSegment->tileCenterX()) + abs(feetYPosition - endSegment->tileCenterY());
-		MapState::Rail::Segment* nearestSegment = startDist <= endDist ? startSegment : endSegment;
+		Rail::Segment* nearestSegment = startDist <= endDist ? startSegment : endSegment;
 		addRailRideComponents(
-			&railHolder,
+			rail,
 			componentsHolder,
 			xPosition,
 			yPosition,
@@ -867,7 +866,7 @@ bool PlayerState::kickSwitch(float xPosition, float yPosition, int ticksTime) {
 		else {
 			switchTopMapY = (int)(yPosition + boundingBoxTopOffset - 0.5f) / MapState::tileSize;
 			if (MapState::tileHasSwitch(switchCenterMapX, switchTopMapY)) {
-				MapState::SwitchState* switchState = mapState.get()->getSwitchState(switchCenterMapX, switchTopMapY);
+				SwitchState* switchState = mapState.get()->getSwitchState(switchCenterMapX, switchTopMapY);
 				if (switchState->getSwitch()->getGroup() == 0)
 					switchId = MapState::getRailSwitchId(switchCenterMapX, switchTopMapY);
 			}

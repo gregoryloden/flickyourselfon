@@ -5,9 +5,9 @@
 class CollisionRect;
 class EntityAnimation;
 class Holder_EntityAnimationComponentVector;
-class Holder_MapStateRail;
 class MapState;
 class PositionState;
+class Rail;
 class SpriteAnimation;
 
 class PlayerState: public EntityState {
@@ -81,7 +81,7 @@ private:
 	void kickFall(float xMoveDistance, float yMoveDistance, char fallHeight, int ticksTime);
 	bool kickRail(float xPosition, float yPosition, int ticksTime);
 	static bool addRailRideComponents(
-		Holder_MapStateRail* railHolder,
+		Rail* rail,
 		Holder_EntityAnimationComponentVector* componentsHolder,
 		float xPosition,
 		float yPosition,

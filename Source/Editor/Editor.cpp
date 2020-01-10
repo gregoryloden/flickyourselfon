@@ -1,7 +1,7 @@
 #include "Editor.h"
 #include "GameState/EntityState.h"
 #include "GameState/GameState.h"
-#include "GameState/MapState.h"
+#include "GameState/MapState/MapState.h"
 #include "Sprites/SpriteRegistry.h"
 #include "Sprites/SpriteSheet.h"
 #include "Util/Config.h"

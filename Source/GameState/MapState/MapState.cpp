@@ -1,8 +1,13 @@
 #include "MapState.h"
-#include "Editor/Editor.h"
+#ifdef EDITOR
+	#include "Editor/Editor.h"
+#endif
 #include "GameState/DynamicValue.h"
 #include "GameState/EntityAnimation.h"
 #include "GameState/EntityState.h"
+#include "GameState/MapState/Rail.h"
+#include "GameState/MapState/ResetSwitch.h"
+#include "GameState/MapState/Switch.h"
 #include "Sprites/SpriteAnimation.h"
 #include "Sprites/SpriteRegistry.h"
 #include "Sprites/SpriteSheet.h"
@@ -11,616 +16,7 @@
 #include "Util/Logger.h"
 #include "Util/StringUtils.h"
 
-#define newRail(x, y, baseHeight, color, initialTileOffset) \
-	newWithArgs(MapState::Rail, x, y, baseHeight, color, initialTileOffset)
-#define newSwitch(leftX, topY, color, group) newWithArgs(MapState::Switch, leftX, topY, color, group)
-#define newResetSwitch(centerX, bottomY) newWithArgs(MapState::ResetSwitch, centerX, bottomY)
-#define newRailState(rail, railIndex) newWithArgs(MapState::RailState, rail, railIndex)
-#define newSwitchState(switch0) newWithArgs(MapState::SwitchState, switch0)
-#define newResetSwitchState(resetSwitch) newWithArgs(MapState::ResetSwitchState, resetSwitch)
 #define newRadioWavesState() produceWithoutArgs(MapState::RadioWavesState)
-
-#ifdef EDITOR
-	//Should only be allocated on the stack
-	class MutexLocker {
-	private:
-		mutex* m;
-	public:
-		MutexLocker(mutex& pM): m(&pM) { pM.lock(); }
-		virtual ~MutexLocker() { m->unlock(); }
-	};
-#endif
-
-//////////////////////////////// MapState::Rail::Segment ////////////////////////////////
-MapState::Rail::Segment::Segment(int pX, int pY, char pMaxTileOffset)
-: x(pX)
-, y(pY)
-//use the bottom end sprite as the default, we'll fix it later
-, spriteHorizontalIndex(endSegmentSpriteHorizontalIndex(0, -1))
-, maxTileOffset(pMaxTileOffset) {
-}
-MapState::Rail::Segment::~Segment() {}
-//get the center x of the tile that this segment is on (when raised)
-float MapState::Rail::Segment::tileCenterX() {
-	return (float)(x * tileSize) + (float)tileSize * 0.5f;
-}
-//get the center y of the tile that this segment is on (when raised)
-float MapState::Rail::Segment::tileCenterY() {
-	return (float)(y * tileSize) + (float)tileSize * 0.5f;
-}
-
-//////////////////////////////// MapState::Rail ////////////////////////////////
-MapState::Rail::Rail(objCounterParametersComma() int x, int y, char pBaseHeight, char pColor, char pInitialTileOffset)
-: onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
-baseHeight(pBaseHeight)
-, color(pColor)
-, segments(new vector<Segment>())
-, groups()
-, initialTileOffset(pInitialTileOffset)
-//give a default tile offset extending to the lowest height
-, maxTileOffset(pBaseHeight / 2)
-#ifdef EDITOR
-	, segmentsMutex()
-	, isDeleted(false)
-#endif
-{
-	segments->push_back(Segment(x, y, 0));
-}
-MapState::Rail::~Rail() {
-	delete segments;
-}
-//get the sprite index based on which direction this end segment extends towards
-int MapState::Rail::endSegmentSpriteHorizontalIndex(int xExtents, int yExtents) {
-	return yExtents != 0 ? 8 + (1 - yExtents) / 2 : 6 + (1 - xExtents) / 2;
-}
-//get the sprite index based on which other segments this segment extends towards
-int MapState::Rail::middleSegmentSpriteHorizontalIndex(int prevX, int prevY, int x, int y, int nextX, int nextY) {
-	//vertical rail if they have the same x
-	if (prevX == nextX)
-		return 0;
-	//horizontal rail if they have the same y
-	else if (prevY == nextY)
-		return 1;
-	//each extents is the sum of a 0 and a 1 or -1
-	else {
-		int xExtentsSum = prevX - x + nextX - x;
-		int yExtentsSum = prevY - y + nextY - y;
-		return 3 - yExtentsSum + (1 - xExtentsSum) / 2;
-	}
-}
-//get the sprite index that extends straight from the previous segment
-int MapState::Rail::extentSegmentSpriteHorizontalIndex(int prevX, int prevY, int x, int y) {
-	return middleSegmentSpriteHorizontalIndex(prevX, prevY, x, y, x + (x - prevX), y + (y - prevY));
-}
-//set the color mask for segments of the given rail color
-void MapState::Rail::setSegmentColor(float colorScale, int railColor) {
-	const float nonColorIntensity = 9.0f / 16.0f;
-	const float sineColorIntensity = 14.0f / 16.0f;
-	float redColor = sineColorIntensity;
-	float greenColor = sineColorIntensity;
-	float blueColor = sineColorIntensity;
-	if (railColor != sineColor) {
-		redColor = railColor == squareColor ? 1.0f : nonColorIntensity;
-		greenColor = railColor == sawColor ? 1.0f : nonColorIntensity;
-		blueColor = railColor == triangleColor ? 1.0f : nonColorIntensity;
-	}
-	glColor4f(colorScale * redColor, colorScale * greenColor, colorScale * blueColor, 1.0f);
-}
-//reverse the order of the segments
-void MapState::Rail::reverseSegments() {
-	vector<Segment>* newSegments = new vector<Segment>();
-	for (int i = (int)segments->size() - 1; i >= 0; i--)
-		newSegments->push_back((*segments)[i]);
-	delete segments;
-	segments = newSegments;
-}
-//add this group to the rail if it does not already contain it
-void MapState::Rail::addGroup(char group) {
-	if (group == 0)
-		return;
-	for (int i = 0; i < (int)groups.size(); i++) {
-		if (groups[i] == group)
-			return;
-	}
-	groups.push_back(group);
-}
-//add a segment on this tile to the rail
-void MapState::Rail::addSegment(int x, int y) {
-	//if we aren't adding at the end, reverse the list before continuing
-	Segment* end = &segments->back();
-	if (abs(y - end->y) + abs(x - end->x) != 1)
-		reverseSegments();
-
-	//find the tile where the shadow should go
-	for (char segmentMaxTileOffset = 0; true; segmentMaxTileOffset++) {
-		//in the event we actually went past the bottom of the map, don't try to find the tile height,
-		//	this segment does not have an offset and we're done searching
-		if (y + segmentMaxTileOffset >= height)
-			segmentMaxTileOffset = Segment::absentTileOffset;
-		else {
-			char railGroundHeight = baseHeight - (segmentMaxTileOffset * 2);
-			char tileHeight = getHeight(x, y + segmentMaxTileOffset);
-			//keep looking if we see an empty space tile or a non-empty space tile that's too low to be a ground tile at this y
-			if (tileHeight == emptySpaceHeight || tileHeight < railGroundHeight)
-				continue;
-
-			//we ended up on a tile above what would be a ground tile for this rail
-			//this is an empty space or a tile that the rail hides behind, mark that this segment does not have an offset
-			if (tileHeight > railGroundHeight)
-				segmentMaxTileOffset = Segment::absentTileOffset;
-		}
-		segments->push_back(Segment(x, y, segmentMaxTileOffset));
-		break;
-	}
-
-	//our newest segment is an end segment, figure out which way it should face
-	Segment* lastEnd = &(*segments)[segments->size() - 2];
-	end = &segments->back();
-	end->spriteHorizontalIndex = endSegmentSpriteHorizontalIndex(lastEnd->x - end->x, lastEnd->y - end->y);
-
-	//our last end segment is now a middle rail, find its sprite and account for its max height offset
-	if (segments->size() >= 3) {
-		Segment* secondLastEnd = &(*segments)[segments->size() - 3];
-		lastEnd->spriteHorizontalIndex =
-			middleSegmentSpriteHorizontalIndex(secondLastEnd->x, secondLastEnd->y, lastEnd->x, lastEnd->y, end->x, end->y);
-		if (lastEnd->maxTileOffset != Segment::absentTileOffset) {
-			maxTileOffset = MathUtils::min(lastEnd->maxTileOffset, maxTileOffset);
-			initialTileOffset = MathUtils::min(maxTileOffset, initialTileOffset);
-		}
-	//we only have 2 segments so the other rail is just the end segment that complements this
-	} else
-		lastEnd->spriteHorizontalIndex = endSegmentSpriteHorizontalIndex(end->x - lastEnd->x, end->y - lastEnd->y);
-}
-//render this rail at its position by rendering each segment
-void MapState::Rail::render(int screenLeftWorldX, int screenTopWorldY, float tileOffset) {
-	#ifdef EDITOR
-		if (isDeleted)
-			return;
-		MutexLocker mutexLocker (segmentsMutex);
-	#endif
-
-	const float maxRailHeightColorScaleReduction = 3.0f / 8.0f;
-	float railHeightColorScale = 1.0f - maxRailHeightColorScaleReduction * MathUtils::fmin(1.0f, tileOffset / 3.0f);
-	setSegmentColor(railHeightColorScale, color);
-	int lastSegmentIndex = (int)segments->size() - 1;
-	for (int i = 1; i < lastSegmentIndex; i++)
-		renderSegment(screenLeftWorldX, screenTopWorldY, tileOffset, i);
-	setSegmentColor(1.0f, color);
-	renderSegment(screenLeftWorldX, screenTopWorldY, 0.0f, 0);
-	renderSegment(screenLeftWorldX, screenTopWorldY, 0.0f, lastSegmentIndex);
-	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-}
-//render the shadow below the rail
-void MapState::Rail::renderShadow(int screenLeftWorldX, int screenTopWorldY) {
-	#ifdef EDITOR
-		if (isDeleted)
-			return;
-		MutexLocker mutexLocker (segmentsMutex);
-	#endif
-	glEnable(GL_BLEND);
-
-	int lastSegmentIndex = (int)segments->size() - 1;
-	for (int i = 1; i < lastSegmentIndex; i++) {
-		Segment& segment = (*segments)[i];
-		//don't render a shadow if this segment hides behind a platform
-		if (segment.maxTileOffset > 0)
-			SpriteRegistry::rails->renderSpriteAtScreenPosition(
-				segment.spriteHorizontalIndex + 10,
-				0,
-				(GLint)(segment.x * tileSize - screenLeftWorldX),
-				(GLint)((segment.y + (int)segment.maxTileOffset) * tileSize - screenTopWorldY));
-	}
-}
-//render groups where the rail would be at 0 offset
-void MapState::Rail::renderGroups(int screenLeftWorldX, int screenTopWorldY) {
-	#ifdef EDITOR
-		if (isDeleted)
-			return;
-		MutexLocker mutexLocker (segmentsMutex);
-	#endif
-
-	int lastSegmentIndex = (int)segments->size() - 1;
-	bool hasGroups = groups.size() > 0;
-
-	for (int i = 0; i <= lastSegmentIndex; i++) {
-		Segment& segment = (*segments)[i];
-		GLint drawLeftX = (GLint)(segment.x * tileSize - screenLeftWorldX);
-		GLint drawTopY = (GLint)(segment.y * tileSize - screenTopWorldY);
-		renderGroupRect(
-			hasGroups ? groups[i % groups.size()] : 0, drawLeftX + 2, drawTopY + 2, drawLeftX + 4, drawTopY + 4);
-	}
-}
-//render the rail segment at its position, clipping it if part of the map is higher than it
-void MapState::Rail::renderSegment(int screenLeftWorldX, int screenTopWorldY, float tileOffset, int segmentIndex) {
-	Segment& segment = (*segments)[segmentIndex];
-	int yPixelOffset = (int)(tileOffset * (float)tileSize + 0.5f);
-	int topWorldY = segment.y * tileSize + yPixelOffset;
-	int bottomTileY = (topWorldY + tileSize - 1) / tileSize;
-	GLint drawLeftX = (GLint)(segment.x * tileSize - screenLeftWorldX);
-	GLint drawTopY = (GLint)(topWorldY - screenTopWorldY);
-	char topTileHeight = getHeight(segment.x, topWorldY / tileSize);
-	char bottomTileHeight = getHeight(segment.x, bottomTileY);
-	bool topShadow = false;
-	bool bottomShadow = false;
-
-	//this segment is completely visible
-	if (bottomTileHeight == emptySpaceHeight
-		|| bottomTileHeight <= baseHeight - (char)((yPixelOffset + tileSize - 1) / tileSize) * 2)
-	{
-		SpriteRegistry::rails->renderSpriteAtScreenPosition(segment.spriteHorizontalIndex, 0, drawLeftX, drawTopY);
-		topShadow = topTileHeight % 2 == 1 && topTileHeight != emptySpaceHeight;
-		bottomShadow = bottomTileHeight % 2 == 1 && bottomTileHeight != emptySpaceHeight;
-	//the top part of this segment is visible
-	} else if (topTileHeight == emptySpaceHeight || topTileHeight <= baseHeight - (char)(yPixelOffset / tileSize) * 2) {
-		int spriteX = segment.spriteHorizontalIndex * tileSize;
-		int spriteHeight = bottomTileY * tileSize - topWorldY;
-		SpriteRegistry::rails->renderSpriteSheetRegionAtScreenRegion(
-			spriteX,
-			0,
-			spriteX + tileSize,
-			spriteHeight,
-			drawLeftX,
-			drawTopY,
-			drawLeftX + (GLint)tileSize,
-			drawTopY + (GLint)spriteHeight);
-		topShadow = topTileHeight % 2 == 1 && topTileHeight != emptySpaceHeight;
-	}
-
-	if (topShadow || bottomShadow) {
-		#ifdef EDITOR
-			if (segment.spriteHorizontalIndex > 6)
-				return;
-		#endif
-		int topSpriteHeight = bottomTileY * tileSize - topWorldY;
-		int spriteX = (segment.spriteHorizontalIndex + 16) * tileSize;
-		int spriteTop = topShadow ? 0 : topSpriteHeight;
-		int spriteBottom = bottomShadow ? tileSize : topSpriteHeight;
-		SpriteRegistry::rails->renderSpriteSheetRegionAtScreenRegion(
-			spriteX,
-			spriteTop,
-			spriteX + tileSize,
-			spriteBottom,
-			drawLeftX,
-			drawTopY + (GLint)spriteTop,
-			drawLeftX + (GLint)tileSize,
-			drawTopY + (GLint)spriteBottom);
-	}
-}
-#ifdef EDITOR
-	//remove this group from the rail if it contains it
-	void MapState::Rail::removeGroup(char group) {
-		for (int i = 0; i < (int)groups.size(); i++) {
-			if (groups[i] == group) {
-				groups.erase(groups.begin() + i);
-				return;
-			}
-		}
-	}
-	//remove the segment on this tile from the rail
-	void MapState::Rail::removeSegment(int x, int y) {
-		MutexLocker mutexLocker (segmentsMutex);
-		Segment& end = segments->back();
-		if (y == end.y && x == end.x)
-			segments->pop_back();
-		else
-			segments->erase(segments->begin());
-		//reset the max tile offset, find the smallest offset among the non-end segments
-		maxTileOffset = baseHeight / 2;
-		for (int i = 1; i < (int)segments->size() - 1; i++) {
-			Segment& segment = (*segments)[i];
-			if (segment.maxTileOffset != Segment::absentTileOffset)
-				maxTileOffset = MathUtils::min(segment.maxTileOffset, maxTileOffset);
-		}
-	}
-	//adjust the initial tile offset of this rail if we're clicking on one of its end segments
-	void MapState::Rail::adjustInitialTileOffset(int x, int y, char tileOffset) {
-		Segment& start = segments->front();
-		Segment& end = segments->back();
-		if ((x == start.x && y == start.y) || (x == end.x && y == end.y))
-			initialTileOffset = MathUtils::max(0, MathUtils::min(maxTileOffset, initialTileOffset + tileOffset));
-	}
-	//we're saving this rail to the floor file, get the data we need at this tile
-	char MapState::Rail::getFloorSaveData(int x, int y) {
-		Segment& start = segments->front();
-		if (x == start.x && y == start.y)
-			return (color << floorRailSwitchColorDataShift)
-				| (initialTileOffset << floorRailInitialTileOffsetDataShift)
-				| floorRailHeadValue;
-		else {
-			for (int i = 1; i - 1 < (int)groups.size() && i < (int)segments->size(); i++) {
-				Segment& segment = (*segments)[i];
-				if (segment.x == x && segment.y == y)
-					return groups[i - 1] << floorRailSwitchGroupDataShift | floorIsRailSwitchBitmask;
-			}
-		}
-		//no data but still part of this rail
-		return floorRailSwitchTailValue;
-	}
-#endif
-
-//////////////////////////////// MapState::Switch ////////////////////////////////
-MapState::Switch::Switch(objCounterParametersComma() int pLeftX, int pTopY, char pColor, char pGroup)
-: onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
-leftX(pLeftX)
-, topY(pTopY)
-, color(pColor)
-, group(pGroup)
-#ifdef EDITOR
-	, isDeleted(false)
-#endif
-{
-}
-MapState::Switch::~Switch() {}
-//render the switch
-void MapState::Switch::render(
-	int screenLeftWorldX,
-	int screenTopWorldY,
-	char lastActivatedSwitchColor,
-	int lastActivatedSwitchColorFadeInTicksOffset,
-	bool isOn,
-	bool showGroup)
-{
-	#ifdef EDITOR
-		if (isDeleted)
-			return;
-		//always render the activated color for all switches up to sine
-		lastActivatedSwitchColor = sineColor;
-		lastActivatedSwitchColorFadeInTicksOffset = switchesFadeInDuration;
-		isOn = true;
-	#else
-		//group 0 is the turn-on-all-switches switch, don't render it if we're not in the editor
-		if (group == 0)
-			return;
-	#endif
-
-	glEnable(GL_BLEND);
-	GLint drawLeftX = (GLint)(leftX * tileSize - screenLeftWorldX);
-	GLint drawTopY = (GLint)(topY * tileSize - screenTopWorldY);
-	//draw the gray sprite if it's off or fading in
-	if (lastActivatedSwitchColor < color
-			|| (lastActivatedSwitchColor == color && lastActivatedSwitchColorFadeInTicksOffset <= 0))
-		SpriteRegistry::switches->renderSpriteAtScreenPosition(0, 0, drawLeftX, drawTopY);
-	//draw the color sprite if it's already on or it's fully faded in
-	else if (lastActivatedSwitchColor > color
-		|| (lastActivatedSwitchColor == color && lastActivatedSwitchColorFadeInTicksOffset >= switchesFadeInDuration))
-	{
-		int spriteHorizontalIndex = lastActivatedSwitchColor < color ? 0 : (int)(color * 2 + (isOn ? 1 : 2));
-		SpriteRegistry::switches->renderSpriteAtScreenPosition(spriteHorizontalIndex, 0, drawLeftX, drawTopY);
-	//draw a partially faded light color sprite above the darker color sprite if we're fading in the color
-	} else {
-		int darkSpriteHorizontalIndex = (int)(color * 2 + 2);
-		SpriteRegistry::switches->renderSpriteAtScreenPosition(darkSpriteHorizontalIndex, 0, drawLeftX, drawTopY);
-		float fadeInAlpha = MathUtils::fsqr((float)lastActivatedSwitchColorFadeInTicksOffset / (float)switchesFadeInDuration);
-		glColor4f(1.0f, 1.0f, 1.0f, fadeInAlpha);
-		int lightSpriteLeftX = (darkSpriteHorizontalIndex - 1) * 12 + 1;
-		SpriteRegistry::switches->renderSpriteSheetRegionAtScreenRegion(
-			lightSpriteLeftX, 1, lightSpriteLeftX + 10, 11, drawLeftX + 1, drawTopY + 1, drawLeftX + 11, drawTopY + 11);
-		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-	}
-	if (showGroup)
-		renderGroupRect(group, drawLeftX + 4, drawTopY + 4, drawLeftX + 8, drawTopY + 8);
-}
-#ifdef EDITOR
-	//update the position of this switch
-	void MapState::Switch::moveTo(int newLeftX, int newTopY) {
-		leftX = newLeftX;
-		topY = newTopY;
-	}
-	//we're saving this switch to the floor file, get the data we need at this tile
-	char MapState::Switch::getFloorSaveData(int x, int y) {
-		//head byte, write our color
-		if (x == leftX && y == topY)
-			return (color << floorRailSwitchColorDataShift) | floorSwitchHeadValue;
-		//tail byte, write our number
-		else if (x == leftX + 1&& y == topY)
-			return (group << floorRailSwitchGroupDataShift) | floorIsRailSwitchBitmask;
-		//no data but still part of this switch
-		else
-			return floorRailSwitchTailValue;
-	}
-#endif
-
-//////////////////////////////// MapState::ResetSwitch::Segment ////////////////////////////////
-MapState::ResetSwitch::Segment::Segment(int pX, int pY, char pColor, char pGroup, int pSpriteHorizontalIndex)
-: x(pX)
-, y(pY)
-, color(pColor)
-, group(pGroup)
-, spriteHorizontalIndex(pSpriteHorizontalIndex) {
-}
-MapState::ResetSwitch::Segment::~Segment() {}
-//render this reset switch segment
-void MapState::ResetSwitch::Segment::render(int screenLeftWorldX, int screenTopWorldY, bool showGroup) {
-	glEnable(GL_BLEND);
-	Rail::setSegmentColor(1.0f, color);
-	GLint drawLeftX = (GLint)(x * tileSize - screenLeftWorldX);
-	GLint drawTopY = (GLint)(y * tileSize - screenTopWorldY);
-	SpriteRegistry::rails->renderSpriteAtScreenPosition(spriteHorizontalIndex, 0, drawLeftX, drawTopY);
-	if (showGroup)
-		renderGroupRect(group, drawLeftX + 2, drawTopY + 2, drawLeftX + 4, drawTopY + 4);
-}
-
-//////////////////////////////// MapState::ResetSwitch ////////////////////////////////
-MapState::ResetSwitch::ResetSwitch(objCounterParametersComma() int pCenterX, int pBottomY)
-: onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
-centerX(pCenterX)
-, bottomY(pBottomY)
-, leftSegments()
-, bottomSegments()
-, rightSegments()
-#ifdef EDITOR
-	, isDeleted(false)
-#endif
-{
-}
-MapState::ResetSwitch::~ResetSwitch() {}
-//render the reset switch
-void MapState::ResetSwitch::render(int screenLeftWorldX, int screenTopWorldY, bool isOn, bool showGroups) {
-	#ifdef EDITOR
-		if (isDeleted)
-			return;
-	#endif
-
-	glEnable(GL_BLEND);
-	GLint drawLeftX = (GLint)(centerX * tileSize - screenLeftWorldX);
-	GLint drawTopY = (GLint)((bottomY - 1) * tileSize - screenTopWorldY);
-	SpriteRegistry::resetSwitch->renderSpriteAtScreenPosition(isOn ? 1 : 0, 0, drawLeftX, drawTopY);
-	for (Segment& segment : leftSegments)
-		segment.render(screenLeftWorldX, screenTopWorldY, showGroups);
-	for (Segment& segment : bottomSegments)
-		segment.render(screenLeftWorldX, screenTopWorldY, showGroups);
-	for (Segment& segment : rightSegments)
-		segment.render(screenLeftWorldX, screenTopWorldY, showGroups);
-}
-#ifdef EDITOR
-	//we're saving this switch to the floor file, get the data we need at this tile
-	char MapState::ResetSwitch::getFloorSaveData(int x, int y) {
-		if (x == centerX && y == bottomY)
-			return floorResetSwitchHeadValue;
-		char leftFloorSaveData = getSegmentFloorSaveData(x, y, leftSegments);
-		if (leftFloorSaveData != 0)
-			return leftFloorSaveData;
-		char bottomFloorSaveData = getSegmentFloorSaveData(x, y, bottomSegments);
-		if (bottomFloorSaveData != 0)
-			return bottomFloorSaveData;
-		return getSegmentFloorSaveData(x, y, rightSegments);
-	}
-	//get the save value for this tile if the coordinates match one of the given segments
-	char MapState::ResetSwitch::getSegmentFloorSaveData(int x, int y, vector<Segment>& segments) {
-		for (int i = 0; i < (int)segments.size(); i++) {
-			Segment& segment = segments[i];
-			if (segment.x != x || segment.y != y)
-				continue;
-			return i == 0
-				//segment 0 combines the first and last colors
-				? floorIsRailSwitchBitmask
-					| (segment.color << floorRailSwitchGroupDataShift)
-					| (segments.back().color << (floorRailSwitchGroupDataShift + 2))
-				//everything else sets its group
-				: floorIsRailSwitchBitmask | (segment.group << floorRailSwitchGroupDataShift);
-		}
-		return 0;
-	}
-#endif
-
-//////////////////////////////// MapState::RailState ////////////////////////////////
-const float MapState::RailState::tileOffsetPerTick = 3.0f / (float)Config::ticksPerSecond;
-MapState::RailState::RailState(objCounterParametersComma() Rail* pRail, int pRailIndex)
-: onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
-rail(pRail)
-, railIndex(pRailIndex)
-, tileOffset((float)pRail->getInitialTileOffset())
-, targetTileOffset(0.0f)
-, lastUpdateTicksTime(0) {
-	targetTileOffset = tileOffset;
-}
-MapState::RailState::~RailState() {
-	//don't delete the rail, it's owned by MapState
-}
-//check if we need to start/stop moving
-void MapState::RailState::updateWithPreviousRailState(RailState* prev, int ticksTime) {
-	targetTileOffset = prev->targetTileOffset;
-	if (prev->tileOffset != prev->targetTileOffset) {
-		float tileOffsetDiff = tileOffsetPerTick * (float)(ticksTime - prev->lastUpdateTicksTime);
-		tileOffset = prev->tileOffset > prev->targetTileOffset
-			? MathUtils::fmax(prev->targetTileOffset, prev->tileOffset - tileOffsetDiff)
-			: MathUtils::fmin(prev->targetTileOffset, prev->tileOffset + tileOffsetDiff);
-	} else
-		tileOffset = targetTileOffset;
-	lastUpdateTicksTime = ticksTime;
-
-	#ifdef EDITOR
-		tileOffset = (float)rail->getInitialTileOffset();
-	#endif
-}
-//swap the tile offset between 0 and the max tile offset
-void MapState::RailState::squareToggleOffset() {
-	targetTileOffset = targetTileOffset == 0.0f ? rail->getMaxTileOffset() : 0.0f;
-}
-//render the rail, possibly with groups
-void MapState::RailState::render(int screenLeftWorldX, int screenTopWorldY) {
-	rail->render(screenLeftWorldX, screenTopWorldY, tileOffset);
-}
-//render a shadow below the rail
-void MapState::RailState::renderShadow(int screenLeftWorldX, int screenTopWorldY) {
-	rail->renderShadow(screenLeftWorldX, screenTopWorldY);
-}
-//render groups where the rail would be at 0 offset
-void MapState::RailState::renderGroups(int screenLeftWorldX, int screenTopWorldY) {
-	rail->renderGroups(screenLeftWorldX, screenTopWorldY);
-}
-//set this rail to the initial tile offset, not moving
-void MapState::RailState::loadState(float pTileOffset) {
-	tileOffset = pTileOffset;
-	targetTileOffset = pTileOffset;
-}
-//reset the offset
-void MapState::RailState::reset() {
-	loadState((float)rail->getInitialTileOffset());
-}
-
-//////////////////////////////// MapState::SwitchState ////////////////////////////////
-MapState::SwitchState::SwitchState(objCounterParametersComma() Switch* pSwitch0)
-: onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
-switch0(pSwitch0)
-, connectedRailStates()
-, flipOnTicksTime(0) {
-}
-MapState::SwitchState::~SwitchState() {
-	//don't delete the switch, it's owned by MapState
-}
-//add a rail state to be affected by this switch state
-void MapState::SwitchState::addConnectedRailState(RailState* railState) {
-	connectedRailStates.push_back(railState);
-}
-//activate rails because this switch was kicked
-void MapState::SwitchState::flip(int pFlipOnTicksTime) {
-	char color = switch0->getColor();
-	//square wave switch: just toggle the target tile offset of the rails
-	if (color == squareColor) {
-		for (RailState* railState : connectedRailStates) {
-			railState->squareToggleOffset();
-		}
-	}
-	flipOnTicksTime = pFlipOnTicksTime;
-}
-//save the time that this switch should turn back on
-void MapState::SwitchState::updateWithPreviousSwitchState(SwitchState* prev) {
-	flipOnTicksTime = prev->flipOnTicksTime;
-}
-//render the switch
-void MapState::SwitchState::render(
-	int screenLeftWorldX,
-	int screenTopWorldY,
-	char lastActivatedSwitchColor,
-	int lastActivatedSwitchColorFadeInTicksOffset,
-	bool showGroup,
-	int ticksTime)
-{
-	switch0->render(
-		screenLeftWorldX,
-		screenTopWorldY,
-		lastActivatedSwitchColor,
-		lastActivatedSwitchColorFadeInTicksOffset,
-		ticksTime >= flipOnTicksTime,
-		showGroup);
-}
-
-//////////////////////////////// MapState::ResetSwitchState ////////////////////////////////
-MapState::ResetSwitchState::ResetSwitchState(objCounterParametersComma() ResetSwitch* pResetSwitch)
-: onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
-resetSwitch(pResetSwitch)
-, flipOffTicksTime(0) {
-}
-MapState::ResetSwitchState::~ResetSwitchState() {}
-//save the time that this reset switch should turn back off
-void MapState::ResetSwitchState::updateWithPreviousResetSwitchState(ResetSwitchState* prev) {
-	flipOffTicksTime = prev->flipOffTicksTime;
-}
-//render the reset switch
-void MapState::ResetSwitchState::render(int screenLeftWorldX, int screenTopWorldY, bool showGroups, int ticksTime) {
-	resetSwitch->render(screenLeftWorldX, screenTopWorldY, ticksTime < flipOffTicksTime, showGroups);
-}
 
 //////////////////////////////// MapState::RadioWavesState ////////////////////////////////
 MapState::RadioWavesState::RadioWavesState(objCounterParameters())
@@ -679,9 +75,9 @@ const float MapState::introAnimationCameraCenterY = (float)(MapState::tileSize *
 char* MapState::tiles = nullptr;
 char* MapState::heights = nullptr;
 short* MapState::railSwitchIds = nullptr;
-vector<MapState::Rail*> MapState::rails;
-vector<MapState::Switch*> MapState::switches;
-vector<MapState::ResetSwitch*> MapState::resetSwitches;
+vector<Rail*> MapState::rails;
+vector<Switch*> MapState::switches;
+vector<ResetSwitch*> MapState::resetSwitches;
 int MapState::width = 1;
 int MapState::height = 1;
 #ifdef EDITOR
@@ -795,9 +191,12 @@ void MapState::buildMap() {
 			resetSwitches.push_back(resetSwitch);
 			railSwitchIds[i - width] = newResetSwitchId;
 			railSwitchIds[i] = newResetSwitchId;
-			addResetSwitchSegments(pixels, redShift, headX, headY, i - 1, newResetSwitchId, resetSwitch->leftSegments);
-			addResetSwitchSegments(pixels, redShift, headX, headY, i + width, newResetSwitchId, resetSwitch->bottomSegments);
-			addResetSwitchSegments(pixels, redShift, headX, headY, i + 1, newResetSwitchId, resetSwitch->rightSegments);
+			Holder_RessetSwitchSegmentVector leftSegmentsHolder (&resetSwitch->leftSegments);
+			Holder_RessetSwitchSegmentVector bottomSegmentsHolder (&resetSwitch->bottomSegments);
+			Holder_RessetSwitchSegmentVector rightSegmentsHolder (&resetSwitch->rightSegments);
+			addResetSwitchSegments(pixels, redShift, headX, headY, i - 1, newResetSwitchId, &leftSegmentsHolder);
+			addResetSwitchSegments(pixels, redShift, headX, headY, i + width, newResetSwitchId, &bottomSegmentsHolder);
+			addResetSwitchSegments(pixels, redShift, headX, headY, i + 1, newResetSwitchId, &rightSegmentsHolder);
 		//this is a regular switch
 		} else if ((railSwitchValue & floorIsSwitchBitmask) != 0) {
 			char switchByte2 = (char)((pixels[i + 1] & redMask) >> redShift);
@@ -865,8 +264,9 @@ void MapState::addResetSwitchSegments(
 	int resetSwitchBottomY,
 	int firstSegmentIndex,
 	int resetSwitchId,
-	vector<ResetSwitch::Segment>& segments)
+	Holder_RessetSwitchSegmentVector* segmentsHolder)
 {
+	vector<ResetSwitch::Segment>* segments = segmentsHolder->val;
 	int resetSwitchValue = pixels[firstSegmentIndex] >> redShift;
 	//no rails here
 	if ((resetSwitchValue & floorIsRailSwitchAndHeadBitmask) != floorRailSwitchTailValue)
@@ -884,7 +284,7 @@ void MapState::addResetSwitchSegments(
 	int segmentY = firstSegmentIndex / width;
 	int firstSegmentSpriteHorizontalIndex =
 		Rail::extentSegmentSpriteHorizontalIndex(lastSegmentX, lastSegmentY, segmentX, segmentY);
-	segments.push_back(ResetSwitch::Segment(segmentX, segmentY, color1, 0, firstSegmentSpriteHorizontalIndex));
+	segments->push_back(ResetSwitch::Segment(segmentX, segmentY, color1, 0, firstSegmentSpriteHorizontalIndex));
 
 	char segmentColor = color1;
 	vector<int> railIndices = parseRail(pixels, redShift, firstSegmentIndex, resetSwitchId);
@@ -895,7 +295,7 @@ void MapState::addResetSwitchSegments(
 		lastSegmentY = segmentY;
 		segmentX = segmentIndex % width;
 		segmentY = segmentIndex / width;
-		segments.back().spriteHorizontalIndex = Rail::middleSegmentSpriteHorizontalIndex(
+		segments->back().spriteHorizontalIndex = Rail::middleSegmentSpriteHorizontalIndex(
 			secondLastSegmentX, secondLastSegmentY, lastSegmentX, lastSegmentY, segmentX, segmentY);
 
 		char group = (char)((pixels[segmentIndex] >> floorRailSwitchGroupDataShift) & floorRailSwitchGroupPostShiftBitmask);
@@ -903,7 +303,7 @@ void MapState::addResetSwitchSegments(
 			segmentColor = color2;
 		int segmentSpriteHorizontalIndex =
 			Rail::extentSegmentSpriteHorizontalIndex(lastSegmentX, lastSegmentY, segmentX, segmentY);
-		segments.push_back(ResetSwitch::Segment(segmentX, segmentY, segmentColor, group, segmentSpriteHorizontalIndex));
+		segments->push_back(ResetSwitch::Segment(segmentX, segmentY, segmentColor, group, segmentSpriteHorizontalIndex));
 	}
 }
 //delete the resources used to handle the map
@@ -1512,6 +912,9 @@ void MapState::resetMap() {
 			if (!editingAdjacentRailSwitch || (xSpan > 1 && ySpan > 1 && !clickedOnRailSwitch))
 				return;
 			//one side at a time, see if we can add a segment to end of the reset switch
+			Holder_RessetSwitchSegmentVector leftSegmentsHolder (&editingResetSwitch->leftSegments);
+			Holder_RessetSwitchSegmentVector bottomSegmentsHolder (&editingResetSwitch->bottomSegments);
+			Holder_RessetSwitchSegmentVector rightSegmentsHolder (&editingResetSwitch->rightSegments);
 			updateResetSwitchGroups(
 					x,
 					y,
@@ -1523,7 +926,7 @@ void MapState::resetMap() {
 					editingResetSwitchBottomY,
 					editingResetSwitchX - 1,
 					editingResetSwitchBottomY,
-					editingResetSwitch->leftSegments)
+					&leftSegmentsHolder)
 				|| updateResetSwitchGroups(
 					x,
 					y,
@@ -1535,7 +938,7 @@ void MapState::resetMap() {
 					editingResetSwitchBottomY,
 					editingResetSwitchX,
 					editingResetSwitchBottomY + 1,
-					editingResetSwitch->bottomSegments)
+					&bottomSegmentsHolder)
 				|| updateResetSwitchGroups(
 					x,
 					y,
@@ -1547,7 +950,7 @@ void MapState::resetMap() {
 					editingResetSwitchBottomY,
 					editingResetSwitchX + 1,
 					editingResetSwitchBottomY,
-					editingResetSwitch->rightSegments);
+					&rightSegmentsHolder);
 		}
 	}
 	//remove a rail segment if we clicked on the last segment of the list, or add a segment if it's adjacent to the last segment
@@ -1564,20 +967,21 @@ void MapState::resetMap() {
 		int baseY,
 		int newRailGroupX,
 		int newRailGroupY,
-		vector<ResetSwitch::Segment>& segments)
+		Holder_RessetSwitchSegmentVector* segmentsHolder)
 	{
-		if (segments.size() == 0) {
+		vector<ResetSwitch::Segment>* segments = segmentsHolder->val;
+		if (segments->size() == 0) {
 			//if we have no segments, we can only add a segment with group 0 at the given coordinates
 			if (x != newRailGroupX || y != newRailGroupY || group != 0)
 				return false;
 		} else {
-			ResetSwitch::Segment& lastSegment = segments.back();
+			ResetSwitch::Segment& lastSegment = segments->back();
 			int segmentDist = abs(lastSegment.x - x) + abs(lastSegment.y - y);
 			//we clicked directly on the last segment, we can't add a segment here
 			if (segmentDist == 0) {
 				//delete it if it matches the color and group of this rail
 				if (lastSegment.color == color && lastSegment.group == group) {
-					segments.pop_back();
+					segments->pop_back();
 					railSwitchIds[resetSwitchIndex] = 0;
 				}
 				return true;
@@ -1585,12 +989,12 @@ void MapState::resetMap() {
 			} else if (segmentDist == 1) {
 				//the color matches the last segment- we can add a segment if the group isn't already there
 				if (color == lastSegment.color) {
-					for (ResetSwitch::Segment& segment : segments) {
+					for (ResetSwitch::Segment& segment : (*segments)) {
 						if (segment.color == color && segment.group == group)
 							return false;
 					}
 				//this is the start of the second color, we can add it if it's group 0
-				} else if (lastSegment.color == segments.front().color) {
+				} else if (lastSegment.color == segments->front().color) {
 					if (group != 0)
 						return false;
 				//this would be a third color, we can't add a segment here
@@ -1603,19 +1007,19 @@ void MapState::resetMap() {
 
 		//if we get here, we can add this segment
 		railSwitchIds[resetSwitchIndex] = resetSwitchId;
-		segments.push_back(ResetSwitch::Segment(x, y, color, group, 0));
+		segments->push_back(ResetSwitch::Segment(x, y, color, group, 0));
 		//fix sprite indices
 		int lastEndX = baseX;
 		int lastEndY = baseY;
-		ResetSwitch::Segment& end = segments.back();
-		if (segments.size() > 1) {
-			ResetSwitch::Segment& lastEnd = segments[segments.size() - 2];
+		ResetSwitch::Segment& end = segments->back();
+		if (segments->size() > 1) {
+			ResetSwitch::Segment& lastEnd = (*segments)[segments->size() - 2];
 			lastEndX = lastEnd.x;
 			lastEndY = lastEnd.y;
 			int secondLastX = baseX;
 			int secondLastY = baseY;
-			if (segments.size() >= 3) {
-				ResetSwitch::Segment& secondLastEnd = segments[segments.size() - 3];
+			if (segments->size() >= 3) {
+				ResetSwitch::Segment& secondLastEnd = (*segments)[segments->size() - 3];
 				secondLastX = secondLastEnd.x;
 				secondLastY = secondLastEnd.y;
 			}
@@ -1687,11 +1091,3 @@ void MapState::resetMap() {
 			return 0;
 	}
 #endif
-
-//////////////////////////////// Holder_MapStateRail ////////////////////////////////
-Holder_MapStateRail::Holder_MapStateRail(MapState::Rail* pVal)
-: val(pVal) {
-}
-Holder_MapStateRail::~Holder_MapStateRail() {
-	//don't delete the rail, it's owned by something else
-}
