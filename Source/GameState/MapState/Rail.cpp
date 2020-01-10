@@ -26,11 +26,11 @@ Rail::Segment::Segment(int pX, int pY, char pMaxTileOffset)
 Rail::Segment::~Segment() {}
 //get the center x of the tile that this segment is on (when raised)
 float Rail::Segment::tileCenterX() {
-	return (float)(x * MapState::tileSize) + (float)MapState::tileSize * 0.5f;
+	return ((float)x + 0.5f) * (float)MapState::tileSize;
 }
 //get the center y of the tile that this segment is on (when raised)
 float Rail::Segment::tileCenterY() {
-	return (float)(y * MapState::tileSize) + (float)MapState::tileSize * 0.5f;
+	return ((float)y + 0.5f) * (float)MapState::tileSize;
 }
 
 //////////////////////////////// Rail ////////////////////////////////
