@@ -45,7 +45,7 @@ public:
 
 	Switch* getSwitch() { return switch0; }
 	void addConnectedRailState(RailState* railState);
-	void flip(int pFlipOnTicksTime);
+	void flip(int flipOffTicksTime);
 	void updateWithPreviousSwitchState(SwitchState* prev);
 	void render(
 		int screenLeftWorldX,

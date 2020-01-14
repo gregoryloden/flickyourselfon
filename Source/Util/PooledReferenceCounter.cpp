@@ -94,6 +94,7 @@ template <class PooledObject> void ObjectPool<PooledObject>::clearPool() {
 
 template class ObjectPool<CompositeQuarticValue>;
 template class ObjectPool<EntityAnimation::Delay>;
+template class ObjectPool<EntityAnimation::MapKickResetSwitch>;
 template class ObjectPool<EntityAnimation::MapKickSwitch>;
 template class ObjectPool<EntityAnimation::SetGhostSprite>;
 template class ObjectPool<EntityAnimation::SetPosition>;

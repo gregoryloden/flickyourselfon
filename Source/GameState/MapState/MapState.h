@@ -54,6 +54,7 @@ public:
 	static const int introAnimationBootTileX = 29 + firstLevelTileOffsetX;
 	static const int introAnimationBootTileY = 26 + firstLevelTileOffsetY;
 	static const int switchesFadeInDuration = 1000;
+	static const int switchFlipDuration = 600;
 	//tile sections
 	static const char tileFloorFirst = 0;
 	static const char tileFloorLast = 8;
@@ -115,7 +116,8 @@ public:
 private:
 	static char* tiles;
 	static char* heights;
-	//bits 0-11 indicate the index in the appropriate rail/switch array, bit 12 indicates a rail, bit 13 indicates a switch
+	//bits 0-11 indicate the index in the appropriate rail/switch array, bits 13 and 12 indicate a rail (01), a switch (10), or
+	//	a reset switch (11)
 	static short* railSwitchIds;
 	static vector<Rail*> rails;
 	static vector<Switch*> switches;
@@ -150,8 +152,12 @@ public:
 	static bool tileHasRailOrSwitch(int x, int y) { return getRailSwitchId(x, y) != 0; }
 	static bool tileHasRail(int x, int y) { return (getRailSwitchId(x, y) & railSwitchIdBitmask) == railIdValue; }
 	static bool tileHasSwitch(int x, int y) { return (getRailSwitchId(x, y) & railSwitchIdBitmask) == switchIdValue; }
+	static bool tileHasResetSwitch(int x, int y) { return (getRailSwitchId(x, y) & railSwitchIdBitmask) == resetSwitchIdValue; }
 	RailState* getRailState(int x, int y) { return railStates[getRailSwitchId(x, y) & railSwitchIndexBitmask]; }
 	SwitchState* getSwitchState(int x, int y) { return switchStates[getRailSwitchId(x, y) & railSwitchIndexBitmask]; }
+	ResetSwitchState* getResetSwitchState(int x, int y) {
+		return resetSwitchStates[getRailSwitchId(x, y) & railSwitchIndexBitmask];
+	}
 	bool getShouldPlayRadioTowerAnimation() { return shouldPlayRadioTowerAnimation; }
 	char getLastActivatedSwitchColor() { return lastActivatedSwitchColor; }
 	int getRadioWavesAnimationTicksDuration() { return radioWavesState.get()->getAnimationTicksDuration(); }
@@ -191,13 +197,16 @@ private:
 	void insertRailByHeight(RailState* railState);
 public:
 	void flipSwitch(short switchId, bool allowRadioTowerAnimation, int ticksTime);
+	void flipResetSwitch(short resetSwitchId, int ticksTime);
 	void startRadioWavesAnimation(int initialTicksDelay, int ticksTime);
 	void startSwitchesFadeInAnimation(int ticksTime);
+	void resetMatchingRails(Holder_RessetSwitchSegmentVector* segmentsHolder);
 	void render(EntityState* camera, char playerZ, bool showConnections, int ticksTime);
 	void renderRailsAbovePlayer(EntityState* camera, char playerZ, bool showConnections, int ticksTime);
 	static void renderGroupRect(char group, GLint leftX, GLint topY, GLint rightX, GLint bottomY);
 	static void logGroup(char group, stringstream* message);
 	static void logSwitchKick(short switchId);
+	static void logResetSwitchKick(short resetSwitchId);
 	static void logRailRide(short railId, int playerX, int playerY);
 	void saveState(ofstream& file);
 	bool loadState(string& line);

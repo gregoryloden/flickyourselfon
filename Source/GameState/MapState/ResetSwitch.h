@@ -27,6 +27,9 @@ public:
 	vector<Segment> leftSegments;
 	vector<Segment> bottomSegments;
 	vector<Segment> rightSegments;
+private:
+	int flipOnTicksTime;
+public:
 	#ifdef EDITOR
 		bool isDeleted;
 	#endif
@@ -53,6 +56,8 @@ public:
 	ResetSwitchState(objCounterParametersComma() ResetSwitch* pResetSwitch);
 	virtual ~ResetSwitchState();
 
+	ResetSwitch* getResetSwitch() { return resetSwitch; }
+	void flip(int flipOnTicksTime);
 	void updateWithPreviousResetSwitchState(ResetSwitchState* prev);
 	void render(int screenLeftWorldX, int screenTopWorldY, bool showGroups, int ticksTime);
 };

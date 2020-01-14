@@ -61,6 +61,7 @@ public:
 	virtual void setSpriteAnimation(SpriteAnimation* pSpriteAnimation, int pSpriteAnimationStartTicksTime);
 	virtual void setGhostSprite(bool show, float x, float y, int ticksTime);
 	virtual void mapKickSwitch(short switchId, bool allowRadioTowerAnimation, int ticksTime);
+	virtual void mapKickResetSwitch(short resetSwitchId, int ticksTime);
 	void updateWithPreviousPlayerState(PlayerState* prev, int ticksTime);
 private:
 	void updatePositionWithPreviousPlayerState(PlayerState* prev, int ticksTime);
@@ -104,6 +105,10 @@ private:
 public:
 	static void addKickSwitchComponents(
 		short switchId, Holder_EntityAnimationComponentVector* componentsHolder, bool allowRadioTowerAnimation);
+private:
+	bool kickResetSwitch(float xPosition, float yPosition, int ticksTime);
+public:
+	static void addKickResetSwitchComponents(short resetSwitchId, Holder_EntityAnimationComponentVector* componentsHolder);
 	void render(EntityState* camera, int ticksTime);
 	void saveState(ofstream& file);
 	bool loadState(string& line);

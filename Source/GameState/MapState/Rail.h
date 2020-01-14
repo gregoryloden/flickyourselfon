@@ -90,6 +90,7 @@ public:
 	bool isAbovePlayerZ(char z) { return getEffectiveHeight() > (float)z + 1.5f; }
 	void updateWithPreviousRailState(RailState* prev, int ticksTime);
 	void squareToggleOffset();
+	void moveToDefaultTileOffset();
 	void render(int screenLeftWorldX, int screenTopWorld);
 	void renderShadow(int screenLeftWorldX, int screenTopWorldY);
 	void renderGroups(int screenLeftWorldX, int screenTopWorldY);

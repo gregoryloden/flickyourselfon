@@ -55,6 +55,7 @@ void ResetSwitch::render(int screenLeftWorldX, int screenTopWorldY, bool isOn, b
 		segment.render(screenLeftWorldX, screenTopWorldY, showGroups);
 	for (Segment& segment : rightSegments)
 		segment.render(screenLeftWorldX, screenTopWorldY, showGroups);
+	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 }
 #ifdef EDITOR
 	//we're saving this switch to the floor file, get the data we need at this tile
@@ -94,6 +95,10 @@ resetSwitch(pResetSwitch)
 , flipOffTicksTime(0) {
 }
 ResetSwitchState::~ResetSwitchState() {}
+//set the time that this reset switch should turn off
+void ResetSwitchState::flip(int flipOnTicksTime) {
+	flipOffTicksTime = flipOnTicksTime + MapState::switchFlipDuration;
+}
 //save the time that this reset switch should turn back off
 void ResetSwitchState::updateWithPreviousResetSwitchState(ResetSwitchState* prev) {
 	flipOffTicksTime = prev->flipOffTicksTime;

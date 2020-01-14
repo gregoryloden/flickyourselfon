@@ -151,6 +151,7 @@ int gameMain() {
 		ObjectPool<EntityAnimation::SetSpriteDirection>::clearPool();
 		ObjectPool<EntityAnimation::SwitchToPlayerCamera>::clearPool();
 		ObjectPool<EntityAnimation::MapKickSwitch>::clearPool();
+		ObjectPool<EntityAnimation::MapKickResetSwitch>::clearPool();
 		ObjectPool<CollisionRect>::clearPool();
 		ObjCounter::end();
 	#endif

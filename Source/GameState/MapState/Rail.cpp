@@ -358,6 +358,10 @@ void RailState::updateWithPreviousRailState(RailState* prev, int ticksTime) {
 void RailState::squareToggleOffset() {
 	targetTileOffset = targetTileOffset == 0.0f ? rail->getMaxTileOffset() : 0.0f;
 }
+//reset the tile offset to 0 so that the rail moves back to its default position
+void RailState::moveToDefaultTileOffset() {
+	targetTileOffset = (float)rail->getInitialTileOffset();
+}
 //render the rail, possibly with groups
 void RailState::render(int screenLeftWorldX, int screenTopWorldY) {
 	rail->render(screenLeftWorldX, screenTopWorldY, tileOffset);

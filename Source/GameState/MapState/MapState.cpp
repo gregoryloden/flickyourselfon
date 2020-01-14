@@ -425,7 +425,7 @@ void MapState::insertRailByHeight(RailState* railState) {
 	}
 	railStatesByHeight[insertionIndex] = railState;
 }
-//set that we should flip a switch in the future
+//flip a switch
 void MapState::flipSwitch(short switchId, bool allowRadioTowerAnimation, int ticksTime) {
 	SwitchState* switchState = switchStates[switchId & railSwitchIndexBitmask];
 	Switch* switch0 = switchState->getSwitch();
@@ -439,6 +439,18 @@ void MapState::flipSwitch(short switchId, bool allowRadioTowerAnimation, int tic
 	//this is just a regular switch and we've turned on the parent switch, flip it
 	} else if (lastActivatedSwitchColor >= switch0->getColor())
 		switchState->flip(ticksTime);
+}
+//flip a reset switch 
+void MapState::flipResetSwitch(short resetSwitchId, int ticksTime) {
+	ResetSwitchState* resetSwitchState = resetSwitchStates[resetSwitchId & railSwitchIndexBitmask];
+	ResetSwitch* resetSwitch = resetSwitchState->getResetSwitch();
+	Holder_RessetSwitchSegmentVector leftSegmentsHolder (&resetSwitch->leftSegments);
+	Holder_RessetSwitchSegmentVector bottomSegmentsHolder (&resetSwitch->bottomSegments);
+	Holder_RessetSwitchSegmentVector rightSegmentsHolder (&resetSwitch->rightSegments);
+	resetMatchingRails(&leftSegmentsHolder);
+	resetMatchingRails(&bottomSegmentsHolder);
+	resetMatchingRails(&rightSegmentsHolder);
+	resetSwitchState->flip(ticksTime);
 }
 //begin a radio waves animation
 void MapState::startRadioWavesAnimation(int initialTicksDelay, int ticksTime) {
@@ -459,6 +471,25 @@ void MapState::startRadioWavesAnimation(int initialTicksDelay, int ticksTime) {
 void MapState::startSwitchesFadeInAnimation(int ticksTime) {
 	shouldPlayRadioTowerAnimation = false;
 	switchesAnimationFadeInStartTicksTime = ticksTime;
+}
+//reset any rails that match the segments
+void MapState::resetMatchingRails(Holder_RessetSwitchSegmentVector* segmentsHolder) {
+	vector<ResetSwitch::Segment>* segments = segmentsHolder->val;
+	for (ResetSwitch::Segment& segment : *segments) {
+		if (segment.group == 0)
+			continue;
+		for (RailState* railState : railStates) {
+			Rail* rail = railState->getRail();
+			if (rail->getColor() != segment.color)
+				continue;
+			for (char group : rail->getGroups()) {
+				if (group == segment.group) {
+					railState->moveToDefaultTileOffset();
+					break;
+				}
+			}
+		}
+	}
 }
 //draw the map
 void MapState::render(EntityState* camera, char playerZ, bool showConnections, int ticksTime) {
@@ -607,7 +638,14 @@ void MapState::logSwitchKick(short switchId) {
 	message << ")";
 	Logger::gameplayLogger.logString(message.str());
 }
-//log that the switch was kicked
+//log that the reset switch was kicked
+void MapState::logResetSwitchKick(short resetSwitchId) {
+	short resetSwitchIndex = resetSwitchId & railSwitchIndexBitmask;
+	stringstream message;
+	message << "  reset switch " << resetSwitchIndex;
+	Logger::gameplayLogger.logString(message.str());
+}
+//log that the player rode on the rail
 void MapState::logRailRide(short railId, int playerX, int playerY) {
 	short railIndex = railId & railSwitchIndexBitmask;
 	stringstream message;

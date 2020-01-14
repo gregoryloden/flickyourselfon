@@ -192,7 +192,8 @@ bool EntityAnimation::SetScreenOverlayColor::handle(EntityState* entityState, in
 //////////////////////////////// EntityAnimation::MapKickSwitch ////////////////////////////////
 EntityAnimation::MapKickSwitch::MapKickSwitch(objCounterParameters())
 : Component(objCounterArguments())
-, switchId(0) {
+, switchId(0)
+, allowRadioTowerAnimation(true) {
 }
 EntityAnimation::MapKickSwitch::~MapKickSwitch() {}
 //initialize and return a MapKickSwitch
@@ -208,6 +209,27 @@ pooledReferenceCounterDefineRelease(EntityAnimation::MapKickSwitch)
 //return that the animation should continue updating after telling the map to kick the switch
 bool EntityAnimation::MapKickSwitch::handle(EntityState* entityState, int ticksTime) {
 	entityState->mapKickSwitch(switchId, allowRadioTowerAnimation, ticksTime);
+	return true;
+}
+
+//////////////////////////////// EntityAnimation::MapKickResetSwitch ////////////////////////////////
+EntityAnimation::MapKickResetSwitch::MapKickResetSwitch(objCounterParameters())
+: Component(objCounterArguments())
+, resetSwitchId(0) {
+}
+EntityAnimation::MapKickResetSwitch::~MapKickResetSwitch() {}
+//initialize and return a MapKickSwitch
+EntityAnimation::MapKickResetSwitch* EntityAnimation::MapKickResetSwitch::produce(
+	objCounterParametersComma() short pResetSwitchId)
+{
+	initializeWithNewFromPool(m, EntityAnimation::MapKickResetSwitch)
+	m->resetSwitchId = pResetSwitchId;
+	return m;
+}
+pooledReferenceCounterDefineRelease(EntityAnimation::MapKickResetSwitch)
+//return that the animation should continue updating after telling the map to kick the reset switch
+bool EntityAnimation::MapKickResetSwitch::handle(EntityState* entityState, int ticksTime) {
+	entityState->mapKickResetSwitch(resetSwitchId, ticksTime);
 	return true;
 }
 

@@ -46,6 +46,8 @@ public:
 	}
 	//tell the map to kick a switch at the given time
 	virtual void mapKickSwitch(short switchId, bool allowRadioTowerAnimation, int ticksTime) {}
+	//tell the map to kick a reset switch at the given time
+	virtual void mapKickResetSwitch(short resetSwitchId, int ticksTime) {}
 	void copyEntityState(EntityState* other);
 	float getRenderCenterWorldX(int ticksTime);
 	float getRenderCenterWorldY(int ticksTime);

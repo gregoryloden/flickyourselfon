@@ -10,6 +10,7 @@
 #define newEntityAnimationSetScreenOverlayColor(r, g, b, a) produceWithArgs(EntityAnimation::SetScreenOverlayColor, r, g, b, a)
 #define newEntityAnimationMapKickSwitch(switchId, allowRadioTowerAnimation) \
 	produceWithArgs(EntityAnimation::MapKickSwitch, switchId, allowRadioTowerAnimation)
+#define newEntityAnimationMapKickResetSwitch(resetSwitchId) produceWithArgs(EntityAnimation::MapKickResetSwitch, resetSwitchId)
 #define newEntityAnimationSwitchToPlayerCamera() produceWithoutArgs(EntityAnimation::SwitchToPlayerCamera)
 
 class DynamicValue;
@@ -139,6 +140,18 @@ public:
 		virtual ~MapKickSwitch();
 
 		static MapKickSwitch* produce(objCounterParametersComma() short pSwitchId, bool pAllowRadioTowerAnimation);
+		virtual void release();
+		virtual bool handle(EntityState* entityState, int ticksTime);
+	};
+	class MapKickResetSwitch: public Component {
+	private:
+		short resetSwitchId;
+
+	public:
+		MapKickResetSwitch(objCounterParameters());
+		virtual ~MapKickResetSwitch();
+
+		static MapKickResetSwitch* produce(objCounterParametersComma() short pResetSwitchId);
 		virtual void release();
 		virtual bool handle(EntityState* entityState, int ticksTime);
 	};

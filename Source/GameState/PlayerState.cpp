@@ -6,6 +6,7 @@
 #include "GameState/MapState/MapState.h"
 #include "GameState/MapState/Rail.h"
 #include "GameState/MapState/Switch.h"
+#include "GameState/MapState/ResetSwitch.h"
 #include "Sprites/SpriteAnimation.h"
 #include "Sprites/SpriteRegistry.h"
 #include "Sprites/SpriteSheet.h"
@@ -106,6 +107,10 @@ void PlayerState::setGhostSprite(bool show, float x, float y, int ticksTime) {
 //tell the map to kick a switch
 void PlayerState::mapKickSwitch(short switchId, bool allowRadioTowerAnimation, int ticksTime) {
 	mapState.get()->flipSwitch(switchId, allowRadioTowerAnimation, ticksTime);
+}
+//tell the map to kick a reset switch
+void PlayerState::mapKickResetSwitch(short resetSwitchId, int ticksTime) {
+	mapState.get()->flipResetSwitch(resetSwitchId, ticksTime);
 }
 //update this player state by reading from the previous state
 void PlayerState::updateWithPreviousPlayerState(PlayerState* prev, int ticksTime) {
@@ -272,6 +277,15 @@ void PlayerState::addMapCollisions(
 				(float)((mapX + 2) * MapState::tileSize - MapState::switchSideInset),
 				(float)((mapY + 2) * MapState::tileSize - MapState::switchBottomInset)));
 		seenSwitchIds.push_back(switchId);
+	} else if (MapState::tileHasResetSwitch(mapX, mapY)) {
+		ResetSwitch* resetSwitch = mapState.get()->getResetSwitchState(mapX, mapY)->getResetSwitch();
+		if (mapX == resetSwitch->getCenterX() && (mapY == resetSwitch->getBottomY() || mapY == resetSwitch->getBottomY() - 1))
+			collidedRects.push_back(
+				newCollisionRect(
+					(float)(mapX * MapState::tileSize),
+					(float)(mapY * MapState::tileSize),
+					(float)((mapX + 1) * MapState::tileSize),
+					(float)((mapY + 1) * MapState::tileSize)));
 	}
 }
 //returns the fraction of the update spent within the bounds of the given rect; since a collision only happens once the player
@@ -347,7 +361,9 @@ void PlayerState::beginKicking(int ticksTime) {
 	int lowMapX = (int)(xPosition + boundingBoxLeftOffset) / MapState::tileSize;
 	int highMapX = (int)(xPosition + boundingBoxRightOffset) / MapState::tileSize;
 
-	if (kickRail(xPosition, yPosition, ticksTime) || kickSwitch(xPosition, yPosition, ticksTime))
+	if (kickRail(xPosition, yPosition, ticksTime)
+			|| kickSwitch(xPosition, yPosition, ticksTime)
+			|| kickResetSwitch(xPosition, yPosition, ticksTime))
 		return;
 
 	if (spriteDirection == SpriteDirection::Up) {
@@ -893,7 +909,7 @@ bool PlayerState::kickSwitch(float xPosition, float yPosition, int ticksTime) {
 	beginEntityAnimation(&kickAnimationComponentsHolder, ticksTime);
 	return true;
 }
-//add the animation components for a kicking animation
+//add the animation components for a switch kicking animation
 void PlayerState::addKickSwitchComponents(
 	short switchId, Holder_EntityAnimationComponentVector* componentsHolder, bool allowRadioTowerAnimation)
 {
@@ -907,6 +923,63 @@ void PlayerState::addKickSwitchComponents(
 			newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerKickingAnimation) COMMA
 			newEntityAnimationDelay(SpriteRegistry::playerKickingAnimationTicksPerFrame) COMMA
 			newEntityAnimationMapKickSwitch(switchId, allowRadioTowerAnimation) COMMA
+			newEntityAnimationDelay(
+				SpriteRegistry::playerKickingAnimation->getTotalTicksDuration()
+					- SpriteRegistry::playerKickingAnimationTicksPerFrame)
+		});
+}
+//check if we're kicking a reset switch, and if so, begin a kicking animation and set the reset switch to flip
+//returns whether we handled a reset switch kick
+bool PlayerState::kickResetSwitch(float xPosition, float yPosition, int ticksTime) {
+	short resetSwitchId = MapState::absentRailSwitchId;
+	if (spriteDirection == SpriteDirection::Up || spriteDirection == SpriteDirection::Down) {
+		float kickingYOffset = spriteDirection == SpriteDirection::Up
+			? boundingBoxTopOffset - kickingDistanceLimit
+			: boundingBoxBottomOffset + kickingDistanceLimit;
+		int resetSwitchLeftMapX = (int)(xPosition + boundingBoxLeftOffset) / MapState::tileSize;
+		int resetSwitchCenterMapX = (int)xPosition / MapState::tileSize;
+		int resetSwitchRightMapX = (int)(xPosition + boundingBoxRightOffset) / MapState::tileSize;
+		int resetSwitchMapY = (int)(yPosition + kickingYOffset) / MapState::tileSize;
+		if (MapState::tileHasResetSwitch(resetSwitchLeftMapX, resetSwitchMapY))
+			resetSwitchId = MapState::getRailSwitchId(resetSwitchLeftMapX, resetSwitchMapY);
+		else if (MapState::tileHasResetSwitch(resetSwitchCenterMapX, resetSwitchMapY))
+			resetSwitchId = MapState::getRailSwitchId(resetSwitchCenterMapX, resetSwitchMapY);
+		else if (MapState::tileHasResetSwitch(resetSwitchRightMapX, resetSwitchMapY))
+			resetSwitchId = MapState::getRailSwitchId(resetSwitchRightMapX, resetSwitchMapY);
+	} else {
+		float kickingXOffset = spriteDirection == SpriteDirection::Left
+			? boundingBoxLeftOffset - kickingDistanceLimit
+			: boundingBoxRightOffset + kickingDistanceLimit;
+		int resetSwitchMapX = (int)(xPosition + kickingXOffset) / MapState::tileSize;
+		int resetSwitchTopMapY = (int)(yPosition + boundingBoxTopOffset) / MapState::tileSize;
+		int resetSwitchBottomMapY = (int)(yPosition + boundingBoxBottomOffset) / MapState::tileSize;
+		if (MapState::tileHasResetSwitch(resetSwitchMapX, resetSwitchTopMapY))
+			resetSwitchId = MapState::getRailSwitchId(resetSwitchMapX, resetSwitchTopMapY);
+		else if (MapState::tileHasResetSwitch(resetSwitchMapX, resetSwitchBottomMapY))
+			resetSwitchId = MapState::getRailSwitchId(resetSwitchMapX, resetSwitchBottomMapY);
+	}
+	if (resetSwitchId == MapState::absentRailSwitchId)
+		return false;
+
+	MapState::logResetSwitchKick(resetSwitchId);
+	vector<ReferenceCounterHolder<EntityAnimation::Component>> kickAnimationComponents;
+	Holder_EntityAnimationComponentVector kickAnimationComponentsHolder (&kickAnimationComponents);
+	addKickResetSwitchComponents(resetSwitchId, &kickAnimationComponentsHolder);
+	beginEntityAnimation(&kickAnimationComponentsHolder, ticksTime);
+	return true;
+}
+//add the animation components for a reset switch kicking animation
+void PlayerState::addKickResetSwitchComponents(short resetSwitchId, Holder_EntityAnimationComponentVector* componentsHolder) {
+	vector<ReferenceCounterHolder<EntityAnimation::Component>>* components = componentsHolder->val;
+	components->insert(
+		components->end(),
+		{
+			newEntityAnimationSetVelocity(
+				newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
+				newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)) COMMA
+			newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerKickingAnimation) COMMA
+			newEntityAnimationDelay(SpriteRegistry::playerKickingAnimationTicksPerFrame) COMMA
+			newEntityAnimationMapKickResetSwitch(resetSwitchId) COMMA
 			newEntityAnimationDelay(
 				SpriteRegistry::playerKickingAnimation->getTotalTicksDuration()
 					- SpriteRegistry::playerKickingAnimationTicksPerFrame)

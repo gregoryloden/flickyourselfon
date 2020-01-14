@@ -101,8 +101,8 @@ SwitchState::~SwitchState() {
 void SwitchState::addConnectedRailState(RailState* railState) {
 	connectedRailStates.push_back(railState);
 }
-//activate rails because this switch was kicked
-void SwitchState::flip(int pFlipOnTicksTime) {
+//activate rails of the same group and color because this switch was kicked
+void SwitchState::flip(int flipOffTicksTime) {
 	char color = switch0->getColor();
 	//square wave switch: just toggle the target tile offset of the rails
 	if (color == MapState::squareColor) {
@@ -110,7 +110,7 @@ void SwitchState::flip(int pFlipOnTicksTime) {
 			railState->squareToggleOffset();
 		}
 	}
-	flipOnTicksTime = pFlipOnTicksTime;
+	flipOnTicksTime = flipOffTicksTime + MapState::switchFlipDuration;
 }
 //save the time that this switch should turn back on
 void SwitchState::updateWithPreviousSwitchState(SwitchState* prev) {
