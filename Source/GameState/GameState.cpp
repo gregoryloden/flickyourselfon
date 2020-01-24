@@ -549,6 +549,28 @@ void GameState::loadInitialState(int ticksTime) {
 				lastX = moveX;
 				lastY = moveY;
 				lastTimestamp = EntityAnimation::getComponentTotalTicksDuration(replayComponents);
+			} else if (StringUtils::startsWith(logMessageString, "  reset switch ")) {
+				logMessage = logMessage + 15;
+				int resetSwitchIndex;
+				StringUtils::parseNextInt(logMessage, &resetSwitchIndex);
+				int resetSwitchMapCenterX = 0;
+				int resetSwitchMapTopY = 0;
+				MapState::getResetSwitchMapTopCenter(resetSwitchIndex, &resetSwitchMapCenterX, &resetSwitchMapTopY);
+				float moveX = ((float)resetSwitchMapCenterX + 0.5f) * (float)MapState::tileSize;
+				float moveY = (float)(resetSwitchMapTopY * MapState::tileSize);
+				addMoveWithGhost(&replayComponentsHolder, lastX, lastY, moveX, moveY, timestamp - lastTimestamp);
+				replayComponents.insert(
+					replayComponents.end(),
+					{
+						newEntityAnimationSetGhostSprite(false, 0.0f, 0.0f) COMMA
+						newEntityAnimationSetSpriteDirection(SpriteDirection::Down)
+					});
+				PlayerState::addKickResetSwitchComponents(
+					MapState::getIdFromResetSwitchIndex(resetSwitchIndex), &replayComponentsHolder);
+				replayComponents.push_back(newEntityAnimationSetSpriteAnimation(nullptr));
+				lastX = moveX;
+				lastY = moveY;
+				lastTimestamp = EntityAnimation::getComponentTotalTicksDuration(replayComponents);
 			}
 		}
 		file.close();

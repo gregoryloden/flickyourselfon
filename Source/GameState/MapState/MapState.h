@@ -91,6 +91,8 @@ public:
 	static const int floorIsRailSwitchBitmask = 1;
 	static const int floorIsRailSwitchHeadBitmask = 2;
 	static const int floorIsRailSwitchAndHeadBitmask = floorIsRailSwitchHeadBitmask | floorIsRailSwitchBitmask;
+	static const int floorRailSwitchAndHeadValue = floorIsRailSwitchHeadBitmask | floorIsRailSwitchBitmask;
+	static const int floorRailSwitchTailValue = floorIsRailSwitchBitmask;
 	static const int floorIsSwitchBitmask = 4;
 	static const int floorIsResetSwitchBitmask = 0x20;
 	static const int floorIsSwitchAndResetSwitchBitmask = floorIsSwitchBitmask | floorIsResetSwitchBitmask;
@@ -100,8 +102,6 @@ public:
 	static const int floorRailSwitchColorDataShift = 3;
 	static const int floorRailSwitchGroupDataShift = 2;
 	static const int floorRailInitialTileOffsetDataShift = 5;
-	static const int floorRailSwitchAndHeadValue = floorIsRailSwitchHeadBitmask | floorIsRailSwitchBitmask;
-	static const int floorRailSwitchTailValue = floorIsRailSwitchBitmask;
 	static const int floorRailHeadValue = floorRailSwitchAndHeadValue;
 	static const int floorSwitchHeadValue = floorRailSwitchAndHeadValue | floorIsSwitchBitmask;
 	static const int floorResetSwitchHeadValue = floorSwitchHeadValue | floorIsResetSwitchBitmask;
@@ -147,6 +147,7 @@ public:
 	static short getRailSwitchId(int x, int y) { return railSwitchIds[y * width + x]; }
 	static Rail* getRailByIndex(int railIndex) { return rails[railIndex]; }
 	static short getIdFromSwitchIndex(short switchIndex) { return switchIndex | switchIdValue; }
+	static short getIdFromResetSwitchIndex(short resetSwitchIndex) { return resetSwitchIndex | switchIdValue; }
 	static int mapWidth() { return width; }
 	static int mapHeight() { return height; }
 	static bool tileHasRailOrSwitch(int x, int y) { return getRailSwitchId(x, y) != 0; }
@@ -187,6 +188,7 @@ public:
 	static int getScreenTopWorldY(EntityState* camera, int ticksTime);
 	#ifdef DEBUG
 		static void getSwitchMapTopLeft(short switchIndex, int* outMapLeftX, int* outMapTopY);
+		static void getResetSwitchMapTopCenter(short resetSwitchIndex, int* outMapCenterX, int* outMapTopY);
 	#endif
 	static float antennaCenterWorldX();
 	static float antennaCenterWorldY();

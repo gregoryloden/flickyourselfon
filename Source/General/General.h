@@ -25,6 +25,7 @@ using namespace std;
 #undef RGB
 
 #define COMMA ,
+#define HAS_BITMASK(a, b) ((a & b) == b)
 #ifdef DEBUG
 	#define onlyInDebug(x) x
 	//**/#define EDITOR 1

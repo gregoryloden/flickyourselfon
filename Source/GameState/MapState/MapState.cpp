@@ -185,7 +185,7 @@ void MapState::buildMap() {
 		//	bits 2-7: group number
 		char color = (railSwitchValue >> floorRailSwitchColorDataShift) & floorRailSwitchColorPostShiftBitmask;
 		//this is a reset switch
-		if ((railSwitchValue & floorIsSwitchAndResetSwitchBitmask) == floorIsSwitchAndResetSwitchBitmask) {
+		if (HAS_BITMASK(railSwitchValue, floorIsSwitchAndResetSwitchBitmask)) {
 			short newResetSwitchId = (short)resetSwitches.size() | resetSwitchIdValue;
 			ResetSwitch* resetSwitch = newResetSwitch(headX, headY);
 			resetSwitches.push_back(resetSwitch);
@@ -198,7 +198,7 @@ void MapState::buildMap() {
 			addResetSwitchSegments(pixels, redShift, headX, headY, i + width, newResetSwitchId, &bottomSegmentsHolder);
 			addResetSwitchSegments(pixels, redShift, headX, headY, i + 1, newResetSwitchId, &rightSegmentsHolder);
 		//this is a regular switch
-		} else if ((railSwitchValue & floorIsSwitchBitmask) != 0) {
+		} else if (HAS_BITMASK(railSwitchValue, floorIsSwitchBitmask)) {
 			char switchByte2 = (char)((pixels[i + 1] & redMask) >> redShift);
 			char group = (switchByte2 >> floorRailSwitchGroupDataShift) & floorRailSwitchGroupPostShiftBitmask;
 			short newSwitchId = (short)switches.size() | switchIdValue;
@@ -341,6 +341,20 @@ int MapState::getScreenTopWorldY(EntityState* camera, int ticksTime) {
 			for (int mapX = 0; mapX < width; mapX++) {
 				if (getRailSwitchId(mapX, mapY) == targetSwitchId) {
 					*outMapLeftX = mapX;
+					*outMapTopY = mapY;
+					return;
+				}
+			}
+		}
+	}
+	//find the reset switch for the given index and write its center bottom coordinate
+	//does not write map coordinates if it doesn't find any
+	void MapState::getResetSwitchMapTopCenter(short resetSwitchIndex, int* outMapCenterX, int* outMapTopY) {
+		short targetResetSwitchId = resetSwitchIndex | resetSwitchIdValue;
+		for (int mapY = 0; mapY < height; mapY++) {
+			for (int mapX = 0; mapX < width; mapX++) {
+				if (getRailSwitchId(mapX, mapY) == targetResetSwitchId) {
+					*outMapCenterX = mapX;
 					*outMapTopY = mapY;
 					return;
 				}

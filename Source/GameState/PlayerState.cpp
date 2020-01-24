@@ -35,6 +35,7 @@ const string PlayerState::playerXFilePrefix = "playerX ";
 const string PlayerState::playerYFilePrefix = "playerY ";
 PlayerState::PlayerState(objCounterParameters())
 : EntityState(objCounterArguments())
+, z(0)
 , xDirection(0)
 , yDirection(0)
 , lastXMovedDelta(0)
@@ -67,6 +68,7 @@ PlayerState* PlayerState::produce(objCounterParametersComma() MapState* mapState
 //copy the other state
 void PlayerState::copyPlayerState(PlayerState* other) {
 	copyEntityState(other);
+	z = other->z;
 	xDirection = other->xDirection;
 	yDirection = other->yDirection;
 	lastXMovedDelta = other->lastXMovedDelta;
@@ -430,39 +432,42 @@ void PlayerState::beginKicking(int ticksTime) {
 			sideTilesRightMapX = (int)(sideTilesLeftXPosition + playerWidth) / MapState::tileSize;
 		}
 
-		int bottomMapY = (int)(yPosition + boundingBoxBottomOffset) / MapState::tileSize;
-		int tileOffset = 1;
-		char fallHeight = MapState::invalidHeight;
-		for (; true; tileOffset++) {
-			fallHeight = MapState::getHeight(sideTilesLeftMapX, bottomMapY + tileOffset);
-			//this is the height we're trying to fall to
-			if (fallHeight == z - tileOffset * 2) {
-				//check that all tiles the player will land on are valid
-				int offsetTopMapY = (int)(yPosition + boundingBoxTopOffset) / MapState::tileSize + tileOffset;
-				for (int mapY = bottomMapY + tileOffset; mapY >= offsetTopMapY; mapY--) {
-					//even if we found a tile we can land on, if the rest of them don't match then we can't fall
-					if (MapState::horizontalTilesHeight(sideTilesLeftMapX, sideTilesRightMapX, mapY) != fallHeight) {
-						fallHeight = MapState::invalidHeight;
-						break;
-					}
+		int topMapY = (int)(yPosition + boundingBoxTopOffset) / MapState::tileSize;
+		for (int tileOffset = 1; true; tileOffset++) {
+			int checkMapY = topMapY + tileOffset;
+			if (checkMapY >= MapState::mapHeight())
+				break;
+
+			char tilesHeight = MapState::horizontalTilesHeight(sideTilesLeftMapX, sideTilesRightMapX, checkMapY);
+			//keep looking if we see an empty space or two different heights
+			if (tilesHeight == MapState::emptySpaceHeight || tilesHeight == MapState::invalidHeight)
+				continue;
+
+			char targetFallHeight = z - (char)tileOffset * 2;
+			//we found tiles that would be in front of the player after a fall, stop looking
+			if (tilesHeight > targetFallHeight)
+				break;
+			//we found tiles that would be behind the player after a fall, keep looking
+			else if (tilesHeight < targetFallHeight)
+				continue;
+
+			//ensure that all tiles the player will land on are the same height
+			bool canFall = true;
+			int bottomCheckMapY = (int)(yPosition + boundingBoxTopOffset) / MapState::tileSize + tileOffset;
+			for (checkMapY++; checkMapY <= bottomCheckMapY; checkMapY++) {
+				if (MapState::horizontalTilesHeight(sideTilesLeftMapX, sideTilesRightMapX, checkMapY) != tilesHeight) {
+					canFall = false;
+					break;
 				}
-				break;
-			//this is part of a cliff or floor tile that's behind the player, keep going
-			//the tile might be near us or far back, either case is fine
-			} else if (fallHeight <= z - tileOffset * 2 + 1)
-				;
-			//anything else is invalid
-			else {
-				fallHeight = MapState::invalidHeight;
-				break;
 			}
-		}
-		//fall if we can
-		if (fallHeight != MapState::invalidHeight) {
+			if (!canFall)
+				break;
+
+			//we found a spot we can fall to
 			float targetXPosition = spriteDirection == SpriteDirection::Left
 				? (float)((sideTilesRightMapX + 1) * MapState::tileSize) - boundingBoxRightOffset - MapState::smallDistance
 				: (float)(sideTilesLeftMapX * MapState::tileSize) - boundingBoxLeftOffset + MapState::smallDistance;
-			kickFall(targetXPosition - xPosition, (float)(tileOffset * MapState::tileSize), fallHeight, ticksTime);
+			kickFall(targetXPosition - xPosition, (float)(tileOffset * MapState::tileSize), tilesHeight, ticksTime);
 			return;
 		}
 	}
@@ -931,7 +936,8 @@ void PlayerState::addKickSwitchComponents(
 //check if we're kicking a reset switch, and if so, begin a kicking animation and set the reset switch to flip
 //returns whether we handled a reset switch kick
 bool PlayerState::kickResetSwitch(float xPosition, float yPosition, int ticksTime) {
-	short resetSwitchId = MapState::absentRailSwitchId;
+	int resetSwitchMapX = -1;
+	int resetSwitchMapY = -1;
 	if (spriteDirection == SpriteDirection::Up || spriteDirection == SpriteDirection::Down) {
 		float kickingYOffset = spriteDirection == SpriteDirection::Up
 			? boundingBoxTopOffset - kickingDistanceLimit
@@ -939,28 +945,30 @@ bool PlayerState::kickResetSwitch(float xPosition, float yPosition, int ticksTim
 		int resetSwitchLeftMapX = (int)(xPosition + boundingBoxLeftOffset) / MapState::tileSize;
 		int resetSwitchCenterMapX = (int)xPosition / MapState::tileSize;
 		int resetSwitchRightMapX = (int)(xPosition + boundingBoxRightOffset) / MapState::tileSize;
-		int resetSwitchMapY = (int)(yPosition + kickingYOffset) / MapState::tileSize;
+		resetSwitchMapY = (int)(yPosition + kickingYOffset) / MapState::tileSize;
 		if (MapState::tileHasResetSwitch(resetSwitchLeftMapX, resetSwitchMapY))
-			resetSwitchId = MapState::getRailSwitchId(resetSwitchLeftMapX, resetSwitchMapY);
+			resetSwitchMapX = resetSwitchLeftMapX;
 		else if (MapState::tileHasResetSwitch(resetSwitchCenterMapX, resetSwitchMapY))
-			resetSwitchId = MapState::getRailSwitchId(resetSwitchCenterMapX, resetSwitchMapY);
+			resetSwitchMapX = resetSwitchCenterMapX;
 		else if (MapState::tileHasResetSwitch(resetSwitchRightMapX, resetSwitchMapY))
-			resetSwitchId = MapState::getRailSwitchId(resetSwitchRightMapX, resetSwitchMapY);
+			resetSwitchMapX = resetSwitchRightMapX;
 	} else {
 		float kickingXOffset = spriteDirection == SpriteDirection::Left
 			? boundingBoxLeftOffset - kickingDistanceLimit
 			: boundingBoxRightOffset + kickingDistanceLimit;
-		int resetSwitchMapX = (int)(xPosition + kickingXOffset) / MapState::tileSize;
+		resetSwitchMapX = (int)(xPosition + kickingXOffset) / MapState::tileSize;
 		int resetSwitchTopMapY = (int)(yPosition + boundingBoxTopOffset) / MapState::tileSize;
 		int resetSwitchBottomMapY = (int)(yPosition + boundingBoxBottomOffset) / MapState::tileSize;
 		if (MapState::tileHasResetSwitch(resetSwitchMapX, resetSwitchTopMapY))
-			resetSwitchId = MapState::getRailSwitchId(resetSwitchMapX, resetSwitchTopMapY);
+			resetSwitchMapY = resetSwitchTopMapY;
 		else if (MapState::tileHasResetSwitch(resetSwitchMapX, resetSwitchBottomMapY))
-			resetSwitchId = MapState::getRailSwitchId(resetSwitchMapX, resetSwitchBottomMapY);
+			resetSwitchMapY = resetSwitchBottomMapY;
 	}
-	if (resetSwitchId == MapState::absentRailSwitchId)
+	//because reset switches can be kicked from outside their tile, we also need to make sure the player is on the same height
+	if (resetSwitchMapX == -1 || resetSwitchMapY == -1 || MapState::getHeight(resetSwitchMapX, resetSwitchMapY) != z)
 		return false;
 
+	short resetSwitchId = MapState::getRailSwitchId(resetSwitchMapX, resetSwitchMapY);
 	MapState::logResetSwitchKick(resetSwitchId);
 	vector<ReferenceCounterHolder<EntityAnimation::Component>> kickAnimationComponents;
 	Holder_EntityAnimationComponentVector kickAnimationComponentsHolder (&kickAnimationComponents);

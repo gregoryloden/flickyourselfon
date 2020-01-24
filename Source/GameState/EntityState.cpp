@@ -12,7 +12,6 @@ EntityState::EntityState(objCounterParameters())
 , renderInterpolatedX(true)
 , y(newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f))
 , renderInterpolatedY(true)
-, z(0)
 , entityAnimation(nullptr)
 , lastUpdateTicksTime(0) {
 }
@@ -23,7 +22,6 @@ void EntityState::copyEntityState(EntityState* other) {
 	renderInterpolatedX = other->renderInterpolatedX;
 	y.set(other->y.get());
 	renderInterpolatedY = other->renderInterpolatedY;
-	z = other->z;
 	entityAnimation.set(other->entityAnimation.get());
 	lastUpdateTicksTime = other->lastUpdateTicksTime;
 }

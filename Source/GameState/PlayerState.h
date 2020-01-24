@@ -32,6 +32,7 @@ private:
 	static const string playerXFilePrefix;
 	static const string playerYFilePrefix;
 
+	char z;
 	char xDirection;
 	char yDirection;
 	float lastXMovedDelta;
@@ -53,6 +54,7 @@ public:
 	virtual ~PlayerState();
 
 	virtual void setSpriteDirection(SpriteDirection pSpriteDirection) { spriteDirection = pSpriteDirection; }
+	char getZ() { return z; }
 	void obtainBoot() { hasBoot = true; }
 	static PlayerState* produce(objCounterParametersComma() MapState* mapState);
 	void copyPlayerState(PlayerState* other);
