@@ -51,6 +51,7 @@ private:
 		virtual void render(float leftX, float baselineY);
 		//handle this option being selected, return the pause state to use as a result
 		virtual PauseState* handle(PauseState* currentState) = 0;
+		void updateDisplayText(string& newDisplayText);
 	};
 	class NavigationOption: public PauseOption {
 	private:
@@ -122,6 +123,27 @@ private:
 		virtual ~AcceptKeyBindingsOption();
 
 		virtual PauseState* handle(PauseState* currentState);
+	};
+	class KickIndicatorOption: public PauseOption {
+	public:
+		enum class Action: int {
+			Climb,
+			Fall,
+			Rail,
+			Switch,
+			ResetSwitch
+		};
+
+	private:
+		Action action;
+
+	public:
+		KickIndicatorOption(objCounterParametersComma() Action pAction);
+		virtual ~KickIndicatorOption();
+
+		virtual PauseState* handle(PauseState* currentState);
+	private:
+		static string getKickActionSettingText(Action pAction);
 	};
 	class EndPauseOption: public PauseOption {
 	private:

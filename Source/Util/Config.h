@@ -17,6 +17,18 @@ public:
 
 		void set(const KeyBindings* other);
 	};
+	//Should only be allocated within an object, on the stack, or as a static object
+	class KickIndicators {
+	public:
+		bool climb;
+		bool fall;
+		bool rail;
+		bool switch0;
+		bool resetSwitch;
+
+		KickIndicators();
+		virtual ~KickIndicators();
+	};
 
 	static const int gameScreenWidth = 199;
 	static const int gameScreenHeight = 149;
@@ -44,12 +56,18 @@ public:
 	static const string leftKeyBindingFilePrefix;
 	static const string kickKeyBindingFilePrefix;
 	static const string showConnectionsKeyBindingFilePrefix;
+	static const string climbKickIndicatorFilePrefix;
+	static const string fallKickIndicatorFilePrefix;
+	static const string railKickIndicatorFilePrefix;
+	static const string switchKickIndicatorFilePrefix;
+	static const string resetSwitchKickIndicatorFilePrefix;
 
 	static float currentPixelWidth;
 	static float currentPixelHeight;
 	static int refreshRate;
 	static KeyBindings keyBindings;
 	static KeyBindings editingKeyBindings;
+	static KickIndicators kickIndicators;
 
 	static void saveSettings();
 	static void loadSettings();

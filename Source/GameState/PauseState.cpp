@@ -10,6 +10,7 @@
 #define newKeyBindingOption(boundKey) newWithArgs(PauseState::KeyBindingOption, boundKey)
 #define newDefaultKeyBindingsOption() newWithoutArgs(PauseState::DefaultKeyBindingsOption)
 #define newAcceptKeyBindingsOption() newWithoutArgs(PauseState::AcceptKeyBindingsOption)
+#define newKickIndicatorOption(action) newWithArgs(PauseState::KickIndicatorOption, action)
 #define newEndPauseOption(endPauseDecision) newWithArgs(PauseState::EndPauseOption, endPauseDecision)
 
 //////////////////////////////// PauseState::PauseMenu ////////////////////////////////
@@ -91,6 +92,11 @@ PauseState::PauseOption::~PauseOption() {}
 //render the NavigationOption
 void PauseState::PauseOption::render(float leftX, float baselineY) {
 	Text::render(displayText.c_str(), leftX, baselineY, displayTextFontScale);
+}
+//update the deisplay text and its metrics
+void PauseState::PauseOption::updateDisplayText(string& newDisplayText) {
+	displayText = newDisplayText;
+	displayTextMetrics = Text::getMetrics(newDisplayText.c_str(), displayTextFontScale);
 }
 
 //////////////////////////////// PauseState::NavigationOption ////////////////////////////////
@@ -260,6 +266,59 @@ PauseState* PauseState::AcceptKeyBindingsOption::handle(PauseState* currentState
 	return currentState->navigateToMenu(nullptr);
 }
 
+//////////////////////////////// PauseState::KickIndicatorOption ////////////////////////////////
+PauseState::KickIndicatorOption::KickIndicatorOption(objCounterParametersComma() Action pAction)
+: PauseOption(objCounterArgumentsComma() getKickActionSettingText(pAction))
+, action(pAction) {
+}
+PauseState::KickIndicatorOption::~KickIndicatorOption() {}
+//toggle the kick indicator for this action
+PauseState* PauseState::KickIndicatorOption::handle(PauseState* currentState) {
+	if (action == Action::Climb)
+		Config::kickIndicators.climb = !Config::kickIndicators.climb;
+	else if (action == Action::Fall)
+		Config::kickIndicators.fall = !Config::kickIndicators.fall;
+	else if (action == Action::Rail)
+		Config::kickIndicators.rail = !Config::kickIndicators.rail;
+	else if (action == Action::Switch)
+		Config::kickIndicators.switch0 = !Config::kickIndicators.switch0;
+	else if (action == Action::ResetSwitch)
+		Config::kickIndicators.resetSwitch = !Config::kickIndicators.resetSwitch;
+	updateDisplayText(getKickActionSettingText(action));
+	Config::saveSettings();
+	return currentState;
+}
+//get the name of the action we're binding a key to, and its current config setting
+//static so that we can use it in the option's constructor
+string PauseState::KickIndicatorOption::getKickActionSettingText(Action pAction) {
+	string actionTitle;
+	bool isOn = false;
+	switch (pAction) {
+		case Action::Climb:
+			actionTitle = "climb: ";
+			isOn = Config::kickIndicators.climb;
+			break;
+		case Action::Fall:
+			actionTitle = "fall: ";
+			isOn = Config::kickIndicators.fall;
+			break;
+		case Action::Rail:
+			actionTitle = "rail: ";
+			isOn = Config::kickIndicators.rail;
+			break;
+		case Action::Switch:
+			actionTitle = "switch: ";
+			isOn = Config::kickIndicators.switch0;
+			break;
+		case Action::ResetSwitch:
+			actionTitle = "reset switch: ";
+			isOn = Config::kickIndicators.resetSwitch;
+			break;
+		default: return "";
+	}
+	return actionTitle + (isOn ? "on" : "off");
+}
+
 //////////////////////////////// PauseState::EndPauseOption ////////////////////////////////
 PauseState::EndPauseOption::EndPauseOption(objCounterParametersComma() int pEndPauseDecision)
 : PauseOption(
@@ -320,6 +379,7 @@ void PauseState::loadMenu() {
 		"Pause",
 		{
 			newNavigationOption("resume", nullptr) COMMA
+			newEndPauseOption((int)EndPauseDecision::Save) COMMA
 			newControlsNavigationOption(
 				newPauseMenu(
 					"Controls",
@@ -334,7 +394,17 @@ void PauseState::loadMenu() {
 						newAcceptKeyBindingsOption() COMMA
 						newNavigationOption("back", nullptr)
 					})) COMMA
-			newEndPauseOption((int)EndPauseDecision::Save) COMMA
+			newNavigationOption("kick indicators",
+				newPauseMenu(
+					"Kick Indicators",
+					{
+						newKickIndicatorOption(KickIndicatorOption::Action::Climb) COMMA
+						newKickIndicatorOption(KickIndicatorOption::Action::Fall) COMMA
+						newKickIndicatorOption(KickIndicatorOption::Action::Rail) COMMA
+						newKickIndicatorOption(KickIndicatorOption::Action::Switch) COMMA
+						newKickIndicatorOption(KickIndicatorOption::Action::ResetSwitch) COMMA
+						newNavigationOption("back", nullptr)
+					})) COMMA
 			newEndPauseOption((int)EndPauseDecision::Reset) COMMA
 			newEndPauseOption((int)EndPauseDecision::Save | (int)EndPauseDecision::Exit) COMMA
 			newEndPauseOption((int)EndPauseDecision::Exit)

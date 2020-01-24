@@ -22,6 +22,16 @@ void Config::KeyBindings::set(const KeyBindings* other) {
 	showConnectionsKey = other->showConnectionsKey;
 }
 
+//////////////////////////////// Config::KickIndicators ////////////////////////////////
+Config::KickIndicators::KickIndicators()
+: climb(true)
+, fall(true)
+, rail(true)
+, switch0(true)
+, resetSwitch(true) {
+}
+Config::KickIndicators::~KickIndicators() {}
+
 //////////////////////////////// Config ////////////////////////////////
 const float Config::defaultPixelWidth = 3.0f;
 const float Config::defaultPixelHeight = 3.0f;
@@ -37,11 +47,17 @@ const string Config::downKeyBindingFilePrefix = "downKey ";
 const string Config::leftKeyBindingFilePrefix = "leftKey ";
 const string Config::kickKeyBindingFilePrefix = "kickKey ";
 const string Config::showConnectionsKeyBindingFilePrefix = "showConnectionsKey ";
+const string Config::climbKickIndicatorFilePrefix = "climb ";
+const string Config::fallKickIndicatorFilePrefix = "fall ";
+const string Config::railKickIndicatorFilePrefix = "rail ";
+const string Config::switchKickIndicatorFilePrefix = "switch ";
+const string Config::resetSwitchKickIndicatorFilePrefix = "resetSwitch ";
 float Config::currentPixelWidth = Config::defaultPixelWidth;
 float Config::currentPixelHeight = Config::defaultPixelHeight;
 int Config::refreshRate = 60;
 Config::KeyBindings Config::keyBindings;
 Config::KeyBindings Config::editingKeyBindings;
+Config::KickIndicators Config::kickIndicators;
 //save the key bindings to the save file
 void Config::saveSettings() {
 	ofstream file;
@@ -58,6 +74,16 @@ void Config::saveSettings() {
 		file << kickKeyBindingFilePrefix << (int)keyBindings.kickKey << "\n";
 	if (keyBindings.showConnectionsKey != defaultKeyBindings.showConnectionsKey)
 		file << showConnectionsKeyBindingFilePrefix << (int)keyBindings.showConnectionsKey << "\n";
+	if (!kickIndicators.climb)
+		file << climbKickIndicatorFilePrefix << "off\n";
+	if (!kickIndicators.fall)
+		file << fallKickIndicatorFilePrefix << "off\n";
+	if (!kickIndicators.rail)
+		file << railKickIndicatorFilePrefix << "off\n";
+	if (!kickIndicators.switch0)
+		file << switchKickIndicatorFilePrefix << "off\n";
+	if (!kickIndicators.resetSwitch)
+		file << resetSwitchKickIndicatorFilePrefix << "off\n";
 	file.close();
 }
 //load the key bindings from the save file, if it exists
@@ -78,6 +104,16 @@ void Config::loadSettings() {
 			keyBindings.kickKey = (SDL_Scancode)atoi(line.c_str() + kickKeyBindingFilePrefix.size());
 		else if (StringUtils::startsWith(line, showConnectionsKeyBindingFilePrefix))
 			keyBindings.showConnectionsKey = (SDL_Scancode)atoi(line.c_str() + showConnectionsKeyBindingFilePrefix.size());
+		else if (StringUtils::startsWith(line, climbKickIndicatorFilePrefix))
+			kickIndicators.climb = strcmp(line.c_str() + climbKickIndicatorFilePrefix.size(), "off") != 0;
+		else if (StringUtils::startsWith(line, fallKickIndicatorFilePrefix))
+			kickIndicators.fall = strcmp(line.c_str() + fallKickIndicatorFilePrefix.size(), "off") != 0;
+		else if (StringUtils::startsWith(line, railKickIndicatorFilePrefix))
+			kickIndicators.rail = strcmp(line.c_str() + railKickIndicatorFilePrefix.size(), "off") != 0;
+		else if (StringUtils::startsWith(line, switchKickIndicatorFilePrefix))
+			kickIndicators.switch0 = strcmp(line.c_str() + switchKickIndicatorFilePrefix.size(), "off") != 0;
+		else if (StringUtils::startsWith(line, resetSwitchKickIndicatorFilePrefix))
+			kickIndicators.resetSwitch = strcmp(line.c_str() + resetSwitchKickIndicatorFilePrefix.size(), "off") != 0;
 	}
 	file.close();
 }
