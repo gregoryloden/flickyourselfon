@@ -20,6 +20,7 @@ public:
 
 		Segment(int pX, int pY, char pMaxTileOffset);
 		virtual ~Segment();
+
 		float tileCenterX();
 		float tileCenterY();
 	};

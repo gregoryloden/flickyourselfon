@@ -370,6 +370,18 @@ float MapState::antennaCenterWorldX() {
 float MapState::antennaCenterWorldY() {
 	return (float)(radioTowerTopYOffset + 2);
 }
+//check that the tile has the main section of the reset switch, not just one of the rail segments
+bool MapState::tileHasResetSwitchBody(int x, int y) {
+	if (!tileHasResetSwitch(x, y))
+		return false;
+	ResetSwitch* resetSwitch = resetSwitches[getRailSwitchId(x, y) & railSwitchIndexBitmask];
+	return (x == resetSwitch->getCenterX() && (y == resetSwitch->getBottomY() || y == resetSwitch->getBottomY() - 1));
+}
+//a switch can only be kicked if it's group 0 or if its color is activate
+bool MapState::canKickSwitch(short switchId) {
+	Switch* switch0 = switches[switchId & railSwitchIndexBitmask];
+	return (switch0->getGroup() == 0) != (lastActivatedSwitchColor >= switch0->getColor());
+}
 //check the height of all the tiles in the row, and return it if they're all the same or -1 if they differ
 char MapState::horizontalTilesHeight(int lowMapX, int highMapX, int mapY) {
 	char foundHeight = getHeight(lowMapX, mapY);
@@ -454,7 +466,7 @@ void MapState::flipSwitch(short switchId, bool allowRadioTowerAnimation, int tic
 	} else if (lastActivatedSwitchColor >= switch0->getColor())
 		switchState->flip(ticksTime);
 }
-//flip a reset switch 
+//flip a reset switch
 void MapState::flipResetSwitch(short resetSwitchId, int ticksTime) {
 	ResetSwitchState* resetSwitchState = resetSwitchStates[resetSwitchId & railSwitchIndexBitmask];
 	ResetSwitch* resetSwitch = resetSwitchState->getResetSwitch();

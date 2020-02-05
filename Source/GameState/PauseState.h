@@ -3,6 +3,8 @@
 
 #define newBasePauseState() produceWithoutArgs(PauseState)
 
+enum class KickActionType: int;
+
 //a single instance of a PauseState is immutable and shared between states
 //PauseStates are added when entering a child and released when exiting, using the same parent instance
 class PauseState: public PooledReferenceCounter {
@@ -125,25 +127,16 @@ private:
 		virtual PauseState* handle(PauseState* currentState);
 	};
 	class KickIndicatorOption: public PauseOption {
-	public:
-		enum class Action: int {
-			Climb,
-			Fall,
-			Rail,
-			Switch,
-			ResetSwitch
-		};
-
 	private:
-		Action action;
+		KickActionType action;
 
 	public:
-		KickIndicatorOption(objCounterParametersComma() Action pAction);
+		KickIndicatorOption(objCounterParametersComma() KickActionType pAction);
 		virtual ~KickIndicatorOption();
 
 		virtual PauseState* handle(PauseState* currentState);
 	private:
-		static string getKickActionSettingText(Action pAction);
+		static string getKickActionSettingText(KickActionType pAction);
 	};
 	class EndPauseOption: public PauseOption {
 	private:

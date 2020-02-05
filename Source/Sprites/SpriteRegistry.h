@@ -15,6 +15,7 @@ public:
 	static const char* switchesFileName;
 	static const char* radioWavesFileName;
 	static const char* resetSwitchFileName;
+	static const char* kickIndicatorFileName;
 
 	static SpriteSheet* player;
 	static SpriteSheet* tiles;
@@ -23,6 +24,7 @@ public:
 	static SpriteSheet* switches;
 	static SpriteSheet* radioWaves;
 	static SpriteSheet* resetSwitch;
+	static SpriteSheet* kickIndicator;
 	static SpriteAnimation* playerWalkingAnimation;
 	static SpriteAnimation* playerLegLiftAnimation;
 	static SpriteAnimation* playerBootWalkingAnimation;

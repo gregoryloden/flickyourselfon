@@ -3,6 +3,7 @@
 #include "GameState/DynamicValue.h"
 #include "GameState/EntityAnimation.h"
 #include "GameState/GameState.h"
+#include "GameState/KickAction.h"
 #include "GameState/MapState/MapState.h"
 #include "GameState/MapState/Rail.h"
 #include "GameState/MapState/Switch.h"
@@ -48,9 +49,10 @@ PlayerState::PlayerState(objCounterParameters())
 , ghostSpriteX(nullptr)
 , ghostSpriteY(nullptr)
 , ghostSpriteStartTicksTime(0)
+, mapState(nullptr)
+, availableKickAction(nullptr)
 , lastControlledX(0.0f)
-, lastControlledY(0.0f)
-, mapState(nullptr) {
+, lastControlledY(0.0f) {
 	lastControlledX = x.get()->getValue(0);
 	lastControlledY = y.get()->getValue(0);
 }
@@ -81,9 +83,10 @@ void PlayerState::copyPlayerState(PlayerState* other) {
 	ghostSpriteX.set(other->ghostSpriteX.get());
 	ghostSpriteY.set(other->ghostSpriteY.get());
 	ghostSpriteStartTicksTime = other->ghostSpriteStartTicksTime;
+	//don't copy map state, it was provided when this player state was produced
+	availableKickAction.set(other->availableKickAction.get());
 	lastControlledX = other->lastControlledX;
 	lastControlledY = other->lastControlledY;
-	//don't copy map state, it was provided when this player state was produced
 }
 pooledReferenceCounterDefineRelease(PlayerState)
 //use the player as the next camera anchor, we will handle switching to a different camera somewhere else
@@ -137,6 +140,9 @@ void PlayerState::updateWithPreviousPlayerState(PlayerState* prev, int ticksTime
 		collideWithEnvironmentWithPreviousPlayerState(prev);
 	#endif
 	updateSpriteWithPreviousPlayerState(prev, ticksTime, !previousStateHadEntityAnimation);
+	#ifndef EDITOR
+		setKickAction();
+	#endif
 
 	//copy the position to the save values
 	lastControlledX = x.get()->getValue(0);
@@ -279,16 +285,13 @@ void PlayerState::addMapCollisions(
 				(float)((mapX + 2) * MapState::tileSize - MapState::switchSideInset),
 				(float)((mapY + 2) * MapState::tileSize - MapState::switchBottomInset)));
 		seenSwitchIds.push_back(switchId);
-	} else if (MapState::tileHasResetSwitch(mapX, mapY)) {
-		ResetSwitch* resetSwitch = mapState.get()->getResetSwitchState(mapX, mapY)->getResetSwitch();
-		if (mapX == resetSwitch->getCenterX() && (mapY == resetSwitch->getBottomY() || mapY == resetSwitch->getBottomY() - 1))
-			collidedRects.push_back(
-				newCollisionRect(
-					(float)(mapX * MapState::tileSize),
-					(float)(mapY * MapState::tileSize),
-					(float)((mapX + 1) * MapState::tileSize),
-					(float)((mapY + 1) * MapState::tileSize)));
-	}
+	} else if (MapState::tileHasResetSwitchBody(mapX, mapY))
+		collidedRects.push_back(
+			newCollisionRect(
+				(float)(mapX * MapState::tileSize),
+				(float)(mapY * MapState::tileSize),
+				(float)((mapX + 1) * MapState::tileSize),
+				(float)((mapY + 1) * MapState::tileSize)));
 }
 //returns the fraction of the update spent within the bounds of the given rect; since a collision only happens once the player
 //	is within the bounds in both directions, this is the min of the two collision durations
@@ -340,85 +343,220 @@ void PlayerState::updateSpriteWithPreviousPlayerState(PlayerState* prev, int tic
 		spriteAnimationStartTicksTime = ticksTime;
 	}
 }
-//if we don't have a kicking animation, start one
-//this should be called after the player has been updated
-void PlayerState::beginKicking(int ticksTime) {
-	if (entityAnimation.get() != nullptr)
-		return;
-
-	xDirection = 0;
-	yDirection = 0;
-	renderInterpolatedX = true;
-	renderInterpolatedY = true;
-
-	//kicking doesn't do anything if you don't have the boot
-	if (!hasBoot) {
-		kickAir(ticksTime);
-		return;
-	}
-
-	//check if we're climbing, falling, or kicking a switch
+//set the kick action if one is available
+void PlayerState::setKickAction() {
 	float xPosition = x.get()->getValue(0);
 	float yPosition = y.get()->getValue(0);
+	availableKickAction.set(nullptr);
+	setRailKickAction(xPosition, yPosition)
+		|| setSwitchKickAction(xPosition, yPosition)
+		|| setResetSwitchKickAction(xPosition, yPosition)
+		|| setFallKickAction(xPosition, yPosition)
+		|| setClimbKickAction(xPosition, yPosition);
+}
+//set a rail kick action if there is a raised rail we can ride across
+//returns whether it was set
+bool PlayerState::setRailKickAction(float xPosition, float yPosition) {
+	float railCheckXPosition;
+	float railCheckYPosition;
+	if (spriteDirection == SpriteDirection::Up || spriteDirection == SpriteDirection::Down) {
+		railCheckXPosition = xPosition;
+		railCheckYPosition =
+			yPosition + (spriteDirection == SpriteDirection::Up ? boundingBoxTopOffset : boundingBoxBottomOffset);
+	} else {
+		railCheckXPosition =
+			xPosition + (spriteDirection == SpriteDirection::Left ? boundingBoxLeftOffset : boundingBoxRightOffset);
+		railCheckYPosition = yPosition + boundingBoxCenterYOffset;
+	}
+	int railMapX = (int)railCheckXPosition / MapState::tileSize;
+	int railMapY = (int)railCheckYPosition / MapState::tileSize;
+	//the player isn't in front of a rail, but if the player is within a half tile of a rail, don't let them fall
+	if (!MapState::tileHasRail(railMapX, railMapY)) {
+		const float halfTileSize = (float)MapState::tileSize * 0.5f;
+		if (spriteDirection == SpriteDirection::Up || spriteDirection == SpriteDirection::Down)
+			return MapState::tileHasRail((int)(railCheckXPosition - halfTileSize) / MapState::tileSize, railMapY)
+				|| MapState::tileHasRail((int)(railCheckXPosition + halfTileSize) / MapState::tileSize, railMapY);
+		else
+			return MapState::tileHasRail(railMapX, (int)(railCheckYPosition - halfTileSize) / MapState::tileSize)
+				|| MapState::tileHasRail(railMapX, (int)(railCheckYPosition + halfTileSize) / MapState::tileSize);
+	}
+
+	RailState* railState = mapState.get()->getRailState(railMapX, railMapY);
+	Rail* rail = railState->getRail();
+	//if it's lowered, we can't ride it but don't allow falling
+	if (!railState->canRide())
+		return true;
+
+	//ensure it's the start or end of the rail
+	int endSegmentIndex = rail->getSegmentCount() - 1;
+	Rail::Segment* startSegment = rail->getSegment(0);
+	Rail::Segment* endSegment = rail->getSegment(endSegmentIndex);
+	bool useStart;
+	if (startSegment->x == railMapX && startSegment->y == railMapY)
+		useStart = true;
+	else if (endSegment->x == railMapX && endSegment->y == railMapY)
+		useStart = false;
+	else
+		return false;
+
+	availableKickAction.set(
+		newKickAction(KickActionType::Rail, 0, 0, 0, MapState::getRailSwitchId(railMapX, railMapY), rail, useStart, 0, 0));
+	return true;
+}
+//set a switch kick action if there is a switch in front of the player
+//returns whether it was set
+bool PlayerState::setSwitchKickAction(float xPosition, float yPosition) {
+	//no switch kicking when facing down
+	if (spriteDirection == SpriteDirection::Down)
+		return false;
+
+	short switchId = MapState::absentRailSwitchId;
+	if (spriteDirection == SpriteDirection::Up) {
+		int switchLeftMapX = (int)(xPosition + boundingBoxLeftOffset + 2.0f) / MapState::tileSize;
+		int switchCenterMapX = (int)xPosition / MapState::tileSize;
+		int switchRightMapX = (int)(xPosition + boundingBoxRightOffset - 2.0f) / MapState::tileSize;
+		int switchTopMapY = (int)(yPosition + boundingBoxTopOffset + 2.0f - kickingDistanceLimit) / MapState::tileSize;
+		if (MapState::tileHasSwitch(switchLeftMapX, switchTopMapY))
+			switchId = MapState::getRailSwitchId(switchLeftMapX, switchTopMapY);
+		else if (MapState::tileHasSwitch(switchCenterMapX, switchTopMapY))
+			switchId = MapState::getRailSwitchId(switchCenterMapX, switchTopMapY);
+		else if (MapState::tileHasSwitch(switchRightMapX, switchTopMapY))
+			switchId = MapState::getRailSwitchId(switchRightMapX, switchTopMapY);
+		//for the switches on the radio tower, accept a slightly further kick so that players who are too far can still trigger
+		//	the switch
+		else {
+			switchTopMapY = (int)(yPosition + boundingBoxTopOffset - 0.5f) / MapState::tileSize;
+			if (MapState::tileHasSwitch(switchCenterMapX, switchTopMapY)) {
+				SwitchState* switchState = mapState.get()->getSwitchState(switchCenterMapX, switchTopMapY);
+				if (switchState->getSwitch()->getGroup() == 0)
+					switchId = MapState::getRailSwitchId(switchCenterMapX, switchTopMapY);
+			}
+		}
+	} else {
+		float kickingXOffset = spriteDirection == SpriteDirection::Left
+			? boundingBoxLeftOffset + 2.0f - kickingDistanceLimit
+			: boundingBoxRightOffset - 2.0f + kickingDistanceLimit;
+		int switchMapX = (int)(xPosition + kickingXOffset) / MapState::tileSize;
+		int switchTopMapY = (int)(yPosition + boundingBoxTopOffset + 2.0f) / MapState::tileSize;
+		int switchBottomMapY = (int)(yPosition + boundingBoxBottomOffset - 1.0f) / MapState::tileSize;
+		if (MapState::tileHasSwitch(switchMapX, switchTopMapY))
+			switchId = MapState::getRailSwitchId(switchMapX, switchTopMapY);
+		else if (MapState::tileHasSwitch(switchMapX, switchBottomMapY))
+			switchId = MapState::getRailSwitchId(switchMapX, switchBottomMapY);
+	}
+	if (switchId == MapState::absentRailSwitchId || !mapState.get()->canKickSwitch(switchId))
+		return false;
+
+	availableKickAction.set(newKickAction(KickActionType::Switch, 0, 0, 0, 0, nullptr, false, switchId, 0));
+	return true;
+}
+//set a reset switch kick action if we can reset switch
+//returns whether it was set
+bool PlayerState::setResetSwitchKickAction(float xPosition, float yPosition) {
+	int resetSwitchMapX = -1;
+	int resetSwitchMapY = -1;
+	if (spriteDirection == SpriteDirection::Up || spriteDirection == SpriteDirection::Down) {
+		float kickingYOffset = spriteDirection == SpriteDirection::Up
+			? boundingBoxTopOffset - kickingDistanceLimit
+			: boundingBoxBottomOffset + kickingDistanceLimit;
+		int resetSwitchLeftMapX = (int)(xPosition + boundingBoxLeftOffset) / MapState::tileSize;
+		int resetSwitchCenterMapX = (int)xPosition / MapState::tileSize;
+		int resetSwitchRightMapX = (int)(xPosition + boundingBoxRightOffset) / MapState::tileSize;
+		resetSwitchMapY = (int)(yPosition + kickingYOffset) / MapState::tileSize;
+		if (MapState::tileHasResetSwitchBody(resetSwitchLeftMapX, resetSwitchMapY))
+			resetSwitchMapX = resetSwitchLeftMapX;
+		else if (MapState::tileHasResetSwitchBody(resetSwitchCenterMapX, resetSwitchMapY))
+			resetSwitchMapX = resetSwitchCenterMapX;
+		else if (MapState::tileHasResetSwitchBody(resetSwitchRightMapX, resetSwitchMapY))
+			resetSwitchMapX = resetSwitchRightMapX;
+	} else {
+		float kickingXOffset = spriteDirection == SpriteDirection::Left
+			? boundingBoxLeftOffset - kickingDistanceLimit
+			: boundingBoxRightOffset + kickingDistanceLimit;
+		resetSwitchMapX = (int)(xPosition + kickingXOffset) / MapState::tileSize;
+		int resetSwitchTopMapY = (int)(yPosition + boundingBoxTopOffset) / MapState::tileSize;
+		int resetSwitchBottomMapY = (int)(yPosition + boundingBoxBottomOffset) / MapState::tileSize;
+		if (MapState::tileHasResetSwitchBody(resetSwitchMapX, resetSwitchTopMapY))
+			resetSwitchMapY = resetSwitchTopMapY;
+		else if (MapState::tileHasResetSwitchBody(resetSwitchMapX, resetSwitchBottomMapY))
+			resetSwitchMapY = resetSwitchBottomMapY;
+	}
+	//because reset switches can be kicked from outside their tile, we also need to make sure the player is on the same height
+	if (resetSwitchMapX == -1 || resetSwitchMapY == -1 || MapState::getHeight(resetSwitchMapX, resetSwitchMapY) != z)
+		return false;
+
+	short resetSwitchId = MapState::getRailSwitchId(resetSwitchMapX, resetSwitchMapY);
+	availableKickAction.set(newKickAction(KickActionType::ResetSwitch, 0, 0, 0, 0, nullptr, false, 0, resetSwitchId));
+	return true;
+}
+//set a climb kick action if we can climb
+//returns whether it was set
+bool PlayerState::setClimbKickAction(float xPosition, float yPosition) {
+	//we can only climb when facing up
+	if (spriteDirection != SpriteDirection::Up)
+		return false;
+
 	int lowMapX = (int)(xPosition + boundingBoxLeftOffset) / MapState::tileSize;
 	int highMapX = (int)(xPosition + boundingBoxRightOffset) / MapState::tileSize;
+	int oneTileUpMapY = (int)(yPosition + boundingBoxTopOffset - kickingDistanceLimit) / MapState::tileSize;
+	char oneTileUpHeight = MapState::horizontalTilesHeight(lowMapX, highMapX, oneTileUpMapY);
+	//make sure tiles are all at the same height
+	if (oneTileUpHeight == MapState::invalidHeight)
+		return false;
 
-	if (kickRail(xPosition, yPosition, ticksTime)
-			|| kickSwitch(xPosition, yPosition, ticksTime)
-			|| kickResetSwitch(xPosition, yPosition, ticksTime))
-		return;
+	//make sure the next tiles are 1 height up and the row after that is 2 height up, the next available floor
+	if (oneTileUpHeight != z + 1 || MapState::horizontalTilesHeight(lowMapX, highMapX, oneTileUpMapY - 1) != z + 2)
+		return false;
 
+	//set a distance such that the bottom of the player is slightly past the edge of the ledge
+	float targetYPosition =
+		(float)(oneTileUpMapY * MapState::tileSize) - boundingBoxBottomOffset - MapState::smallDistance;
+	availableKickAction.set(newKickAction(KickActionType::Climb, 0, targetYPosition, 0, 0, nullptr, false, 0, 0));
+	return true;
+}
+//set a fall kick action if we can fall
+//returns whether it was set
+bool PlayerState::setFallKickAction(float xPosition, float yPosition) {
+	int lowMapX = (int)(xPosition + boundingBoxLeftOffset) / MapState::tileSize;
+	int highMapX = (int)(xPosition + boundingBoxRightOffset) / MapState::tileSize;
+	char fallHeight;
+	float targetXPosition;
+	float targetYPosition;
 	if (spriteDirection == SpriteDirection::Up) {
 		int oneTileUpMapY = (int)(yPosition + boundingBoxTopOffset - kickingDistanceLimit) / MapState::tileSize;
 		char oneTileUpHeight = MapState::horizontalTilesHeight(lowMapX, highMapX, oneTileUpMapY);
-		if (oneTileUpHeight != MapState::invalidHeight) {
-			//we found a floor to fall to
-			if (oneTileUpHeight < z && (oneTileUpHeight & 1) == 0) {
-				//move a distance such that the bottom of the player is slightly above the top of the cliff
-				float targetYPosition =
-					(float)((oneTileUpMapY + 1) * MapState::tileSize) - boundingBoxBottomOffset - MapState::smallDistance;
-				kickFall(0.0f, targetYPosition - yPosition, oneTileUpHeight, ticksTime);
-				return;
-			//we found a ledge to climb up
-			} else if (oneTileUpHeight == z + 1
-				&& MapState::horizontalTilesHeight(lowMapX, highMapX, oneTileUpMapY - 1) == z + 2)
-			{
-				//move a distance such that the bottom of the player is slightly past the edge of the ledge
-				float targetYPosition =
-					(float)(oneTileUpMapY * MapState::tileSize) - boundingBoxBottomOffset - MapState::smallDistance;
-				kickClimb(targetYPosition - yPosition, ticksTime);
-				return;
-			}
-		}
+		//can't fall unless we found tiles that are all the same lower floor height
+		if (oneTileUpHeight == MapState::invalidHeight || oneTileUpHeight >= z || (oneTileUpHeight & 1) != 0)
+			return false;
+
+		//move a distance such that the bottom of the player is slightly above the top of the cliff
+		targetXPosition = xPosition;
+		targetYPosition = (float)((oneTileUpMapY + 1) * MapState::tileSize) - boundingBoxBottomOffset - MapState::smallDistance;
+		fallHeight = oneTileUpHeight;
 	} else if (spriteDirection == SpriteDirection::Down) {
 		int oneTileDownMapY = (int)(yPosition + boundingBoxBottomOffset + kickingDistanceLimit) / MapState::tileSize;
-		char fallHeight = MapState::invalidHeight;
+		fallHeight = MapState::invalidHeight;
 		int tileOffset = 0;
 		for (; true; tileOffset++) {
 			fallHeight = MapState::horizontalTilesHeight(lowMapX, highMapX, oneTileDownMapY + tileOffset);
 			//stop looking if the heights differ
 			if (fallHeight == MapState::invalidHeight)
-				break;
+				return false;
 			//cliff face, keep looking
 			else if (fallHeight == z - 1 - tileOffset * 2)
 				;
 			//this is a tile we can fall to
 			else if (fallHeight == z - tileOffset * 2 && tileOffset >= 1)
 				break;
-			//the row is higher than us so stop looking
-			else {
-				fallHeight = MapState::invalidHeight;
-				break;
-			}
+			//the row is higher than us (or the empty tile) so stop looking
+			else
+				return false;
 		}
-		//fall if we can
-		if (fallHeight != MapState::invalidHeight) {
-			//move a distance such that the bottom of the player is slightly below the bottom of the cliff
-			float targetYPosition =
-				(float)((oneTileDownMapY + tileOffset) * MapState::tileSize) - boundingBoxTopOffset + MapState::smallDistance;
-			kickFall(0.0f, targetYPosition - yPosition, fallHeight, ticksTime);
-			return;
-		}
+
+		//move a distance such that the bottom of the player is slightly below the bottom of the cliff
+		targetXPosition = xPosition;
+		targetYPosition =
+			(float)((oneTileDownMapY + tileOffset) * MapState::tileSize) - boundingBoxTopOffset + MapState::smallDistance;
 	} else {
 		int sideTilesLeftMapX;
 		int sideTilesRightMapX;
@@ -436,44 +574,86 @@ void PlayerState::beginKicking(int ticksTime) {
 		for (int tileOffset = 1; true; tileOffset++) {
 			int checkMapY = topMapY + tileOffset;
 			if (checkMapY >= MapState::mapHeight())
-				break;
+				return false;
 
 			char tilesHeight = MapState::horizontalTilesHeight(sideTilesLeftMapX, sideTilesRightMapX, checkMapY);
 			//keep looking if we see an empty space or two different heights
 			if (tilesHeight == MapState::emptySpaceHeight || tilesHeight == MapState::invalidHeight)
 				continue;
 
-			char targetFallHeight = z - (char)tileOffset * 2;
+			fallHeight = z - (char)tileOffset * 2;
 			//we found tiles that would be in front of the player after a fall, stop looking
-			if (tilesHeight > targetFallHeight)
-				break;
+			if (tilesHeight > fallHeight)
+				return false;
 			//we found tiles that would be behind the player after a fall, keep looking
-			else if (tilesHeight < targetFallHeight)
+			else if (tilesHeight < fallHeight)
 				continue;
 
 			//ensure that all tiles the player will land on are the same height
-			bool canFall = true;
 			int bottomCheckMapY = (int)(yPosition + boundingBoxTopOffset) / MapState::tileSize + tileOffset;
 			for (checkMapY++; checkMapY <= bottomCheckMapY; checkMapY++) {
-				if (MapState::horizontalTilesHeight(sideTilesLeftMapX, sideTilesRightMapX, checkMapY) != tilesHeight) {
-					canFall = false;
-					break;
-				}
+				if (MapState::horizontalTilesHeight(sideTilesLeftMapX, sideTilesRightMapX, checkMapY) != tilesHeight)
+					return false;
 			}
-			if (!canFall)
-				break;
 
 			//we found a spot we can fall to
-			float targetXPosition = spriteDirection == SpriteDirection::Left
+			targetXPosition = spriteDirection == SpriteDirection::Left
 				? (float)((sideTilesRightMapX + 1) * MapState::tileSize) - boundingBoxRightOffset - MapState::smallDistance
 				: (float)(sideTilesLeftMapX * MapState::tileSize) - boundingBoxLeftOffset + MapState::smallDistance;
-			kickFall(targetXPosition - xPosition, (float)(tileOffset * MapState::tileSize), tilesHeight, ticksTime);
-			return;
+			targetYPosition = yPosition + (float)(tileOffset * MapState::tileSize);
+			break;
 		}
 	}
 
-	//we didn't do anything with the kick, just play the animation
-	kickAir(ticksTime);
+	availableKickAction.set(
+		newKickAction(KickActionType::Fall, targetXPosition, targetYPosition, fallHeight, 0, nullptr, false, 0, 0));
+	return true;
+}
+//if we don't have a kicking animation, start one
+//this should be called after the player has been updated
+void PlayerState::beginKicking(int ticksTime) {
+	if (entityAnimation.get() != nullptr)
+		return;
+
+	xDirection = 0;
+	yDirection = 0;
+	renderInterpolatedX = true;
+	renderInterpolatedY = true;
+
+	//kicking doesn't do anything if you don't have the boot or if there is no available kick action
+	KickAction* kickAction = availableKickAction.get();
+	if (!hasBoot || kickAction == nullptr) {
+		kickAir(ticksTime);
+		return;
+	}
+
+	float xPosition = x.get()->getValue(0);
+	float yPosition = y.get()->getValue(0);
+	switch (kickAction->getType()) {
+		case KickActionType::Climb:
+			kickClimb(kickAction->getTargetPlayerY() - yPosition, ticksTime);
+			break;
+		case KickActionType::Fall:
+			kickFall(
+				kickAction->getTargetPlayerX() - xPosition,
+				kickAction->getTargetPlayerY() - yPosition,
+				kickAction->getFallHeight(),
+				ticksTime);
+			break;
+		case KickActionType::Rail:
+			kickRail(
+				kickAction->getRailId(), kickAction->getRail(), kickAction->getUseRailStart(), xPosition, yPosition, ticksTime);
+			break;
+		case KickActionType::Switch:
+			kickSwitch(kickAction->getSwitchId(), ticksTime);
+			break;
+		case KickActionType::ResetSwitch:
+			kickResetSwitch(kickAction->getResetSwitchId(), ticksTime);
+			break;
+		default:
+			break;
+	}
+	availableKickAction.set(nullptr);
 }
 //begin a kicking animation without changing any state
 void PlayerState::kickAir(int ticksTime) {
@@ -612,71 +792,22 @@ void PlayerState::kickFall(float xMoveDistance, float yMoveDistance, char fallHe
 	beginEntityAnimation(&kickingAnimationComponentsHolder, ticksTime);
 	z = fallHeight;
 }
-//check if we're kicking the end of a rail, and if so, begin a kicking animation and ride it
-//returns whether we handled a rail kick
-bool PlayerState::kickRail(float xPosition, float yPosition, int ticksTime) {
-	float railCheckXPosition;
-	float railCheckYPosition;
-	if (spriteDirection == SpriteDirection::Up || spriteDirection == SpriteDirection::Down) {
-		railCheckXPosition = xPosition;
-		railCheckYPosition =
-			yPosition + (spriteDirection == SpriteDirection::Up ? boundingBoxTopOffset : boundingBoxBottomOffset);
-	} else {
-		railCheckXPosition =
-			xPosition + (spriteDirection == SpriteDirection::Left ? boundingBoxLeftOffset : boundingBoxRightOffset);
-		railCheckYPosition = yPosition + boundingBoxCenterYOffset;
-	}
-	int railMapX = (int)railCheckXPosition / MapState::tileSize;
-	int railMapY = (int)railCheckYPosition / MapState::tileSize;
-	//the player didn't kick on a rail
-	if (!MapState::tileHasRail(railMapX, railMapY)) {
-		const float halfTileSize = (float)MapState::tileSize * 0.5f;
-		//if the player kicked within a half tile of a rail, don't let them fall
-		bool kickedNearRail;
-		if (spriteDirection == SpriteDirection::Up || spriteDirection == SpriteDirection::Down) {
-			kickedNearRail =
-				MapState::tileHasRail((int)(railCheckXPosition - halfTileSize) / MapState::tileSize, railMapY)
-					|| MapState::tileHasRail((int)(railCheckXPosition + halfTileSize) / MapState::tileSize, railMapY);
-		} else {
-			kickedNearRail =
-				MapState::tileHasRail(railMapX, (int)(railCheckYPosition - halfTileSize) / MapState::tileSize)
-					|| MapState::tileHasRail(railMapX, (int)(railCheckYPosition + halfTileSize) / MapState::tileSize);
-		}
-		if (kickedNearRail) {
-			kickAir(ticksTime);
-			return true;
-		} else
-			return false;
-	}
-
-	RailState* railState = mapState.get()->getRailState(railMapX, railMapY);
-	Rail* rail = railState->getRail();
-	//if it's lowered, we can't ride it but don't try to fall
-	if (!railState->canRide()) {
-		kickAir(ticksTime);
-		return true;
-	}
-
+//begin a rail-riding animation and follow it to its other end
+void PlayerState::kickRail(short railId, Rail* rail, bool useStart, float xPosition, float yPosition, int ticksTime) {
 	vector<ReferenceCounterHolder<EntityAnimation::Component>> ridingRailAnimationComponents;
 	Holder_EntityAnimationComponentVector ridingRailAnimationComponentsHolder (&ridingRailAnimationComponents);
-	if (addRailRideComponents(
-		rail, &ridingRailAnimationComponentsHolder, xPosition, yPosition, railMapX, railMapY, nullptr, nullptr))
-	{
-		MapState::logRailRide(MapState::getRailSwitchId(railMapX, railMapY), (int)xPosition, (int)yPosition);
-		beginEntityAnimation(&ridingRailAnimationComponentsHolder, ticksTime);
-		return true;
-	} else
-		return false;
+	addRailRideComponents(
+		rail, &ridingRailAnimationComponentsHolder, xPosition, yPosition, useStart, nullptr, nullptr);
+	MapState::logRailRide(railId, (int)xPosition, (int)yPosition);
+	beginEntityAnimation(&ridingRailAnimationComponentsHolder, ticksTime);
 }
-//add the components for a rail-riding animation, if our position matches the start or end of a rail
-//returns whether components were added
-bool PlayerState::addRailRideComponents(
+//add the components for a rail-riding animation
+void PlayerState::addRailRideComponents(
 	Rail* rail,
 	Holder_EntityAnimationComponentVector* componentsHolder,
 	float xPosition,
 	float yPosition,
-	int railMapX,
-	int railMapY,
+	bool useStart,
 	float* outFinalXPosition,
 	float* outFinalYPosition)
 {
@@ -687,14 +818,13 @@ bool PlayerState::addRailRideComponents(
 	int firstSegmentIndex = 0;
 	int lastSegmentIndex = 0;
 	int segmentIndexIncrement;
-	if (startSegment->x == railMapX && startSegment->y == railMapY) {
+	if (useStart) {
 		lastSegmentIndex = endSegmentIndex;
 		segmentIndexIncrement = 1;
-	} else if (endSegment->x == railMapX && endSegment->y == railMapY) {
+	} else {
 		firstSegmentIndex = endSegmentIndex;
 		segmentIndexIncrement = -1;
-	} else
-		return false;
+	}
 
 	const float bootLiftDuration = (float)SpriteRegistry::playerKickingAnimationTicksPerFrame;
 	const float floatRailToRailTicksDuration = (float)railToRailTicksDuration;
@@ -830,7 +960,6 @@ bool PlayerState::addRailRideComponents(
 		*outFinalXPosition = finalXPosition;
 	if (outFinalYPosition != nullptr)
 		*outFinalYPosition = finalYPosition;
-	return true;
 }
 #ifdef DEBUG
 	//add the components for a rail-riding animation for the given rail, starting at whichever end is nearest
@@ -851,68 +980,24 @@ bool PlayerState::addRailRideComponents(
 		//	the tile that the segment is on
 		float startDist = abs(xPosition - startSegment->tileCenterX()) + abs(feetYPosition - startSegment->tileCenterY());
 		float endDist = abs(xPosition - endSegment->tileCenterX()) + abs(feetYPosition - endSegment->tileCenterY());
-		Rail::Segment* nearestSegment = startDist <= endDist ? startSegment : endSegment;
+		bool useStart = startDist <= endDist;
 		addRailRideComponents(
 			rail,
 			componentsHolder,
 			xPosition,
 			yPosition,
-			nearestSegment->x,
-			nearestSegment->y,
+			useStart,
 			outFinalXPosition,
 			outFinalYPosition);
 	}
 #endif
-//check if we're kicking a switch, and if so, begin a kicking animation and set the switch to flip
-//returns whether we handled a switch kick
-bool PlayerState::kickSwitch(float xPosition, float yPosition, int ticksTime) {
-	//no switch kicking when facing down
-	if (spriteDirection == SpriteDirection::Down)
-		return false;
-
-	short switchId = MapState::absentRailSwitchId;
-	if (spriteDirection == SpriteDirection::Up) {
-		int switchLeftMapX = (int)(xPosition + boundingBoxLeftOffset + 2.0f) / MapState::tileSize;
-		int switchCenterMapX = (int)xPosition / MapState::tileSize;
-		int switchRightMapX = (int)(xPosition + boundingBoxRightOffset - 2.0f) / MapState::tileSize;
-		int switchTopMapY = (int)(yPosition + boundingBoxTopOffset + 2.0f - kickingDistanceLimit) / MapState::tileSize;
-		if (MapState::tileHasSwitch(switchLeftMapX, switchTopMapY))
-			switchId = MapState::getRailSwitchId(switchLeftMapX, switchTopMapY);
-		else if (MapState::tileHasSwitch(switchCenterMapX, switchTopMapY))
-			switchId = MapState::getRailSwitchId(switchCenterMapX, switchTopMapY);
-		else if (MapState::tileHasSwitch(switchRightMapX, switchTopMapY))
-			switchId = MapState::getRailSwitchId(switchRightMapX, switchTopMapY);
-		//for the switches on the radio tower, accept a slightly further kick so that players who are too far can still trigger
-		//	the switch
-		else {
-			switchTopMapY = (int)(yPosition + boundingBoxTopOffset - 0.5f) / MapState::tileSize;
-			if (MapState::tileHasSwitch(switchCenterMapX, switchTopMapY)) {
-				SwitchState* switchState = mapState.get()->getSwitchState(switchCenterMapX, switchTopMapY);
-				if (switchState->getSwitch()->getGroup() == 0)
-					switchId = MapState::getRailSwitchId(switchCenterMapX, switchTopMapY);
-			}
-		}
-	} else {
-		float kickingXOffset = spriteDirection == SpriteDirection::Left
-			? boundingBoxLeftOffset + 2.0f - kickingDistanceLimit
-			: boundingBoxRightOffset - 2.0f + kickingDistanceLimit;
-		int switchMapX = (int)(xPosition + kickingXOffset) / MapState::tileSize;
-		int switchTopMapY = (int)(yPosition + boundingBoxTopOffset + 2.0f) / MapState::tileSize;
-		int switchBottomMapY = (int)(yPosition + boundingBoxBottomOffset - 1.0f) / MapState::tileSize;
-		if (MapState::tileHasSwitch(switchMapX, switchTopMapY))
-			switchId = MapState::getRailSwitchId(switchMapX, switchTopMapY);
-		else if (MapState::tileHasSwitch(switchMapX, switchBottomMapY))
-			switchId = MapState::getRailSwitchId(switchMapX, switchBottomMapY);
-	}
-	if (switchId == MapState::absentRailSwitchId)
-		return false;
-
+//begin a kicking animation and set the switch to flip
+void PlayerState::kickSwitch(short switchId, int ticksTime) {
 	MapState::logSwitchKick(switchId);
 	vector<ReferenceCounterHolder<EntityAnimation::Component>> kickAnimationComponents;
 	Holder_EntityAnimationComponentVector kickAnimationComponentsHolder (&kickAnimationComponents);
 	addKickSwitchComponents(switchId, &kickAnimationComponentsHolder, true);
 	beginEntityAnimation(&kickAnimationComponentsHolder, ticksTime);
-	return true;
 }
 //add the animation components for a switch kicking animation
 void PlayerState::addKickSwitchComponents(
@@ -933,48 +1018,13 @@ void PlayerState::addKickSwitchComponents(
 					- SpriteRegistry::playerKickingAnimationTicksPerFrame)
 		});
 }
-//check if we're kicking a reset switch, and if so, begin a kicking animation and set the reset switch to flip
-//returns whether we handled a reset switch kick
-bool PlayerState::kickResetSwitch(float xPosition, float yPosition, int ticksTime) {
-	int resetSwitchMapX = -1;
-	int resetSwitchMapY = -1;
-	if (spriteDirection == SpriteDirection::Up || spriteDirection == SpriteDirection::Down) {
-		float kickingYOffset = spriteDirection == SpriteDirection::Up
-			? boundingBoxTopOffset - kickingDistanceLimit
-			: boundingBoxBottomOffset + kickingDistanceLimit;
-		int resetSwitchLeftMapX = (int)(xPosition + boundingBoxLeftOffset) / MapState::tileSize;
-		int resetSwitchCenterMapX = (int)xPosition / MapState::tileSize;
-		int resetSwitchRightMapX = (int)(xPosition + boundingBoxRightOffset) / MapState::tileSize;
-		resetSwitchMapY = (int)(yPosition + kickingYOffset) / MapState::tileSize;
-		if (MapState::tileHasResetSwitch(resetSwitchLeftMapX, resetSwitchMapY))
-			resetSwitchMapX = resetSwitchLeftMapX;
-		else if (MapState::tileHasResetSwitch(resetSwitchCenterMapX, resetSwitchMapY))
-			resetSwitchMapX = resetSwitchCenterMapX;
-		else if (MapState::tileHasResetSwitch(resetSwitchRightMapX, resetSwitchMapY))
-			resetSwitchMapX = resetSwitchRightMapX;
-	} else {
-		float kickingXOffset = spriteDirection == SpriteDirection::Left
-			? boundingBoxLeftOffset - kickingDistanceLimit
-			: boundingBoxRightOffset + kickingDistanceLimit;
-		resetSwitchMapX = (int)(xPosition + kickingXOffset) / MapState::tileSize;
-		int resetSwitchTopMapY = (int)(yPosition + boundingBoxTopOffset) / MapState::tileSize;
-		int resetSwitchBottomMapY = (int)(yPosition + boundingBoxBottomOffset) / MapState::tileSize;
-		if (MapState::tileHasResetSwitch(resetSwitchMapX, resetSwitchTopMapY))
-			resetSwitchMapY = resetSwitchTopMapY;
-		else if (MapState::tileHasResetSwitch(resetSwitchMapX, resetSwitchBottomMapY))
-			resetSwitchMapY = resetSwitchBottomMapY;
-	}
-	//because reset switches can be kicked from outside their tile, we also need to make sure the player is on the same height
-	if (resetSwitchMapX == -1 || resetSwitchMapY == -1 || MapState::getHeight(resetSwitchMapX, resetSwitchMapY) != z)
-		return false;
-
-	short resetSwitchId = MapState::getRailSwitchId(resetSwitchMapX, resetSwitchMapY);
+//begin a kicking animation and set the reset switch to flip
+void PlayerState::kickResetSwitch(short resetSwitchId, int ticksTime) {
 	MapState::logResetSwitchKick(resetSwitchId);
 	vector<ReferenceCounterHolder<EntityAnimation::Component>> kickAnimationComponents;
 	Holder_EntityAnimationComponentVector kickAnimationComponentsHolder (&kickAnimationComponents);
 	addKickResetSwitchComponents(resetSwitchId, &kickAnimationComponentsHolder);
 	beginEntityAnimation(&kickAnimationComponentsHolder, ticksTime);
-	return true;
 }
 //add the animation components for a reset switch kicking animation
 void PlayerState::addKickResetSwitchComponents(short resetSwitchId, Holder_EntityAnimationComponentVector* componentsHolder) {
@@ -1016,6 +1066,24 @@ void PlayerState::render(EntityState* camera, int ticksTime) {
 	else
 		SpriteRegistry::player->renderSpriteCenteredAtScreenPosition(
 			hasBoot ? 4 : 0, (int)spriteDirection, renderCenterX, renderCenterY);
+	if (hasBoot && availableKickAction.get() != nullptr) {
+		KickAction* kickAction = availableKickAction.get();
+		bool showKickIndicator;
+		if (kickAction->getType() == KickActionType::Climb)
+			showKickIndicator = Config::kickIndicators.climb;
+		else if (kickAction->getType() == KickActionType::Fall)
+			showKickIndicator = Config::kickIndicators.fall;
+		else if (kickAction->getType() == KickActionType::Rail)
+			showKickIndicator = Config::kickIndicators.rail;
+		else if (kickAction->getType() == KickActionType::Switch)
+			showKickIndicator = Config::kickIndicators.switch0;
+		else if (kickAction->getType() == KickActionType::ResetSwitch)
+			showKickIndicator = Config::kickIndicators.resetSwitch;
+		else
+			showKickIndicator = false;
+		if (showKickIndicator)
+			SpriteRegistry::kickIndicator->renderSpriteCenteredAtScreenPosition(0, 0, renderCenterX, renderCenterY - 15.0f);
+	}
 
 	#ifdef SHOW_PLAYER_BOUNDING_BOX
 		SpriteSheet::renderFilledRectangle(

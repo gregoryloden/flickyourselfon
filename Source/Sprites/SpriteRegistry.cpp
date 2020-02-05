@@ -11,6 +11,7 @@ const char* SpriteRegistry::railsFileName = "rails.png";
 const char* SpriteRegistry::switchesFileName = "switches.png";
 const char* SpriteRegistry::radioWavesFileName = "radiowaves.png";
 const char* SpriteRegistry::resetSwitchFileName = "resetswitch.png";
+const char* SpriteRegistry::kickIndicatorFileName = "kickindicator.png";
 SpriteSheet* SpriteRegistry::player = nullptr;
 SpriteSheet* SpriteRegistry::tiles = nullptr;
 SpriteSheet* SpriteRegistry::radioTower = nullptr;
@@ -18,6 +19,7 @@ SpriteSheet* SpriteRegistry::rails = nullptr;
 SpriteSheet* SpriteRegistry::switches = nullptr;
 SpriteSheet* SpriteRegistry::radioWaves = nullptr;
 SpriteSheet* SpriteRegistry::resetSwitch = nullptr;
+SpriteSheet* SpriteRegistry::kickIndicator = nullptr;
 SpriteAnimation* SpriteRegistry::playerWalkingAnimation = nullptr;
 SpriteAnimation* SpriteRegistry::playerLegLiftAnimation = nullptr;
 SpriteAnimation* SpriteRegistry::playerBootWalkingAnimation = nullptr;
@@ -39,6 +41,7 @@ void SpriteRegistry::loadAll() {
 	radioWaves = newSpriteSheetWithImagePath(radioWavesFileName, 5, 1);
 	resetSwitch = newSpriteSheetWithImagePath(resetSwitchFileName, 2, 1);
 	resetSwitch->removeBottomRightPixelBorder();
+	kickIndicator = newSpriteSheetWithImagePath(kickIndicatorFileName, 1, 1);
 	playerWalkingAnimation = newSpriteAnimation(
 		player,
 		{
@@ -91,6 +94,7 @@ void SpriteRegistry::unloadAll() {
 	delete switches;
 	delete radioWaves;
 	delete resetSwitch;
+	delete kickIndicator;
 	delete playerWalkingAnimation;
 	delete playerLegLiftAnimation;
 	delete playerBootWalkingAnimation;

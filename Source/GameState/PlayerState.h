@@ -5,6 +5,7 @@
 class CollisionRect;
 class EntityAnimation;
 class Holder_EntityAnimationComponentVector;
+class KickAction;
 class MapState;
 class PositionState;
 class Rail;
@@ -45,9 +46,10 @@ private:
 	ReferenceCounterHolder<DynamicValue> ghostSpriteX;
 	ReferenceCounterHolder<DynamicValue> ghostSpriteY;
 	int ghostSpriteStartTicksTime;
+	ReferenceCounterHolder<MapState> mapState;
+	ReferenceCounterHolder<KickAction> availableKickAction;
 	float lastControlledX;
 	float lastControlledY;
-	ReferenceCounterHolder<MapState> mapState;
 
 public:
 	PlayerState(objCounterParameters());
@@ -76,20 +78,25 @@ private:
 	float xCollisionDuration(CollisionRect* other);
 	float yCollisionDuration(CollisionRect* other);
 	void updateSpriteWithPreviousPlayerState(PlayerState* prev, int ticksTime, bool usePreviousStateSpriteAnimation);
+	void setKickAction();
+	bool setRailKickAction(float xPosition, float yPosition);
+	bool setSwitchKickAction(float xPosition, float yPosition);
+	bool setResetSwitchKickAction(float xPosition, float yPosition);
+	bool setClimbKickAction(float xPosition, float yPosition);
+	bool setFallKickAction(float xPosition, float yPosition);
 public:
 	void beginKicking(int ticksTime);
 private:
 	void kickAir(int ticksTime);
 	void kickClimb(float yMoveDistance, int ticksTime);
 	void kickFall(float xMoveDistance, float yMoveDistance, char fallHeight, int ticksTime);
-	bool kickRail(float xPosition, float yPosition, int ticksTime);
-	static bool addRailRideComponents(
+	void kickRail(short railId, Rail* rail, bool useStart, float xPosition, float yPosition, int ticksTime);
+	static void addRailRideComponents(
 		Rail* rail,
 		Holder_EntityAnimationComponentVector* componentsHolder,
 		float xPosition,
 		float yPosition,
-		int railMapX,
-		int railMapY,
+		bool useStart,
 		float* outFinalXPosition,
 		float* outFinalYPosition);
 public:
@@ -103,12 +110,12 @@ public:
 			float* outFinalYPosition);
 	#endif
 private:
-	bool kickSwitch(float xPosition, float yPosition, int ticksTime);
+	void kickSwitch(short switchId, int ticksTime);
 public:
 	static void addKickSwitchComponents(
 		short switchId, Holder_EntityAnimationComponentVector* componentsHolder, bool allowRadioTowerAnimation);
 private:
-	bool kickResetSwitch(float xPosition, float yPosition, int ticksTime);
+	void kickResetSwitch(short resetSwitchId, int ticksTime);
 public:
 	static void addKickResetSwitchComponents(short resetSwitchId, Holder_EntityAnimationComponentVector* componentsHolder);
 	void render(EntityState* camera, int ticksTime);

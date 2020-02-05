@@ -3,6 +3,7 @@
 #include "GameState/DynamicValue.h"
 #include "GameState/EntityAnimation.h"
 #include "GameState/EntityState.h"
+#include "GameState/KickAction.h"
 #include "GameState/PauseState.h"
 #include "GameState/PlayerState.h"
 #include "GameState/MapState/MapState.h"
@@ -92,6 +93,7 @@ template <class PooledObject> void ObjectPool<PooledObject>::clearPool() {
 	pool.clear();
 }
 
+//many subclasses only need their own pool, they are not held directly
 template class ObjectPool<CompositeQuarticValue>;
 template class ObjectPool<EntityAnimation::Delay>;
 template class ObjectPool<EntityAnimation::MapKickResetSwitch>;
@@ -103,12 +105,15 @@ template class ObjectPool<EntityAnimation::SetSpriteAnimation>;
 template class ObjectPool<EntityAnimation::SetSpriteDirection>;
 template class ObjectPool<EntityAnimation::SetVelocity>;
 template class ObjectPool<EntityAnimation::SwitchToPlayerCamera>;
+//superclasses only need holders, the classes themselves are not allocated
 template class ReferenceCounterHolder<DynamicValue>;
 template class ReferenceCounterHolder<EntityAnimation::Component>;
 template class ReferenceCounterHolder<EntityState>;
+//solo-concrete classes or held subclasses need both their own pools and holders
 instantiateObjectPoolAndReferenceCounterHolder(CollisionRect)
 instantiateObjectPoolAndReferenceCounterHolder(DynamicCameraAnchor)
 instantiateObjectPoolAndReferenceCounterHolder(EntityAnimation)
+instantiateObjectPoolAndReferenceCounterHolder(KickAction)
 instantiateObjectPoolAndReferenceCounterHolder(MapState)
 instantiateObjectPoolAndReferenceCounterHolder(PauseState)
 instantiateObjectPoolAndReferenceCounterHolder(PlayerState)

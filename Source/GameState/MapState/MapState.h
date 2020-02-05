@@ -192,6 +192,8 @@ public:
 	#endif
 	static float antennaCenterWorldX();
 	static float antennaCenterWorldY();
+	static bool tileHasResetSwitchBody(int x, int y);
+	bool canKickSwitch(short switchId);
 	static char horizontalTilesHeight(int lowMapX, int highMapX, int mapY);
 	static void setIntroAnimationBootTile(bool showBootTile);
 	void updateWithPreviousMapState(MapState* prev, int ticksTime);

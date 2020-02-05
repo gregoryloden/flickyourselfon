@@ -7,6 +7,7 @@
 #include "GameState/EntityAnimation.h"
 #include "GameState/EntityState.h"
 #include "GameState/GameState.h"
+#include "GameState/KickAction.h"
 #include "GameState/PauseState.h"
 #include "GameState/MapState/MapState.h"
 #include "Util/CircularStateQueue.h"
@@ -153,6 +154,7 @@ int gameMain() {
 		ObjectPool<EntityAnimation::MapKickSwitch>::clearPool();
 		ObjectPool<EntityAnimation::MapKickResetSwitch>::clearPool();
 		ObjectPool<CollisionRect>::clearPool();
+		ObjectPool<KickAction>::clearPool();
 		ObjCounter::end();
 	#endif
 	Logger::gameplayLogger.endLogging();

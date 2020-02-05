@@ -1,13 +1,13 @@
 #include "Util/PooledReferenceCounter.h"
 
+#define newGameState() newWithoutArgs(GameState)
+
 class DynamicCameraAnchor;
 class EntityState;
 class Holder_EntityAnimationComponentVector;
 class MapState;
 class PauseState;
 class PlayerState;
-
-#define newGameState() newWithoutArgs(GameState)
 
 class GameState onlyInDebug(: public ObjCounter) {
 private:

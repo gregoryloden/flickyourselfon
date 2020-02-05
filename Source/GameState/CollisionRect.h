@@ -11,6 +11,7 @@ public:
 
 	CollisionRect(objCounterParameters());
 	virtual ~CollisionRect();
+
 	virtual void release();
 	static CollisionRect* produce(objCounterParametersComma() float pLeft, float pTop, float pRight, float pBottom);
 	bool intersects(CollisionRect* other);

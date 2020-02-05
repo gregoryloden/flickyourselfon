@@ -54,6 +54,7 @@ private:
 
 	Logger(const char* pFileName, ios_base::openmode pFileFlags);
 	virtual ~Logger();
+
 public:
 	void beginLogging();
 	static void beginMultiThreadedLogging();
