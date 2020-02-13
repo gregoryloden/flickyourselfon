@@ -41,7 +41,7 @@ baseHeight(pBaseHeight)
 , segments(new vector<Segment>())
 , groups()
 , initialTileOffset(pInitialTileOffset)
-//give a default tile offset extending to the lowest height
+//give a default tile offset extending to the lowest height, we'll correct it as we add segments
 , maxTileOffset(pBaseHeight / 2)
 #ifdef EDITOR
 	, segmentsMutex()
@@ -76,8 +76,9 @@ int Rail::middleSegmentSpriteHorizontalIndex(int prevX, int prevY, int x, int y,
 int Rail::extentSegmentSpriteHorizontalIndex(int prevX, int prevY, int x, int y) {
 	return middleSegmentSpriteHorizontalIndex(prevX, prevY, x, y, x + (x - prevX), y + (y - prevY));
 }
-//set the color mask for segments of the given rail color
-void Rail::setSegmentColor(float colorScale, int railColor) {
+//set the color mask for segments of the given rail color based on how much it's been lowered, using a scale from 0 (fully
+//	raised) to 1 (fully lowered)
+void Rail::setSegmentColor(float loweredScale, int railColor) {
 	const float nonColorIntensity = 9.0f / 16.0f;
 	const float sineColorIntensity = 14.0f / 16.0f;
 	float redColor = sineColorIntensity;
@@ -88,7 +89,14 @@ void Rail::setSegmentColor(float colorScale, int railColor) {
 		greenColor = railColor == MapState::sawColor ? 1.0f : nonColorIntensity;
 		blueColor = railColor == MapState::triangleColor ? 1.0f : nonColorIntensity;
 	}
-	glColor4f(colorScale * redColor, colorScale * greenColor, colorScale * blueColor, 1.0f);
+	float raisedScale = 1.0f - loweredScale;
+	const float loweredColorIntensity = 0.625f;
+	const float loweredAlphaIntensity = 0.5f;
+	glColor4f(
+		redColor * raisedScale + loweredColorIntensity * loweredScale,
+		greenColor * raisedScale + loweredColorIntensity * loweredScale,
+		blueColor * raisedScale + loweredColorIntensity * loweredScale,
+		raisedScale + loweredAlphaIntensity * loweredScale);
 }
 //reverse the order of the segments
 void Rail::reverseSegments() {
@@ -128,8 +136,8 @@ void Rail::addSegment(int x, int y) {
 			if (tileHeight == MapState::emptySpaceHeight || tileHeight < railGroundHeight)
 				continue;
 
-			//we ended up on a tile above what would be a ground tile for this rail
-			//this is an empty space or a tile that the rail hides behind, mark that this segment does not have an offset
+			//we ended up on a tile that is above what would be a ground tile for this rail, which means that that the rail
+			//	hides behind it- mark that this segment does not have an offset
 			if (tileHeight > railGroundHeight)
 				segmentMaxTileOffset = Segment::absentTileOffset;
 		}
@@ -163,13 +171,11 @@ void Rail::render(int screenLeftWorldX, int screenTopWorldY, float tileOffset) {
 		MutexLocker mutexLocker (segmentsMutex);
 	#endif
 
-	const float maxRailHeightColorScaleReduction = 3.0f / 8.0f;
-	float railHeightColorScale = 1.0f - maxRailHeightColorScaleReduction * MathUtils::fmin(1.0f, tileOffset / 3.0f);
-	setSegmentColor(railHeightColorScale, color);
+	setSegmentColor(MathUtils::fmin(1.0f, tileOffset / 3.0f), color);
 	int lastSegmentIndex = (int)segments->size() - 1;
 	for (int i = 1; i < lastSegmentIndex; i++)
 		renderSegment(screenLeftWorldX, screenTopWorldY, tileOffset, i);
-	setSegmentColor(1.0f, color);
+	setSegmentColor(0.0f, color);
 	renderSegment(screenLeftWorldX, screenTopWorldY, 0.0f, 0);
 	renderSegment(screenLeftWorldX, screenTopWorldY, 0.0f, lastSegmentIndex);
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);

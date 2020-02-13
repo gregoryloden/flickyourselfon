@@ -51,7 +51,7 @@ public:
 	static int endSegmentSpriteHorizontalIndex(int xExtents, int yExtents);
 	static int middleSegmentSpriteHorizontalIndex(int prevX, int prevY, int x, int y, int nextX, int nextY);
 	static int extentSegmentSpriteHorizontalIndex(int prevX, int prevY, int x, int y);
-	static void setSegmentColor(float colorScale, int railColor);
+	static void setSegmentColor(float loweredScale, int railColor);
 	void reverseSegments();
 	void addGroup(char group);
 	void addSegment(int x, int y);
