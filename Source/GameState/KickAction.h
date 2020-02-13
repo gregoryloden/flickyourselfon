@@ -1,8 +1,7 @@
 #include "Util/PooledReferenceCounter.h"
 
-#define newKickAction(type, targetPlayerX, targetPlayerY, fallHeight, railId, rail, useRailStart, switchId, resetSwitchId) \
-	produceWithArgs(\
-		KickAction, type, targetPlayerX, targetPlayerY, fallHeight, railId, rail, useRailStart, switchId, resetSwitchId)
+#define newKickAction(type, targetPlayerX, targetPlayerY, fallHeight, railSwitchId) \
+	produceWithArgs(KickAction, type, targetPlayerX, targetPlayerY, fallHeight, railSwitchId)
 
 class Rail;
 
@@ -20,11 +19,7 @@ private:
 	float targetPlayerX;
 	float targetPlayerY;
 	char fallHeight;
-	short railId;
-	Rail* rail;
-	bool useRailStart;
-	short switchId;
-	short resetSwitchId;
+	short railSwitchId;
 
 public:
 	KickAction(objCounterParameters());
@@ -34,11 +29,7 @@ public:
 	float getTargetPlayerX() { return targetPlayerX; }
 	float getTargetPlayerY() { return targetPlayerY; }
 	char getFallHeight() { return fallHeight; }
-	short getRailId() { return railId; }
-	Rail* getRail() { return rail; }
-	bool getUseRailStart() { return useRailStart; }
-	short getSwitchId() { return switchId; }
-	short getResetSwitchId() { return resetSwitchId; }
+	short getRailSwitchId() { return railSwitchId; }
 	virtual void release();
 	static KickAction* produce(
 		objCounterParametersComma()
@@ -46,9 +37,5 @@ public:
 		float pTargetPlayerX,
 		float pTargetPlayerY,
 		char pFallHeight,
-		short pRailId,
-		Rail* pRail,
-		bool pUseRailStart,
-		short pSwitchId,
-		short pResetSwitchId);
+		short pRailSwitchId);
 };

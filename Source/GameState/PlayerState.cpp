@@ -400,7 +400,7 @@ bool PlayerState::setRailKickAction(float xPosition, float yPosition) {
 		return false;
 
 	availableKickAction.set(
-		newKickAction(KickActionType::Rail, 0, 0, 0, MapState::getRailSwitchId(railMapX, railMapY), rail, useStart, 0, 0));
+		newKickAction(KickActionType::Rail, 0, 0, 0, MapState::getRailSwitchId(railMapX, railMapY)));
 	return true;
 }
 //set a switch kick action if there is a switch in front of the player
@@ -447,7 +447,7 @@ bool PlayerState::setSwitchKickAction(float xPosition, float yPosition) {
 	if (switchId == MapState::absentRailSwitchId || !mapState.get()->canKickSwitch(switchId))
 		return false;
 
-	availableKickAction.set(newKickAction(KickActionType::Switch, 0, 0, 0, 0, nullptr, false, switchId, 0));
+	availableKickAction.set(newKickAction(KickActionType::Switch, 0, 0, 0, switchId));
 	return true;
 }
 //set a reset switch kick action if we can reset switch
@@ -486,7 +486,7 @@ bool PlayerState::setResetSwitchKickAction(float xPosition, float yPosition) {
 		return false;
 
 	short resetSwitchId = MapState::getRailSwitchId(resetSwitchMapX, resetSwitchMapY);
-	availableKickAction.set(newKickAction(KickActionType::ResetSwitch, 0, 0, 0, 0, nullptr, false, 0, resetSwitchId));
+	availableKickAction.set(newKickAction(KickActionType::ResetSwitch, 0, 0, 0, resetSwitchId));
 	return true;
 }
 //set a climb kick action if we can climb
@@ -511,7 +511,7 @@ bool PlayerState::setClimbKickAction(float xPosition, float yPosition) {
 	//set a distance such that the bottom of the player is slightly past the edge of the ledge
 	float targetYPosition =
 		(float)(oneTileUpMapY * MapState::tileSize) - boundingBoxBottomOffset - MapState::smallDistance;
-	availableKickAction.set(newKickAction(KickActionType::Climb, 0, targetYPosition, 0, 0, nullptr, false, 0, 0));
+	availableKickAction.set(newKickAction(KickActionType::Climb, 0, targetYPosition, 0, MapState::absentRailSwitchId));
 	return true;
 }
 //set a fall kick action if we can fall
@@ -606,7 +606,7 @@ bool PlayerState::setFallKickAction(float xPosition, float yPosition) {
 	}
 
 	availableKickAction.set(
-		newKickAction(KickActionType::Fall, targetXPosition, targetYPosition, fallHeight, 0, nullptr, false, 0, 0));
+		newKickAction(KickActionType::Fall, targetXPosition, targetYPosition, fallHeight, MapState::absentRailSwitchId));
 	return true;
 }
 //if we don't have a kicking animation, start one
@@ -641,14 +641,13 @@ void PlayerState::beginKicking(int ticksTime) {
 				ticksTime);
 			break;
 		case KickActionType::Rail:
-			kickRail(
-				kickAction->getRailId(), kickAction->getRail(), kickAction->getUseRailStart(), xPosition, yPosition, ticksTime);
+			kickRail(kickAction->getRailSwitchId(), xPosition, yPosition, ticksTime);
 			break;
 		case KickActionType::Switch:
-			kickSwitch(kickAction->getSwitchId(), ticksTime);
+			kickSwitch(kickAction->getRailSwitchId(), ticksTime);
 			break;
 		case KickActionType::ResetSwitch:
-			kickResetSwitch(kickAction->getResetSwitchId(), ticksTime);
+			kickResetSwitch(kickAction->getRailSwitchId(), ticksTime);
 			break;
 		default:
 			break;
@@ -663,8 +662,8 @@ void PlayerState::kickAir(int ticksTime) {
 	vector<ReferenceCounterHolder<EntityAnimation::Component>> kickAnimationComponents ({
 		newEntityAnimationSetVelocity(
 			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
-			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)) COMMA
-		newEntityAnimationSetSpriteAnimation(kickingSpriteAnimation) COMMA
+			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)),
+		newEntityAnimationSetSpriteAnimation(kickingSpriteAnimation),
 		newEntityAnimationDelay(kickingSpriteAnimation->getTotalTicksDuration())
 	});
 	Holder_EntityAnimationComponentVector kickAnimationComponentsHolder (&kickAnimationComponents);
@@ -688,9 +687,9 @@ void PlayerState::kickClimb(float yMoveDistance, int ticksTime) {
 		//start by stopping the player and delaying until the leg-sticking-out frame
 		newEntityAnimationSetVelocity(
 			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
-			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)) COMMA
-		newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerKickingAnimation) COMMA
-		newEntityAnimationDelay(SpriteRegistry::playerKickingAnimationTicksPerFrame) COMMA
+			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)),
+		newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerKickingAnimation),
+		newEntityAnimationDelay(SpriteRegistry::playerKickingAnimationTicksPerFrame),
 		//then set the climb velocity, delay for the rest of the animation, and then stop the player
 		newEntityAnimationSetVelocity(
 			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
@@ -699,8 +698,8 @@ void PlayerState::kickClimb(float yMoveDistance, int ticksTime) {
 				0.0f,
 				0.0f,
 				yCubicValuePerDuration / moveDurationCubed,
-				yQuarticValuePerDuration / (moveDurationCubed * floatMoveDuration))) COMMA
-		newEntityAnimationDelay(moveDuration) COMMA
+				yQuarticValuePerDuration / (moveDurationCubed * floatMoveDuration))),
+		newEntityAnimationDelay(moveDuration),
 		newEntityAnimationSetVelocity(
 			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f), newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f))
 	});
@@ -719,8 +718,8 @@ void PlayerState::kickFall(float xMoveDistance, float yMoveDistance, char fallHe
 	vector<ReferenceCounterHolder<EntityAnimation::Component>> kickingAnimationComponents ({
 		newEntityAnimationSetVelocity(
 			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
-			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)) COMMA
-		newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerKickingAnimation) COMMA
+			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)),
+		newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerKickingAnimation),
 		newEntityAnimationDelay(SpriteRegistry::playerKickingAnimationTicksPerFrame)
 	});
 
@@ -783,7 +782,7 @@ void PlayerState::kickFall(float xMoveDistance, float yMoveDistance, char fallHe
 	kickingAnimationComponents.insert(
 		kickingAnimationComponents.end(),
 		{
-			newEntityAnimationDelay(moveDuration) COMMA
+			newEntityAnimationDelay(moveDuration),
 			newEntityAnimationSetVelocity(
 				newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f), newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f))
 		});
@@ -793,32 +792,38 @@ void PlayerState::kickFall(float xMoveDistance, float yMoveDistance, char fallHe
 	z = fallHeight;
 }
 //begin a rail-riding animation and follow it to its other end
-void PlayerState::kickRail(short railId, Rail* rail, bool useStart, float xPosition, float yPosition, int ticksTime) {
+void PlayerState::kickRail(short railId, float xPosition, float yPosition, int ticksTime) {
+	MapState::logRailRide(railId, (int)xPosition, (int)yPosition);
 	vector<ReferenceCounterHolder<EntityAnimation::Component>> ridingRailAnimationComponents;
 	Holder_EntityAnimationComponentVector ridingRailAnimationComponentsHolder (&ridingRailAnimationComponents);
-	addRailRideComponents(
-		rail, &ridingRailAnimationComponentsHolder, xPosition, yPosition, useStart, nullptr, nullptr);
-	MapState::logRailRide(railId, (int)xPosition, (int)yPosition);
+	addRailRideComponents(railId, &ridingRailAnimationComponentsHolder, xPosition, yPosition, nullptr, nullptr);
 	beginEntityAnimation(&ridingRailAnimationComponentsHolder, ticksTime);
 }
 //add the components for a rail-riding animation
 void PlayerState::addRailRideComponents(
-	Rail* rail,
+	short railId,
 	Holder_EntityAnimationComponentVector* componentsHolder,
 	float xPosition,
 	float yPosition,
-	bool useStart,
 	float* outFinalXPosition,
 	float* outFinalYPosition)
 {
 	vector<ReferenceCounterHolder<EntityAnimation::Component>>* components = componentsHolder->val;
-	int endSegmentIndex = rail->getSegmentCount() - 1;
+	Rail* rail = MapState::getRailFromId(railId);
 	Rail::Segment* startSegment = rail->getSegment(0);
-	Rail::Segment* endSegment = rail->getSegment(endSegmentIndex);
+	Rail::Segment* endSegment = rail->getSegment(rail->getSegmentCount() - 1);
+
+	//define the distance to the segment as the manhattan distance of the center of the player bounding box to the center of
+	//	the tile that the segment is on
+	float feetYPosition = yPosition + boundingBoxCenterYOffset;
+	float startDist = abs(xPosition - startSegment->tileCenterX()) + abs(feetYPosition - startSegment->tileCenterY());
+	float endDist = abs(xPosition - endSegment->tileCenterX()) + abs(feetYPosition - endSegment->tileCenterY());
+
+	int endSegmentIndex = rail->getSegmentCount() - 1;
 	int firstSegmentIndex = 0;
 	int lastSegmentIndex = 0;
 	int segmentIndexIncrement;
-	if (useStart) {
+	if (startDist <= endDist) {
 		lastSegmentIndex = endSegmentIndex;
 		segmentIndexIncrement = 1;
 	} else {
@@ -879,9 +884,9 @@ void PlayerState::addRailRideComponents(
 				{
 					newEntityAnimationSetVelocity(
 						newCompositeQuarticValue(0.0f, xMoveDistance / bootLiftDuration, 0.0f, 0.0f, 0.0f),
-						newCompositeQuarticValue(0.0f, yMoveDistance / bootLiftDuration, 0.0f, 0.0f, 0.0f)) COMMA
-					newEntityAnimationDelay(SpriteRegistry::playerKickingAnimationTicksPerFrame) COMMA
-					newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerRidingRailAnimation) COMMA
+						newCompositeQuarticValue(0.0f, yMoveDistance / bootLiftDuration, 0.0f, 0.0f, 0.0f)),
+					newEntityAnimationDelay(SpriteRegistry::playerKickingAnimationTicksPerFrame),
+					newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerRidingRailAnimation),
 					newEntityAnimationSetSpriteDirection(nextSpriteDirection)
 				});
 			firstMove = false;
@@ -892,7 +897,7 @@ void PlayerState::addRailRideComponents(
 				{
 					newEntityAnimationSetVelocity(
 						newCompositeQuarticValue(0.0f, xMoveDistance / floatRailToRailTicksDuration, 0.0f, 0.0f, 0.0f),
-						newCompositeQuarticValue(0.0f, yMoveDistance / floatRailToRailTicksDuration, 0.0f, 0.0f, 0.0f)) COMMA
+						newCompositeQuarticValue(0.0f, yMoveDistance / floatRailToRailTicksDuration, 0.0f, 0.0f, 0.0f)),
 					newEntityAnimationDelay(railToRailTicksDuration)
 				});
 		//curved section
@@ -923,8 +928,8 @@ void PlayerState::addRailRideComponents(
 			components->insert(
 				components->end(),
 				{
-					newEntityAnimationDelay(halfRailToRailTicksDuration) COMMA
-					newEntityAnimationSetSpriteDirection(nextSpriteDirection) COMMA
+					newEntityAnimationDelay(halfRailToRailTicksDuration),
+					newEntityAnimationSetSpriteDirection(nextSpriteDirection),
 					newEntityAnimationDelay(railToRailTicksDuration - halfRailToRailTicksDuration)
 				});
 		}
@@ -949,9 +954,9 @@ void PlayerState::addRailRideComponents(
 		{
 			newEntityAnimationSetVelocity(
 				newCompositeQuarticValue(0.0f, (finalXPosition - targetXPosition) / bootLiftDuration, 0.0f, 0.0f, 0.0f),
-				newCompositeQuarticValue(0.0f, (finalYPosition - targetYPosition) / bootLiftDuration, 0.0f, 0.0f, 0.0f)) COMMA
-			newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerBootLiftAnimation) COMMA
-			newEntityAnimationDelay(SpriteRegistry::playerKickingAnimationTicksPerFrame) COMMA
+				newCompositeQuarticValue(0.0f, (finalYPosition - targetYPosition) / bootLiftDuration, 0.0f, 0.0f, 0.0f)),
+			newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerBootLiftAnimation),
+			newEntityAnimationDelay(SpriteRegistry::playerKickingAnimationTicksPerFrame),
 			newEntityAnimationSetVelocity(
 				newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f), newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f))
 		});
@@ -961,36 +966,6 @@ void PlayerState::addRailRideComponents(
 	if (outFinalYPosition != nullptr)
 		*outFinalYPosition = finalYPosition;
 }
-#ifdef DEBUG
-	//add the components for a rail-riding animation for the given rail, starting at whichever end is nearest
-	void PlayerState::addNearestRailRideComponents(
-		int railIndex,
-		Holder_EntityAnimationComponentVector* componentsHolder,
-		float xPosition,
-		float yPosition,
-		float* outFinalXPosition,
-		float* outFinalYPosition)
-	{
-		Rail* rail = MapState::getRailByIndex(railIndex);
-		float feetYPosition = yPosition + boundingBoxCenterYOffset;
-		Rail::Segment* startSegment = rail->getSegment(0);
-		Rail::Segment* endSegment = rail->getSegment(rail->getSegmentCount() - 1);
-
-		//define the distance to the segment as the manhattan distance of the center of the player bounding box to the center of
-		//	the tile that the segment is on
-		float startDist = abs(xPosition - startSegment->tileCenterX()) + abs(feetYPosition - startSegment->tileCenterY());
-		float endDist = abs(xPosition - endSegment->tileCenterX()) + abs(feetYPosition - endSegment->tileCenterY());
-		bool useStart = startDist <= endDist;
-		addRailRideComponents(
-			rail,
-			componentsHolder,
-			xPosition,
-			yPosition,
-			useStart,
-			outFinalXPosition,
-			outFinalYPosition);
-	}
-#endif
 //begin a kicking animation and set the switch to flip
 void PlayerState::kickSwitch(short switchId, int ticksTime) {
 	MapState::logSwitchKick(switchId);
@@ -1009,10 +984,10 @@ void PlayerState::addKickSwitchComponents(
 		{
 			newEntityAnimationSetVelocity(
 				newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
-				newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)) COMMA
-			newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerKickingAnimation) COMMA
-			newEntityAnimationDelay(SpriteRegistry::playerKickingAnimationTicksPerFrame) COMMA
-			newEntityAnimationMapKickSwitch(switchId, allowRadioTowerAnimation) COMMA
+				newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)),
+			newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerKickingAnimation),
+			newEntityAnimationDelay(SpriteRegistry::playerKickingAnimationTicksPerFrame),
+			newEntityAnimationMapKickSwitch(switchId, allowRadioTowerAnimation),
 			newEntityAnimationDelay(
 				SpriteRegistry::playerKickingAnimation->getTotalTicksDuration()
 					- SpriteRegistry::playerKickingAnimationTicksPerFrame)
@@ -1034,10 +1009,10 @@ void PlayerState::addKickResetSwitchComponents(short resetSwitchId, Holder_Entit
 		{
 			newEntityAnimationSetVelocity(
 				newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
-				newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)) COMMA
-			newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerKickingAnimation) COMMA
-			newEntityAnimationDelay(SpriteRegistry::playerKickingAnimationTicksPerFrame) COMMA
-			newEntityAnimationMapKickResetSwitch(resetSwitchId) COMMA
+				newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)),
+			newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerKickingAnimation),
+			newEntityAnimationDelay(SpriteRegistry::playerKickingAnimationTicksPerFrame),
+			newEntityAnimationMapKickResetSwitch(resetSwitchId),
 			newEntityAnimationDelay(
 				SpriteRegistry::playerKickingAnimation->getTotalTicksDuration()
 					- SpriteRegistry::playerKickingAnimationTicksPerFrame)

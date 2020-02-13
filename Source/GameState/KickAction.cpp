@@ -6,11 +6,7 @@ KickAction::KickAction(objCounterParameters())
 , targetPlayerX(0.0f)
 , targetPlayerY(0.0f)
 , fallHeight(0)
-, railId(0)
-, rail(nullptr)
-, useRailStart(false)
-, switchId(0)
-, resetSwitchId(0) {
+, railSwitchId(0) {
 }
 KickAction::~KickAction() {}
 KickAction* KickAction::produce(
@@ -19,22 +15,14 @@ KickAction* KickAction::produce(
 	float pTargetPlayerX,
 	float pTargetPlayerY,
 	char pFallHeight,
-	short pRailId,
-	Rail* pRail,
-	bool pUseRailStart,
-	short pSwitchId,
-	short pResetSwitchId)
+	short pRailSwitchId)
 {
 	initializeWithNewFromPool(k, KickAction)
 	k->type = pType;
 	k->targetPlayerX = pTargetPlayerX;
 	k->targetPlayerY = pTargetPlayerY;
 	k->fallHeight = pFallHeight;
-	k->railId = pRailId;
-	k->rail = pRail;
-	k->useRailStart = pUseRailStart;
-	k->switchId = pSwitchId;
-	k->resetSwitchId = pResetSwitchId;
+	k->railSwitchId = pRailSwitchId;
 	return k;
 }
 pooledReferenceCounterDefineRelease(KickAction)

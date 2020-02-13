@@ -523,8 +523,13 @@ void GameState::loadInitialState(int ticksTime) {
 							newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
 							newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f))
 					});
-				PlayerState::addNearestRailRideComponents(
-					railIndex, &replayComponentsHolder, (float)startX, (float)startY, &lastX, &lastY);
+				PlayerState::addRailRideComponents(
+					MapState::getIdFromRailIndex(railIndex),
+					&replayComponentsHolder,
+					(float)startX,
+					(float)startY,
+					&lastX,
+					&lastY);
 				replayComponents.push_back(newEntityAnimationSetSpriteAnimation(nullptr));
 				lastTimestamp = EntityAnimation::getComponentTotalTicksDuration(replayComponents);
 			} else if (StringUtils::startsWith(logMessageString, "  switch ")) {

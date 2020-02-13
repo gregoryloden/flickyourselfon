@@ -90,25 +90,15 @@ private:
 	void kickAir(int ticksTime);
 	void kickClimb(float yMoveDistance, int ticksTime);
 	void kickFall(float xMoveDistance, float yMoveDistance, char fallHeight, int ticksTime);
-	void kickRail(short railId, Rail* rail, bool useStart, float xPosition, float yPosition, int ticksTime);
+	void kickRail(short railId, float xPosition, float yPosition, int ticksTime);
+public:
 	static void addRailRideComponents(
-		Rail* rail,
+		short railId,
 		Holder_EntityAnimationComponentVector* componentsHolder,
 		float xPosition,
 		float yPosition,
-		bool useStart,
 		float* outFinalXPosition,
 		float* outFinalYPosition);
-public:
-	#ifdef DEBUG
-		static void addNearestRailRideComponents(
-			int railIndex,
-			Holder_EntityAnimationComponentVector* componentsHolder,
-			float xPosition,
-			float yPosition,
-			float* outFinalXPosition,
-			float* outFinalYPosition);
-	#endif
 private:
 	void kickSwitch(short switchId, int ticksTime);
 public:
