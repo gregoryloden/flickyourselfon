@@ -30,8 +30,8 @@ public:
 		virtual ~KickIndicators();
 	};
 
-	static const int gameScreenWidth = 199;
-	static const int gameScreenHeight = 149;
+	static const int gameScreenWidth = 221;
+	static const int gameScreenHeight = 165;
 	#ifdef EDITOR
 		static const int editorMarginRight = 150;
 		static const int editorMarginBottom = 60;
