@@ -9,7 +9,7 @@ Config::KeyBindings::KeyBindings()
 , downKey(SDL_SCANCODE_DOWN)
 , leftKey(SDL_SCANCODE_LEFT)
 , kickKey(SDL_SCANCODE_SPACE)
-, showConnectionsKey(SDL_SCANCODE_LSHIFT) {
+, showConnectionsKey(SDL_SCANCODE_Z) {
 }
 Config::KeyBindings::~KeyBindings() {}
 //copy the key bindings from the other KeyBindings

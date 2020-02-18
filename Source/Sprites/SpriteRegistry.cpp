@@ -24,6 +24,7 @@ SpriteAnimation* SpriteRegistry::playerWalkingAnimation = nullptr;
 SpriteAnimation* SpriteRegistry::playerLegLiftAnimation = nullptr;
 SpriteAnimation* SpriteRegistry::playerBootWalkingAnimation = nullptr;
 SpriteAnimation* SpriteRegistry::playerKickingAnimation = nullptr;
+SpriteAnimation* SpriteRegistry::playerFastKickingAnimation = nullptr;
 SpriteAnimation* SpriteRegistry::playerBootLiftAnimation = nullptr;
 SpriteAnimation* SpriteRegistry::playerRidingRailAnimation = nullptr;
 SpriteAnimation* SpriteRegistry::radioWavesAnimation = nullptr;
@@ -70,6 +71,13 @@ void SpriteRegistry::loadAll() {
 			newSpriteAnimationFrame(8, -1, playerKickingAnimationTicksPerFrame) COMMA
 			newSpriteAnimationFrame(7, -1, playerKickingAnimationTicksPerFrame)
 		});
+	playerFastKickingAnimation = newSpriteAnimation(
+		player,
+		{
+			newSpriteAnimationFrame(7, -1, playerFastKickingAnimationTicksPerFrame) COMMA
+			newSpriteAnimationFrame(8, -1, playerFastKickingAnimationTicksPerFrame) COMMA
+			newSpriteAnimationFrame(7, -1, playerFastKickingAnimationTicksPerFrame)
+		});
 	playerBootLiftAnimation = newSpriteAnimation(player, { newSpriteAnimationFrame(7, -1, 1) });
 	playerRidingRailAnimation = newSpriteAnimation(player, { newSpriteAnimationFrame(9, -1, 1) });
 	radioWavesAnimation = newSpriteAnimation(
@@ -99,6 +107,7 @@ void SpriteRegistry::unloadAll() {
 	delete playerLegLiftAnimation;
 	delete playerBootWalkingAnimation;
 	delete playerKickingAnimation;
+	delete playerFastKickingAnimation;
 	delete playerBootLiftAnimation;
 	delete playerRidingRailAnimation;
 	delete radioWavesAnimation;

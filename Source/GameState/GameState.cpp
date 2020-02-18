@@ -649,12 +649,12 @@ void GameState::beginIntroAnimation(int ticksTime) {
 		newEntityAnimationSetPosition(
 			PlayerState::introAnimationPlayerCenterX, PlayerState::introAnimationPlayerCenterY) COMMA
 		newEntityAnimationDelay(introAnimationStartTicksTime) COMMA
-		newEntityAnimationDelay(3000) COMMA
+		newEntityAnimationDelay(2500) COMMA
 		//walk to the wall
 		walkRight COMMA
 		setWalkingAnimation COMMA
 		newEntityAnimationSetSpriteDirection(SpriteDirection::Right) COMMA
-		newEntityAnimationDelay(1700) COMMA
+		newEntityAnimationDelay(2200) COMMA
 		//walk down, stop at the boot
 		walkDown COMMA
 		newEntityAnimationSetSpriteDirection(SpriteDirection::Down) COMMA

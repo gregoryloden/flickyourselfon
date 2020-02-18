@@ -27,7 +27,7 @@ const float PlayerState::boundingBoxTopOffset = 4.5f;
 const float PlayerState::boundingBoxBottomOffset = PlayerState::boundingBoxTopOffset + PlayerState::playerHeight;
 const float PlayerState::boundingBoxCenterYOffset =
 	(PlayerState::boundingBoxTopOffset + PlayerState::boundingBoxBottomOffset) * 0.5f;
-const float PlayerState::introAnimationPlayerCenterX = 70.5f + (float)(MapState::firstLevelTileOffsetX * MapState::tileSize);
+const float PlayerState::introAnimationPlayerCenterX = 50.5f + (float)(MapState::firstLevelTileOffsetX * MapState::tileSize);
 const float PlayerState::introAnimationPlayerCenterY = 106.5f + (float)(MapState::firstLevelTileOffsetY * MapState::tileSize);
 const float PlayerState::speedPerSecond = 40.0f;
 const float PlayerState::diagonalSpeedPerSecond = speedPerSecond * sqrt(0.5f);
@@ -51,6 +51,8 @@ PlayerState::PlayerState(objCounterParameters())
 , ghostSpriteStartTicksTime(0)
 , mapState(nullptr)
 , availableKickAction(nullptr)
+, autoClimbFallStartTicksTime(-1)
+, canImmediatelyAutoClimbFall(false)
 , lastControlledX(0.0f)
 , lastControlledY(0.0f) {
 	lastControlledX = x.get()->getValue(0);
@@ -85,6 +87,8 @@ void PlayerState::copyPlayerState(PlayerState* other) {
 	ghostSpriteStartTicksTime = other->ghostSpriteStartTicksTime;
 	//don't copy map state, it was provided when this player state was produced
 	availableKickAction.set(other->availableKickAction.get());
+	autoClimbFallStartTicksTime = other->autoClimbFallStartTicksTime;
+	canImmediatelyAutoClimbFall = other->canImmediatelyAutoClimbFall;
 	lastControlledX = other->lastControlledX;
 	lastControlledY = other->lastControlledY;
 }
@@ -142,6 +146,7 @@ void PlayerState::updateWithPreviousPlayerState(PlayerState* prev, int ticksTime
 	updateSpriteWithPreviousPlayerState(prev, ticksTime, !previousStateHadEntityAnimation);
 	#ifndef EDITOR
 		setKickAction();
+		tryAutoClimbFall(prev, ticksTime);
 	#endif
 
 	//copy the position to the save values
@@ -609,6 +614,39 @@ bool PlayerState::setFallKickAction(float xPosition, float yPosition) {
 		newKickAction(KickActionType::Fall, targetXPosition, targetYPosition, fallHeight, MapState::absentRailSwitchId));
 	return true;
 }
+//auto-climb or auto-fall if we can
+void PlayerState::tryAutoClimbFall(PlayerState* prev, int ticksTime) {
+	canImmediatelyAutoClimbFall = yDirection != 0 && prev->canImmediatelyAutoClimbFall;
+
+	autoClimbFallStartTicksTime = -1;
+	if (availableKickAction.get() == nullptr)
+		return;
+	KickActionType kickActionType = availableKickAction.get()->getType();
+
+	//ensure we have an auto-compatible kick action
+	if (kickActionType == KickActionType::Climb
+			|| (kickActionType == KickActionType::Fall && availableKickAction.get()->getFallHeight() == z - 2))
+		;
+	else
+		return;
+	//don't auto-climb or auto-fall if the player isn't moving directly up or down
+	if (xDirection != 0 || yDirection == 0)
+		return;
+
+	autoClimbFallStartTicksTime = ticksTime + autoClimbFallTriggerDelay;
+	//we had a kick action before and it's the same climb/fall as we have now, copy its start time
+	if (prev->availableKickAction.get() != nullptr
+			&& prev->availableKickAction.get()->getType() == kickActionType
+			&& prev->autoClimbFallStartTicksTime != -1)
+		autoClimbFallStartTicksTime = prev->autoClimbFallStartTicksTime;
+
+	//if we've reached the threshold, start kicking now
+	if (ticksTime >= autoClimbFallStartTicksTime || canImmediatelyAutoClimbFall) {
+		beginKicking(ticksTime);
+		autoClimbFallStartTicksTime = -1;
+		canImmediatelyAutoClimbFall = true;
+	}
+}
 //if we don't have a kicking animation, start one
 //this should be called after the player has been updated
 void PlayerState::beginKicking(int ticksTime) {
@@ -676,7 +714,8 @@ void PlayerState::kickClimb(float yMoveDistance, int ticksTime) {
 	Logger::gameplayLogger.logString(message.str());
 
 	int moveDuration =
-		SpriteRegistry::playerKickingAnimation->getTotalTicksDuration() - SpriteRegistry::playerKickingAnimationTicksPerFrame;
+		SpriteRegistry::playerFastKickingAnimation->getTotalTicksDuration()
+			- SpriteRegistry::playerFastKickingAnimationTicksPerFrame;
 	float floatMoveDuration = (float)moveDuration;
 	float moveDurationCubed = floatMoveDuration * floatMoveDuration * floatMoveDuration;
 
@@ -688,8 +727,8 @@ void PlayerState::kickClimb(float yMoveDistance, int ticksTime) {
 		newEntityAnimationSetVelocity(
 			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
 			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)),
-		newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerKickingAnimation),
-		newEntityAnimationDelay(SpriteRegistry::playerKickingAnimationTicksPerFrame),
+		newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerFastKickingAnimation),
+		newEntityAnimationDelay(SpriteRegistry::playerFastKickingAnimationTicksPerFrame),
 		//then set the climb velocity, delay for the rest of the animation, and then stop the player
 		newEntityAnimationSetVelocity(
 			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
@@ -714,20 +753,27 @@ void PlayerState::kickFall(float xMoveDistance, float yMoveDistance, char fallHe
 	message << "  fall " << (int)(x.get()->getValue(0)) << " " << (int)(y.get()->getValue(0));
 	Logger::gameplayLogger.logString(message.str());
 
+	bool useFastKickingAnimation = fallHeight == z - 2 && spriteDirection == SpriteDirection::Down;
+	SpriteAnimation* fallAnimation =
+		useFastKickingAnimation ? SpriteRegistry::playerFastKickingAnimation : SpriteRegistry::playerKickingAnimation;
+	int fallAnimationTicksPerFrame = useFastKickingAnimation
+		? SpriteRegistry::playerFastKickingAnimationTicksPerFrame
+		: SpriteRegistry::playerKickingAnimationTicksPerFrame;
+
 	//start by stopping the player and delaying until the leg-sticking-out frame
 	vector<ReferenceCounterHolder<EntityAnimation::Component>> kickingAnimationComponents ({
 		newEntityAnimationSetVelocity(
 			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
 			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)),
-		newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerKickingAnimation),
-		newEntityAnimationDelay(SpriteRegistry::playerKickingAnimationTicksPerFrame)
+		newEntityAnimationSetSpriteAnimation(fallAnimation),
+		newEntityAnimationDelay(fallAnimationTicksPerFrame)
 	});
 
-	int moveDuration =
-		SpriteRegistry::playerKickingAnimation->getTotalTicksDuration() - SpriteRegistry::playerKickingAnimationTicksPerFrame;
+	int moveDuration = fallAnimation->getTotalTicksDuration() - fallAnimationTicksPerFrame;
 	float floatMoveDuration = (float)moveDuration;
 	float moveDurationSquared = floatMoveDuration * floatMoveDuration;
 
+	//up has a jump trajectory that visually goes up far, then down
 	if (spriteDirection == SpriteDirection::Up) {
 		//we want a cubic curve that goes through (0,0) and (1,1) and a chosen midpoint (i,j) where 0 < i < 1
 		//it also goes through (c,#) such that dy/dt has roots at c (trough) and i (crest) (and arbitrary multiplier d)
