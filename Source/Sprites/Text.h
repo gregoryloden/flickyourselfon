@@ -77,5 +77,6 @@ public:
 	static Metrics getKeyBackgroundMetrics(Metrics* textMetrics);
 	static void render(const char* text, float leftX, float baselineY, float fontScale);
 	static void renderKeyBackground(float leftX, float baselineY, Metrics* keyBackgroundMetrics);
+	static void renderLines(vector<string>& lines, vector<Metrics> linesMetrics);
 };
 #endif

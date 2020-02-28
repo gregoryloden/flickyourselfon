@@ -145,6 +145,7 @@ int gameMain() {
 		ObjectPool<EntityAnimation::SetVelocity>::clearPool();
 		ObjectPool<MapState::RadioWavesState>::clearPool();
 		ObjectPool<CompositeQuarticValue>::clearPool();
+		ObjectPool<LinearInterpolatedValue>::clearPool();
 		ObjectPool<EntityAnimation::Delay>::clearPool();
 		ObjectPool<EntityAnimation::SetPosition>::clearPool();
 		ObjectPool<EntityAnimation::SetGhostSprite>::clearPool();

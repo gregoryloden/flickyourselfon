@@ -1,5 +1,6 @@
 #include "Text.h"
 #include "Sprites/SpriteSheet.h"
+#include "Util/Config.h"
 #include "Util/FileUtils.h"
 
 #define newGlyph(spriteX, spriteY, spriteWidth, spriteHeight, baselineOffset) \
@@ -296,4 +297,23 @@ void Text::renderKeyBackground(float leftX, float baselineY, Metrics* keyBackgro
 		topY,
 		(GLint)(leftX + keyBackgroundMetrics->charactersWidth),
 		bottomY);
+}
+//render lines of text vertically centered
+void Text::renderLines(vector<string>& lines, vector<Metrics> linesMetrics) {
+	float totalHeight = -linesMetrics.front().topPadding - linesMetrics.back().bottomPadding;
+	for (Metrics& metrics : linesMetrics) {
+		totalHeight += metrics.getTotalHeight();
+	}
+
+	float screenCenterX = (float)Config::gameScreenWidth * 0.5f;
+	Metrics* lastMetrics = &linesMetrics.front();
+	float baselineY = ((float)Config::gameScreenHeight - totalHeight) * 0.5f + lastMetrics->aboveBaseline;
+	render(lines.front().c_str(), screenCenterX - lastMetrics->charactersWidth * 0.5f, baselineY, lastMetrics->fontScale);
+
+	for (int i = 1; i < (int)lines.size(); i++) {
+		Metrics* metrics = &linesMetrics[i];
+		baselineY += metrics->getBaselineDistanceBelow(lastMetrics);
+		render(lines[i].c_str(), screenCenterX - metrics->charactersWidth * 0.5f, baselineY, metrics->fontScale);
+		lastMetrics = metrics;
+	}
 }

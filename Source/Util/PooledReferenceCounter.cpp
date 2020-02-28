@@ -105,6 +105,7 @@ template class ObjectPool<EntityAnimation::SetSpriteAnimation>;
 template class ObjectPool<EntityAnimation::SetSpriteDirection>;
 template class ObjectPool<EntityAnimation::SetVelocity>;
 template class ObjectPool<EntityAnimation::SwitchToPlayerCamera>;
+template class ObjectPool<LinearInterpolatedValue>;
 //superclasses only need holders, the classes themselves are not allocated
 template class ReferenceCounterHolder<DynamicValue>;
 template class ReferenceCounterHolder<EntityAnimation::Component>;

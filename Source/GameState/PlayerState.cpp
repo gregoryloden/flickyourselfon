@@ -67,6 +67,7 @@ PlayerState* PlayerState::produce(objCounterParametersComma() MapState* mapState
 	p->z = 0;
 	p->hasBoot = false;
 	p->mapState.set(mapState);
+	p->availableKickAction.set(nullptr);
 	return p;
 }
 //copy the other state

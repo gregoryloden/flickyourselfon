@@ -481,13 +481,13 @@ void MapState::flipResetSwitch(short resetSwitchId, int ticksTime) {
 //begin a radio waves animation
 void MapState::startRadioWavesAnimation(int initialTicksDelay, int ticksTime) {
 	vector<ReferenceCounterHolder<EntityAnimation::Component>> radioWavesAnimationComponents ({
-		newEntityAnimationDelay(initialTicksDelay) COMMA
-		newEntityAnimationSetSpriteAnimation(SpriteRegistry::radioWavesAnimation) COMMA
-		newEntityAnimationDelay(SpriteRegistry::radioWavesAnimation->getTotalTicksDuration()) COMMA
-		newEntityAnimationSetSpriteAnimation(nullptr) COMMA
-		newEntityAnimationDelay(RadioWavesState::interRadioWavesAnimationTicks) COMMA
-		newEntityAnimationSetSpriteAnimation(SpriteRegistry::radioWavesAnimation) COMMA
-		newEntityAnimationDelay(SpriteRegistry::radioWavesAnimation->getTotalTicksDuration()) COMMA
+		newEntityAnimationDelay(initialTicksDelay),
+		newEntityAnimationSetSpriteAnimation(SpriteRegistry::radioWavesAnimation),
+		newEntityAnimationDelay(SpriteRegistry::radioWavesAnimation->getTotalTicksDuration()),
+		newEntityAnimationSetSpriteAnimation(nullptr),
+		newEntityAnimationDelay(RadioWavesState::interRadioWavesAnimationTicks),
+		newEntityAnimationSetSpriteAnimation(SpriteRegistry::radioWavesAnimation),
+		newEntityAnimationDelay(SpriteRegistry::radioWavesAnimation->getTotalTicksDuration()),
 		newEntityAnimationSetSpriteAnimation(nullptr)
 	});
 	Holder_EntityAnimationComponentVector radioWavesAnimationComponentsHolder (&radioWavesAnimationComponents);

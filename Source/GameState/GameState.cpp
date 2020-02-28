@@ -30,6 +30,15 @@ const char* GameState::titleGameName = "Flick Yourself On";
 const char* GameState::titleCreditsLine1 = "A game by";
 const char* GameState::titleCreditsLine2 = "Gregory Loden";
 const char* GameState::titlePostCreditsMessage = "Thanks for playing!";
+const char* GameState::bootExplanationMessage1 = "You are";
+const char* GameState::bootExplanationMessage2 = "a boot.";
+const char* GameState::radioTowerExplanationMessageLine1 = "Your local radio tower";
+const char* GameState::radioTowerExplanationMessageLine2 = "lost connection";
+const char* GameState::radioTowerExplanationMessageLine3 = "to its";
+const char* GameState::radioTowerExplanationMessageLine4 = "master transmitter relay.";
+const char* GameState::goalExplanationMessageLine1 = "Can you";
+const char* GameState::goalExplanationMessageLine2 = "guide this person";
+const char* GameState::goalExplanationMessageLine3 = "to turn it on?";
 #ifdef DEBUG
 	const char* GameState::replayFileName = "fyo_replay.log";
 #endif
@@ -38,7 +47,7 @@ const string GameState::sawIntroAnimationFilePrefix = "sawIntroAnimation ";
 GameState::GameState(objCounterParameters())
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
 sawIntroAnimation(false)
-, titleAnimation(TitleAnimation::None)
+, textDisplayType(TextDisplayType::None)
 , titleAnimationStartTicksTime(0)
 , playerState(nullptr)
 , mapState(nullptr)
@@ -62,7 +71,7 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 
 	//copy values that don't usually change from state to state
 	sawIntroAnimation = prev->sawIntroAnimation;
-	titleAnimation = prev->titleAnimation;
+	textDisplayType = prev->textDisplayType;
 	titleAnimationStartTicksTime = prev->titleAnimationStartTicksTime;
 
 	//don't update any state if we're paused
@@ -206,13 +215,13 @@ void GameState::startRadioTowerAnimation(int ticksTime) {
 
 	//build the animation until right before the radio waves animation
 	vector<ReferenceCounterHolder<EntityAnimation::Component>> dynamicCameraAnchorAnimationComponents ({
-		newEntityAnimationSetPosition(playerX, playerY) COMMA
-		stopMoving COMMA
-		newEntityAnimationDelay(radioTowerInitialPauseAnimationTicks) COMMA
+		newEntityAnimationSetPosition(playerX, playerY),
+		stopMoving,
+		newEntityAnimationDelay(radioTowerInitialPauseAnimationTicks),
 		EntityAnimation::SetVelocity::cubicInterpolation(
-			radioTowerAntennaX - playerX, radioTowerAntennaY - playerY, (float)playerToRadioTowerAnimationTicks) COMMA
-		newEntityAnimationDelay(playerToRadioTowerAnimationTicks) COMMA
-		stopMoving COMMA
+			radioTowerAntennaX - playerX, radioTowerAntennaY - playerY, (float)playerToRadioTowerAnimationTicks),
+		newEntityAnimationDelay(playerToRadioTowerAnimationTicks),
+		stopMoving,
 		newEntityAnimationDelay(preRadioWavesAnimationTicks)
 	});
 
@@ -227,13 +236,13 @@ void GameState::startRadioTowerAnimation(int ticksTime) {
 	dynamicCameraAnchorAnimationComponents.insert(
 		dynamicCameraAnchorAnimationComponents.end(),
 		{
-			newEntityAnimationDelay(radioWavesAnimationTicksDuration + postRadioWavesAnimationTicks) COMMA
+			newEntityAnimationDelay(radioWavesAnimationTicksDuration + postRadioWavesAnimationTicks),
 			EntityAnimation::SetVelocity::cubicInterpolation(
 				switchesAnimationCenterWorldX - radioTowerAntennaX,
 				switchesAnimationCenterWorldY - radioTowerAntennaY,
-				(float)radioTowerToSwitchesAnimationTicks) COMMA
-			newEntityAnimationDelay(radioTowerToSwitchesAnimationTicks) COMMA
-			stopMoving COMMA
+				(float)radioTowerToSwitchesAnimationTicks),
+			newEntityAnimationDelay(radioTowerToSwitchesAnimationTicks),
+			stopMoving,
 			newEntityAnimationDelay(preSwitchesFadeInAnimationTicks)
 	});
 
@@ -246,14 +255,14 @@ void GameState::startRadioTowerAnimation(int ticksTime) {
 	dynamicCameraAnchorAnimationComponents.insert(
 		dynamicCameraAnchorAnimationComponents.end(),
 		{
-			newEntityAnimationDelay(MapState::switchesFadeInDuration) COMMA
-			newEntityAnimationDelay(postSwitchesFadeInAnimationTicks) COMMA
+			newEntityAnimationDelay(MapState::switchesFadeInDuration),
+			newEntityAnimationDelay(postSwitchesFadeInAnimationTicks),
 			EntityAnimation::SetVelocity::cubicInterpolation(
 				playerX - switchesAnimationCenterWorldX,
 				playerY - switchesAnimationCenterWorldY,
-				(float)switchesToPlayerAnimationTicks) COMMA
-			newEntityAnimationDelay(switchesToPlayerAnimationTicks) COMMA
-			stopMoving COMMA
+				(float)switchesToPlayerAnimationTicks),
+			newEntityAnimationDelay(switchesToPlayerAnimationTicks),
+			stopMoving,
 			newEntityAnimationSwitchToPlayerCamera()
 	});
 	Holder_EntityAnimationComponentVector dynamicCameraAnchorAnimationComponentsHolder (
@@ -265,8 +274,8 @@ void GameState::startRadioTowerAnimation(int ticksTime) {
 		SpriteRegistry::playerKickingAnimation->getTotalTicksDuration()
 			- SpriteRegistry::playerKickingAnimationTicksPerFrame;
 	vector<ReferenceCounterHolder<EntityAnimation::Component>> playerAnimationComponents ({
-		newEntityAnimationDelay(remainingKickingAimationTicksDuration) COMMA
-		newEntityAnimationSetSpriteAnimation(nullptr) COMMA
+		newEntityAnimationDelay(remainingKickingAimationTicksDuration),
+		newEntityAnimationSetSpriteAnimation(nullptr),
 		newEntityAnimationDelay(
 			EntityAnimation::getComponentTotalTicksDuration(dynamicCameraAnchorAnimationComponents)
 				- remainingKickingAimationTicksDuration)
@@ -285,7 +294,8 @@ void GameState::render(int ticksTime) {
 
 	if (camera == dynamicCameraAnchor.get())
 		dynamicCameraAnchor.get()->render(gameTicksTime);
-	renderTitleAnimation(gameTicksTime);
+	if (textDisplayType != TextDisplayType::None)
+		renderTextDisplay(gameTicksTime);
 
 	//TODO: real win condition
 	float px = playerState.get()->getRenderCenterWorldX(gameTicksTime);
@@ -303,66 +313,100 @@ void GameState::render(int ticksTime) {
 	#endif
 }
 //render the title animation at the given time
-void GameState::renderTitleAnimation(int gameTicksTime) {
-	switch (titleAnimation) {
-		case TitleAnimation::Intro: {
-			SpriteSheet::renderFilledRectangle(
-				0.0f, 0.0f, 0.0f, 1.0f, 0, 0, (GLint)Config::gameScreenWidth, (GLint)Config::gameScreenHeight);
-			int titleAnimationTicksTime = gameTicksTime - titleAnimationStartTicksTime;
-			GLfloat titleAlpha;
-			if (titleAnimationTicksTime < introTitleFadeInTicksTime)
-				titleAlpha = 0.0f;
-			else if (titleAnimationTicksTime < introTitleDisplayTicksTime)
-				titleAlpha =
-					(GLfloat)(titleAnimationTicksTime - introTitleFadeInTicksTime) / (GLfloat)introTitleFadeInTicksDuration;
-			else if (titleAnimationTicksTime < introTitleFadeOutTicksTime)
-				titleAlpha = 1.0f;
-			else if (titleAnimationTicksTime < introPostTitleTicksTime)
-				titleAlpha =
-					(GLfloat)(introPostTitleTicksTime - titleAnimationTicksTime) / (GLfloat)introTitleFadeOutTicksDuration;
-			else if (titleAnimationTicksTime < introAnimationStartTicksTime)
-				titleAlpha = 0.0f;
-			else {
-				titleAnimation = TitleAnimation::None;
-				return;
-			}
-
-			Text::Metrics gameNameMetrics = Text::getMetrics(titleGameName, 2.0f);
-			Text::Metrics spacerMetrics = Text::getMetrics(" ", 1.0f);
-			Text::Metrics creditsLine1Metrics = Text::getMetrics(titleCreditsLine1, 1.0f);
-			Text::Metrics creditsLine2Metrics = Text::getMetrics(titleCreditsLine2, 1.0f);
-			float totalHeight =
-				gameNameMetrics.getTotalHeight()
-					+ spacerMetrics.getTotalHeight()
-					+ creditsLine1Metrics.getTotalHeight()
-					+ creditsLine2Metrics.getTotalHeight()
-					- gameNameMetrics.topPadding
-					- creditsLine2Metrics.bottomPadding;
-
-			glColor4f(1.0f, 1.0f, 1.0f, titleAlpha);
-			float screenCenterX = (float)Config::gameScreenWidth * 0.5f;
-			float gameNameBaseline = ((float)Config::gameScreenHeight - totalHeight) * 0.5f + gameNameMetrics.aboveBaseline;
-			Text::render(titleGameName, screenCenterX - gameNameMetrics.charactersWidth * 0.5f, gameNameBaseline, 2.0f);
-			float creditsLine1Baseline =
-				gameNameBaseline
-					+ spacerMetrics.getBaselineDistanceBelow(&gameNameMetrics)
-					+ creditsLine1Metrics.getBaselineDistanceBelow(&spacerMetrics);
-			Text::render(
-				titleCreditsLine1, screenCenterX - creditsLine1Metrics.charactersWidth * 0.5f, creditsLine1Baseline, 1.0f);
-			float creditsLine2Baseline =
-				creditsLine1Baseline + creditsLine2Metrics.getBaselineDistanceBelow(&creditsLine1Metrics);
-			Text::render(
-				titleCreditsLine2, screenCenterX - creditsLine2Metrics.charactersWidth * 0.5f, creditsLine2Baseline, 1.0f);
-			glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+void GameState::renderTextDisplay(int gameTicksTime) {
+	vector<string> textDisplayStrings;
+	vector<Text::Metrics> textDisplayMetrics;
+	int textFadeInStartTicksTime = 0;
+	int textFadeInTicksDuration = 0;
+	int textDisplayTicksDuration = 0;
+	int textFadeOutTicksDuration = 0;
+	TextDisplayType nextTextDisplayType = TextDisplayType::None;
+	switch (textDisplayType) {
+		case TextDisplayType::Intro:
+			textDisplayStrings = { titleGameName, " ", titleCreditsLine1, titleCreditsLine2 };
+			textDisplayMetrics = { Text::getMetrics(titleGameName, 2.0f) };
+			textFadeInStartTicksTime = introTitleFadeInStartTicksTime;
+			textFadeInTicksDuration = introTitleFadeInTicksDuration;
+			textDisplayTicksDuration = introTitleDisplayTicksDuration;
+			textFadeOutTicksDuration = introTitleFadeOutTicksDuration;
+			nextTextDisplayType = TextDisplayType::BootExplanation;
+			break;
+		case TextDisplayType::BootExplanation:
+			textDisplayStrings = { bootExplanationMessage1, bootExplanationMessage2, " ", " ", " " };
+			textFadeInStartTicksTime = bootExplanationFadeInStartTicksTime;
+			textFadeInTicksDuration = bootExplanationFadeInTicksDuration;
+			textDisplayTicksDuration = bootExplanationDisplayTicksDuration;
+			textFadeOutTicksDuration = bootExplanationFadeOutTicksDuration;
+			nextTextDisplayType = TextDisplayType::RadioTowerExplanation;
+			break;
+		case TextDisplayType::RadioTowerExplanation:
+			textDisplayStrings = {
+				radioTowerExplanationMessageLine1,
+				radioTowerExplanationMessageLine2,
+				radioTowerExplanationMessageLine3,
+				radioTowerExplanationMessageLine4,
+				" ",
+				" ",
+				" ",
+				" "
+			};
+			textFadeInStartTicksTime = radioTowerExplanationFadeInStartTicksTime;
+			textFadeInTicksDuration = radioTowerExplanationFadeInTicksDuration;
+			textDisplayTicksDuration = radioTowerExplanationDisplayTicksDuration;
+			textFadeOutTicksDuration = radioTowerExplanationFadeOutTicksDuration;
+			nextTextDisplayType = TextDisplayType::GoalExplanation;
+			break;
+		case TextDisplayType::GoalExplanation:
+			textDisplayStrings = {
+				" ",
+				" ",
+				" ",
+				" ",
+				" ",
+				" ",
+				" ",
+				goalExplanationMessageLine1,
+				goalExplanationMessageLine2,
+				goalExplanationMessageLine3
+			};
+			textFadeInStartTicksTime = goalExplanationFadeInStartTicksTime;
+			textFadeInTicksDuration = goalExplanationFadeInTicksDuration;
+			textDisplayTicksDuration = goalExplanationDisplayTicksDuration;
+			textFadeOutTicksDuration = goalExplanationFadeOutTicksDuration;
+			nextTextDisplayType = TextDisplayType::None;
+			break;
+		case TextDisplayType::Outro:
+			//TODO: outro text
 			return;
-		}
-		case TitleAnimation::Outro:
-			//TODO: outro animation
-			return;
-		case TitleAnimation::None:
+		case TextDisplayType::None:
 		default:
 			return;
 	}
+
+	while (textDisplayMetrics.size() < textDisplayStrings.size())
+		textDisplayMetrics.push_back(Text::getMetrics(textDisplayStrings[textDisplayMetrics.size()].c_str(), 1.0f));
+
+	int textFadeInEndTicksTime = textFadeInStartTicksTime + textFadeInTicksDuration;
+	int textFadeOutStartTicksTime = textFadeInEndTicksTime + textDisplayTicksDuration;
+	int textFadeOutEndTicksTime = textFadeOutStartTicksTime + textFadeOutTicksDuration;
+	int textDisplayTicksTime = gameTicksTime - titleAnimationStartTicksTime;
+	GLfloat textDisplayAlpha;
+	if (textDisplayTicksTime < textFadeInStartTicksTime)
+		textDisplayAlpha = 0.0f;
+	else if (textDisplayTicksTime < textFadeInEndTicksTime)
+		textDisplayAlpha = (GLfloat)(textDisplayTicksTime - textFadeInStartTicksTime) / (GLfloat)textFadeInTicksDuration;
+	else if (textDisplayTicksTime < textFadeOutStartTicksTime)
+		textDisplayAlpha = 1.0f;
+	else if (textDisplayTicksTime < textFadeOutEndTicksTime)
+		textDisplayAlpha = (GLfloat)(textFadeOutEndTicksTime - textDisplayTicksTime) / (GLfloat)textFadeOutTicksDuration;
+	else {
+		textDisplayType = nextTextDisplayType;
+		renderTextDisplay(gameTicksTime);
+		return;
+	}
+	glColor4f(1.0f, 1.0f, 1.0f, textDisplayAlpha);
+	Text::renderLines(textDisplayStrings, textDisplayMetrics);
+	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 }
 //save the state to a file
 void GameState::saveState() {
@@ -449,7 +493,7 @@ void GameState::loadInitialState(int ticksTime) {
 					replayComponents.end(),
 					{
 						newEntityAnimationSetPosition(
-							PlayerState::introAnimationPlayerCenterX, PlayerState::introAnimationPlayerCenterY) COMMA
+							PlayerState::introAnimationPlayerCenterX, PlayerState::introAnimationPlayerCenterY),
 						newEntityAnimationDelay(timestamp)
 					});
 				lastTimestamp = timestamp;
@@ -476,10 +520,10 @@ void GameState::loadInitialState(int ticksTime) {
 				replayComponents.insert(
 					replayComponents.end(),
 					{
-						newEntityAnimationSetGhostSprite(false, 0.0f, 0.0f) COMMA
+						newEntityAnimationSetGhostSprite(false, 0.0f, 0.0f),
 						newEntityAnimationSetVelocity(
 							newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
-							newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)) COMMA
+							newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)),
 						newEntityAnimationSetSpriteAnimation(nullptr)
 					});
 				lastTimestamp = timestamp + climbDuration;
@@ -498,10 +542,10 @@ void GameState::loadInitialState(int ticksTime) {
 				replayComponents.insert(
 					replayComponents.end(),
 					{
-						newEntityAnimationSetGhostSprite(false, 0.0f, 0.0f) COMMA
+						newEntityAnimationSetGhostSprite(false, 0.0f, 0.0f),
 						newEntityAnimationSetVelocity(
 							newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
-							newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)) COMMA
+							newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)),
 						newEntityAnimationSetSpriteAnimation(nullptr)
 					});
 				lastTimestamp = timestamp + fallDuration;
@@ -518,7 +562,7 @@ void GameState::loadInitialState(int ticksTime) {
 				replayComponents.insert(
 					replayComponents.end(),
 					{
-						newEntityAnimationSetGhostSprite(false, 0.0f, 0.0f) COMMA
+						newEntityAnimationSetGhostSprite(false, 0.0f, 0.0f),
 						newEntityAnimationSetVelocity(
 							newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
 							newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f))
@@ -545,7 +589,7 @@ void GameState::loadInitialState(int ticksTime) {
 				replayComponents.insert(
 					replayComponents.end(),
 					{
-						newEntityAnimationSetGhostSprite(false, 0.0f, 0.0f) COMMA
+						newEntityAnimationSetGhostSprite(false, 0.0f, 0.0f),
 						newEntityAnimationSetSpriteDirection(SpriteDirection::Down)
 					});
 				PlayerState::addKickSwitchComponents(
@@ -567,7 +611,7 @@ void GameState::loadInitialState(int ticksTime) {
 				replayComponents.insert(
 					replayComponents.end(),
 					{
-						newEntityAnimationSetGhostSprite(false, 0.0f, 0.0f) COMMA
+						newEntityAnimationSetGhostSprite(false, 0.0f, 0.0f),
 						newEntityAnimationSetSpriteDirection(SpriteDirection::Down)
 					});
 				PlayerState::addKickResetSwitchComponents(
@@ -607,11 +651,11 @@ void GameState::loadInitialState(int ticksTime) {
 		replayComponents->insert(
 			replayComponents->end(),
 			{
-				newEntityAnimationSetGhostSprite(true, endX, endY) COMMA
+				newEntityAnimationSetGhostSprite(true, endX, endY),
 				newEntityAnimationSetVelocity(
 					newCompositeQuarticValue(0.0f, moveX, 0.0f, 0.0f, 0.0f),
-					newCompositeQuarticValue(0.0f, moveY, 0.0f, 0.0f, 0.0f)) COMMA
-				newEntityAnimationSetSpriteDirection(spriteDirection) COMMA
+					newCompositeQuarticValue(0.0f, moveY, 0.0f, 0.0f, 0.0f)),
+				newEntityAnimationSetSpriteDirection(spriteDirection),
 				newEntityAnimationDelay(ticksDuration)
 			});
 	}
@@ -621,7 +665,7 @@ void GameState::beginIntroAnimation(int ticksTime) {
 	MapState::setIntroAnimationBootTile(true);
 	camera = dynamicCameraAnchor.get();
 
-	titleAnimation = TitleAnimation::Intro;
+	textDisplayType = TextDisplayType::Intro;
 	titleAnimationStartTicksTime = ticksTime;
 
 	//player animation component helpers
@@ -629,8 +673,7 @@ void GameState::beginIntroAnimation(int ticksTime) {
 	EntityAnimation::SetVelocity* stopMoving = newEntityAnimationSetVelocity(
 		newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f), newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f));
 	EntityAnimation::SetVelocity* walkRight = newEntityAnimationSetVelocity(
-		newCompositeQuarticValue(0.0f, speedPerTick, 0.0f, 0.0f, 0.0f),
-		newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f));
+		newCompositeQuarticValue(0.0f, speedPerTick, 0.0f, 0.0f, 0.0f), newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f));
 	EntityAnimation::SetVelocity* walkUp = newEntityAnimationSetVelocity(
 		newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
 		newCompositeQuarticValue(0.0f, -speedPerTick, 0.0f, 0.0f, 0.0f));
@@ -638,149 +681,122 @@ void GameState::beginIntroAnimation(int ticksTime) {
 		newCompositeQuarticValue(0.0f, -speedPerTick, 0.0f, 0.0f, 0.0f),
 		newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f));
 	EntityAnimation::SetVelocity* walkDown = newEntityAnimationSetVelocity(
-		newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
-		newCompositeQuarticValue(0.0f, speedPerTick, 0.0f, 0.0f, 0.0f));
+		newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f), newCompositeQuarticValue(0.0f, speedPerTick, 0.0f, 0.0f, 0.0f));
 	EntityAnimation::SetSpriteAnimation* setWalkingAnimation =
 		newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerWalkingAnimation);
 	EntityAnimation::SetSpriteAnimation* clearSpriteAnimation = newEntityAnimationSetSpriteAnimation(nullptr);
 
 	vector<ReferenceCounterHolder<EntityAnimation::Component>> playerAnimationComponents ({
-		stopMoving COMMA
+		stopMoving,
 		newEntityAnimationSetPosition(
-			PlayerState::introAnimationPlayerCenterX, PlayerState::introAnimationPlayerCenterY) COMMA
-		newEntityAnimationDelay(introAnimationStartTicksTime) COMMA
-		newEntityAnimationDelay(2500) COMMA
+			PlayerState::introAnimationPlayerCenterX, PlayerState::introAnimationPlayerCenterY),
+		newEntityAnimationDelay(introAnimationStartTicksTime),
+		newEntityAnimationDelay(2500),
 		//walk to the wall
-		walkRight COMMA
-		setWalkingAnimation COMMA
-		newEntityAnimationSetSpriteDirection(SpriteDirection::Right) COMMA
-		newEntityAnimationDelay(2200) COMMA
+		walkRight,
+		setWalkingAnimation,
+		newEntityAnimationSetSpriteDirection(SpriteDirection::Right),
+		newEntityAnimationDelay(2200),
 		//walk down, stop at the boot
-		walkDown COMMA
-		newEntityAnimationSetSpriteDirection(SpriteDirection::Down) COMMA
-		newEntityAnimationDelay(1000) COMMA
-		stopMoving COMMA
-		clearSpriteAnimation COMMA
-		newEntityAnimationDelay(1500) COMMA
+		walkDown,
+		newEntityAnimationSetSpriteDirection(SpriteDirection::Down),
+		newEntityAnimationDelay(1000),
+		stopMoving,
+		clearSpriteAnimation,
+		newEntityAnimationDelay(3000),
 		//look at the boot
-		newEntityAnimationSetSpriteDirection(SpriteDirection::Right) COMMA
-		newEntityAnimationDelay(800) COMMA
-		newEntityAnimationSetSpriteDirection(SpriteDirection::Down) COMMA
-		newEntityAnimationDelay(1000) COMMA
+		newEntityAnimationSetSpriteDirection(SpriteDirection::Right),
+		newEntityAnimationDelay(800),
+		newEntityAnimationSetSpriteDirection(SpriteDirection::Down),
+		newEntityAnimationDelay(1000),
 		//walk around the boot
-		walkDown COMMA
-		setWalkingAnimation COMMA
-		newEntityAnimationDelay(900) COMMA
-		stopMoving COMMA
-		clearSpriteAnimation COMMA
-		newEntityAnimationDelay(300) COMMA
-		walkRight COMMA
-		setWalkingAnimation COMMA
-		newEntityAnimationSetSpriteDirection(SpriteDirection::Right) COMMA
-		newEntityAnimationDelay(1800) COMMA
+		walkDown,
+		setWalkingAnimation,
+		newEntityAnimationDelay(900),
+		stopMoving,
+		clearSpriteAnimation,
+		newEntityAnimationDelay(700),
+		walkRight,
+		setWalkingAnimation,
+		newEntityAnimationSetSpriteDirection(SpriteDirection::Right),
+		newEntityAnimationDelay(1800),
 		//stop and look around
-		stopMoving COMMA
-		clearSpriteAnimation COMMA
-		newEntityAnimationDelay(700) COMMA
-		newEntityAnimationSetSpriteDirection(SpriteDirection::Up) COMMA
-		newEntityAnimationDelay(700) COMMA
-		newEntityAnimationSetSpriteDirection(SpriteDirection::Down) COMMA
-		newEntityAnimationDelay(500) COMMA
-		newEntityAnimationSetSpriteDirection(SpriteDirection::Left) COMMA
-		newEntityAnimationDelay(350) COMMA
-		newEntityAnimationSetSpriteDirection(SpriteDirection::Right) COMMA
-		newEntityAnimationDelay(1000) COMMA
+		stopMoving,
+		clearSpriteAnimation,
+		newEntityAnimationDelay(700),
+		newEntityAnimationSetSpriteDirection(SpriteDirection::Up),
+		newEntityAnimationDelay(700),
+		newEntityAnimationSetSpriteDirection(SpriteDirection::Down),
+		newEntityAnimationDelay(500),
+		newEntityAnimationSetSpriteDirection(SpriteDirection::Left),
+		newEntityAnimationDelay(350),
+		newEntityAnimationSetSpriteDirection(SpriteDirection::Right),
+		newEntityAnimationDelay(1000),
 		//walk up
-		newEntityAnimationSetSpriteDirection(SpriteDirection::Up) COMMA
-		walkUp COMMA
-		setWalkingAnimation COMMA
-		newEntityAnimationDelay(1700) COMMA
+		newEntityAnimationSetSpriteDirection(SpriteDirection::Up),
+		walkUp,
+		setWalkingAnimation,
+		newEntityAnimationDelay(1700),
 		//stop and look around
-		stopMoving COMMA
-		clearSpriteAnimation COMMA
-		newEntityAnimationDelay(1000) COMMA
-		newEntityAnimationSetSpriteDirection(SpriteDirection::Right) COMMA
-		newEntityAnimationDelay(600) COMMA
-		newEntityAnimationSetSpriteDirection(SpriteDirection::Left) COMMA
-		newEntityAnimationDelay(400) COMMA
-		newEntityAnimationSetSpriteDirection(SpriteDirection::Up) COMMA
-		newEntityAnimationDelay(1200) COMMA
+		stopMoving,
+		clearSpriteAnimation,
+		newEntityAnimationDelay(1000),
+		newEntityAnimationSetSpriteDirection(SpriteDirection::Right),
+		newEntityAnimationDelay(600),
+		newEntityAnimationSetSpriteDirection(SpriteDirection::Left),
+		newEntityAnimationDelay(400),
+		newEntityAnimationSetSpriteDirection(SpriteDirection::Up),
+		newEntityAnimationDelay(1200),
 		//walk back down to the boot
-		walkDown COMMA
-		setWalkingAnimation COMMA
-		newEntityAnimationSetSpriteDirection(SpriteDirection::Down) COMMA
-		newEntityAnimationDelay(900) COMMA
-		walkLeft COMMA
-		newEntityAnimationSetSpriteDirection(SpriteDirection::Left) COMMA
-		newEntityAnimationDelay(400) COMMA
-		stopMoving COMMA
-		clearSpriteAnimation COMMA
-		newEntityAnimationDelay(500) COMMA
+		walkDown,
+		setWalkingAnimation,
+		newEntityAnimationSetSpriteDirection(SpriteDirection::Down),
+		newEntityAnimationDelay(900),
+		walkLeft,
+		newEntityAnimationSetSpriteDirection(SpriteDirection::Left),
+		newEntityAnimationDelay(400),
+		stopMoving,
+		clearSpriteAnimation,
+		newEntityAnimationDelay(500),
 		//approach more slowly
 		newEntityAnimationSetVelocity(
 			newCompositeQuarticValue(0.0f, -speedPerTick * 0.5f, 0.0f, 0.0f, 0.0f),
-			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)) COMMA
-		setWalkingAnimation COMMA
-		newEntityAnimationDelay(540) COMMA
-		stopMoving COMMA
-		clearSpriteAnimation COMMA
-		newEntityAnimationDelay(800) COMMA
+			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)),
+		setWalkingAnimation,
+		newEntityAnimationDelay(540),
+		stopMoving,
+		clearSpriteAnimation,
+		newEntityAnimationDelay(800),
 		//put on the boot, moving the arbitrary distance needed to get to the right position
 		newEntityAnimationSetVelocity(
 			newCompositeQuarticValue(0.0f, -17.0f / (float)Config::ticksPerSecond, 0.0f, 0.0f, 0.0f),
-			newCompositeQuarticValue(0.0f, 4.0f / (float)Config::ticksPerSecond, 0.0f, 0.0f, 0.0f)) COMMA
-		newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerLegLiftAnimation) COMMA
-		newEntityAnimationDelay(SpriteRegistry::playerLegLiftAnimation->getTotalTicksDuration()) COMMA
-		stopMoving COMMA
+			newCompositeQuarticValue(0.0f, 4.0f / (float)Config::ticksPerSecond, 0.0f, 0.0f, 0.0f)),
+		newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerLegLiftAnimation),
+		newEntityAnimationDelay(SpriteRegistry::playerLegLiftAnimation->getTotalTicksDuration()),
+		stopMoving,
 		clearSpriteAnimation
 	});
 	Holder_EntityAnimationComponentVector playerAnimationComponentsHolder (&playerAnimationComponents);
 	playerState.get()->beginEntityAnimation(&playerAnimationComponentsHolder, ticksTime);
 
+	int blackScreenFadeOutEndTime = introAnimationStartTicksTime + 1000;
+	int animationEndTicksTime = EntityAnimation::getComponentTotalTicksDuration(playerAnimationComponents);
+	int legLiftStartTime = animationEndTicksTime - SpriteRegistry::playerLegLiftAnimation->getTotalTicksDuration();
 	vector<ReferenceCounterHolder<EntityAnimation::Component>> cameraAnimationComponents ({
-		newEntityAnimationSetPosition(MapState::introAnimationCameraCenterX, MapState::introAnimationCameraCenterY) COMMA
+		newEntityAnimationSetPosition(MapState::introAnimationCameraCenterX, MapState::introAnimationCameraCenterY),
 		newEntityAnimationSetScreenOverlayColor(
 			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
 			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
 			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
-			newCompositeQuarticValue(1.0f, 0.0f, 0.0f, 0.0f, 0.0f)) COMMA
-		newEntityAnimationDelay(introAnimationStartTicksTime) COMMA
-		newEntityAnimationSetScreenOverlayColor(
-			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
-			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
-			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
-			newCompositeQuarticValue(1.0f, -0.875f / (float)Config::ticksPerSecond, 0.0f, 0.0f, 0.0f)) COMMA
-		newEntityAnimationDelay(1000) COMMA
-		newEntityAnimationSetScreenOverlayColor(
-			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
-			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
-			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
-			newCompositeQuarticValue(0.125f, 0.0f, 0.0f, 0.0f, 0.0f))
+			newLinearInterpolatedValue({
+				LinearInterpolatedValue::ValueAtTime(1.0f, introAnimationStartTicksTime) COMMA
+				LinearInterpolatedValue::ValueAtTime(0.125f, blackScreenFadeOutEndTime) COMMA
+				LinearInterpolatedValue::ValueAtTime(0.125f, legLiftStartTime) COMMA
+				LinearInterpolatedValue::ValueAtTime(0.0f, animationEndTicksTime)
+			})),
+		newEntityAnimationDelay(animationEndTicksTime),
+		newEntityAnimationSwitchToPlayerCamera()
 	});
-
-	//delay the camera animation until the end of the player animation minus the leg lift animation duration
-	int legLiftAnimationTicksDuration = SpriteRegistry::playerLegLiftAnimation->getTotalTicksDuration();
-	cameraAnimationComponents.insert(
-		cameraAnimationComponents.end(),
-		{
-			newEntityAnimationDelay(
-				EntityAnimation::getComponentTotalTicksDuration(playerAnimationComponents)
-					- EntityAnimation::getComponentTotalTicksDuration(cameraAnimationComponents)
-					- legLiftAnimationTicksDuration) COMMA
-			//fade in the screen and then switch to the player camera
-			newEntityAnimationSetScreenOverlayColor(
-				newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
-				newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
-				newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
-				newCompositeQuarticValue(0.125f, -0.125f / (float)legLiftAnimationTicksDuration, 0.0f, 0.0f, 0.0f)) COMMA
-			newEntityAnimationDelay(legLiftAnimationTicksDuration) COMMA
-			newEntityAnimationSetScreenOverlayColor(
-				newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
-				newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
-				newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
-				newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)) COMMA
-			newEntityAnimationSwitchToPlayerCamera()
-		});
 	Holder_EntityAnimationComponentVector cameraAnimationComponentsHolder (&cameraAnimationComponents);
 	dynamicCameraAnchor.get()->beginEntityAnimation(&cameraAnimationComponentsHolder, ticksTime);
 }

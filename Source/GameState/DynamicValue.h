@@ -4,6 +4,7 @@
 		constantValue, linearValuePerTick, quadraticValuePerTick, cubicValuePerTick, quarticValuePerTick) \
 	produceWithArgs(\
 		CompositeQuarticValue, constantValue, linearValuePerTick, quadraticValuePerTick, cubicValuePerTick, quarticValuePerTick)
+#define newLinearInterpolatedValue(valuesAtTimes) produceWithArgs(LinearInterpolatedValue, valuesAtTimes)
 
 //each DynamicValue is only held in one place at a time
 class DynamicValue: public PooledReferenceCounter {
@@ -35,6 +36,34 @@ public:
 		float pQuadraticValuePerTick,
 		float pCubicValuePerTick,
 		float pQuarticValuePerTick);
+	virtual void release();
+	virtual DynamicValue* copyWithConstantValue(float pConstantValue);
+	virtual float getValue(int ticksElapsed);
+};
+class LinearInterpolatedValue: public DynamicValue {
+public:
+	//Should only be allocated within an object, on the stack, or as a static object
+	class ValueAtTime {
+	private:
+		float value;
+		int atTicksTime;
+
+	public:
+		ValueAtTime(float pValue, int pAtTicksTime);
+		virtual ~ValueAtTime();
+
+		float getValue() { return value; }
+		int getAtTicksTime() { return atTicksTime; }
+	};
+
+private:
+	vector<ValueAtTime> valuesAtTimes;
+
+public:
+	LinearInterpolatedValue(objCounterParameters());
+	virtual ~LinearInterpolatedValue();
+
+	static LinearInterpolatedValue* produce(objCounterParametersComma() vector<ValueAtTime> valuesAtTimes);
 	virtual void release();
 	virtual DynamicValue* copyWithConstantValue(float pConstantValue);
 	virtual float getValue(int ticksElapsed);
