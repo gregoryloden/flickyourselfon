@@ -1,5 +1,6 @@
 #include "Util/PooledReferenceCounter.h"
 
+#define newConstantValue(value) produceWithArgs(ConstantValue, value)
 #define newCompositeQuarticValue(\
 		constantValue, linearValuePerTick, quadraticValuePerTick, cubicValuePerTick, quarticValuePerTick) \
 	produceWithArgs(\
@@ -16,6 +17,19 @@ public:
 	virtual DynamicValue* copyWithConstantValue(float pConstantValue) = 0;
 	//return the value after the given amount of time has elapsed
 	virtual float getValue(int ticksElapsed) = 0;
+};
+class ConstantValue: public DynamicValue {
+private:
+	float value;
+
+public:
+	ConstantValue(objCounterParameters());
+	virtual ~ConstantValue();
+
+	static ConstantValue* produce(objCounterParametersComma() float pValue);
+	virtual void release();
+	virtual DynamicValue* copyWithConstantValue(float pConstantValue);
+	virtual float getValue(int ticksElapsed);
 };
 class CompositeQuarticValue: public DynamicValue {
 private:

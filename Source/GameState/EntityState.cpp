@@ -8,9 +8,9 @@
 //////////////////////////////// EntityState ////////////////////////////////
 EntityState::EntityState(objCounterParameters())
 : PooledReferenceCounter(objCounterArguments())
-, x(newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f))
+, x(newConstantValue(0.0f))
 , renderInterpolatedX(true)
-, y(newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f))
+, y(newConstantValue(0.0f))
 , renderInterpolatedY(true)
 , entityAnimation(nullptr)
 , lastUpdateTicksTime(0) {
@@ -103,10 +103,10 @@ DynamicCameraAnchor::~DynamicCameraAnchor() {}
 //initialize and return a DynamicCameraAnchor
 DynamicCameraAnchor* DynamicCameraAnchor::produce(objCounterParameters()) {
 	initializeWithNewFromPool(d, DynamicCameraAnchor)
-	d->screenOverlayR.set(newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f));
-	d->screenOverlayG.set(newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f));
-	d->screenOverlayB.set(newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f));
-	d->screenOverlayA.set(newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f));
+	d->screenOverlayR.set(newConstantValue(0.0f));
+	d->screenOverlayG.set(newConstantValue(0.0f));
+	d->screenOverlayB.set(newConstantValue(0.0f));
+	d->screenOverlayA.set(newConstantValue(0.0f));
 	d->shouldSwitchToPlayerCamera = false;
 	return d;
 }

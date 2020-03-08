@@ -34,7 +34,7 @@ const char* GameState::bootExplanationMessage1 = "You are";
 const char* GameState::bootExplanationMessage2 = "a boot.";
 const char* GameState::radioTowerExplanationMessageLine1 = "Your local radio tower";
 const char* GameState::radioTowerExplanationMessageLine2 = "lost connection";
-const char* GameState::radioTowerExplanationMessageLine3 = "to its";
+const char* GameState::radioTowerExplanationMessageLine3 = "with its";
 const char* GameState::radioTowerExplanationMessageLine4 = "master transmitter relay.";
 const char* GameState::goalExplanationMessageLine1 = "Can you";
 const char* GameState::goalExplanationMessageLine2 = "guide this person";
@@ -192,8 +192,7 @@ void GameState::startRadioTowerAnimation(int ticksTime) {
 	float playerY = playerState.get()->getRenderCenterWorldY(ticksTime);
 	float radioTowerAntennaX = MapState::antennaCenterWorldX();
 	float radioTowerAntennaY = MapState::antennaCenterWorldY();
-	EntityAnimation::SetVelocity* stopMoving = newEntityAnimationSetVelocity(
-		newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f), newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f));
+	EntityAnimation::SetVelocity* stopMoving = newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f));
 	float switchesAnimationCenterWorldX = squareSwitchesAnimationCenterWorldX;
 	float switchesAnimationCenterWorldY = squareSwitchesAnimationCenterWorldY;
 	switch (mapState.get()->getLastActivatedSwitchColor()) {
@@ -365,6 +364,7 @@ void GameState::renderTextDisplay(int gameTicksTime) {
 				" ",
 				" ",
 				" ",
+				" ",
 				goalExplanationMessageLine1,
 				goalExplanationMessageLine2,
 				goalExplanationMessageLine3
@@ -521,9 +521,7 @@ void GameState::loadInitialState(int ticksTime) {
 					replayComponents.end(),
 					{
 						newEntityAnimationSetGhostSprite(false, 0.0f, 0.0f),
-						newEntityAnimationSetVelocity(
-							newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
-							newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)),
+						newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f)),
 						newEntityAnimationSetSpriteAnimation(nullptr)
 					});
 				lastTimestamp = timestamp + climbDuration;
@@ -543,9 +541,7 @@ void GameState::loadInitialState(int ticksTime) {
 					replayComponents.end(),
 					{
 						newEntityAnimationSetGhostSprite(false, 0.0f, 0.0f),
-						newEntityAnimationSetVelocity(
-							newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
-							newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)),
+						newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f)),
 						newEntityAnimationSetSpriteAnimation(nullptr)
 					});
 				lastTimestamp = timestamp + fallDuration;
@@ -563,9 +559,7 @@ void GameState::loadInitialState(int ticksTime) {
 					replayComponents.end(),
 					{
 						newEntityAnimationSetGhostSprite(false, 0.0f, 0.0f),
-						newEntityAnimationSetVelocity(
-							newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
-							newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f))
+						newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f))
 					});
 				PlayerState::addRailRideComponents(
 					MapState::getIdFromRailIndex(railIndex),
@@ -670,18 +664,15 @@ void GameState::beginIntroAnimation(int ticksTime) {
 
 	//player animation component helpers
 	float speedPerTick = PlayerState::speedPerSecond / (float)Config::ticksPerSecond;
-	EntityAnimation::SetVelocity* stopMoving = newEntityAnimationSetVelocity(
-		newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f), newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f));
-	EntityAnimation::SetVelocity* walkRight = newEntityAnimationSetVelocity(
-		newCompositeQuarticValue(0.0f, speedPerTick, 0.0f, 0.0f, 0.0f), newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f));
-	EntityAnimation::SetVelocity* walkUp = newEntityAnimationSetVelocity(
-		newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
-		newCompositeQuarticValue(0.0f, -speedPerTick, 0.0f, 0.0f, 0.0f));
-	EntityAnimation::SetVelocity* walkLeft = newEntityAnimationSetVelocity(
-		newCompositeQuarticValue(0.0f, -speedPerTick, 0.0f, 0.0f, 0.0f),
-		newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f));
-	EntityAnimation::SetVelocity* walkDown = newEntityAnimationSetVelocity(
-		newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f), newCompositeQuarticValue(0.0f, speedPerTick, 0.0f, 0.0f, 0.0f));
+	EntityAnimation::SetVelocity* stopMoving = newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f));
+	EntityAnimation::SetVelocity* walkLeft =
+		newEntityAnimationSetVelocity(newCompositeQuarticValue(0.0f, -speedPerTick, 0.0f, 0.0f, 0.0f), newConstantValue(0.0f));
+	EntityAnimation::SetVelocity* walkRight =
+		newEntityAnimationSetVelocity(newCompositeQuarticValue(0.0f, speedPerTick, 0.0f, 0.0f, 0.0f), newConstantValue(0.0f));
+	EntityAnimation::SetVelocity* walkUp =
+		newEntityAnimationSetVelocity(newConstantValue(0.0f), newCompositeQuarticValue(0.0f, -speedPerTick, 0.0f, 0.0f, 0.0f));
+	EntityAnimation::SetVelocity* walkDown =
+		newEntityAnimationSetVelocity(newConstantValue(0.0f), newCompositeQuarticValue(0.0f, speedPerTick, 0.0f, 0.0f, 0.0f));
 	EntityAnimation::SetSpriteAnimation* setWalkingAnimation =
 		newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerWalkingAnimation);
 	EntityAnimation::SetSpriteAnimation* clearSpriteAnimation = newEntityAnimationSetSpriteAnimation(nullptr);
@@ -760,8 +751,7 @@ void GameState::beginIntroAnimation(int ticksTime) {
 		newEntityAnimationDelay(500),
 		//approach more slowly
 		newEntityAnimationSetVelocity(
-			newCompositeQuarticValue(0.0f, -speedPerTick * 0.5f, 0.0f, 0.0f, 0.0f),
-			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)),
+			newCompositeQuarticValue(0.0f, -speedPerTick * 0.5f, 0.0f, 0.0f, 0.0f), newConstantValue(0.0f)),
 		setWalkingAnimation,
 		newEntityAnimationDelay(540),
 		stopMoving,
@@ -785,9 +775,9 @@ void GameState::beginIntroAnimation(int ticksTime) {
 	vector<ReferenceCounterHolder<EntityAnimation::Component>> cameraAnimationComponents ({
 		newEntityAnimationSetPosition(MapState::introAnimationCameraCenterX, MapState::introAnimationCameraCenterY),
 		newEntityAnimationSetScreenOverlayColor(
-			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
-			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
-			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
+			newConstantValue(0.0f),
+			newConstantValue(0.0f),
+			newConstantValue(0.0f),
 			newLinearInterpolatedValue({
 				LinearInterpolatedValue::ValueAtTime(1.0f, introAnimationStartTicksTime) COMMA
 				LinearInterpolatedValue::ValueAtTime(0.125f, blackScreenFadeOutEndTime) COMMA
@@ -795,6 +785,8 @@ void GameState::beginIntroAnimation(int ticksTime) {
 				LinearInterpolatedValue::ValueAtTime(0.0f, animationEndTicksTime)
 			})),
 		newEntityAnimationDelay(animationEndTicksTime),
+		newEntityAnimationSetScreenOverlayColor(
+			newConstantValue(0.0f), newConstantValue(0.0f), newConstantValue(0.0f), newConstantValue(0.0f)),
 		newEntityAnimationSwitchToPlayerCamera()
 	});
 	Holder_EntityAnimationComponentVector cameraAnimationComponentsHolder (&cameraAnimationComponents);

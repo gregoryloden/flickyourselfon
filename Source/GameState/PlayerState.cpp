@@ -699,9 +699,7 @@ void PlayerState::kickAir(int ticksTime) {
 		? SpriteRegistry::playerKickingAnimation
 		: SpriteRegistry::playerLegLiftAnimation;
 	vector<ReferenceCounterHolder<EntityAnimation::Component>> kickAnimationComponents ({
-		newEntityAnimationSetVelocity(
-			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
-			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)),
+		newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f)),
 		newEntityAnimationSetSpriteAnimation(kickingSpriteAnimation),
 		newEntityAnimationDelay(kickingSpriteAnimation->getTotalTicksDuration())
 	});
@@ -725,14 +723,12 @@ void PlayerState::kickClimb(float yMoveDistance, int ticksTime) {
 
 	vector<ReferenceCounterHolder<EntityAnimation::Component>> kickingAnimationComponents ({
 		//start by stopping the player and delaying until the leg-sticking-out frame
-		newEntityAnimationSetVelocity(
-			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
-			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)),
+		newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f)),
 		newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerFastKickingAnimation),
 		newEntityAnimationDelay(SpriteRegistry::playerFastKickingAnimationTicksPerFrame),
 		//then set the climb velocity, delay for the rest of the animation, and then stop the player
 		newEntityAnimationSetVelocity(
-			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
+			newConstantValue(0.0f),
 			newCompositeQuarticValue(
 				0.0f,
 				0.0f,
@@ -740,8 +736,7 @@ void PlayerState::kickClimb(float yMoveDistance, int ticksTime) {
 				yCubicValuePerDuration / moveDurationCubed,
 				yQuarticValuePerDuration / (moveDurationCubed * floatMoveDuration))),
 		newEntityAnimationDelay(moveDuration),
-		newEntityAnimationSetVelocity(
-			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f), newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f))
+		newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f))
 	});
 
 	Holder_EntityAnimationComponentVector kickingAnimationComponentsHolder (&kickingAnimationComponents);
@@ -763,9 +758,7 @@ void PlayerState::kickFall(float xMoveDistance, float yMoveDistance, char fallHe
 
 	//start by stopping the player and delaying until the leg-sticking-out frame
 	vector<ReferenceCounterHolder<EntityAnimation::Component>> kickingAnimationComponents ({
-		newEntityAnimationSetVelocity(
-			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
-			newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)),
+		newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f)),
 		newEntityAnimationSetSpriteAnimation(fallAnimation),
 		newEntityAnimationDelay(fallAnimationTicksPerFrame)
 	});
@@ -805,7 +798,7 @@ void PlayerState::kickFall(float xMoveDistance, float yMoveDistance, char fallHe
 
 		kickingAnimationComponents.push_back(
 			newEntityAnimationSetVelocity(
-				newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
+				newConstantValue(0.0f),
 				newCompositeQuarticValue(
 					0.0f,
 					yLinearValuePerDuration / floatMoveDuration,
@@ -830,8 +823,7 @@ void PlayerState::kickFall(float xMoveDistance, float yMoveDistance, char fallHe
 		kickingAnimationComponents.end(),
 		{
 			newEntityAnimationDelay(moveDuration),
-			newEntityAnimationSetVelocity(
-				newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f), newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f))
+			newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f))
 		});
 
 	Holder_EntityAnimationComponentVector kickingAnimationComponentsHolder (&kickingAnimationComponents);
@@ -1004,8 +996,7 @@ void PlayerState::addRailRideComponents(
 				newCompositeQuarticValue(0.0f, (finalYPosition - targetYPosition) / bootLiftDuration, 0.0f, 0.0f, 0.0f)),
 			newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerBootLiftAnimation),
 			newEntityAnimationDelay(SpriteRegistry::playerKickingAnimationTicksPerFrame),
-			newEntityAnimationSetVelocity(
-				newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f), newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f))
+			newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f))
 		});
 
 	if (outFinalXPosition != nullptr)
@@ -1029,9 +1020,7 @@ void PlayerState::addKickSwitchComponents(
 	components->insert(
 		components->end(),
 		{
-			newEntityAnimationSetVelocity(
-				newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
-				newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)),
+			newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f)),
 			newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerKickingAnimation),
 			newEntityAnimationDelay(SpriteRegistry::playerKickingAnimationTicksPerFrame),
 			newEntityAnimationMapKickSwitch(switchId, allowRadioTowerAnimation),
@@ -1054,9 +1043,7 @@ void PlayerState::addKickResetSwitchComponents(short resetSwitchId, Holder_Entit
 	components->insert(
 		components->end(),
 		{
-			newEntityAnimationSetVelocity(
-				newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
-				newCompositeQuarticValue(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)),
+			newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f)),
 			newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerKickingAnimation),
 			newEntityAnimationDelay(SpriteRegistry::playerKickingAnimationTicksPerFrame),
 			newEntityAnimationMapKickResetSwitch(resetSwitchId),
@@ -1144,6 +1131,7 @@ void PlayerState::setInitialZ() {
 		(int)(y.get()->getValue(0) + boundingBoxCenterYOffset) / MapState::tileSize);
 }
 #ifdef DEBUG
+	//move the player as high as possible so that all rails render under
 	void PlayerState::setHighestZ() {
 		z = MapState::highestFloorHeight;
 	}

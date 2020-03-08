@@ -6,6 +6,28 @@ DynamicValue::DynamicValue(objCounterParameters())
 }
 DynamicValue::~DynamicValue() {}
 
+//////////////////////////////// ConstantValue ////////////////////////////////
+ConstantValue::ConstantValue(objCounterParameters())
+: DynamicValue(objCounterArguments())
+, value(0.0f) {
+}
+ConstantValue::~ConstantValue() {}
+//initialize and return a ConstantValue
+ConstantValue* ConstantValue::produce(objCounterParametersComma() float pValue) {
+	initializeWithNewFromPool(c, ConstantValue)
+	c->value = pValue;
+	return c;
+}
+pooledReferenceCounterDefineRelease(ConstantValue)
+//return a new ConstantValue with the provided value
+DynamicValue* ConstantValue::copyWithConstantValue(float pConstantValue) {
+	return newConstantValue(pConstantValue);
+}
+//get the value at the given time
+float ConstantValue::getValue(int ticksElapsed) {
+	return value;
+}
+
 //////////////////////////////// CompositeQuarticValue ////////////////////////////////
 CompositeQuarticValue::CompositeQuarticValue(objCounterParameters())
 : DynamicValue(objCounterArguments())
