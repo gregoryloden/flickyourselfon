@@ -290,6 +290,7 @@ void GameState::render(int ticksTime) {
 	mapState.get()->render(camera, playerZ, showConnections, gameTicksTime);
 	playerState.get()->render(camera, gameTicksTime);
 	mapState.get()->renderRailsAbovePlayer(camera, playerZ, showConnections, gameTicksTime);
+	playerState.get()->renderKickAction(camera, gameTicksTime);
 
 	if (camera == dynamicCameraAnchor.get())
 		dynamicCameraAnchor.get()->render(gameTicksTime);

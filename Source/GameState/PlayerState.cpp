@@ -11,6 +11,7 @@
 #include "Sprites/SpriteAnimation.h"
 #include "Sprites/SpriteRegistry.h"
 #include "Sprites/SpriteSheet.h"
+#include "Sprites/Text.h"
 #include "Util/Config.h"
 #include "Util/Logger.h"
 #include "Util/StringUtils.h"
@@ -121,6 +122,12 @@ void PlayerState::mapKickSwitch(short switchId, bool allowRadioTowerAnimation, i
 //tell the map to kick a reset switch
 void PlayerState::mapKickResetSwitch(short resetSwitchId, int ticksTime) {
 	mapState.get()->flipResetSwitch(resetSwitchId, ticksTime);
+}
+//if we have a reset switch kick action, return its id
+short PlayerState::getKickActionResetSwitchId() {
+	return availableKickAction.get() != nullptr && availableKickAction.get()->getType() == KickActionType::ResetSwitch
+		? availableKickAction.get()->getRailSwitchId()
+		: MapState::absentRailSwitchId;
 }
 //update this player state by reading from the previous state
 void PlayerState::updateWithPreviousPlayerState(PlayerState* prev, int ticksTime) {
@@ -390,8 +397,10 @@ bool PlayerState::setRailKickAction(float xPosition, float yPosition) {
 	RailState* railState = mapState.get()->getRailState(railMapX, railMapY);
 	Rail* rail = railState->getRail();
 	//if it's lowered, we can't ride it but don't allow falling
-	if (!railState->canRide())
+	if (!railState->canRide()) {
+		availableKickAction.set(newKickAction(KickActionType::NoRail, 0, 0, 0, MapState::absentRailSwitchId));
 		return true;
+	}
 
 	//ensure it's the start or end of the rail
 	int endSegmentIndex = rail->getSegmentCount() - 1;
@@ -689,6 +698,7 @@ void PlayerState::beginKicking(int ticksTime) {
 			kickResetSwitch(kickAction->getRailSwitchId(), ticksTime);
 			break;
 		default:
+			kickAir(ticksTime);
 			break;
 	}
 	availableKickAction.set(nullptr);
@@ -1075,24 +1085,6 @@ void PlayerState::render(EntityState* camera, int ticksTime) {
 	else
 		SpriteRegistry::player->renderSpriteCenteredAtScreenPosition(
 			hasBoot ? 4 : 0, (int)spriteDirection, renderCenterX, renderCenterY);
-	if (hasBoot && availableKickAction.get() != nullptr) {
-		KickAction* kickAction = availableKickAction.get();
-		bool showKickIndicator;
-		if (kickAction->getType() == KickActionType::Climb)
-			showKickIndicator = Config::kickIndicators.climb;
-		else if (kickAction->getType() == KickActionType::Fall)
-			showKickIndicator = Config::kickIndicators.fall;
-		else if (kickAction->getType() == KickActionType::Rail)
-			showKickIndicator = Config::kickIndicators.rail;
-		else if (kickAction->getType() == KickActionType::Switch)
-			showKickIndicator = Config::kickIndicators.switch0;
-		else if (kickAction->getType() == KickActionType::ResetSwitch)
-			showKickIndicator = Config::kickIndicators.resetSwitch;
-		else
-			showKickIndicator = false;
-		if (showKickIndicator)
-			SpriteRegistry::kickIndicator->renderSpriteCenteredAtScreenPosition(0, 0, renderCenterX, renderCenterY - 15.0f);
-	}
 
 	#ifdef SHOW_PLAYER_BOUNDING_BOX
 		SpriteSheet::renderFilledRectangle(
@@ -1105,6 +1097,36 @@ void PlayerState::render(EntityState* camera, int ticksTime) {
 			(GLint)(renderCenterX + boundingBoxRightOffset),
 			(GLint)(renderCenterY + boundingBoxBottomOffset));
 	#endif
+}
+//render the kick action for this player state if one is available
+void PlayerState::renderKickAction(EntityState* camera, int ticksTime) {
+	if (!hasBoot || availableKickAction.get() == nullptr)
+		return;
+	float renderCenterX = getRenderCenterScreenX(camera,  ticksTime);
+	float renderCenterY = getRenderCenterScreenY(camera,  ticksTime);
+	bool showKickIndicator = false;
+	KickActionType kickActionType = availableKickAction.get()->getType();
+	switch (kickActionType) {
+		case KickActionType::Climb: showKickIndicator = Config::kickIndicators.climb; break;
+		case KickActionType::Fall: showKickIndicator = Config::kickIndicators.fall; break;
+		case KickActionType::Rail:
+		case KickActionType::NoRail: showKickIndicator = Config::kickIndicators.rail; break;
+		case KickActionType::Switch: showKickIndicator = Config::kickIndicators.switch0; break;
+		case KickActionType::ResetSwitch: {
+			if (!Config::kickIndicators.resetSwitch)
+				return;
+			Text::Metrics metrics = Text::getMetrics("Reset", 1.0f);
+			Text::render("Reset", renderCenterX - metrics.charactersWidth * 0.5f, renderCenterY - 11.5f, 1.0f);
+			return;
+		}
+		default:
+			return;
+	}
+	if (!showKickIndicator)
+		return;
+	glEnable(GL_BLEND);
+	SpriteRegistry::kickIndicator->renderSpriteCenteredAtScreenPosition(
+		(int)kickActionType, 0, renderCenterX, renderCenterY - 17.0f);
 }
 //save this player state to the file
 void PlayerState::saveState(ofstream& file) {

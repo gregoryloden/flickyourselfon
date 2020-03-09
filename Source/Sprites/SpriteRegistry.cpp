@@ -42,7 +42,8 @@ void SpriteRegistry::loadAll() {
 	radioWaves = newSpriteSheetWithImagePath(radioWavesFileName, 5, 1);
 	resetSwitch = newSpriteSheetWithImagePath(resetSwitchFileName, 2, 1);
 	resetSwitch->removeBottomRightPixelBorder();
-	kickIndicator = newSpriteSheetWithImagePath(kickIndicatorFileName, 1, 1);
+	kickIndicator = newSpriteSheetWithImagePath(kickIndicatorFileName, 5, 1);
+	kickIndicator->removeBottomRightPixelBorder();
 	playerWalkingAnimation = newSpriteAnimation(
 		player,
 		{

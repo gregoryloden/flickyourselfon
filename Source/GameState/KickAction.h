@@ -6,11 +6,12 @@
 class Rail;
 
 enum class KickActionType: int {
-	None,
-	Climb,
-	Fall,
-	Rail,
-	Switch,
+	None = -1,
+	Climb = 0,
+	Fall = 1,
+	Rail = 2,
+	NoRail = 3,
+	Switch = 4,
 	ResetSwitch
 };
 class KickAction: public PooledReferenceCounter {
