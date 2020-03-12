@@ -114,7 +114,7 @@ private:
 public:
 	static void addKickResetSwitchComponents(short resetSwitchId, Holder_EntityAnimationComponentVector* componentsHolder);
 	void render(EntityState* camera, int ticksTime);
-	void renderKickAction(EntityState* camera, int ticksTime);
+	void renderKickAction(EntityState* camera, bool hasRailsToReset, int ticksTime);
 	void saveState(ofstream& file);
 	bool loadState(string& line);
 	void setInitialZ();

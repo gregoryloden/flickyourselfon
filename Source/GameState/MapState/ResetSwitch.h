@@ -39,6 +39,7 @@ public:
 
 	int getCenterX() { return centerX; }
 	int getBottomY() { return bottomY; }
+	bool hasGroupForColor(char group, char color);
 	void render(int screenLeftWorldX, int screenTopWorldY, bool isOn, bool showGroups);
 	#ifdef EDITOR
 		public:

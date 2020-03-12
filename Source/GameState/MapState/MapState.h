@@ -207,7 +207,8 @@ public:
 	void startSwitchesFadeInAnimation(int ticksTime);
 	void resetMatchingRails(Holder_RessetSwitchSegmentVector* segmentsHolder);
 	void render(EntityState* camera, char playerZ, bool showConnections, int ticksTime);
-	void renderRailsAbovePlayer(EntityState* camera, char playerZ, bool showConnections, int ticksTime);
+	void renderRailsAbovePlayer(EntityState* camera, bool showConnections, int ticksTime);
+	bool renderGroupsForRailsToReset(EntityState* camera, short resetSwitchId, int ticksTime);
 	static void renderGroupRect(char group, GLint leftX, GLint topY, GLint rightX, GLint bottomY);
 	static void logGroup(char group, stringstream* message);
 	static void logSwitchKick(short switchId);

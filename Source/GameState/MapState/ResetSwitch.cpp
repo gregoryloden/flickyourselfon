@@ -57,6 +57,22 @@ void ResetSwitch::render(int screenLeftWorldX, int screenTopWorldY, bool isOn, b
 		segment.render(screenLeftWorldX, screenTopWorldY, showGroups);
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 }
+//returns whether the group can be found in any of the segments
+bool ResetSwitch::hasGroupForColor(char group, char color) {
+	for (Segment& segment : leftSegments) {
+		if (segment.group == group && segment.color == color)
+			return true;
+	}
+	for (Segment& segment : bottomSegments) {
+		if (segment.group == group && segment.color == color)
+			return true;
+	}
+	for (Segment& segment : rightSegments) {
+		if (segment.group == group && segment.color == color)
+			return true;
+	}
+	return false;
+}
 #ifdef EDITOR
 	//we're saving this switch to the floor file, get the data we need at this tile
 	char ResetSwitch::getFloorSaveData(int x, int y) {

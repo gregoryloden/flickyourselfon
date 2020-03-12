@@ -605,7 +605,8 @@ void MapState::render(EntityState* camera, char playerZ, bool showConnections, i
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 }
 //draw any rails that are above the player
-void MapState::renderRailsAbovePlayer(EntityState* camera, char playerZ, bool showConnections, int ticksTime) {
+//assumes render() has already been called to set the rails above the player
+void MapState::renderRailsAbovePlayer(EntityState* camera, bool showConnections, int ticksTime) {
 	#ifdef EDITOR
 		//by default, show the connections
 		if (nonTilesHidingState / 2 == 0)
@@ -622,10 +623,36 @@ void MapState::renderRailsAbovePlayer(EntityState* camera, char playerZ, bool sh
 	int screenTopWorldY = getScreenTopWorldY(camera, ticksTime);
 	for (int i = railsBelowPlayerZ; i < (int)railStatesByHeight.size(); i++)
 		railStatesByHeight[i]->render(screenLeftWorldX, screenTopWorldY);
+	//show groups above the player for all rails
 	if (showConnections) {
 		for (RailState* railState : railStates)
 			railState->renderGroups(screenLeftWorldX, screenTopWorldY);
 	}
+}
+//render the groups for rails that are not in their default position that have a group that this reset switch also has
+//return whether any groups were drawn
+bool MapState::renderGroupsForRailsToReset(EntityState* camera, short resetSwitchId, int ticksTime) {
+	int screenLeftWorldX = getScreenLeftWorldX(camera, ticksTime);
+	int screenTopWorldY = getScreenTopWorldY(camera, ticksTime);
+	ResetSwitch* resetSwitch = resetSwitches[resetSwitchId & railSwitchIndexBitmask];
+	bool hasRailsToReset = false;
+	for (RailState* railState : railStates) {
+		Rail* rail = railState->getRail();
+		if (railState->getTargetTileOffset() == (float)rail->getInitialTileOffset())
+			continue;
+		char railColor = rail->getColor();
+		for (char railGroup : rail->getGroups()) {
+			//the reset switch has a group for this rail, render groups for it
+			if (resetSwitch->hasGroupForColor(railGroup, railColor)) {
+				railState->renderGroups(screenLeftWorldX, screenTopWorldY);
+				hasRailsToReset = true;
+				break;
+			}
+		}
+	}
+	if (hasRailsToReset)
+		resetSwitchStates[resetSwitchId & railSwitchIndexBitmask]->render(screenLeftWorldX, screenTopWorldY, true, ticksTime);
+	return hasRailsToReset;
 }
 //draw a graphic to represent this rail/switch group
 void MapState::renderGroupRect(char group, GLint leftX, GLint topY, GLint rightX, GLint bottomY) {

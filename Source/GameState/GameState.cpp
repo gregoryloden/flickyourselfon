@@ -289,8 +289,13 @@ void GameState::render(int ticksTime) {
 	int playerZ = playerState.get()->getZ();
 	mapState.get()->render(camera, playerZ, showConnections, gameTicksTime);
 	playerState.get()->render(camera, gameTicksTime);
-	mapState.get()->renderRailsAbovePlayer(camera, playerZ, showConnections, gameTicksTime);
-	playerState.get()->renderKickAction(camera, gameTicksTime);
+	mapState.get()->renderRailsAbovePlayer(camera, showConnections, gameTicksTime);
+
+	short kickActionResetSwitchId = playerState.get()->getKickActionResetSwitchId();
+	bool hasRailsToReset = false;
+	if (kickActionResetSwitchId != MapState::absentRailSwitchId)
+		hasRailsToReset = mapState.get()->renderGroupsForRailsToReset(camera, kickActionResetSwitchId, gameTicksTime);
+	playerState.get()->renderKickAction(camera, hasRailsToReset, gameTicksTime);
 
 	if (camera == dynamicCameraAnchor.get())
 		dynamicCameraAnchor.get()->render(gameTicksTime);

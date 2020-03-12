@@ -396,6 +396,9 @@ bool PlayerState::setRailKickAction(float xPosition, float yPosition) {
 
 	RailState* railState = mapState.get()->getRailState(railMapX, railMapY);
 	Rail* rail = railState->getRail();
+	//if it's the wrong height, just ignore it completely
+	if (rail->getBaseHeight() != z)
+		return false;
 	//if it's lowered, we can't ride it but don't allow falling
 	if (!railState->canRide()) {
 		availableKickAction.set(newKickAction(KickActionType::NoRail, 0, 0, 0, MapState::absentRailSwitchId));
@@ -1099,7 +1102,7 @@ void PlayerState::render(EntityState* camera, int ticksTime) {
 	#endif
 }
 //render the kick action for this player state if one is available
-void PlayerState::renderKickAction(EntityState* camera, int ticksTime) {
+void PlayerState::renderKickAction(EntityState* camera, bool hasRailsToReset, int ticksTime) {
 	if (!hasBoot || availableKickAction.get() == nullptr)
 		return;
 	float renderCenterX = getRenderCenterScreenX(camera,  ticksTime);
@@ -1113,7 +1116,7 @@ void PlayerState::renderKickAction(EntityState* camera, int ticksTime) {
 		case KickActionType::NoRail: showKickIndicator = Config::kickIndicators.rail; break;
 		case KickActionType::Switch: showKickIndicator = Config::kickIndicators.switch0; break;
 		case KickActionType::ResetSwitch: {
-			if (!Config::kickIndicators.resetSwitch)
+			if (!Config::kickIndicators.resetSwitch || !hasRailsToReset)
 				return;
 			Text::Metrics metrics = Text::getMetrics("Reset", 1.0f);
 			Text::render("Reset", renderCenterX - metrics.charactersWidth * 0.5f, renderCenterY - 11.5f, 1.0f);
