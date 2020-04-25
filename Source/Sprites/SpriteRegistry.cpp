@@ -31,19 +31,14 @@ SpriteAnimation* SpriteRegistry::radioWavesAnimation = nullptr;
 //load all the sprite sheets
 //this should only be called after the gl context has been created
 void SpriteRegistry::loadAll() {
-	player = newSpriteSheetWithImagePath(playerFileName, 10, 4);
-	tiles = newSpriteSheetWithImagePath(tilesFileName, MapState::tileCount, 1);
-	tiles->removeBottomRightPixelBorder();
-	radioTower = newSpriteSheetWithImagePath(radioTowerFileName, 1, 1);
-	rails = newSpriteSheetWithImagePath(railsFileName, 22, 1);
-	rails->removeBottomRightPixelBorder();
-	switches = newSpriteSheetWithImagePath(switchesFileName, 9, 1);
-	switches->removeBottomRightPixelBorder();
-	radioWaves = newSpriteSheetWithImagePath(radioWavesFileName, 5, 1);
-	resetSwitch = newSpriteSheetWithImagePath(resetSwitchFileName, 2, 1);
-	resetSwitch->removeBottomRightPixelBorder();
-	kickIndicator = newSpriteSheetWithImagePath(kickIndicatorFileName, 5, 1);
-	kickIndicator->removeBottomRightPixelBorder();
+	player = newSpriteSheetWithImagePath(playerFileName, 10, 4, false);
+	tiles = newSpriteSheetWithImagePath(tilesFileName, MapState::tileCount, 1, true);
+	radioTower = newSpriteSheetWithImagePath(radioTowerFileName, 1, 1, false);
+	rails = newSpriteSheetWithImagePath(railsFileName, 22, 1, true);
+	switches = newSpriteSheetWithImagePath(switchesFileName, 9, 1, true);
+	radioWaves = newSpriteSheetWithImagePath(radioWavesFileName, 5, 1, false);
+	resetSwitch = newSpriteSheetWithImagePath(resetSwitchFileName, 2, 1, true);
+	kickIndicator = newSpriteSheetWithImagePath(kickIndicatorFileName, 9, 1, true);
 	playerWalkingAnimation = newSpriteAnimation(
 		player,
 		{

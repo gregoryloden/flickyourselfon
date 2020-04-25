@@ -2,11 +2,13 @@
 #include "Util/FileUtils.h"
 
 SpriteSheet::SpriteSheet(
-	objCounterParametersComma() SDL_Surface* imageSurface, int horizontalSpriteCount, int verticalSpriteCount)
+	objCounterParametersComma()
+	SDL_Surface* imageSurface,
+	int horizontalSpriteCount,
+	int verticalSpriteCount,
+	bool hasBottomRightPixelBorder)
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
 textureId(0)
-, spriteSheetWidth(imageSurface->w)
-, spriteSheetHeight(imageSurface->h)
 , spriteWidth(imageSurface->w / horizontalSpriteCount)
 , spriteHeight(imageSurface->h / verticalSpriteCount)
 , spriteTexPixelWidth(1.0f / (float)imageSurface->w)
@@ -26,25 +28,30 @@ textureId(0)
 	#endif
 	glTexImage2D(
 		GL_TEXTURE_2D, 0, GL_RGBA, imageSurface->w, imageSurface->h, 0, texFormat, GL_UNSIGNED_BYTE, imageSurface->pixels);
+
+	//the last row and column of pixels shouldn't get drawn as part of the sprite
+	if (hasBottomRightPixelBorder) {
+		//because of floored int division, and assuming (sheet size = 1 + sprite size * sprites), any sprite with 2 or more in a
+		//	direction should already have the proper value
+		if (horizontalSpriteCount == 1)
+			spriteWidth--;
+		if (verticalSpriteCount == 1)
+			spriteHeight--;
+	}
 }
 SpriteSheet::~SpriteSheet() {}
 //load the surface at the image path and then build a SpriteSheet
 SpriteSheet* SpriteSheet::produce(
-	objCounterParametersComma() const char* imagePath, int horizontalSpriteCount, int verticalSpriteCount)
+	objCounterParametersComma()
+	const char* imagePath,
+	int horizontalSpriteCount,
+	int verticalSpriteCount,
+	bool hasBottomRightPixelBorder)
 {
 	SDL_Surface* surface = FileUtils::loadImage(imagePath);
-	SpriteSheet* spriteSheet = newSpriteSheet(surface, horizontalSpriteCount, verticalSpriteCount);
+	SpriteSheet* spriteSheet = newSpriteSheet(surface, horizontalSpriteCount, verticalSpriteCount, hasBottomRightPixelBorder);
 	SDL_FreeSurface(surface);
 	return spriteSheet;
-}
-//the last row and column of pixels shouldn't get drawn as part of the sprite
-void SpriteSheet::removeBottomRightPixelBorder() {
-	//because of floored int division, and assuming (sheet width = 1 + sprite width * sprites), any sprite with 2 or more in a
-	//	direction should already have the proper value
-	if (spriteWidth == spriteSheetWidth)
-		spriteWidth--;
-	if (spriteHeight == spriteSheetHeight)
-		spriteHeight--;
 }
 //draw the specified region of the sprite sheet
 void SpriteSheet::renderSpriteSheetRegionAtScreenRegion(

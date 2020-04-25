@@ -5,12 +5,14 @@
 #include "GameState/DynamicValue.h"
 #include "GameState/EntityAnimation.h"
 #include "GameState/EntityState.h"
+#include "GameState/KickAction.h"
 #include "GameState/MapState/Rail.h"
 #include "GameState/MapState/ResetSwitch.h"
 #include "GameState/MapState/Switch.h"
 #include "Sprites/SpriteAnimation.h"
 #include "Sprites/SpriteRegistry.h"
 #include "Sprites/SpriteSheet.h"
+#include "Sprites/Text.h"
 #include "Util/Config.h"
 #include "Util/FileUtils.h"
 #include "Util/Logger.h"
@@ -85,6 +87,7 @@ int MapState::height = 1;
 #endif
 const string MapState::railOffsetFilePrefix = "rail ";
 const string MapState::lastActivatedSwitchColorFilePrefix = "lastActivatedSwitchColor ";
+const string MapState::finishedConnectionsTutorialFilePrefix = "finishedConnectionsTutorial ";
 MapState::MapState(objCounterParameters())
 : PooledReferenceCounter(objCounterArguments())
 , railStates()
@@ -93,6 +96,7 @@ MapState::MapState(objCounterParameters())
 , switchStates()
 , resetSwitchStates()
 , lastActivatedSwitchColor(-1)
+, finishedConnectionsTutorial(false)
 , switchesAnimationFadeInStartTicksTime(0)
 , shouldPlayRadioTowerAnimation(false)
 , radioWavesState(nullptr) {
@@ -364,7 +368,7 @@ int MapState::getScreenTopWorldY(EntityState* camera, int ticksTime) {
 #endif
 //get the center x of the radio tower antenna
 float MapState::antennaCenterWorldX() {
-	return (float)(radioTowerLeftXOffset + SpriteRegistry::radioTower->getSpriteSheetWidth() / 2);
+	return (float)(radioTowerLeftXOffset + SpriteRegistry::radioTower->getSpriteWidth() / 2);
 }
 //get the center y of the radio tower antenna
 float MapState::antennaCenterWorldY() {
@@ -378,9 +382,22 @@ bool MapState::tileHasResetSwitchBody(int x, int y) {
 	return (x == resetSwitch->getCenterX() && (y == resetSwitch->getBottomY() || y == resetSwitch->getBottomY() - 1));
 }
 //a switch can only be kicked if it's group 0 or if its color is activate
-bool MapState::canKickSwitch(short switchId) {
+KickActionType MapState::getSwitchKickActionType(short switchId) {
 	Switch* switch0 = switches[switchId & railSwitchIndexBitmask];
-	return (switch0->getGroup() == 0) != (lastActivatedSwitchColor >= switch0->getColor());
+	bool group0 = switch0->getGroup() == 0;
+	//we've already triggered this group 0 switch, or can't yet kick this puzzle switch
+	if (group0 == (lastActivatedSwitchColor >= switch0->getColor()))
+		return KickActionType::None;
+	if (group0) {
+		switch (switch0->getColor()) {
+			case squareColor: return KickActionType::Square;
+			case triangleColor: return KickActionType::Triangle;
+			case sawColor: return KickActionType::Saw;
+			case sineColor: return KickActionType::Sine;
+			default: return KickActionType::None;
+		}
+	} else
+		return KickActionType::Switch;
 }
 //check the height of all the tiles in the row, and return it if they're all the same or -1 if they differ
 char MapState::horizontalTilesHeight(int lowMapX, int highMapX, int mapY) {
@@ -398,7 +415,10 @@ void MapState::setIntroAnimationBootTile(bool showBootTile) {
 }
 //update the rails and switches
 void MapState::updateWithPreviousMapState(MapState* prev, int ticksTime) {
+	const Uint8* keyboardState = SDL_GetKeyboardState(nullptr);
 	lastActivatedSwitchColor = prev->lastActivatedSwitchColor;
+	finishedConnectionsTutorial =
+		prev->finishedConnectionsTutorial || (keyboardState[Config::keyBindings.showConnectionsKey] != 0);
 	shouldPlayRadioTowerAnimation = false;
 	switchesAnimationFadeInStartTicksTime = prev->switchesAnimationFadeInStartTicksTime;
 
@@ -604,9 +624,9 @@ void MapState::render(EntityState* camera, char playerZ, bool showConnections, i
 	radioWavesState.get()->render(camera, ticksTime);
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 }
-//draw any rails that are above the player
+//draw anything (rails, groups) that render above the player
 //assumes render() has already been called to set the rails above the player
-void MapState::renderRailsAbovePlayer(EntityState* camera, bool showConnections, int ticksTime) {
+void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int ticksTime) {
 	#ifdef EDITOR
 		//by default, show the connections
 		if (nonTilesHidingState / 2 == 0)
@@ -623,10 +643,22 @@ void MapState::renderRailsAbovePlayer(EntityState* camera, bool showConnections,
 	int screenTopWorldY = getScreenTopWorldY(camera, ticksTime);
 	for (int i = railsBelowPlayerZ; i < (int)railStatesByHeight.size(); i++)
 		railStatesByHeight[i]->render(screenLeftWorldX, screenTopWorldY);
-	//show groups above the player for all rails
 	if (showConnections) {
+		//show groups above the player for all rails
 		for (RailState* railState : railStates)
 			railState->renderGroups(screenLeftWorldX, screenTopWorldY);
+		if (!finishedConnectionsTutorial && SDL_GetKeyboardState(nullptr)[Config::keyBindings.showConnectionsKey] == 0) {
+			const char* showConnectionsText = "show connections: ";
+			const float leftX = 10.0f;
+			const float baselineY = 20.0f;
+			Text::Metrics showConnectionsMetrics = Text::getMetrics(showConnectionsText, 1.0f);
+			Text::render(showConnectionsText, leftX, baselineY, 1.0f);
+			Text::renderWithKeyBackground(
+				Config::KeyBindings::getKeyName(Config::keyBindings.showConnectionsKey),
+				leftX + showConnectionsMetrics.charactersWidth,
+				baselineY,
+				1.0f);
+		}
 	}
 }
 //render the groups for rails that are not in their default position that have a group that this reset switch also has
@@ -718,6 +750,8 @@ void MapState::logRailRide(short railId, int playerX, int playerY) {
 void MapState::saveState(ofstream& file) {
 	if (lastActivatedSwitchColor >= 0)
 		file << lastActivatedSwitchColorFilePrefix << (int)lastActivatedSwitchColor << "\n";
+	if (finishedConnectionsTutorial)
+		file << finishedConnectionsTutorialFilePrefix << "true\n";
 
 	#ifdef EDITOR
 		//don't save the rail states if we're saving the floor file
@@ -738,6 +772,8 @@ void MapState::saveState(ofstream& file) {
 bool MapState::loadState(string& line) {
 	if (StringUtils::startsWith(line, lastActivatedSwitchColorFilePrefix))
 		lastActivatedSwitchColor = (char)atoi(line.c_str() + lastActivatedSwitchColorFilePrefix.size());
+	else if (StringUtils::startsWith(line, finishedConnectionsTutorialFilePrefix))
+		finishedConnectionsTutorial = strcmp(line.c_str() + finishedConnectionsTutorialFilePrefix.size(), "true") == 0;
 	else if (StringUtils::startsWith(line, railOffsetFilePrefix)) {
 		const char* railIndexString = line.c_str() + railOffsetFilePrefix.size();
 		const char* offsetString = strchr(railIndexString, ' ') + 1;
@@ -755,6 +791,7 @@ void MapState::sortInitialRails() {
 //reset the rails and switches
 void MapState::resetMap() {
 	lastActivatedSwitchColor = -1;
+	finishedConnectionsTutorial = false;
 	for (RailState* railState : railStates)
 		railState->reset();
 }

@@ -3,8 +3,6 @@
 #define newKickAction(type, targetPlayerX, targetPlayerY, fallHeight, railSwitchId) \
 	produceWithArgs(KickAction, type, targetPlayerX, targetPlayerY, fallHeight, railSwitchId)
 
-class Rail;
-
 enum class KickActionType: int {
 	None = -1,
 	Climb = 0,
@@ -12,6 +10,10 @@ enum class KickActionType: int {
 	Rail = 2,
 	NoRail = 3,
 	Switch = 4,
+	Square = 5,
+	Triangle = 6,
+	Saw = 7,
+	Sine = 8,
 	ResetSwitch
 };
 class KickAction: public PooledReferenceCounter {
@@ -39,4 +41,5 @@ public:
 		float pTargetPlayerY,
 		char pFallHeight,
 		short pRailSwitchId);
+	void render(float centerX, float bottomY, bool hasRailsToReset);
 };

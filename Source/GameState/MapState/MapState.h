@@ -9,6 +9,7 @@ class ResetSwitch;
 class ResetSwitchState;
 class Switch;
 class SwitchState;
+enum class KickActionType: int;
 
 class MapState: public PooledReferenceCounter {
 public:
@@ -112,6 +113,7 @@ public:
 	static const float introAnimationCameraCenterY;
 	static const string railOffsetFilePrefix;
 	static const string lastActivatedSwitchColorFilePrefix;
+	static const string finishedConnectionsTutorialFilePrefix;
 
 private:
 	static char* tiles;
@@ -134,6 +136,7 @@ private:
 	vector<SwitchState*> switchStates;
 	vector<ResetSwitchState*> resetSwitchStates;
 	char lastActivatedSwitchColor;
+	bool finishedConnectionsTutorial;
 	int switchesAnimationFadeInStartTicksTime;
 	bool shouldPlayRadioTowerAnimation;
 	ReferenceCounterHolder<RadioWavesState> radioWavesState;
@@ -162,6 +165,7 @@ public:
 	}
 	bool getShouldPlayRadioTowerAnimation() { return shouldPlayRadioTowerAnimation; }
 	char getLastActivatedSwitchColor() { return lastActivatedSwitchColor; }
+	bool getFinishedConnectionsTutorial() { return finishedConnectionsTutorial; }
 	int getRadioWavesAnimationTicksDuration() { return radioWavesState.get()->getAnimationTicksDuration(); }
 	#ifdef EDITOR
 		static void setTile(int x, int y, char tile) { tiles[y * width + x] = tile; }
@@ -194,7 +198,7 @@ public:
 	static float antennaCenterWorldX();
 	static float antennaCenterWorldY();
 	static bool tileHasResetSwitchBody(int x, int y);
-	bool canKickSwitch(short switchId);
+	KickActionType getSwitchKickActionType(short switchId);
 	static char horizontalTilesHeight(int lowMapX, int highMapX, int mapY);
 	static void setIntroAnimationBootTile(bool showBootTile);
 	void updateWithPreviousMapState(MapState* prev, int ticksTime);
@@ -207,7 +211,7 @@ public:
 	void startSwitchesFadeInAnimation(int ticksTime);
 	void resetMatchingRails(Holder_RessetSwitchSegmentVector* segmentsHolder);
 	void render(EntityState* camera, char playerZ, bool showConnections, int ticksTime);
-	void renderRailsAbovePlayer(EntityState* camera, bool showConnections, int ticksTime);
+	void renderAbovePlayer(EntityState* camera, bool showConnections, int ticksTime);
 	bool renderGroupsForRailsToReset(EntityState* camera, short resetSwitchId, int ticksTime);
 	static void renderGroupRect(char group, GLint leftX, GLint topY, GLint rightX, GLint bottomY);
 	static void logGroup(char group, stringstream* message);

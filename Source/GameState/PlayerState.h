@@ -69,6 +69,7 @@ public:
 	virtual void setGhostSprite(bool show, float x, float y, int ticksTime);
 	virtual void mapKickSwitch(short switchId, bool allowRadioTowerAnimation, int ticksTime);
 	virtual void mapKickResetSwitch(short resetSwitchId, int ticksTime);
+	bool showTutorialConnectionsForKickAction();
 	short getKickActionResetSwitchId();
 	void updateWithPreviousPlayerState(PlayerState* prev, int ticksTime);
 private:
@@ -118,6 +119,7 @@ public:
 	void saveState(ofstream& file);
 	bool loadState(string& line);
 	void setInitialZ();
+	void reset();
 	#ifdef DEBUG
 		void setHighestZ();
 	#endif

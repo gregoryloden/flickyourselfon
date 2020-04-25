@@ -1,29 +1,35 @@
 #include "General/General.h"
 
-#define newSpriteSheet(imageSurface, horizontalSpriteCount, verticalSpriteCount) \
-	newWithArgs(SpriteSheet, imageSurface, horizontalSpriteCount, verticalSpriteCount)
-#define newSpriteSheetWithImagePath(imagePath, horizontalSpriteCount, verticalSpriteCount) \
-	produceWithArgs(SpriteSheet, imagePath, horizontalSpriteCount, verticalSpriteCount)
+#define newSpriteSheet(imageSurface, horizontalSpriteCount, verticalSpriteCount, hasBottomRightPixelBorder) \
+	newWithArgs(SpriteSheet, imageSurface, horizontalSpriteCount, verticalSpriteCount, hasBottomRightPixelBorder)
+#define newSpriteSheetWithImagePath(imagePath, horizontalSpriteCount, verticalSpriteCount, hasBottomRightPixelBorder) \
+	produceWithArgs(SpriteSheet, imagePath, horizontalSpriteCount, verticalSpriteCount, hasBottomRightPixelBorder)
 
 class SpriteSheet onlyInDebug(: public ObjCounter) {
 private:
 	GLuint textureId;
-	int spriteSheetWidth;
-	int spriteSheetHeight;
 	int spriteWidth;
 	int spriteHeight;
 	float spriteTexPixelWidth;
 	float spriteTexPixelHeight;
 
 public:
-	SpriteSheet(objCounterParametersComma() SDL_Surface* imageSurface, int horizontalSpriteCount, int verticalSpriteCount);
+	SpriteSheet(
+		objCounterParametersComma()
+		SDL_Surface* imageSurface,
+		int horizontalSpriteCount,
+		int verticalSpriteCount,
+		bool hasBottomRightPixelBorder);
 	virtual ~SpriteSheet();
 
-	int getSpriteSheetWidth() { return spriteSheetWidth; }
-	int getSpriteSheetHeight() { return spriteSheetHeight; }
+	int getSpriteWidth() { return spriteWidth; }
+	int getSpriteHeight() { return spriteHeight; }
 	static SpriteSheet* produce(
-		objCounterParametersComma() const char* imagePath, int horizontalSpriteCount, int verticalSpriteCount);
-	void removeBottomRightPixelBorder();
+		objCounterParametersComma()
+		const char* imagePath,
+		int horizontalSpriteCount,
+		int verticalSpriteCount,
+		bool hasBottomRightPixelBorder);
 	void renderSpriteSheetRegionAtScreenRegion(
 		int spriteLeftX,
 		int spriteTopY,

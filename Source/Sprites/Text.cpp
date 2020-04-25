@@ -66,8 +66,8 @@ vector<Text::GlyphRow*> Text::glyphRows;
 //load the font sprite sheet and find which glyphs we have
 void Text::loadFont() {
 	SDL_Surface* fontSurface = FileUtils::loadImage(fontFileName);
-	font = newSpriteSheet(fontSurface, 1, 1);
-	keyBackground = newSpriteSheetWithImagePath(keyBackgroundFileName, 1, 1);
+	font = newSpriteSheet(fontSurface, 1, 1, false);
+	keyBackground = newSpriteSheetWithImagePath(keyBackgroundFileName, 1, 1, false);
 	int imageWidth = fontSurface->w;
 
 	int* pixels = static_cast<int*>(fontSurface->pixels);
@@ -228,8 +228,8 @@ Text::Metrics Text::getKeyBackgroundMetrics(Metrics* textMetrics) {
 	Metrics metrics;
 	metrics.fontScale = textMetrics->fontScale;
 	metrics.charactersWidth =
-		MathUtils::max(targetKeyBackgroundWidth, keyBackground->getSpriteSheetWidth()) * metrics.fontScale;
-	metrics.aboveBaseline = (float)(keyBackground->getSpriteSheetHeight() - belowBaselineSpacing) * metrics.fontScale;
+		MathUtils::max(targetKeyBackgroundWidth, keyBackground->getSpriteWidth()) * metrics.fontScale;
+	metrics.aboveBaseline = (float)(keyBackground->getSpriteHeight() - belowBaselineSpacing) * metrics.fontScale;
 	metrics.belowBaseline = (float)belowBaselineSpacing * metrics.fontScale;
 	metrics.topPadding = metrics.fontScale;
 	metrics.bottomPadding = 0.0f;
@@ -260,11 +260,26 @@ void Text::render(const char* text, float leftX, float baselineY, float fontScal
 		leftX += (float)(glyphWidth + defaultInterCharacterSpacing) * fontScale;
 	}
 }
+//draw text with a key background behind it, with the key background placed at the left x
+void Text::renderWithKeyBackground(const char* text, float leftX, float baselineY, float fontScale) {
+	Metrics textMetrics = getMetrics(text, fontScale);
+	Metrics keyBackgroundMetrics = getKeyBackgroundMetrics(&textMetrics);
+	renderWithKeyBackgroundWithMetrics(text, leftX, baselineY, &textMetrics, &keyBackgroundMetrics);
+}
+//draw text with a key background behind it, with the key background placed at the left x, using the pre-computed metrics
+void Text::renderWithKeyBackgroundWithMetrics(
+	const char* text, float leftX, float baselineY, Metrics* textMetrics, Metrics* keyBackgroundMetrics)
+{
+	renderKeyBackground(leftX, baselineY, keyBackgroundMetrics);
+	leftX += (keyBackgroundMetrics->charactersWidth - textMetrics->charactersWidth) * 0.5f;
+	//the key background has 1 pixel on the left border and 3 on the right, render text 1 font pixel to the left
+	Text::render(text, leftX - textMetrics->fontScale, baselineY, textMetrics->fontScale);
+}
 //draw a key background to be drawn behind text
 void Text::renderKeyBackground(float leftX, float baselineY, Metrics* keyBackgroundMetrics) {
 	int originalBackgroundWidth = (int)(keyBackgroundMetrics->charactersWidth / keyBackgroundMetrics->fontScale);
-	int leftHalfSpriteWidth = keyBackground->getSpriteSheetWidth() / 2;
-	int rightHalfSpriteWidth = keyBackground->getSpriteSheetWidth() - leftHalfSpriteWidth - 1;
+	int leftHalfSpriteWidth = keyBackground->getSpriteWidth() / 2;
+	int rightHalfSpriteWidth = keyBackground->getSpriteWidth() - leftHalfSpriteWidth - 1;
 
 	GLint drawLeftMiddleX = (GLint)(leftX + (float)leftHalfSpriteWidth * keyBackgroundMetrics->fontScale);
 	GLint drawRightMiddleX =
@@ -276,13 +291,13 @@ void Text::renderKeyBackground(float leftX, float baselineY, Metrics* keyBackgro
 	//draw the left side
 	glEnable(GL_BLEND);
 	keyBackground->renderSpriteSheetRegionAtScreenRegion(
-		0, 0, leftHalfSpriteWidth, keyBackground->getSpriteSheetHeight(), (GLint)leftX, topY, drawLeftMiddleX, bottomY);
+		0, 0, leftHalfSpriteWidth, keyBackground->getSpriteHeight(), (GLint)leftX, topY, drawLeftMiddleX, bottomY);
 	//draw the middle section
 	keyBackground->renderSpriteSheetRegionAtScreenRegion(
 		leftHalfSpriteWidth,
 		0,
 		leftHalfSpriteWidth + 1,
-		keyBackground->getSpriteSheetHeight(),
+		keyBackground->getSpriteHeight(),
 		drawLeftMiddleX,
 		topY,
 		drawRightMiddleX,
@@ -291,8 +306,8 @@ void Text::renderKeyBackground(float leftX, float baselineY, Metrics* keyBackgro
 	keyBackground->renderSpriteSheetRegionAtScreenRegion(
 		leftHalfSpriteWidth + 1,
 		0,
-		keyBackground->getSpriteSheetWidth(),
-		keyBackground->getSpriteSheetHeight(),
+		keyBackground->getSpriteWidth(),
+		keyBackground->getSpriteHeight(),
 		drawRightMiddleX,
 		topY,
 		(GLint)(leftX + keyBackgroundMetrics->charactersWidth),

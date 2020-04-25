@@ -123,6 +123,21 @@ void PlayerState::mapKickSwitch(short switchId, bool allowRadioTowerAnimation, i
 void PlayerState::mapKickResetSwitch(short resetSwitchId, int ticksTime) {
 	mapState.get()->flipResetSwitch(resetSwitchId, ticksTime);
 }
+//return whether we have a kick action where we can show connections
+bool PlayerState::showTutorialConnectionsForKickAction() {
+	KickAction* kickAction = availableKickAction.get();
+	if (kickAction == nullptr)
+		return false;
+	switch (kickAction->getType()) {
+		//show connections for rails, reset switches and puzzle switches
+		case KickActionType::Rail:
+		case KickActionType::ResetSwitch:
+		case KickActionType::Switch:
+			return true;
+		default:
+			return false;
+	}
+}
 //if we have a reset switch kick action, return its id
 short PlayerState::getKickActionResetSwitchId() {
 	return availableKickAction.get() != nullptr && availableKickAction.get()->getType() == KickActionType::ResetSwitch
@@ -462,10 +477,13 @@ bool PlayerState::setSwitchKickAction(float xPosition, float yPosition) {
 		else if (MapState::tileHasSwitch(switchMapX, switchBottomMapY))
 			switchId = MapState::getRailSwitchId(switchMapX, switchBottomMapY);
 	}
-	if (switchId == MapState::absentRailSwitchId || !mapState.get()->canKickSwitch(switchId))
+	if (switchId == MapState::absentRailSwitchId)
+		return false;
+	KickActionType switchKickActionType = mapState.get()->getSwitchKickActionType(switchId);
+	if (switchKickActionType == KickActionType::None)
 		return false;
 
-	availableKickAction.set(newKickAction(KickActionType::Switch, 0, 0, 0, switchId));
+	availableKickAction.set(newKickAction(switchKickActionType, 0, 0, 0, switchId));
 	return true;
 }
 //set a reset switch kick action if we can reset switch
@@ -695,6 +713,10 @@ void PlayerState::beginKicking(int ticksTime) {
 			kickRail(kickAction->getRailSwitchId(), xPosition, yPosition, ticksTime);
 			break;
 		case KickActionType::Switch:
+		case KickActionType::Square:
+		case KickActionType::Triangle:
+		case KickActionType::Saw:
+		case KickActionType::Sine:
 			kickSwitch(kickAction->getRailSwitchId(), ticksTime);
 			break;
 		case KickActionType::ResetSwitch:
@@ -1106,30 +1128,8 @@ void PlayerState::renderKickAction(EntityState* camera, bool hasRailsToReset, in
 	if (!hasBoot || availableKickAction.get() == nullptr)
 		return;
 	float renderCenterX = getRenderCenterScreenX(camera,  ticksTime);
-	float renderCenterY = getRenderCenterScreenY(camera,  ticksTime);
-	bool showKickIndicator = false;
-	KickActionType kickActionType = availableKickAction.get()->getType();
-	switch (kickActionType) {
-		case KickActionType::Climb: showKickIndicator = Config::kickIndicators.climb; break;
-		case KickActionType::Fall: showKickIndicator = Config::kickIndicators.fall; break;
-		case KickActionType::Rail:
-		case KickActionType::NoRail: showKickIndicator = Config::kickIndicators.rail; break;
-		case KickActionType::Switch: showKickIndicator = Config::kickIndicators.switch0; break;
-		case KickActionType::ResetSwitch: {
-			if (!Config::kickIndicators.resetSwitch || !hasRailsToReset)
-				return;
-			Text::Metrics metrics = Text::getMetrics("Reset", 1.0f);
-			Text::render("Reset", renderCenterX - metrics.charactersWidth * 0.5f, renderCenterY - 11.5f, 1.0f);
-			return;
-		}
-		default:
-			return;
-	}
-	if (!showKickIndicator)
-		return;
-	glEnable(GL_BLEND);
-	SpriteRegistry::kickIndicator->renderSpriteCenteredAtScreenPosition(
-		(int)kickActionType, 0, renderCenterX, renderCenterY - 17.0f);
+	float renderTopY = getRenderCenterScreenY(camera,  ticksTime) - (float)SpriteRegistry::player->getSpriteHeight() / 2.0f;
+	availableKickAction.get()->render(renderCenterX, renderTopY, hasRailsToReset);
 }
 //save this player state to the file
 void PlayerState::saveState(ofstream& file) {
@@ -1154,6 +1154,14 @@ void PlayerState::setInitialZ() {
 	z = MapState::getHeight(
 		(int)x.get()->getValue(0) / MapState::tileSize,
 		(int)(y.get()->getValue(0) + boundingBoxCenterYOffset) / MapState::tileSize);
+}
+//reset any state on the player that shouldn't exist for the intro animation
+void PlayerState::reset() {
+	availableKickAction.set(nullptr);
+	z = 0;
+	hasBoot = false;
+	autoClimbFallStartTicksTime = -1;
+	canImmediatelyAutoClimbFall = false;
 }
 #ifdef DEBUG
 	//move the player as high as possible so that all rails render under

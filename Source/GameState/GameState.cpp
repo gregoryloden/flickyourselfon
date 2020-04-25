@@ -285,11 +285,13 @@ void GameState::startRadioTowerAnimation(int ticksTime) {
 //render this state, which was deemed to be the last state to need rendering
 void GameState::render(int ticksTime) {
 	int gameTicksTime = (pauseState.get() != nullptr ? pauseStartTicksTime : ticksTime) - gameTimeOffsetTicksDuration;
-	bool showConnections = SDL_GetKeyboardState(nullptr)[Config::keyBindings.showConnectionsKey] != 0;
+	bool showConnections =
+		SDL_GetKeyboardState(nullptr)[Config::keyBindings.showConnectionsKey] != 0
+			|| (!mapState.get()->getFinishedConnectionsTutorial() && playerState.get()->showTutorialConnectionsForKickAction());
 	int playerZ = playerState.get()->getZ();
 	mapState.get()->render(camera, playerZ, showConnections, gameTicksTime);
 	playerState.get()->render(camera, gameTicksTime);
-	mapState.get()->renderRailsAbovePlayer(camera, showConnections, gameTicksTime);
+	mapState.get()->renderAbovePlayer(camera, showConnections, gameTicksTime);
 
 	short kickActionResetSwitchId = playerState.get()->getKickActionResetSwitchId();
 	bool hasRailsToReset = false;
@@ -803,11 +805,8 @@ void GameState::resetGame(int ticksTime) {
 	sawIntroAnimation = false;
 	gameTimeOffsetTicksDuration = 0;
 	pauseState.set(nullptr);
-	mapState.set(newMapState());
 	mapState.get()->resetMap();
-	PlayerState* resetPlayerState = newPlayerState(mapState.get());
-	resetPlayerState->copyPlayerState(playerState.get());
-	playerState.set(resetPlayerState);
+	playerState.get()->reset();
 	dynamicCameraAnchor.set(newDynamicCameraAnchor());
 
 	beginIntroAnimation(ticksTime);

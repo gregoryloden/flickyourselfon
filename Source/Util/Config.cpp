@@ -1,4 +1,4 @@
-#include "Config.h"
+﻿#include "Config.h"
 #include "Util/FileUtils.h"
 #include "Util/StringUtils.h"
 
@@ -20,6 +20,16 @@ void Config::KeyBindings::set(const KeyBindings* other) {
 	leftKey = other->leftKey;
 	kickKey = other->kickKey;
 	showConnectionsKey = other->showConnectionsKey;
+}
+//get the name for this key code
+const char* Config::KeyBindings::getKeyName(SDL_Scancode key) {
+	switch (key) {
+		case SDL_SCANCODE_LEFT: return u8"←";
+		case SDL_SCANCODE_UP: return u8"↑";
+		case SDL_SCANCODE_RIGHT: return u8"→";
+		case SDL_SCANCODE_DOWN: return u8"↓";
+		default: return SDL_GetKeyName(SDL_GetKeyFromScancode(key));
+	}
 }
 
 //////////////////////////////// Config::KickIndicators ////////////////////////////////

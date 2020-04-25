@@ -16,6 +16,7 @@ public:
 		virtual ~KeyBindings();
 
 		void set(const KeyBindings* other);
+		static const char* getKeyName(SDL_Scancode key);
 	};
 	//Should only be allocated within an object, on the stack, or as a static object
 	class KickIndicators {

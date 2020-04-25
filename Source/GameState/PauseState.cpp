@@ -175,27 +175,16 @@ void PauseState::KeyBindingOption::renderSelecting(float leftX, float baselineY,
 	if (selecting)
 		Text::render(keySelectingText, leftX, baselineY, cachedKeySelectingTextFontScale);
 	//render the key background and name
-	else {
-		Text::renderKeyBackground(leftX, baselineY, &cachedKeyBackgroundMetrics);
-		leftX += (cachedKeyBackgroundMetrics.charactersWidth - cachedKeyTextMetrics.charactersWidth) * 0.5f;
-		//the key background has 1 pixel on the left border and 3 on the right, render text 1 font pixel to the left
-		Text::render(cachedKeyName.c_str(), leftX - cachedKeyTextMetrics.fontScale, baselineY, cachedKeyTextMetrics.fontScale);
-	}
+	else
+		Text::renderWithKeyBackgroundWithMetrics(
+			cachedKeyName.c_str(), leftX, baselineY, &cachedKeyTextMetrics, &cachedKeyBackgroundMetrics);
 }
 //if we have a new bound key, cache its metrics
 void PauseState::KeyBindingOption::ensureCachedKeyMetrics(bool selecting) {
 	SDL_Scancode currentBoundKeyScancode = getBoundKeyScancode();
 	if (currentBoundKeyScancode != cachedKeyScancode) {
 		cachedKeyScancode = currentBoundKeyScancode;
-		switch (currentBoundKeyScancode) {
-			case SDL_SCANCODE_LEFT: cachedKeyName = u8"←"; break;
-			case SDL_SCANCODE_UP: cachedKeyName = u8"↑"; break;
-			case SDL_SCANCODE_RIGHT: cachedKeyName = u8"→"; break;
-			case SDL_SCANCODE_DOWN: cachedKeyName = u8"↓"; break;
-			default:
-				cachedKeyName = SDL_GetKeyName(SDL_GetKeyFromScancode(currentBoundKeyScancode));
-				break;
-		}
+		cachedKeyName = Config::KeyBindings::getKeyName(currentBoundKeyScancode);
 		cachedKeyTextMetrics = Text::getMetrics(cachedKeyName.c_str(), PauseOption::getDisplayTextMetrics().fontScale);
 		cachedKeyBackgroundMetrics = Text::getKeyBackgroundMetrics(&cachedKeyTextMetrics);
 	}
