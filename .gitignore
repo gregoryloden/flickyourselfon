@@ -1,5 +1,6 @@
 *.db
 *.lnk
+builds/*
 Debug/*
 Release/*
 *.vs

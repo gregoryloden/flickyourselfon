@@ -26,7 +26,7 @@ const float GameState::sawSwitchesAnimationCenterWorldX = 100.0f; //todo: pick a
 const float GameState::sawSwitchesAnimationCenterWorldY = 100.0f; //todo: pick a position
 const float GameState::sineSwitchesAnimationCenterWorldX = 100.0f; //todo: pick a position
 const float GameState::sineSwitchesAnimationCenterWorldY = 100.0f; //todo: pick a position
-const char* GameState::titleGameName = "Flick Yourself On";
+const char* GameState::titleGameName = "Kick Yourself On";
 const char* GameState::titleCreditsLine1 = "A game by";
 const char* GameState::titleCreditsLine2 = "Gregory Loden";
 const char* GameState::titlePostCreditsMessage = "Thanks for playing!";
@@ -40,9 +40,9 @@ const char* GameState::goalExplanationMessageLine1 = "Can you";
 const char* GameState::goalExplanationMessageLine2 = "guide this person";
 const char* GameState::goalExplanationMessageLine3 = "to turn it on?";
 #ifdef DEBUG
-	const char* GameState::replayFileName = "fyo_replay.log";
+	const char* GameState::replayFileName = "kyo_replay.log";
 #endif
-const char* GameState::savedGameFileName = "fyo.sav";
+const char* GameState::savedGameFileName = "kyo.sav";
 const string GameState::sawIntroAnimationFilePrefix = "sawIntroAnimation ";
 GameState::GameState(objCounterParameters())
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)

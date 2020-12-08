@@ -45,8 +45,8 @@ bool Logger::threadRunning = false;
 thread* Logger::logThread = nullptr;
 Logger::LogQueueStack* Logger::logQueueStack = nullptr;
 vector<Logger*> Logger::loggers;
-Logger Logger::debugLogger ("fyo_debug.log", ios::out | ios::trunc);
-Logger Logger::gameplayLogger ("fyo_gameplay.log", ios::out | ios::app);
+Logger Logger::debugLogger ("kyo_debug.log", ios::out | ios::trunc);
+Logger Logger::gameplayLogger ("kyo_gameplay.log", ios::out | ios::app);
 Logger::Logger(const char* pFileName, ios_base::openmode pFileFlags)
 : fileName(pFileName)
 , file(nullptr)

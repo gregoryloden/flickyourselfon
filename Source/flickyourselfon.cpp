@@ -46,7 +46,7 @@ int gameMain() {
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 	SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl");
 	window = SDL_CreateWindow(
-		"Flick Yourself On",
+		GameState::titleGameName,
 		SDL_WINDOWPOS_CENTERED,
 		SDL_WINDOWPOS_CENTERED,
 		(int)((float)Config::windowScreenWidth * Config::defaultPixelWidth),

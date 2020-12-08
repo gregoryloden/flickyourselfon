@@ -37,11 +37,11 @@ private:
 	static const int bootExplanationFadeOutTicksDuration = 500;
 	static const int radioTowerExplanationFadeInStartTicksTime = 16000;
 	static const int radioTowerExplanationFadeInTicksDuration = 500;
-	static const int radioTowerExplanationDisplayTicksDuration = 3000;
+	static const int radioTowerExplanationDisplayTicksDuration = 3500;
 	static const int radioTowerExplanationFadeOutTicksDuration = 500;
 	static const int goalExplanationFadeInStartTicksTime = 23000;
 	static const int goalExplanationFadeInTicksDuration = 500;
-	static const int goalExplanationDisplayTicksDuration = 2000;
+	static const int goalExplanationDisplayTicksDuration = 2500;
 	static const int goalExplanationFadeOutTicksDuration = 500;
 	//switches color activation timing
 	static const int radioTowerInitialPauseAnimationTicks = 1500;
@@ -62,7 +62,9 @@ private:
 	static const float sineSwitchesAnimationCenterWorldX;
 	static const float sineSwitchesAnimationCenterWorldY;
 	//title screen and intro explanation text
+public:
 	static const char* titleGameName;
+private:
 	static const char* titleCreditsLine1;
 	static const char* titleCreditsLine2;
 	static const char* titlePostCreditsMessage;

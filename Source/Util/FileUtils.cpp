@@ -8,7 +8,7 @@
 
 const string FileUtils::imagesFolder = "images/";
 #ifdef __APPLE__
-	const char* FileUtils::fileIoIntermediatePath = "/Library/Application Support/flickyourselfon";
+	const char* FileUtils::fileIoIntermediatePath = "/Library/Application Support/kickyourselfon";
 #endif
 //load an image
 SDL_Surface* FileUtils::loadImage(const char *imagePath) {

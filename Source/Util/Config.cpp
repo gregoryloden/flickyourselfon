@@ -55,7 +55,7 @@ const float Config::backgroundColorRed = 3.0f / 16.0f;
 const float Config::backgroundColorGreen = 0.0f;
 const float Config::backgroundColorBlue = 3.0f / 16.0f;
 const Config::KeyBindings Config::defaultKeyBindings;
-const char* Config::optionsFileName = "fyo.options";
+const char* Config::optionsFileName = "kyo.options";
 const string Config::upKeyBindingFilePrefix = "upKey ";
 const string Config::rightKeyBindingFilePrefix = "rightKey ";
 const string Config::downKeyBindingFilePrefix = "downKey ";
