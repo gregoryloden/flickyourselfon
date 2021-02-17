@@ -506,34 +506,40 @@
 		MapState::setHeight(x, newFloorY, newHeight);
 
 		//we replaced the floor with a wall, just set the tile
-		if (replacementHeight % 2 != 0)
+		if (replacementHeight % 2 != 0) {
 			MapState::setTile(x, y, MapState::tileWallFirst);
+			ShuffleTileButton::shuffleTile(x, y);
 		//we copied an adjacent floor tile, set the right one
-		else
-			MapState::setAppropriateDefaultFloorTile(x, y, replacementHeight);
-		MapState::setAppropriateDefaultFloorTile(x, newFloorY, newHeight);
+		} else
+			setAppropriateDefaultFloorTile(x, y, replacementHeight);
+		setAppropriateDefaultFloorTile(x, newFloorY, newHeight);
 		//set the heights for the old adjacent tiles, whether they match the replacement height or the old height
-		MapState::setAppropriateDefaultFloorTile(x - 1, y, height);
-		MapState::setAppropriateDefaultFloorTile(x + 1, y, height);
+		setAppropriateDefaultFloorTile(x - 1, y, height);
+		setAppropriateDefaultFloorTile(x + 1, y, height);
 		if (replacementHeight % 2 == 0) {
-			MapState::setAppropriateDefaultFloorTile(x - 1, y, replacementHeight);
-			MapState::setAppropriateDefaultFloorTile(x + 1, y, replacementHeight);
+			setAppropriateDefaultFloorTile(x - 1, y, replacementHeight);
+			setAppropriateDefaultFloorTile(x + 1, y, replacementHeight);
 		}
 		//set the heights for the new adjacent tiles, whether they match the new height or the old height
-		MapState::setAppropriateDefaultFloorTile(x - 1, newFloorY, height);
-		MapState::setAppropriateDefaultFloorTile(x - 1, newFloorY, newHeight);
-		MapState::setAppropriateDefaultFloorTile(x + 1, newFloorY, height);
-		MapState::setAppropriateDefaultFloorTile(x + 1, newFloorY, newHeight);
+		setAppropriateDefaultFloorTile(x - 1, newFloorY, height);
+		setAppropriateDefaultFloorTile(x - 1, newFloorY, newHeight);
+		setAppropriateDefaultFloorTile(x + 1, newFloorY, height);
+		setAppropriateDefaultFloorTile(x + 1, newFloorY, newHeight);
 		//and also set the tile below if we lowered this tile and the one below is a floor tile
 		if (!isRaiseTileButton) {
 			char belowHeight = MapState::getHeight(x, newFloorY + 1);
 			if (belowHeight % 2 == 0)
-				MapState::setAppropriateDefaultFloorTile(x, newFloorY + 1, belowHeight);
+				setAppropriateDefaultFloorTile(x, newFloorY + 1, belowHeight);
 		}
 	}
 	//set the drag action so that we don't raise/lower tiles while dragging
 	void Editor::RaiseLowerTileButton::postPaint() {
 		lastMouseDragAction = MouseDragAction::RaiseLowerTile;
+	}
+	//set the default floor tile and then randomize it
+	void Editor::RaiseLowerTileButton::setAppropriateDefaultFloorTile(int x, int y, char expectedFloorHeight) {
+		MapState::setAppropriateDefaultFloorTile(x, y, expectedFloorHeight);
+		ShuffleTileButton::shuffleTile(x, y);
 	}
 
 	//////////////////////////////// Editor::ShuffleTileButton ////////////////////////////////
@@ -567,31 +573,42 @@
 	void Editor::ShuffleTileButton::paintMap(int x, int y) {
 		//if we're only painting one tile, ensure it changes
 		int attempts =
-			selectedPaintBoxXRadiusButton->getRadius() == 0 && selectedPaintBoxYRadiusButton->getRadius() == 0 ? 1000 : 1;
+				selectedPaintBoxXRadiusButton->getRadius() == 0
+					&& selectedPaintBoxYRadiusButton->getRadius() == 0
+					&& !evenPaintBoxXRadiusButton->isSelected
+					&& !evenPaintBoxYRadiusButton->isSelected
+			? 1000
+			: 1;
 		for (; attempts > 0; attempts--) {
-			char oldTile = MapState::getTile(x, y);
-			char newTile;
-			if (oldTile >= MapState::tileFloorFirst && oldTile <= MapState::tileFloorLast)
-				newTile = (char)floorTileDistribution(*randomEngine);
-			else if (oldTile >= MapState::tileWallFirst && oldTile <= MapState::tileWallLast)
-				newTile = (char)wallTileDistribution(*randomEngine);
-			else if (oldTile >= MapState::tilePlatformRightFloorFirst && oldTile <= MapState::tilePlatformRightFloorLast)
-				newTile = (char)platformRightFloorTileDistribution(*randomEngine);
-			else if (oldTile >= MapState::tilePlatformLeftFloorFirst && oldTile <= MapState::tilePlatformLeftFloorLast)
-				newTile = (char)platformLeftFloorTileDistribution(*randomEngine);
-			else if (oldTile >= MapState::tilePlatformTopFloorFirst && oldTile <= MapState::tilePlatformTopFloorLast)
-				newTile = (char)platformTopFloorTileDistribution(*randomEngine);
-			else if (oldTile >= MapState::tileGroundLeftFloorFirst && oldTile <= MapState::tileGroundLeftFloorLast)
-				newTile = (char)groundLeftFloorTileDistribution(*randomEngine);
-			else if (oldTile >= MapState::tileGroundRightFloorFirst && oldTile <= MapState::tileGroundRightFloorLast)
-				newTile = (char)groundRightFloorTileDistribution(*randomEngine);
-			else
+			if (shuffleTile(x, y))
 				return;
-			if (newTile != oldTile) {
-				MapState::setTile(x, y, newTile);
-				return;
-			}
 		}
+	}
+	//assign a new value to the tile if possible
+	//returns true if a new value was assigned, or was not eligible to be asssigned
+	bool Editor::ShuffleTileButton::shuffleTile(int x, int y) {
+		char oldTile = MapState::getTile(x, y);
+		char newTile;
+		if (oldTile >= MapState::tileFloorFirst && oldTile <= MapState::tileFloorLast)
+			newTile = (char)floorTileDistribution(*randomEngine);
+		else if (oldTile >= MapState::tileWallFirst && oldTile <= MapState::tileWallLast)
+			newTile = (char)wallTileDistribution(*randomEngine);
+		else if (oldTile >= MapState::tilePlatformRightFloorFirst && oldTile <= MapState::tilePlatformRightFloorLast)
+			newTile = (char)platformRightFloorTileDistribution(*randomEngine);
+		else if (oldTile >= MapState::tilePlatformLeftFloorFirst && oldTile <= MapState::tilePlatformLeftFloorLast)
+			newTile = (char)platformLeftFloorTileDistribution(*randomEngine);
+		else if (oldTile >= MapState::tilePlatformTopFloorFirst && oldTile <= MapState::tilePlatformTopFloorLast)
+			newTile = (char)platformTopFloorTileDistribution(*randomEngine);
+		else if (oldTile >= MapState::tileGroundLeftFloorFirst && oldTile <= MapState::tileGroundLeftFloorLast)
+			newTile = (char)groundLeftFloorTileDistribution(*randomEngine);
+		else if (oldTile >= MapState::tileGroundRightFloorFirst && oldTile <= MapState::tileGroundRightFloorLast)
+			newTile = (char)groundRightFloorTileDistribution(*randomEngine);
+		else
+			return true;
+		if (newTile == oldTile)
+			return false;
+		MapState::setTile(x, y, newTile);
+		return true;
 	}
 
 	//////////////////////////////// Editor::SwitchButton ////////////////////////////////

@@ -192,6 +192,8 @@ private:
 		virtual void onClick();
 		virtual void paintMap(int x, int y);
 		virtual void postPaint();
+	private:
+		static void setAppropriateDefaultFloorTile(int x, int y, char expectedFloorHeight);
 	};
 	class ShuffleTileButton: public Button {
 	public:
@@ -205,6 +207,7 @@ private:
 		virtual void render();
 		virtual void onClick();
 		virtual void paintMap(int x, int y);
+		static bool shuffleTile(int x, int y);
 	};
 	class SwitchButton: public Button {
 	public:
