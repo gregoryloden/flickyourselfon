@@ -44,8 +44,8 @@ baseHeight(pBaseHeight)
 //give a default tile offset extending to the lowest height, we'll correct it as we add segments
 , maxTileOffset(pBaseHeight / 2)
 #ifdef EDITOR
-	, segmentsMutex()
-	, isDeleted(false)
+	, editorSegmentsMutex()
+	, editorIsDeleted(false)
 #endif
 {
 	segments->push_back(Segment(x, y, 0));
@@ -166,9 +166,9 @@ void Rail::addSegment(int x, int y) {
 //render this rail at its position by rendering each segment
 void Rail::render(int screenLeftWorldX, int screenTopWorldY, float tileOffset) {
 	#ifdef EDITOR
-		if (isDeleted)
+		if (editorIsDeleted)
 			return;
-		MutexLocker mutexLocker (segmentsMutex);
+		MutexLocker mutexLocker (editorSegmentsMutex);
 	#endif
 
 	setSegmentColor(MathUtils::fmin(1.0f, tileOffset / 3.0f), color);
@@ -183,9 +183,9 @@ void Rail::render(int screenLeftWorldX, int screenTopWorldY, float tileOffset) {
 //render the shadow below the rail
 void Rail::renderShadow(int screenLeftWorldX, int screenTopWorldY) {
 	#ifdef EDITOR
-		if (isDeleted)
+		if (editorIsDeleted)
 			return;
-		MutexLocker mutexLocker (segmentsMutex);
+		MutexLocker mutexLocker (editorSegmentsMutex);
 	#endif
 	glEnable(GL_BLEND);
 
@@ -204,9 +204,9 @@ void Rail::renderShadow(int screenLeftWorldX, int screenTopWorldY) {
 //render groups where the rail would be at 0 offset
 void Rail::renderGroups(int screenLeftWorldX, int screenTopWorldY) {
 	#ifdef EDITOR
-		if (isDeleted)
+		if (editorIsDeleted)
 			return;
-		MutexLocker mutexLocker (segmentsMutex);
+		MutexLocker mutexLocker (editorSegmentsMutex);
 	#endif
 
 	int lastSegmentIndex = (int)segments->size() - 1;
@@ -280,7 +280,7 @@ void Rail::renderSegment(int screenLeftWorldX, int screenTopWorldY, float tileOf
 }
 #ifdef EDITOR
 	//remove this group from the rail if it contains it
-	void Rail::removeGroup(char group) {
+	void Rail::editorRemoveGroup(char group) {
 		for (int i = 0; i < (int)groups.size(); i++) {
 			if (groups[i] == group) {
 				groups.erase(groups.begin() + i);
@@ -289,8 +289,8 @@ void Rail::renderSegment(int screenLeftWorldX, int screenTopWorldY, float tileOf
 		}
 	}
 	//remove the segment on this tile from the rail
-	void Rail::removeSegment(int x, int y) {
-		MutexLocker mutexLocker (segmentsMutex);
+	void Rail::editorRemoveSegment(int x, int y) {
+		MutexLocker mutexLocker (editorSegmentsMutex);
 		Segment& end = segments->back();
 		if (y == end.y && x == end.x)
 			segments->pop_back();
@@ -305,14 +305,14 @@ void Rail::renderSegment(int screenLeftWorldX, int screenTopWorldY, float tileOf
 		}
 	}
 	//adjust the initial tile offset of this rail if we're clicking on one of its end segments
-	void Rail::adjustInitialTileOffset(int x, int y, char tileOffset) {
+	void Rail::editorAdjustInitialTileOffset(int x, int y, char tileOffset) {
 		Segment& start = segments->front();
 		Segment& end = segments->back();
 		if ((x == start.x && y == start.y) || (x == end.x && y == end.y))
 			initialTileOffset = MathUtils::max(0, MathUtils::min(maxTileOffset, initialTileOffset + tileOffset));
 	}
 	//we're saving this rail to the floor file, get the data we need at this tile
-	char Rail::getFloorSaveData(int x, int y) {
+	char Rail::editorGetFloorSaveData(int x, int y) {
 		Segment& start = segments->front();
 		if (x == start.x && y == start.y)
 			return (color << MapState::floorRailSwitchColorDataShift)

@@ -12,7 +12,7 @@ leftX(pLeftX)
 , color(pColor)
 , group(pGroup)
 #ifdef EDITOR
-	, isDeleted(false)
+	, editorIsDeleted(false)
 #endif
 {
 }
@@ -27,7 +27,7 @@ void Switch::render(
 	bool showGroup)
 {
 	#ifdef EDITOR
-		if (isDeleted)
+		if (editorIsDeleted)
 			return;
 		//always render the activated color for all switches up to sine
 		lastActivatedSwitchColor = MapState::sineColor;
@@ -69,12 +69,12 @@ void Switch::render(
 }
 #ifdef EDITOR
 	//update the position of this switch
-	void Switch::moveTo(int newLeftX, int newTopY) {
+	void Switch::editorMoveTo(int newLeftX, int newTopY) {
 		leftX = newLeftX;
 		topY = newTopY;
 	}
 	//we're saving this switch to the floor file, get the data we need at this tile
-	char Switch::getFloorSaveData(int x, int y) {
+	char Switch::editorGetFloorSaveData(int x, int y) {
 		//head byte, write our color
 		if (x == leftX && y == topY)
 			return (color << MapState::floorRailSwitchColorDataShift) | MapState::floorSwitchHeadValue;

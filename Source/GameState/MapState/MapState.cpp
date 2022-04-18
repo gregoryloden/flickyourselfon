@@ -83,7 +83,7 @@ vector<ResetSwitch*> MapState::resetSwitches;
 int MapState::width = 1;
 int MapState::height = 1;
 #ifdef EDITOR
-	int MapState::nonTilesHidingState = 1;
+	int MapState::editorNonTilesHidingState = 1;
 #endif
 const string MapState::railOffsetFilePrefix = "rail ";
 const string MapState::lastActivatedSwitchColorFilePrefix = "lastActivatedSwitchColor ";
@@ -571,13 +571,13 @@ void MapState::render(EntityState* camera, char playerZ, bool showConnections, i
 	}
 
 	#ifdef EDITOR
-		if (showConnections == (nonTilesHidingState % 2 == 1))
-			nonTilesHidingState = (nonTilesHidingState + 1) % 6;
+		if (showConnections == (editorNonTilesHidingState % 2 == 1))
+			editorNonTilesHidingState = (editorNonTilesHidingState + 1) % 6;
 		//by default, show the connections
-		if (nonTilesHidingState / 2 == 0)
+		if (editorNonTilesHidingState / 2 == 0)
 			showConnections = true;
 		//on the first press of the show-connections button, hide the connections
-		else if (nonTilesHidingState / 2 == 1)
+		else if (editorNonTilesHidingState / 2 == 1)
 			showConnections = false;
 		//on the 2nd press of the show-connections button, hide everything other than the tiles
 		else
@@ -629,10 +629,10 @@ void MapState::render(EntityState* camera, char playerZ, bool showConnections, i
 void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int ticksTime) {
 	#ifdef EDITOR
 		//by default, show the connections
-		if (nonTilesHidingState / 2 == 0)
+		if (editorNonTilesHidingState / 2 == 0)
 			showConnections = true;
 		//on the first press of the show-connections button, hide the connections
-		else if (nonTilesHidingState / 2 == 1)
+		else if (editorNonTilesHidingState / 2 == 1)
 			showConnections = false;
 		//on the 2nd press of the show-connections button, hide everything other than the tiles
 		else
@@ -798,7 +798,7 @@ void MapState::resetMap() {
 #ifdef EDITOR
 	//examine the neighboring tiles and pick an appropriate default tile, but only if we match the expected floor height
 	//wall tiles and floor tiles of a different height will be ignored
-	void MapState::setAppropriateDefaultFloorTile(int x, int y, char expectedFloorHeight) {
+	void MapState::editorSetAppropriateDefaultFloorTile(int x, int y, char expectedFloorHeight) {
 		char height = getHeight(x, y);
 		if (height != expectedFloorHeight)
 			return;
@@ -808,40 +808,40 @@ void MapState::resetMap() {
 		char leftHeight = getHeight(leftX, y);
 		char rightHeight = getHeight(rightX, y);
 		bool leftIsBelow = leftHeight < height || leftHeight == emptySpaceHeight;
-		bool leftIsAbove = leftHeight > height && hasFloorTileCreatingShadowForHeight(leftX, y, height);
+		bool leftIsAbove = leftHeight > height && editorHasFloorTileCreatingShadowForHeight(leftX, y, height);
 		bool rightIsBelow = rightHeight < height || rightHeight == emptySpaceHeight;
-		bool rightIsAbove = rightHeight > height && hasFloorTileCreatingShadowForHeight(rightX, y, height);
+		bool rightIsAbove = rightHeight > height && editorHasFloorTileCreatingShadowForHeight(rightX, y, height);
 
 		//this tile is higher than the one above it
 		char topHeight = getHeight(x, y - 1);
 		if (height > topHeight || topHeight == emptySpaceHeight) {
 			if (leftIsAbove)
-				setTile(x, y, tilePlatformTopGroundLeftFloor);
+				editorSetTile(x, y, tilePlatformTopGroundLeftFloor);
 			else if (leftIsBelow)
-				setTile(x, y, tilePlatformTopLeftFloor);
+				editorSetTile(x, y, tilePlatformTopLeftFloor);
 			else if (rightIsAbove)
-				setTile(x, y, tilePlatformTopGroundRightFloor);
+				editorSetTile(x, y, tilePlatformTopGroundRightFloor);
 			else if (rightIsBelow)
-				setTile(x, y, tilePlatformTopRightFloor);
+				editorSetTile(x, y, tilePlatformTopRightFloor);
 			else
-				setTile(x, y, tilePlatformTopFloorFirst);
+				editorSetTile(x, y, tilePlatformTopFloorFirst);
 		//this tile is the same height or lower than the one above it
 		} else {
 			if (leftIsAbove)
-				setTile(x, y, tileGroundLeftFloorFirst);
+				editorSetTile(x, y, tileGroundLeftFloorFirst);
 			else if (leftIsBelow)
-				setTile(x, y, tilePlatformLeftFloorFirst);
+				editorSetTile(x, y, tilePlatformLeftFloorFirst);
 			else if (rightIsAbove)
-				setTile(x, y, tileGroundRightFloorFirst);
+				editorSetTile(x, y, tileGroundRightFloorFirst);
 			else if (rightIsBelow)
-				setTile(x, y, tilePlatformRightFloorFirst);
+				editorSetTile(x, y, tilePlatformRightFloorFirst);
 			else
-				setTile(x, y, tileFloorFirst);
+				editorSetTile(x, y, tileFloorFirst);
 		}
 	}
 	//check to see if there is a floor tile at this x that is effectively "above" an adjacent tile at the given y
 	//go up the tiles, and if we find a floor tile with the right height, return true, or if it's too low, return false
-	bool MapState::hasFloorTileCreatingShadowForHeight(int x, int y, char height) {
+	bool MapState::editorHasFloorTileCreatingShadowForHeight(int x, int y, char height) {
 		for (char tileOffset = 1; true; tileOffset++) {
 			char heightDiff = getHeight(x, y - (int)tileOffset) - height;
 			//too high to match, keep going
@@ -853,7 +853,7 @@ void MapState::resetMap() {
 		}
 	}
 	//set a switch if there's room, or delete a switch if we can
-	void MapState::setSwitch(int leftX, int topY, char color, char group) {
+	void MapState::editorSetSwitch(int leftX, int topY, char color, char group) {
 		//a switch occupies a 2x2 square, and must be surrounded by a 1-tile ring of no-swich-or-rail tiles
 		if (leftX - 1 < 0 || topY - 1 < 0 || leftX + 2 >= width || topY + 2 >= height)
 			return;
@@ -885,7 +885,7 @@ void MapState::resetMap() {
 				//we clicked on a switch exactly the same as the one we're placing, mark it as deleted and set newSwitchId to 0
 				//	so that we can use the regular switch-placing logic to clear the switch
 				else if (moveDist == 0) {
-					switch0->isDeleted = true;
+					switch0->editorIsDeleted = true;
 					newSwitchId = 0;
 					checkY = topY + 3;
 					break;
@@ -909,19 +909,19 @@ void MapState::resetMap() {
 					railSwitchIds[eraseY * width + eraseX] = 0;
 				}
 			}
-			matchedSwitch->moveTo(leftX, topY);
+			matchedSwitch->editorMoveTo(leftX, topY);
 		//we're deleting a switch, remove this group from any matching rails
 		} else if (newSwitchId == 0) {
 			for (Rail* rail : rails) {
 				if (rail->getColor() == color)
-					rail->removeGroup(group);
+					rail->editorRemoveGroup(group);
 			}
 		//we're setting a new switch
 		} else {
 			//but don't set it if we already have a switch exactly like this one
 			for (int i = 0; i < (int)switches.size(); i++) {
 				Switch* switch0 = switches[i];
-				if (switch0->getColor() == color && switch0->getGroup() == group && !switch0->isDeleted)
+				if (switch0->getColor() == color && switch0->getGroup() == group && !switch0->editorIsDeleted)
 					return;
 			}
 			switches.push_back(newSwitch(leftX, topY, color, group));
@@ -935,14 +935,14 @@ void MapState::resetMap() {
 		}
 	}
 	//set a rail, or delete a rail if we can
-	void MapState::setRail(int x, int y, char color, char group) {
+	void MapState::editorSetRail(int x, int y, char color, char group) {
 		//a rail can't go along the edge of the map
 		if (x - 1 < 0 || y - 1 < 0 || x + 1 >= width || y + 1 >= height)
 			return;
 		//if there is no switch that matches this rail, don't do anything
 		bool foundMatchingSwitch = false;
 		for (Switch* switch0 : switches) {
-			if (switch0->getGroup() == group && switch0->getColor() == color && !switch0->isDeleted) {
+			if (switch0->getGroup() == group && switch0->getColor() == color && !switch0->editorIsDeleted) {
 				foundMatchingSwitch = true;
 				break;
 			}
@@ -1021,12 +1021,12 @@ void MapState::resetMap() {
 				railSwitchIds[railSwitchIndex] = editingRailSwitchId;
 			//we clicked on the last segment of a rail, delete it
 			} else if (segmentCount == 1) {
-				editingRail->isDeleted = true;
+				editingRail->editorIsDeleted = true;
 				railSwitchIds[railSwitchIndex] = 0;
 			//we clicked at the end of a rail, delete that segment
 			} else if ((firstSegment->x == x && firstSegment->y == y) || (lastSegment->x == x && lastSegment->y == y)) {
-				editingRail->removeGroup(group);
-				editingRail->removeSegment(x, y);
+				editingRail->editorRemoveGroup(group);
+				editingRail->editorRemoveSegment(x, y);
 				railSwitchIds[railSwitchIndex] = 0;
 			}
 		//we're editing a reset switch
@@ -1043,7 +1043,7 @@ void MapState::resetMap() {
 			Holder_RessetSwitchSegmentVector leftSegmentsHolder (&editingResetSwitch->leftSegments);
 			Holder_RessetSwitchSegmentVector bottomSegmentsHolder (&editingResetSwitch->bottomSegments);
 			Holder_RessetSwitchSegmentVector rightSegmentsHolder (&editingResetSwitch->rightSegments);
-			updateResetSwitchGroups(
+			editorUpdateResetSwitchGroups(
 					x,
 					y,
 					color,
@@ -1055,7 +1055,7 @@ void MapState::resetMap() {
 					editingResetSwitchX - 1,
 					editingResetSwitchBottomY,
 					&leftSegmentsHolder)
-				|| updateResetSwitchGroups(
+				|| editorUpdateResetSwitchGroups(
 					x,
 					y,
 					color,
@@ -1067,7 +1067,7 @@ void MapState::resetMap() {
 					editingResetSwitchX,
 					editingResetSwitchBottomY + 1,
 					&bottomSegmentsHolder)
-				|| updateResetSwitchGroups(
+				|| editorUpdateResetSwitchGroups(
 					x,
 					y,
 					color,
@@ -1084,7 +1084,7 @@ void MapState::resetMap() {
 	//remove a rail segment if we clicked on the last segment of the list, or add a segment if it's adjacent to the last segment
 	//	of the list, or add the first segment if there are none and the new one matches the other coordinates
 	//return whether we updated the segments or determined there was nothing to update
-	bool MapState::updateResetSwitchGroups(
+	bool MapState::editorUpdateResetSwitchGroups(
 		int x,
 		int y,
 		char color,
@@ -1158,7 +1158,7 @@ void MapState::resetMap() {
 		return true;
 	}
 	//set a reset switch, or delete one if we can
-	void MapState::setResetSwitch(int x, int bottomY) {
+	void MapState::editorSetResetSwitch(int x, int bottomY) {
 		//a reset switch occupies a 1x2 square, and must be surrounded by a 1-tile ring of no-swich-or-rail tiles
 		if (x - 1 < 0 || bottomY - 2 < 0 || x + 1 >= width || bottomY + 1 >= height)
 			return;
@@ -1184,7 +1184,7 @@ void MapState::resetMap() {
 							|| resetSwitch->bottomSegments.size() > 0
 							|| resetSwitch->rightSegments.size() > 0)
 						return;
-					resetSwitch->isDeleted = true;
+					resetSwitch->editorIsDeleted = true;
 					newResetSwitchId = 0;
 					checkY = bottomY + 2;
 					break;
@@ -1200,21 +1200,21 @@ void MapState::resetMap() {
 			resetSwitches.push_back(newResetSwitch(x, bottomY));
 	}
 	//adjust the tile offset of the rail here, if there is one
-	void MapState::adjustRailInitialTileOffset(int x, int y, char tileOffset) {
+	void MapState::editorAdjustRailInitialTileOffset(int x, int y, char tileOffset) {
 		int railSwitchId = getRailSwitchId(x, y);
 		if ((railSwitchId & railSwitchIdBitmask) == railIdValue)
-			rails[railSwitchId & railSwitchIndexBitmask]->adjustInitialTileOffset(x, y, tileOffset);
+			rails[railSwitchId & railSwitchIndexBitmask]->editorAdjustInitialTileOffset(x, y, tileOffset);
 	}
 	//check if we're saving a rail or switch to the floor file, and if so get the data we need at this tile
-	char MapState::getRailSwitchFloorSaveData(int x, int y) {
+	char MapState::editorGetRailSwitchFloorSaveData(int x, int y) {
 		int railSwitchId = getRailSwitchId(x, y);
 		int railSwitchIdValue = railSwitchId & railSwitchIdBitmask;
 		if (railSwitchIdValue == railIdValue)
-			return rails[railSwitchId & railSwitchIndexBitmask]->getFloorSaveData(x, y);
+			return rails[railSwitchId & railSwitchIndexBitmask]->editorGetFloorSaveData(x, y);
 		else if (railSwitchIdValue == switchIdValue)
-			return switches[railSwitchId & railSwitchIndexBitmask]->getFloorSaveData(x, y);
+			return switches[railSwitchId & railSwitchIndexBitmask]->editorGetFloorSaveData(x, y);
 		else if (railSwitchIdValue == resetSwitchIdValue)
-			return resetSwitches[railSwitchId & railSwitchIndexBitmask]->getFloorSaveData(x, y);
+			return resetSwitches[railSwitchId & railSwitchIndexBitmask]->editorGetFloorSaveData(x, y);
 		else
 			return 0;
 	}

@@ -33,7 +33,7 @@ centerX(pCenterX)
 , bottomSegments()
 , rightSegments()
 #ifdef EDITOR
-	, isDeleted(false)
+	, editorIsDeleted(false)
 #endif
 {
 }
@@ -41,7 +41,7 @@ ResetSwitch::~ResetSwitch() {}
 //render the reset switch
 void ResetSwitch::render(int screenLeftWorldX, int screenTopWorldY, bool isOn, bool showGroups) {
 	#ifdef EDITOR
-		if (isDeleted)
+		if (editorIsDeleted)
 			return;
 	#endif
 
@@ -75,19 +75,19 @@ bool ResetSwitch::hasGroupForColor(char group, char color) {
 }
 #ifdef EDITOR
 	//we're saving this switch to the floor file, get the data we need at this tile
-	char ResetSwitch::getFloorSaveData(int x, int y) {
+	char ResetSwitch::editorGetFloorSaveData(int x, int y) {
 		if (x == centerX && y == bottomY)
 			return MapState::floorResetSwitchHeadValue;
-		char leftFloorSaveData = getSegmentFloorSaveData(x, y, leftSegments);
+		char leftFloorSaveData = editorGetSegmentFloorSaveData(x, y, leftSegments);
 		if (leftFloorSaveData != 0)
 			return leftFloorSaveData;
-		char bottomFloorSaveData = getSegmentFloorSaveData(x, y, bottomSegments);
+		char bottomFloorSaveData = editorGetSegmentFloorSaveData(x, y, bottomSegments);
 		if (bottomFloorSaveData != 0)
 			return bottomFloorSaveData;
-		return getSegmentFloorSaveData(x, y, rightSegments);
+		return editorGetSegmentFloorSaveData(x, y, rightSegments);
 	}
 	//get the save value for this tile if the coordinates match one of the given segments
-	char ResetSwitch::getSegmentFloorSaveData(int x, int y, vector<Segment>& segments) {
+	char ResetSwitch::editorGetSegmentFloorSaveData(int x, int y, vector<Segment>& segments) {
 		for (int i = 0; i < (int)segments.size(); i++) {
 			Segment& segment = segments[i];
 			if (segment.x != x || segment.y != y)

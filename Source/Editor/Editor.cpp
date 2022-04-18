@@ -150,7 +150,7 @@
 					SDL_SetRenderDrawColor(floorRenderer, 254, 255, 255, 255);
 				else {
 					char height = MapState::getHeight(mapX, mapY);
-					char railSwitchData = (Uint8)MapState::getRailSwitchFloorSaveData(mapX, mapY);
+					char railSwitchData = (Uint8)MapState::editorGetRailSwitchFloorSaveData(mapX, mapY);
 					if (height == MapState::emptySpaceHeight)
 						//if we don't have a rail/switch, use 254 for red since bit 0 indicates a rail/switch
 						SDL_SetRenderDrawColor(floorRenderer, railSwitchData != 0 ? railSwitchData : 254, 255, 255, 255);
@@ -260,7 +260,7 @@
 	}
 	//set the tile at this position
 	void Editor::TileButton::paintMap(int x, int y) {
-		MapState::setTile(x, y, tile);
+		MapState::editorSetTile(x, y, tile);
 	}
 
 	//////////////////////////////// Editor::HeightButton ////////////////////////////////
@@ -301,7 +301,7 @@
 	}
 	//set the tile at this position
 	void Editor::HeightButton::paintMap(int x, int y) {
-		MapState::setHeight(x, y, height);
+		MapState::editorSetHeight(x, y, height);
 	}
 
 	//////////////////////////////// Editor::PaintBoxRadiusButton ////////////////////////////////
@@ -392,7 +392,7 @@
 	//set the tile at this position
 	void Editor::NoiseButton::paintMap(int x, int y) {
 		discrete_distribution<int>& d = *noiseTilesDistribution;
-		MapState::setTile(x, y, noiseTileButtons[d(*randomEngine)]->tile);
+		MapState::editorSetTile(x, y, noiseTileButtons[d(*randomEngine)]->tile);
 	}
 
 	//////////////////////////////// Editor::NoiseTileButton ////////////////////////////////
@@ -502,12 +502,12 @@
 					replacementHeight = MathUtils::max(0, topHeight - 2);
 			}
 		}
-		MapState::setHeight(x, y, replacementHeight);
-		MapState::setHeight(x, newFloorY, newHeight);
+		MapState::editorSetHeight(x, y, replacementHeight);
+		MapState::editorSetHeight(x, newFloorY, newHeight);
 
 		//we replaced the floor with a wall, just set the tile
 		if (replacementHeight % 2 != 0) {
-			MapState::setTile(x, y, MapState::tileWallFirst);
+			MapState::editorSetTile(x, y, MapState::tileWallFirst);
 			ShuffleTileButton::shuffleTile(x, y);
 		//we copied an adjacent floor tile, set the right one
 		} else
@@ -538,7 +538,7 @@
 	}
 	//set the default floor tile and then randomize it
 	void Editor::RaiseLowerTileButton::setAppropriateDefaultFloorTile(int x, int y, char expectedFloorHeight) {
-		MapState::setAppropriateDefaultFloorTile(x, y, expectedFloorHeight);
+		MapState::editorSetAppropriateDefaultFloorTile(x, y, expectedFloorHeight);
 		ShuffleTileButton::shuffleTile(x, y);
 	}
 
@@ -607,7 +607,7 @@
 			return true;
 		if (newTile == oldTile)
 			return false;
-		MapState::setTile(x, y, newTile);
+		MapState::editorSetTile(x, y, newTile);
 		return true;
 	}
 
@@ -635,7 +635,7 @@
 	//set a switch at this position
 	void Editor::SwitchButton::paintMap(int x, int y) {
 		if (clickedAdjacentTile(x, y, MouseDragAction::AddRemoveSwitch))
-			MapState::setSwitch(x, y, color, selectedRailSwitchGroupButton->getRailSwitchGroup());
+			MapState::editorSetSwitch(x, y, color, selectedRailSwitchGroupButton->getRailSwitchGroup());
 	}
 
 	//////////////////////////////// Editor::RailButton ////////////////////////////////
@@ -669,7 +669,7 @@
 	//set a rail at this position
 	void Editor::RailButton::paintMap(int x, int y) {
 		if (clickedAdjacentTile(x, y, MouseDragAction::AddRemoveRail))
-			MapState::setRail(x, y, color, selectedRailSwitchGroupButton->getRailSwitchGroup());
+			MapState::editorSetRail(x, y, color, selectedRailSwitchGroupButton->getRailSwitchGroup());
 	}
 
 	//////////////////////////////// Editor::RailTileOffsetButton ////////////////////////////////
@@ -702,7 +702,7 @@
 	}
 	//adjust the tile offset of the rail at this position
 	void Editor::RailTileOffsetButton::paintMap(int x, int y) {
-		MapState::adjustRailInitialTileOffset(x, y, tileOffset);
+		MapState::editorAdjustRailInitialTileOffset(x, y, tileOffset);
 	}
 
 	//////////////////////////////// Editor::ResetSwitchButton ////////////////////////////////
@@ -730,7 +730,7 @@
 	void Editor::ResetSwitchButton::paintMap(int x, int y) {
 		if (lastMouseDragAction == MouseDragAction::None) {
 			lastMouseDragAction = MouseDragAction::AddRemoveResetSwitch;
-			MapState::setResetSwitch(x, y);
+			MapState::editorSetResetSwitch(x, y);
 		}
 	}
 

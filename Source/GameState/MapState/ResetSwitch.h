@@ -31,7 +31,7 @@ private:
 	int flipOnTicksTime;
 public:
 	#ifdef EDITOR
-		bool isDeleted;
+		bool editorIsDeleted;
 	#endif
 
 	ResetSwitch(objCounterParametersComma() int pCenterX, int pBottomY);
@@ -43,9 +43,9 @@ public:
 	void render(int screenLeftWorldX, int screenTopWorldY, bool isOn, bool showGroups);
 	#ifdef EDITOR
 		public:
-			char getFloorSaveData(int x, int y);
+			char editorGetFloorSaveData(int x, int y);
 		private:
-			char getSegmentFloorSaveData(int x, int y, vector<Segment>& segments);
+			char editorGetSegmentFloorSaveData(int x, int y, vector<Segment>& segments);
 	#endif
 };
 class ResetSwitchState onlyInDebug(: public ObjCounter) {
