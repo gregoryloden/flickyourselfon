@@ -4,17 +4,6 @@
 #include "Sprites/SpriteSheet.h"
 #include "Util/Config.h"
 
-#ifdef EDITOR
-	//Should only be allocated on the stack
-	class MutexLocker {
-	private:
-		mutex* m;
-	public:
-		MutexLocker(mutex& pM): m(&pM) { pM.lock(); }
-		virtual ~MutexLocker() { m->unlock(); }
-	};
-#endif
-
 //////////////////////////////// Rail::Segment ////////////////////////////////
 Rail::Segment::Segment(int pX, int pY, char pMaxTileOffset)
 : x(pX)
@@ -44,7 +33,6 @@ baseHeight(pBaseHeight)
 //give a default tile offset extending to the lowest height, we'll correct it as we add segments
 , maxTileOffset(pBaseHeight / 2)
 #ifdef EDITOR
-	, editorSegmentsMutex()
 	, editorIsDeleted(false)
 #endif
 {
@@ -168,7 +156,6 @@ void Rail::render(int screenLeftWorldX, int screenTopWorldY, float tileOffset) {
 	#ifdef EDITOR
 		if (editorIsDeleted)
 			return;
-		MutexLocker mutexLocker (editorSegmentsMutex);
 	#endif
 
 	setSegmentColor(MathUtils::fmin(1.0f, tileOffset / 3.0f), color);
@@ -185,7 +172,6 @@ void Rail::renderShadow(int screenLeftWorldX, int screenTopWorldY) {
 	#ifdef EDITOR
 		if (editorIsDeleted)
 			return;
-		MutexLocker mutexLocker (editorSegmentsMutex);
 	#endif
 	glEnable(GL_BLEND);
 
@@ -206,7 +192,6 @@ void Rail::renderGroups(int screenLeftWorldX, int screenTopWorldY) {
 	#ifdef EDITOR
 		if (editorIsDeleted)
 			return;
-		MutexLocker mutexLocker (editorSegmentsMutex);
 	#endif
 
 	int lastSegmentIndex = (int)segments->size() - 1;
@@ -290,7 +275,6 @@ void Rail::renderSegment(int screenLeftWorldX, int screenTopWorldY, float tileOf
 	}
 	//remove the segment on this tile from the rail
 	void Rail::editorRemoveSegment(int x, int y) {
-		MutexLocker mutexLocker (editorSegmentsMutex);
 		Segment& end = segments->back();
 		if (y == end.y && x == end.x)
 			segments->pop_back();

@@ -1,4 +1,5 @@
 #include "General/General.h"
+#include <mutex>
 #include <random>
 #include "Sprites/Text.h"
 
@@ -17,6 +18,14 @@ private:
 		AddRemoveSwitch,
 		AddRemoveResetSwitch
 	};
+public:
+	//Should only be allocated on the stack
+	class EditingMutexLocker {
+	public:
+		EditingMutexLocker();
+		virtual ~EditingMutexLocker();
+	};
+private:
 	//Should only be allocated within an object, on the stack, or as a static object
 	class RGB {
 	public:
@@ -291,6 +300,10 @@ private:
 	static const RGB heightFloorRGB;
 	static const RGB heightWallRGB;
 
+public:
+	static bool isActive;
+private:
+	static mutex editingMutex;
 	static vector<Button*> buttons;
 	static EvenPaintBoxRadiusButton* evenPaintBoxXRadiusButton;
 	static EvenPaintBoxRadiusButton* evenPaintBoxYRadiusButton;

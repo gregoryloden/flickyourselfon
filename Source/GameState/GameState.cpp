@@ -284,6 +284,7 @@ void GameState::startRadioTowerAnimation(int ticksTime) {
 }
 //render this state, which was deemed to be the last state to need rendering
 void GameState::render(int ticksTime) {
+	Editor::EditingMutexLocker editingMutexLocker;
 	int gameTicksTime = (pauseState.get() != nullptr ? pauseStartTicksTime : ticksTime) - gameTimeOffsetTicksDuration;
 	bool showConnections =
 		SDL_GetKeyboardState(nullptr)[Config::keyBindings.showConnectionsKey] != 0

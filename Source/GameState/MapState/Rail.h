@@ -1,7 +1,4 @@
 #include "General/General.h"
-#ifdef EDITOR
-	#include <mutex>
-#endif
 
 #define newRail(x, y, baseHeight, color, initialTileOffset) newWithArgs(Rail, x, y, baseHeight, color, initialTileOffset)
 #define newRailState(rail, railIndex) newWithArgs(RailState, rail, railIndex)
@@ -34,7 +31,6 @@ private:
 	char maxTileOffset;
 public:
 	#ifdef EDITOR
-		mutex editorSegmentsMutex;
 		bool editorIsDeleted;
 	#endif
 

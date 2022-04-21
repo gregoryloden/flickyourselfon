@@ -28,7 +28,19 @@
 	#define newResetSwitchButton(zone, leftX, topY) newWithArgs(Editor::ResetSwitchButton, zone, leftX, topY)
 	#define newRailSwitchGroupButton(zone, leftX, topY, railSwitchGroup) \
 		newWithArgs(Editor::RailSwitchGroupButton, zone, leftX, topY, railSwitchGroup)
+#endif
 
+//////////////////////////////// Editor::EditingMutexLocker ////////////////////////////////
+Editor::EditingMutexLocker::EditingMutexLocker() {
+	if (isActive)
+		editingMutex.lock();
+}
+Editor::EditingMutexLocker::~EditingMutexLocker() {
+	if (isActive)
+		editingMutex.unlock();
+}
+
+#ifdef EDITOR
 	//////////////////////////////// Editor::RGB ////////////////////////////////
 	Editor::RGB::RGB(float pRed, float pGreen, float pBlue)
 	: red(pRed)
@@ -756,6 +768,12 @@
 	const Editor::RGB Editor::backgroundRGB (0.25f, 0.75f, 0.75f);
 	const Editor::RGB Editor::heightFloorRGB (0.0f, 0.75f, 9.0f / 16.0f);
 	const Editor::RGB Editor::heightWallRGB (5.0f / 8.0f, 3.0f / 8.0f, 0.25f);
+	bool Editor::isActive = true;
+#else
+bool Editor::isActive = false;
+#endif
+mutex Editor::editingMutex;
+#ifdef EDITOR
 	vector<Editor::Button*> Editor::buttons;
 	Editor::EvenPaintBoxRadiusButton* Editor::evenPaintBoxXRadiusButton = nullptr;
 	Editor::EvenPaintBoxRadiusButton* Editor::evenPaintBoxYRadiusButton = nullptr;
@@ -878,6 +896,7 @@
 	}
 	//see if we clicked on any buttons or the game screen
 	void Editor::handleClick(SDL_MouseButtonEvent& clickEvent, bool isDrag, EntityState* camera, int ticksTime) {
+		EditingMutexLocker editingMutexLocker;
 		if (!isDrag)
 			lastMouseDragAction = MouseDragAction::None;
 
