@@ -26,11 +26,16 @@ bool renderThreadReadyForUpdates = false;
 #ifdef __cplusplus
 extern "C"
 #endif
-int gameMain() {
+int gameMain(int argc, char* argv[]) {
 	//initialize SDL before we do anything else, we need it to log timestamps
 	int initResult = SDL_Init(SDL_INIT_EVERYTHING);
 	if (initResult < 0)
 		return initResult;
+
+	for (int i = 0; i < argc; i++) {
+		if (strcmp(argv[i], "--editor") == 0)
+			Editor::isActive = true;
+	}
 
 	#ifdef DEBUG
 		ObjCounter::start();

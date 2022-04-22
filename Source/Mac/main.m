@@ -1,3 +1,3 @@
 int main(int argc, const char * argv[]) {
-	return gameMain();
+	return gameMain(argc, argv);
 }

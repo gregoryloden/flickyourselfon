@@ -4,5 +4,5 @@
 extern "C"
 #endif
 int main(int argc, char* argv[]) {
-	return gameMain();
+	return gameMain(argc, argv);
 }
