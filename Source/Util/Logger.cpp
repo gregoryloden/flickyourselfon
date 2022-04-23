@@ -61,8 +61,8 @@ Logger::~Logger() {
 //open the file for writing on a single thread and add this to the list of loggers
 void Logger::beginLogging() {
 	#ifdef EDITOR
-		if (this != &debugLogger)
-			return;
+	if (this != &debugLogger)
+		return;
 	#endif
 	file = new ofstream();
 	FileUtils::openFileForWrite(file, fileName, fileFlags);
@@ -107,8 +107,8 @@ void Logger::endMultiThreadedLogging() {
 //finally close the file and remove this from the list of loggers
 void Logger::endLogging() {
 	#ifdef EDITOR
-		if (this != &debugLogger)
-			return;
+	if (this != &debugLogger)
+		return;
 	#endif
 	for (int i = 0; i < (int)loggers.size(); i++) {
 		if (loggers[i] == this) {
@@ -170,8 +170,8 @@ void Logger::log(const char* message) {
 //log a message to the current thread's log queue
 void Logger::logString(const string& message) {
 	#ifdef EDITOR
-		if (this != &debugLogger)
-			return;
+	if (this != &debugLogger)
+		return;
 	#endif
 	int timestamp = (int)SDL_GetTicks();
 	stringstream messageWithTimestamp;

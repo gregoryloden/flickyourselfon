@@ -34,13 +34,13 @@ public:
 	static const int gameScreenWidth = 221;
 	static const int gameScreenHeight = 165;
 	#ifdef EDITOR
-		static const int editorMarginRight = 150;
-		static const int editorMarginBottom = 60;
-		static const int windowScreenWidth = gameScreenWidth + editorMarginRight;
-		static const int windowScreenHeight = gameScreenHeight + editorMarginBottom;
+	static const int editorMarginRight = 150;
+	static const int editorMarginBottom = 60;
+	static const int windowScreenWidth = gameScreenWidth + editorMarginRight;
+	static const int windowScreenHeight = gameScreenHeight + editorMarginBottom;
 	#else
-		static const int windowScreenWidth = gameScreenWidth;
-		static const int windowScreenHeight = gameScreenHeight;
+	static const int windowScreenWidth = gameScreenWidth;
+	static const int windowScreenHeight = gameScreenHeight;
 	#endif
 	static const int ticksPerSecond = 1000;
 	static const int updatesPerSecond = 48;

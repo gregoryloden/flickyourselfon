@@ -184,8 +184,8 @@ void PlayerState::updatePositionWithPreviousPlayerState(PlayerState* prev, int t
 	float speedPerTick =
 		((xDirection & yDirection) != 0 ? diagonalSpeedPerSecond : speedPerSecond) / (float)Config::ticksPerSecond;
 	#ifdef EDITOR
-		if (keyboardState[Config::keyBindings.kickKey] != 0)
-			speedPerTick *= 8.0f;
+	if (keyboardState[Config::keyBindings.kickKey] != 0)
+		speedPerTick *= 8.0f;
 	#endif
 
 	int ticksSinceLastUpdate = ticksTime - prev->lastUpdateTicksTime;

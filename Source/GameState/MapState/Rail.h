@@ -31,7 +31,7 @@ private:
 	char maxTileOffset;
 public:
 	#ifdef EDITOR
-		bool editorIsDeleted;
+	bool editorIsDeleted;
 	#endif
 
 	Rail(objCounterParametersComma() int x, int y, char pBaseHeight, char pColor, char pInitialTileOffset);
@@ -57,11 +57,11 @@ public:
 private:
 	void renderSegment(int screenLeftWorldX, int screenTopWorldY, float tileOffset, int segmentIndex);
 	#ifdef EDITOR
-	public:
-		void editorRemoveGroup(char group);
-		void editorRemoveSegment(int x, int y);
-		void editorAdjustInitialTileOffset(int x, int y, char tileOffset);
-		char editorGetFloorSaveData(int x, int y);
+public:
+	void editorRemoveGroup(char group);
+	void editorRemoveSegment(int x, int y);
+	void editorAdjustInitialTileOffset(int x, int y, char tileOffset);
+	char editorGetFloorSaveData(int x, int y);
 	#endif
 };
 class RailState onlyInDebug(: public ObjCounter) {

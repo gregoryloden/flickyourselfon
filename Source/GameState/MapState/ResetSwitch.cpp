@@ -33,7 +33,7 @@ centerX(pCenterX)
 , bottomSegments()
 , rightSegments()
 #ifdef EDITOR
-	, editorIsDeleted(false)
+, editorIsDeleted(false)
 #endif
 {
 }
@@ -41,8 +41,8 @@ ResetSwitch::~ResetSwitch() {}
 //render the reset switch
 void ResetSwitch::render(int screenLeftWorldX, int screenTopWorldY, bool isOn, bool showGroups) {
 	#ifdef EDITOR
-		if (editorIsDeleted)
-			return;
+	if (editorIsDeleted)
+		return;
 	#endif
 
 	glEnable(GL_BLEND);
@@ -74,34 +74,34 @@ bool ResetSwitch::hasGroupForColor(char group, char color) {
 	return false;
 }
 #ifdef EDITOR
-	//we're saving this switch to the floor file, get the data we need at this tile
-	char ResetSwitch::editorGetFloorSaveData(int x, int y) {
-		if (x == centerX && y == bottomY)
-			return MapState::floorResetSwitchHeadValue;
-		char leftFloorSaveData = editorGetSegmentFloorSaveData(x, y, leftSegments);
-		if (leftFloorSaveData != 0)
-			return leftFloorSaveData;
-		char bottomFloorSaveData = editorGetSegmentFloorSaveData(x, y, bottomSegments);
-		if (bottomFloorSaveData != 0)
-			return bottomFloorSaveData;
-		return editorGetSegmentFloorSaveData(x, y, rightSegments);
+//we're saving this switch to the floor file, get the data we need at this tile
+char ResetSwitch::editorGetFloorSaveData(int x, int y) {
+	if (x == centerX && y == bottomY)
+		return MapState::floorResetSwitchHeadValue;
+	char leftFloorSaveData = editorGetSegmentFloorSaveData(x, y, leftSegments);
+	if (leftFloorSaveData != 0)
+		return leftFloorSaveData;
+	char bottomFloorSaveData = editorGetSegmentFloorSaveData(x, y, bottomSegments);
+	if (bottomFloorSaveData != 0)
+		return bottomFloorSaveData;
+	return editorGetSegmentFloorSaveData(x, y, rightSegments);
+}
+//get the save value for this tile if the coordinates match one of the given segments
+char ResetSwitch::editorGetSegmentFloorSaveData(int x, int y, vector<Segment>& segments) {
+	for (int i = 0; i < (int)segments.size(); i++) {
+		Segment& segment = segments[i];
+		if (segment.x != x || segment.y != y)
+			continue;
+		return i == 0
+			//segment 0 combines the first and last colors
+			? MapState::floorIsRailSwitchBitmask
+				| (segment.color << MapState::floorRailSwitchGroupDataShift)
+				| (segments.back().color << (MapState::floorRailSwitchGroupDataShift + 2))
+			//everything else sets its group
+			: MapState::floorIsRailSwitchBitmask | (segment.group << MapState::floorRailSwitchGroupDataShift);
 	}
-	//get the save value for this tile if the coordinates match one of the given segments
-	char ResetSwitch::editorGetSegmentFloorSaveData(int x, int y, vector<Segment>& segments) {
-		for (int i = 0; i < (int)segments.size(); i++) {
-			Segment& segment = segments[i];
-			if (segment.x != x || segment.y != y)
-				continue;
-			return i == 0
-				//segment 0 combines the first and last colors
-				? MapState::floorIsRailSwitchBitmask
-					| (segment.color << MapState::floorRailSwitchGroupDataShift)
-					| (segments.back().color << (MapState::floorRailSwitchGroupDataShift + 2))
-				//everything else sets its group
-				: MapState::floorIsRailSwitchBitmask | (segment.group << MapState::floorRailSwitchGroupDataShift);
-		}
-		return 0;
-	}
+	return 0;
+}
 #endif
 
 //////////////////////////////// ResetSwitchState ////////////////////////////////

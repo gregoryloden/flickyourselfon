@@ -12,7 +12,7 @@ leftX(pLeftX)
 , color(pColor)
 , group(pGroup)
 #ifdef EDITOR
-	, editorIsDeleted(false)
+, editorIsDeleted(false)
 #endif
 {
 }
@@ -68,23 +68,23 @@ void Switch::render(
 		MapState::renderGroupRect(group, drawLeftX + 4, drawTopY + 4, drawLeftX + 8, drawTopY + 8);
 }
 #ifdef EDITOR
-	//update the position of this switch
-	void Switch::editorMoveTo(int newLeftX, int newTopY) {
-		leftX = newLeftX;
-		topY = newTopY;
-	}
-	//we're saving this switch to the floor file, get the data we need at this tile
-	char Switch::editorGetFloorSaveData(int x, int y) {
-		//head byte, write our color
-		if (x == leftX && y == topY)
-			return (color << MapState::floorRailSwitchColorDataShift) | MapState::floorSwitchHeadValue;
-		//tail byte, write our number
-		else if (x == leftX + 1&& y == topY)
-			return (group << MapState::floorRailSwitchGroupDataShift) | MapState::floorIsRailSwitchBitmask;
-		//no data but still part of this switch
-		else
-			return MapState::floorRailSwitchTailValue;
-	}
+//update the position of this switch
+void Switch::editorMoveTo(int newLeftX, int newTopY) {
+	leftX = newLeftX;
+	topY = newTopY;
+}
+//we're saving this switch to the floor file, get the data we need at this tile
+char Switch::editorGetFloorSaveData(int x, int y) {
+	//head byte, write our color
+	if (x == leftX && y == topY)
+		return (color << MapState::floorRailSwitchColorDataShift) | MapState::floorSwitchHeadValue;
+	//tail byte, write our number
+	else if (x == leftX + 1&& y == topY)
+		return (group << MapState::floorRailSwitchGroupDataShift) | MapState::floorIsRailSwitchBitmask;
+	//no data but still part of this switch
+	else
+		return MapState::floorRailSwitchTailValue;
+}
 #endif
 
 //////////////////////////////// SwitchState ////////////////////////////////

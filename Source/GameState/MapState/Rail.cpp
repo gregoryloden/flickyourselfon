@@ -33,7 +33,7 @@ baseHeight(pBaseHeight)
 //give a default tile offset extending to the lowest height, we'll correct it as we add segments
 , maxTileOffset(pBaseHeight / 2)
 #ifdef EDITOR
-	, editorIsDeleted(false)
+, editorIsDeleted(false)
 #endif
 {
 	segments->push_back(Segment(x, y, 0));
@@ -154,8 +154,8 @@ void Rail::addSegment(int x, int y) {
 //render this rail at its position by rendering each segment
 void Rail::render(int screenLeftWorldX, int screenTopWorldY, float tileOffset) {
 	#ifdef EDITOR
-		if (editorIsDeleted)
-			return;
+	if (editorIsDeleted)
+		return;
 	#endif
 
 	setSegmentColor(MathUtils::fmin(1.0f, tileOffset / 3.0f), color);
@@ -170,8 +170,8 @@ void Rail::render(int screenLeftWorldX, int screenTopWorldY, float tileOffset) {
 //render the shadow below the rail
 void Rail::renderShadow(int screenLeftWorldX, int screenTopWorldY) {
 	#ifdef EDITOR
-		if (editorIsDeleted)
-			return;
+	if (editorIsDeleted)
+		return;
 	#endif
 	glEnable(GL_BLEND);
 
@@ -190,8 +190,8 @@ void Rail::renderShadow(int screenLeftWorldX, int screenTopWorldY) {
 //render groups where the rail would be at 0 offset
 void Rail::renderGroups(int screenLeftWorldX, int screenTopWorldY) {
 	#ifdef EDITOR
-		if (editorIsDeleted)
-			return;
+	if (editorIsDeleted)
+		return;
 	#endif
 
 	int lastSegmentIndex = (int)segments->size() - 1;
@@ -245,8 +245,8 @@ void Rail::renderSegment(int screenLeftWorldX, int screenTopWorldY, float tileOf
 
 	if (topShadow || bottomShadow) {
 		#ifdef EDITOR
-			if (segment.spriteHorizontalIndex > 6)
-				return;
+		if (segment.spriteHorizontalIndex > 6)
+			return;
 		#endif
 		int topSpriteHeight = bottomTileY * MapState::tileSize - topWorldY;
 		int spriteX = (segment.spriteHorizontalIndex + 16) * MapState::tileSize;
@@ -264,54 +264,54 @@ void Rail::renderSegment(int screenLeftWorldX, int screenTopWorldY, float tileOf
 	}
 }
 #ifdef EDITOR
-	//remove this group from the rail if it contains it
-	void Rail::editorRemoveGroup(char group) {
-		for (int i = 0; i < (int)groups.size(); i++) {
-			if (groups[i] == group) {
-				groups.erase(groups.begin() + i);
-				return;
-			}
+//remove this group from the rail if it contains it
+void Rail::editorRemoveGroup(char group) {
+	for (int i = 0; i < (int)groups.size(); i++) {
+		if (groups[i] == group) {
+			groups.erase(groups.begin() + i);
+			return;
 		}
 	}
-	//remove the segment on this tile from the rail
-	void Rail::editorRemoveSegment(int x, int y) {
-		Segment& end = segments->back();
-		if (y == end.y && x == end.x)
-			segments->pop_back();
-		else
-			segments->erase(segments->begin());
-		//reset the max tile offset, find the smallest offset among the non-end segments
-		maxTileOffset = baseHeight / 2;
-		for (int i = 1; i < (int)segments->size() - 1; i++) {
+}
+//remove the segment on this tile from the rail
+void Rail::editorRemoveSegment(int x, int y) {
+	Segment& end = segments->back();
+	if (y == end.y && x == end.x)
+		segments->pop_back();
+	else
+		segments->erase(segments->begin());
+	//reset the max tile offset, find the smallest offset among the non-end segments
+	maxTileOffset = baseHeight / 2;
+	for (int i = 1; i < (int)segments->size() - 1; i++) {
+		Segment& segment = (*segments)[i];
+		if (segment.maxTileOffset != Segment::absentTileOffset)
+			maxTileOffset = MathUtils::min(segment.maxTileOffset, maxTileOffset);
+	}
+}
+//adjust the initial tile offset of this rail if we're clicking on one of its end segments
+void Rail::editorAdjustInitialTileOffset(int x, int y, char tileOffset) {
+	Segment& start = segments->front();
+	Segment& end = segments->back();
+	if ((x == start.x && y == start.y) || (x == end.x && y == end.y))
+		initialTileOffset = MathUtils::max(0, MathUtils::min(maxTileOffset, initialTileOffset + tileOffset));
+}
+//we're saving this rail to the floor file, get the data we need at this tile
+char Rail::editorGetFloorSaveData(int x, int y) {
+	Segment& start = segments->front();
+	if (x == start.x && y == start.y)
+		return (color << MapState::floorRailSwitchColorDataShift)
+			| (initialTileOffset << MapState::floorRailInitialTileOffsetDataShift)
+			| MapState::floorRailHeadValue;
+	else {
+		for (int i = 1; i - 1 < (int)groups.size() && i < (int)segments->size(); i++) {
 			Segment& segment = (*segments)[i];
-			if (segment.maxTileOffset != Segment::absentTileOffset)
-				maxTileOffset = MathUtils::min(segment.maxTileOffset, maxTileOffset);
+			if (segment.x == x && segment.y == y)
+				return groups[i - 1] << MapState::floorRailSwitchGroupDataShift | MapState::floorIsRailSwitchBitmask;
 		}
 	}
-	//adjust the initial tile offset of this rail if we're clicking on one of its end segments
-	void Rail::editorAdjustInitialTileOffset(int x, int y, char tileOffset) {
-		Segment& start = segments->front();
-		Segment& end = segments->back();
-		if ((x == start.x && y == start.y) || (x == end.x && y == end.y))
-			initialTileOffset = MathUtils::max(0, MathUtils::min(maxTileOffset, initialTileOffset + tileOffset));
-	}
-	//we're saving this rail to the floor file, get the data we need at this tile
-	char Rail::editorGetFloorSaveData(int x, int y) {
-		Segment& start = segments->front();
-		if (x == start.x && y == start.y)
-			return (color << MapState::floorRailSwitchColorDataShift)
-				| (initialTileOffset << MapState::floorRailInitialTileOffsetDataShift)
-				| MapState::floorRailHeadValue;
-		else {
-			for (int i = 1; i - 1 < (int)groups.size() && i < (int)segments->size(); i++) {
-				Segment& segment = (*segments)[i];
-				if (segment.x == x && segment.y == y)
-					return groups[i - 1] << MapState::floorRailSwitchGroupDataShift | MapState::floorIsRailSwitchBitmask;
-			}
-		}
-		//no data but still part of this rail
-		return MapState::floorRailSwitchTailValue;
-	}
+	//no data but still part of this rail
+	return MapState::floorRailSwitchTailValue;
+}
 #endif
 
 //////////////////////////////// RailState ////////////////////////////////

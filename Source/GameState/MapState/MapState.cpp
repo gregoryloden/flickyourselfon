@@ -1,6 +1,6 @@
 #include "MapState.h"
 #ifdef EDITOR
-	#include "Editor/Editor.h"
+#include "Editor/Editor.h"
 #endif
 #include "GameState/DynamicValue.h"
 #include "GameState/EntityAnimation.h"
@@ -83,7 +83,7 @@ vector<ResetSwitch*> MapState::resetSwitches;
 int MapState::width = 1;
 int MapState::height = 1;
 #ifdef EDITOR
-	int MapState::editorNonTilesHidingState = 1;
+int MapState::editorNonTilesHidingState = 1;
 #endif
 const string MapState::railOffsetFilePrefix = "rail ";
 const string MapState::lastActivatedSwitchColorFilePrefix = "lastActivatedSwitchColor ";
@@ -549,7 +549,7 @@ void MapState::render(EntityState* camera, char playerZ, bool showConnections, i
 	int tileMaxX = MathUtils::min((Config::gameScreenWidth + screenLeftWorldX - 1) / tileSize + 1, width);
 	int tileMaxY = MathUtils::min((Config::gameScreenHeight + screenTopWorldY - 1) / tileSize + 1, height);
 	#ifdef EDITOR
-		char editorSelectedHeight = Editor::getSelectedHeight();
+	char editorSelectedHeight = Editor::getSelectedHeight();
 	#endif
 	for (int y = tileMinY; y < tileMaxY; y++) {
 		for (int x = tileMinX; x < tileMaxX; x++) {
@@ -563,9 +563,9 @@ void MapState::render(EntityState* camera, char playerZ, bool showConnections, i
 			GLint topY = (GLint)(y * tileSize - screenTopWorldY);
 			SpriteRegistry::tiles->renderSpriteAtScreenPosition((int)(tiles[mapIndex]), 0, leftX, topY);
 			#ifdef EDITOR
-				if (editorSelectedHeight != -1 && editorSelectedHeight != mapHeight)
-					SpriteSheet::renderFilledRectangle(
-						0.0f, 0.0f, 0.0f, 0.5f, leftX, topY, leftX + (GLint)tileSize, topY + (GLint)tileSize);
+			if (editorSelectedHeight != -1 && editorSelectedHeight != mapHeight)
+				SpriteSheet::renderFilledRectangle(
+					0.0f, 0.0f, 0.0f, 0.5f, leftX, topY, leftX + (GLint)tileSize, topY + (GLint)tileSize);
 			#endif
 		}
 	}
@@ -754,12 +754,12 @@ void MapState::saveState(ofstream& file) {
 		file << finishedConnectionsTutorialFilePrefix << "true\n";
 
 	#ifdef EDITOR
-		//don't save the rail states if we're saving the floor file
-		//also write that we unlocked all the switches
-		if (Editor::needsGameStateSave) {
-			file << lastActivatedSwitchColorFilePrefix << "100\n";
-			return;
-		}
+	//don't save the rail states if we're saving the floor file
+	//also write that we unlocked all the switches
+	if (Editor::needsGameStateSave) {
+		file << lastActivatedSwitchColorFilePrefix << "100\n";
+		return;
+	}
 	#endif
 	for (int i = 0; i < (int)railStates.size(); i++) {
 		RailState* railState = railStates[i];
@@ -796,426 +796,426 @@ void MapState::resetMap() {
 		railState->reset();
 }
 #ifdef EDITOR
-	//examine the neighboring tiles and pick an appropriate default tile, but only if we match the expected floor height
-	//wall tiles and floor tiles of a different height will be ignored
-	void MapState::editorSetAppropriateDefaultFloorTile(int x, int y, char expectedFloorHeight) {
-		char height = getHeight(x, y);
-		if (height != expectedFloorHeight)
-			return;
+//examine the neighboring tiles and pick an appropriate default tile, but only if we match the expected floor height
+//wall tiles and floor tiles of a different height will be ignored
+void MapState::editorSetAppropriateDefaultFloorTile(int x, int y, char expectedFloorHeight) {
+	char height = getHeight(x, y);
+	if (height != expectedFloorHeight)
+		return;
 
-		int leftX = x - 1;
-		int rightX = x + 1;
-		char leftHeight = getHeight(leftX, y);
-		char rightHeight = getHeight(rightX, y);
-		bool leftIsBelow = leftHeight < height || leftHeight == emptySpaceHeight;
-		bool leftIsAbove = leftHeight > height && editorHasFloorTileCreatingShadowForHeight(leftX, y, height);
-		bool rightIsBelow = rightHeight < height || rightHeight == emptySpaceHeight;
-		bool rightIsAbove = rightHeight > height && editorHasFloorTileCreatingShadowForHeight(rightX, y, height);
+	int leftX = x - 1;
+	int rightX = x + 1;
+	char leftHeight = getHeight(leftX, y);
+	char rightHeight = getHeight(rightX, y);
+	bool leftIsBelow = leftHeight < height || leftHeight == emptySpaceHeight;
+	bool leftIsAbove = leftHeight > height && editorHasFloorTileCreatingShadowForHeight(leftX, y, height);
+	bool rightIsBelow = rightHeight < height || rightHeight == emptySpaceHeight;
+	bool rightIsAbove = rightHeight > height && editorHasFloorTileCreatingShadowForHeight(rightX, y, height);
 
-		//this tile is higher than the one above it
-		char topHeight = getHeight(x, y - 1);
-		if (height > topHeight || topHeight == emptySpaceHeight) {
-			if (leftIsAbove)
-				editorSetTile(x, y, tilePlatformTopGroundLeftFloor);
-			else if (leftIsBelow)
-				editorSetTile(x, y, tilePlatformTopLeftFloor);
-			else if (rightIsAbove)
-				editorSetTile(x, y, tilePlatformTopGroundRightFloor);
-			else if (rightIsBelow)
-				editorSetTile(x, y, tilePlatformTopRightFloor);
-			else
-				editorSetTile(x, y, tilePlatformTopFloorFirst);
-		//this tile is the same height or lower than the one above it
-		} else {
-			if (leftIsAbove)
-				editorSetTile(x, y, tileGroundLeftFloorFirst);
-			else if (leftIsBelow)
-				editorSetTile(x, y, tilePlatformLeftFloorFirst);
-			else if (rightIsAbove)
-				editorSetTile(x, y, tileGroundRightFloorFirst);
-			else if (rightIsBelow)
-				editorSetTile(x, y, tilePlatformRightFloorFirst);
-			else
-				editorSetTile(x, y, tileFloorFirst);
-		}
+	//this tile is higher than the one above it
+	char topHeight = getHeight(x, y - 1);
+	if (height > topHeight || topHeight == emptySpaceHeight) {
+		if (leftIsAbove)
+			editorSetTile(x, y, tilePlatformTopGroundLeftFloor);
+		else if (leftIsBelow)
+			editorSetTile(x, y, tilePlatformTopLeftFloor);
+		else if (rightIsAbove)
+			editorSetTile(x, y, tilePlatformTopGroundRightFloor);
+		else if (rightIsBelow)
+			editorSetTile(x, y, tilePlatformTopRightFloor);
+		else
+			editorSetTile(x, y, tilePlatformTopFloorFirst);
+	//this tile is the same height or lower than the one above it
+	} else {
+		if (leftIsAbove)
+			editorSetTile(x, y, tileGroundLeftFloorFirst);
+		else if (leftIsBelow)
+			editorSetTile(x, y, tilePlatformLeftFloorFirst);
+		else if (rightIsAbove)
+			editorSetTile(x, y, tileGroundRightFloorFirst);
+		else if (rightIsBelow)
+			editorSetTile(x, y, tilePlatformRightFloorFirst);
+		else
+			editorSetTile(x, y, tileFloorFirst);
 	}
-	//check to see if there is a floor tile at this x that is effectively "above" an adjacent tile at the given y
-	//go up the tiles, and if we find a floor tile with the right height, return true, or if it's too low, return false
-	bool MapState::editorHasFloorTileCreatingShadowForHeight(int x, int y, char height) {
-		for (char tileOffset = 1; true; tileOffset++) {
-			char heightDiff = getHeight(x, y - (int)tileOffset) - height;
-			//too high to match, keep going
-			if (heightDiff > tileOffset * 2)
+}
+//check to see if there is a floor tile at this x that is effectively "above" an adjacent tile at the given y
+//go up the tiles, and if we find a floor tile with the right height, return true, or if it's too low, return false
+bool MapState::editorHasFloorTileCreatingShadowForHeight(int x, int y, char height) {
+	for (char tileOffset = 1; true; tileOffset++) {
+		char heightDiff = getHeight(x, y - (int)tileOffset) - height;
+		//too high to match, keep going
+		if (heightDiff > tileOffset * 2)
+			continue;
+
+		//if it's an exact match then we found the tile above this one, otherwise there is no tile above this one
+		return heightDiff == tileOffset * 2;
+	}
+}
+//set a switch if there's room, or delete a switch if we can
+void MapState::editorSetSwitch(int leftX, int topY, char color, char group) {
+	//a switch occupies a 2x2 square, and must be surrounded by a 1-tile ring of no-swich-or-rail tiles
+	if (leftX - 1 < 0 || topY - 1 < 0 || leftX + 2 >= width || topY + 2 >= height)
+		return;
+
+	short newSwitchId = (short)switches.size() | switchIdValue;
+	Switch* matchedSwitch = nullptr;
+	int matchedSwitchX = -1;
+	int matchedSwitchY = -1;
+	for (int checkY = topY - 1; checkY <= topY + 2; checkY++) {
+		for (int checkX = leftX - 1; checkX <= leftX + 2; checkX++) {
+			//no rail or switch here, keep looking
+			if (!tileHasRailOrSwitch(checkX, checkY))
 				continue;
 
-			//if it's an exact match then we found the tile above this one, otherwise there is no tile above this one
-			return heightDiff == tileOffset * 2;
-		}
-	}
-	//set a switch if there's room, or delete a switch if we can
-	void MapState::editorSetSwitch(int leftX, int topY, char color, char group) {
-		//a switch occupies a 2x2 square, and must be surrounded by a 1-tile ring of no-swich-or-rail tiles
-		if (leftX - 1 < 0 || topY - 1 < 0 || leftX + 2 >= width || topY + 2 >= height)
-			return;
+			//this is not a switch, we can't delete, move, or place a switch here
+			short otherRailSwitchId = getRailSwitchId(checkX, checkY);
+			if ((otherRailSwitchId & railSwitchIdBitmask) != switchIdValue)
+				return;
 
-		short newSwitchId = (short)switches.size() | switchIdValue;
-		Switch* matchedSwitch = nullptr;
-		int matchedSwitchX = -1;
-		int matchedSwitchY = -1;
-		for (int checkY = topY - 1; checkY <= topY + 2; checkY++) {
-			for (int checkX = leftX - 1; checkX <= leftX + 2; checkX++) {
-				//no rail or switch here, keep looking
-				if (!tileHasRailOrSwitch(checkX, checkY))
-					continue;
+			//there is a switch here but we won't delete it because it isn't exactly the same as the switch we're placing
+			Switch* switch0 = switches[otherRailSwitchId & railSwitchIndexBitmask];
+			if (switch0->getColor() != color || switch0->getGroup() != group)
+				return;
 
-				//this is not a switch, we can't delete, move, or place a switch here
-				short otherRailSwitchId = getRailSwitchId(checkX, checkY);
-				if ((otherRailSwitchId & railSwitchIdBitmask) != switchIdValue)
-					return;
-
-				//there is a switch here but we won't delete it because it isn't exactly the same as the switch we're placing
-				Switch* switch0 = switches[otherRailSwitchId & railSwitchIndexBitmask];
-				if (switch0->getColor() != color || switch0->getGroup() != group)
-					return;
-
-				int moveDist = abs(checkX - leftX) + abs(checkY - topY);
-				//we found this switch already, keep going
-				if (matchedSwitch != nullptr)
-					continue;
-				//we clicked on a switch exactly the same as the one we're placing, mark it as deleted and set newSwitchId to 0
-				//	so that we can use the regular switch-placing logic to clear the switch
-				else if (moveDist == 0) {
-					switch0->editorIsDeleted = true;
-					newSwitchId = 0;
-					checkY = topY + 3;
-					break;
-				//we clicked 1 square adjacent to a switch exactly the same as the one we're placing, save the position and keep
-				//	going
-				} else if (moveDist == 1) {
-					matchedSwitch = switch0;
-					newSwitchId = otherRailSwitchId;
-					matchedSwitchX = checkX;
-					matchedSwitchY = checkY;
-				//it's the same switch but it's too far, we can't move it or delete it
-				} else
-					return;
-			}
-		}
-
-		//we've moving a switch, erase the ID from the old tiles and update the position on the switch
-		if (matchedSwitch != nullptr) {
-			for (int eraseY = matchedSwitchY; eraseY < matchedSwitchY + 2; eraseY++) {
-				for (int eraseX = matchedSwitchX; eraseX < matchedSwitchX + 2; eraseX++) {
-					railSwitchIds[eraseY * width + eraseX] = 0;
-				}
-			}
-			matchedSwitch->editorMoveTo(leftX, topY);
-		//we're deleting a switch, remove this group from any matching rails
-		} else if (newSwitchId == 0) {
-			for (Rail* rail : rails) {
-				if (rail->getColor() == color)
-					rail->editorRemoveGroup(group);
-			}
-		//we're setting a new switch
-		} else {
-			//but don't set it if we already have a switch exactly like this one
-			for (int i = 0; i < (int)switches.size(); i++) {
-				Switch* switch0 = switches[i];
-				if (switch0->getColor() == color && switch0->getGroup() == group && !switch0->editorIsDeleted)
-					return;
-			}
-			switches.push_back(newSwitch(leftX, topY, color, group));
-		}
-
-		//go through and set the new switch ID, whether we're adding, moving, or removing a switch
-		for (int switchIdY = topY; switchIdY < topY + 2; switchIdY++) {
-			for (int switchIdX = leftX; switchIdX < leftX + 2; switchIdX++) {
-				railSwitchIds[switchIdY * width + switchIdX] = newSwitchId;
-			}
-		}
-	}
-	//set a rail, or delete a rail if we can
-	void MapState::editorSetRail(int x, int y, char color, char group) {
-		//a rail can't go along the edge of the map
-		if (x - 1 < 0 || y - 1 < 0 || x + 1 >= width || y + 1 >= height)
-			return;
-		//if there is no switch that matches this rail, don't do anything
-		bool foundMatchingSwitch = false;
-		for (Switch* switch0 : switches) {
-			if (switch0->getGroup() == group && switch0->getColor() == color && !switch0->editorIsDeleted) {
-				foundMatchingSwitch = true;
+			int moveDist = abs(checkX - leftX) + abs(checkY - topY);
+			//we found this switch already, keep going
+			if (matchedSwitch != nullptr)
+				continue;
+			//we clicked on a switch exactly the same as the one we're placing, mark it as deleted and set newSwitchId to 0 so
+			//	that we can use the regular switch-placing logic to clear the switch
+			else if (moveDist == 0) {
+				switch0->editorIsDeleted = true;
+				newSwitchId = 0;
+				checkY = topY + 3;
 				break;
-			}
-		}
-		if (!foundMatchingSwitch)
-			return;
-
-		short editingRailSwitchId = -1;
-		bool editingAdjacentRailSwitch = false;
-		bool clickedOnRailSwitch = false;
-		int minCheckX = 1000000;
-		int minCheckY = 1000000;
-		int maxCheckX = -1;
-		int maxCheckY = -1;
-		for (int checkY = y - 1; checkY <= y + 1; checkY++) {
-			for (int checkX = x - 1; checkX <= x + 1; checkX++) {
-				//no rail or switch here, keep looking
-				if (!tileHasRailOrSwitch(checkX, checkY))
-					continue;
-
-				//if this is not a rail or reset switch, we can't place a new rail here
-				short otherRailSwitchId = getRailSwitchId(checkX, checkY);
-				short otherRailSwitchIdValue = otherRailSwitchId & railSwitchIdBitmask;
-				if (otherRailSwitchIdValue != railIdValue && otherRailSwitchIdValue != resetSwitchIdValue)
-					return;
-
-				//we haven't seen any rail or switch yet, save it
-				if (editingRailSwitchId == -1)
-					editingRailSwitchId = otherRailSwitchId;
-				//we saw an id before and we found a different id now, we can't place a rail here
-				else if (editingRailSwitchId != otherRailSwitchId)
-					return;
-
-				if (abs(x - checkX) + abs(y - checkY) == 1)
-					editingAdjacentRailSwitch = true;
-				if (checkX == x && checkY == y)
-					clickedOnRailSwitch = true;
-				minCheckX = MathUtils::min(minCheckX, checkX);
-				minCheckY = MathUtils::min(minCheckY, checkY);
-				maxCheckX = MathUtils::max(maxCheckX, checkX);
-				maxCheckY = MathUtils::max(maxCheckY, checkY);
-			}
-		}
-
-		int railSwitchIndex = y * width + x;
-		//we're adding a new rail
-		if (editingRailSwitchId == -1) {
-			railSwitchIds[railSwitchIndex] = (short)rails.size() | railIdValue;
-			rails.push_back(newRail(x, y, getHeight(x, y), color, 0));
-			return;
-		}
-
-		int xSpan = maxCheckX - minCheckX + 1;
-		int ySpan = maxCheckY - minCheckY + 1;
-		short editingRailSwitchIdValue = editingRailSwitchId & railSwitchIdBitmask;
-		//we're editing a rail
-		if (editingRailSwitchIdValue == railIdValue) {
-			Rail* editingRail = rails[editingRailSwitchId & railSwitchIndexBitmask];
-			//don't do anything if the colors don't match, or if the adjacent rails span more than a 1x2 rect (because that
-			//	means we're touching more than just the end of a rail)
-			if (editingRail->getColor() != color || (xSpan + ySpan > 3))
+			//we clicked 1 square adjacent to a switch exactly the same as the one we're placing, save the position and keep
+			//	going
+			} else if (moveDist == 1) {
+				matchedSwitch = switch0;
+				newSwitchId = otherRailSwitchId;
+				matchedSwitchX = checkX;
+				matchedSwitchY = checkY;
+			//it's the same switch but it's too far, we can't move it or delete it
+			} else
 				return;
-
-			int segmentCount = editingRail->getSegmentCount();
-			Rail::Segment* firstSegment = editingRail->getSegment(0);
-			Rail::Segment* lastSegment = editingRail->getSegment(segmentCount - 1);
-			//we clicked next to a rail, add to it
-			if (!clickedOnRailSwitch) {
-				int tileHeight = getHeight(x, y);
-				//don't add a segment if the rail is not adjacent, or on a non-empty-space tile above the rail
-				if (!editingAdjacentRailSwitch || (tileHeight > editingRail->getBaseHeight() && tileHeight != emptySpaceHeight))
-					return;
-
-				editingRail->addGroup(group);
-				editingRail->addSegment(x, y);
-				railSwitchIds[railSwitchIndex] = editingRailSwitchId;
-			//we clicked on the last segment of a rail, delete it
-			} else if (segmentCount == 1) {
-				editingRail->editorIsDeleted = true;
-				railSwitchIds[railSwitchIndex] = 0;
-			//we clicked at the end of a rail, delete that segment
-			} else if ((firstSegment->x == x && firstSegment->y == y) || (lastSegment->x == x && lastSegment->y == y)) {
-				editingRail->editorRemoveGroup(group);
-				editingRail->editorRemoveSegment(x, y);
-				railSwitchIds[railSwitchIndex] = 0;
-			}
-		//we're editing a reset switch
-		} else if (editingRailSwitchIdValue == resetSwitchIdValue) {
-			ResetSwitch* editingResetSwitch = resetSwitches[editingRailSwitchId & railSwitchIndexBitmask];
-			int editingResetSwitchX = editingResetSwitch->getCenterX();
-			int editingResetSwitchBottomY = editingResetSwitch->getBottomY();
-			//don't do anything if we the reset switch isn't adjacent to this, or if the adjacent reset switch spans more than 2
-			//	in both directions (a 1x3 rect is fine if we clicked next to the reset switch with a rail below it, and if it's
-			//	the middle of a rail we'll just end up passing it)
-			if (!editingAdjacentRailSwitch || (xSpan > 1 && ySpan > 1 && !clickedOnRailSwitch))
-				return;
-			//one side at a time, see if we can add a segment to end of the reset switch
-			Holder_RessetSwitchSegmentVector leftSegmentsHolder (&editingResetSwitch->leftSegments);
-			Holder_RessetSwitchSegmentVector bottomSegmentsHolder (&editingResetSwitch->bottomSegments);
-			Holder_RessetSwitchSegmentVector rightSegmentsHolder (&editingResetSwitch->rightSegments);
-			editorUpdateResetSwitchGroups(
-					x,
-					y,
-					color,
-					group,
-					editingRailSwitchId,
-					railSwitchIndex,
-					editingResetSwitchX,
-					editingResetSwitchBottomY,
-					editingResetSwitchX - 1,
-					editingResetSwitchBottomY,
-					&leftSegmentsHolder)
-				|| editorUpdateResetSwitchGroups(
-					x,
-					y,
-					color,
-					group,
-					editingRailSwitchId,
-					railSwitchIndex,
-					editingResetSwitchX,
-					editingResetSwitchBottomY,
-					editingResetSwitchX,
-					editingResetSwitchBottomY + 1,
-					&bottomSegmentsHolder)
-				|| editorUpdateResetSwitchGroups(
-					x,
-					y,
-					color,
-					group,
-					editingRailSwitchId,
-					railSwitchIndex,
-					editingResetSwitchX,
-					editingResetSwitchBottomY,
-					editingResetSwitchX + 1,
-					editingResetSwitchBottomY,
-					&rightSegmentsHolder);
 		}
 	}
-	//remove a rail segment if we clicked on the last segment of the list, or add a segment if it's adjacent to the last segment
-	//	of the list, or add the first segment if there are none and the new one matches the other coordinates
-	//return whether we updated the segments or determined there was nothing to update
-	bool MapState::editorUpdateResetSwitchGroups(
-		int x,
-		int y,
-		char color,
-		char group,
-		short resetSwitchId,
-		int resetSwitchIndex,
-		int baseX,
-		int baseY,
-		int newRailGroupX,
-		int newRailGroupY,
-		Holder_RessetSwitchSegmentVector* segmentsHolder)
-	{
-		vector<ResetSwitch::Segment>* segments = segmentsHolder->val;
-		if (segments->size() == 0) {
-			//if we have no segments, we can only add a segment with group 0 at the given coordinates
-			if (x != newRailGroupX || y != newRailGroupY || group != 0)
-				return false;
-		} else {
-			ResetSwitch::Segment& lastSegment = segments->back();
-			int segmentDist = abs(lastSegment.x - x) + abs(lastSegment.y - y);
-			//we clicked directly on the last segment, we can't add a segment here
-			if (segmentDist == 0) {
-				//delete it if it matches the color and group of this rail
-				if (lastSegment.color == color && lastSegment.group == group) {
-					segments->pop_back();
-					railSwitchIds[resetSwitchIndex] = 0;
-				}
-				return true;
-			//we clicked next to the last segment, check if we can add a segment here
-			} else if (segmentDist == 1) {
-				//the color matches the last segment- we can add a segment if the group isn't already there
-				if (color == lastSegment.color) {
-					for (ResetSwitch::Segment& segment : (*segments)) {
-						if (segment.color == color && segment.group == group)
-							return false;
-					}
-				//this is the start of the second color, we can add it if it's group 0
-				} else if (lastSegment.color == segments->front().color) {
-					if (group != 0)
+
+	//we've moving a switch, erase the ID from the old tiles and update the position on the switch
+	if (matchedSwitch != nullptr) {
+		for (int eraseY = matchedSwitchY; eraseY < matchedSwitchY + 2; eraseY++) {
+			for (int eraseX = matchedSwitchX; eraseX < matchedSwitchX + 2; eraseX++) {
+				railSwitchIds[eraseY * width + eraseX] = 0;
+			}
+		}
+		matchedSwitch->editorMoveTo(leftX, topY);
+	//we're deleting a switch, remove this group from any matching rails
+	} else if (newSwitchId == 0) {
+		for (Rail* rail : rails) {
+			if (rail->getColor() == color)
+				rail->editorRemoveGroup(group);
+		}
+	//we're setting a new switch
+	} else {
+		//but don't set it if we already have a switch exactly like this one
+		for (int i = 0; i < (int)switches.size(); i++) {
+			Switch* switch0 = switches[i];
+			if (switch0->getColor() == color && switch0->getGroup() == group && !switch0->editorIsDeleted)
+				return;
+		}
+		switches.push_back(newSwitch(leftX, topY, color, group));
+	}
+
+	//go through and set the new switch ID, whether we're adding, moving, or removing a switch
+	for (int switchIdY = topY; switchIdY < topY + 2; switchIdY++) {
+		for (int switchIdX = leftX; switchIdX < leftX + 2; switchIdX++) {
+			railSwitchIds[switchIdY * width + switchIdX] = newSwitchId;
+		}
+	}
+}
+//set a rail, or delete a rail if we can
+void MapState::editorSetRail(int x, int y, char color, char group) {
+	//a rail can't go along the edge of the map
+	if (x - 1 < 0 || y - 1 < 0 || x + 1 >= width || y + 1 >= height)
+		return;
+	//if there is no switch that matches this rail, don't do anything
+	bool foundMatchingSwitch = false;
+	for (Switch* switch0 : switches) {
+		if (switch0->getGroup() == group && switch0->getColor() == color && !switch0->editorIsDeleted) {
+			foundMatchingSwitch = true;
+			break;
+		}
+	}
+	if (!foundMatchingSwitch)
+		return;
+
+	short editingRailSwitchId = -1;
+	bool editingAdjacentRailSwitch = false;
+	bool clickedOnRailSwitch = false;
+	int minCheckX = 1000000;
+	int minCheckY = 1000000;
+	int maxCheckX = -1;
+	int maxCheckY = -1;
+	for (int checkY = y - 1; checkY <= y + 1; checkY++) {
+		for (int checkX = x - 1; checkX <= x + 1; checkX++) {
+			//no rail or switch here, keep looking
+			if (!tileHasRailOrSwitch(checkX, checkY))
+				continue;
+
+			//if this is not a rail or reset switch, we can't place a new rail here
+			short otherRailSwitchId = getRailSwitchId(checkX, checkY);
+			short otherRailSwitchIdValue = otherRailSwitchId & railSwitchIdBitmask;
+			if (otherRailSwitchIdValue != railIdValue && otherRailSwitchIdValue != resetSwitchIdValue)
+				return;
+
+			//we haven't seen any rail or switch yet, save it
+			if (editingRailSwitchId == -1)
+				editingRailSwitchId = otherRailSwitchId;
+			//we saw an id before and we found a different id now, we can't place a rail here
+			else if (editingRailSwitchId != otherRailSwitchId)
+				return;
+
+			if (abs(x - checkX) + abs(y - checkY) == 1)
+				editingAdjacentRailSwitch = true;
+			if (checkX == x && checkY == y)
+				clickedOnRailSwitch = true;
+			minCheckX = MathUtils::min(minCheckX, checkX);
+			minCheckY = MathUtils::min(minCheckY, checkY);
+			maxCheckX = MathUtils::max(maxCheckX, checkX);
+			maxCheckY = MathUtils::max(maxCheckY, checkY);
+		}
+	}
+
+	int railSwitchIndex = y * width + x;
+	//we're adding a new rail
+	if (editingRailSwitchId == -1) {
+		railSwitchIds[railSwitchIndex] = (short)rails.size() | railIdValue;
+		rails.push_back(newRail(x, y, getHeight(x, y), color, 0));
+		return;
+	}
+
+	int xSpan = maxCheckX - minCheckX + 1;
+	int ySpan = maxCheckY - minCheckY + 1;
+	short editingRailSwitchIdValue = editingRailSwitchId & railSwitchIdBitmask;
+	//we're editing a rail
+	if (editingRailSwitchIdValue == railIdValue) {
+		Rail* editingRail = rails[editingRailSwitchId & railSwitchIndexBitmask];
+		//don't do anything if the colors don't match, or if the adjacent rails span more than a 1x2 rect (because that means
+		//	we're touching more than just the end of a rail)
+		if (editingRail->getColor() != color || (xSpan + ySpan > 3))
+			return;
+
+		int segmentCount = editingRail->getSegmentCount();
+		Rail::Segment* firstSegment = editingRail->getSegment(0);
+		Rail::Segment* lastSegment = editingRail->getSegment(segmentCount - 1);
+		//we clicked next to a rail, add to it
+		if (!clickedOnRailSwitch) {
+			int tileHeight = getHeight(x, y);
+			//don't add a segment if the rail is not adjacent, or on a non-empty-space tile above the rail
+			if (!editingAdjacentRailSwitch || (tileHeight > editingRail->getBaseHeight() && tileHeight != emptySpaceHeight))
+				return;
+
+			editingRail->addGroup(group);
+			editingRail->addSegment(x, y);
+			railSwitchIds[railSwitchIndex] = editingRailSwitchId;
+		//we clicked on the last segment of a rail, delete it
+		} else if (segmentCount == 1) {
+			editingRail->editorIsDeleted = true;
+			railSwitchIds[railSwitchIndex] = 0;
+		//we clicked at the end of a rail, delete that segment
+		} else if ((firstSegment->x == x && firstSegment->y == y) || (lastSegment->x == x && lastSegment->y == y)) {
+			editingRail->editorRemoveGroup(group);
+			editingRail->editorRemoveSegment(x, y);
+			railSwitchIds[railSwitchIndex] = 0;
+		}
+	//we're editing a reset switch
+	} else if (editingRailSwitchIdValue == resetSwitchIdValue) {
+		ResetSwitch* editingResetSwitch = resetSwitches[editingRailSwitchId & railSwitchIndexBitmask];
+		int editingResetSwitchX = editingResetSwitch->getCenterX();
+		int editingResetSwitchBottomY = editingResetSwitch->getBottomY();
+		//don't do anything if we the reset switch isn't adjacent to this, or if the adjacent reset switch spans more than 2 in
+		//	both directions (a 1x3 rect is fine if we clicked next to the reset switch with a rail below it, and if it's the
+		//	middle of a rail we'll just end up passing it)
+		if (!editingAdjacentRailSwitch || (xSpan > 1 && ySpan > 1 && !clickedOnRailSwitch))
+			return;
+		//one side at a time, see if we can add a segment to end of the reset switch
+		Holder_RessetSwitchSegmentVector leftSegmentsHolder (&editingResetSwitch->leftSegments);
+		Holder_RessetSwitchSegmentVector bottomSegmentsHolder (&editingResetSwitch->bottomSegments);
+		Holder_RessetSwitchSegmentVector rightSegmentsHolder (&editingResetSwitch->rightSegments);
+		editorUpdateResetSwitchGroups(
+				x,
+				y,
+				color,
+				group,
+				editingRailSwitchId,
+				railSwitchIndex,
+				editingResetSwitchX,
+				editingResetSwitchBottomY,
+				editingResetSwitchX - 1,
+				editingResetSwitchBottomY,
+				&leftSegmentsHolder)
+			|| editorUpdateResetSwitchGroups(
+				x,
+				y,
+				color,
+				group,
+				editingRailSwitchId,
+				railSwitchIndex,
+				editingResetSwitchX,
+				editingResetSwitchBottomY,
+				editingResetSwitchX,
+				editingResetSwitchBottomY + 1,
+				&bottomSegmentsHolder)
+			|| editorUpdateResetSwitchGroups(
+				x,
+				y,
+				color,
+				group,
+				editingRailSwitchId,
+				railSwitchIndex,
+				editingResetSwitchX,
+				editingResetSwitchBottomY,
+				editingResetSwitchX + 1,
+				editingResetSwitchBottomY,
+				&rightSegmentsHolder);
+	}
+}
+//remove a rail segment if we clicked on the last segment of the list, or add a segment if it's adjacent to the last segment of
+//	the list, or add the first segment if there are none and the new one matches the other coordinates
+//return whether we updated the segments or determined there was nothing to update
+bool MapState::editorUpdateResetSwitchGroups(
+	int x,
+	int y,
+	char color,
+	char group,
+	short resetSwitchId,
+	int resetSwitchIndex,
+	int baseX,
+	int baseY,
+	int newRailGroupX,
+	int newRailGroupY,
+	Holder_RessetSwitchSegmentVector* segmentsHolder)
+{
+	vector<ResetSwitch::Segment>* segments = segmentsHolder->val;
+	if (segments->size() == 0) {
+		//if we have no segments, we can only add a segment with group 0 at the given coordinates
+		if (x != newRailGroupX || y != newRailGroupY || group != 0)
+			return false;
+	} else {
+		ResetSwitch::Segment& lastSegment = segments->back();
+		int segmentDist = abs(lastSegment.x - x) + abs(lastSegment.y - y);
+		//we clicked directly on the last segment, we can't add a segment here
+		if (segmentDist == 0) {
+			//delete it if it matches the color and group of this rail
+			if (lastSegment.color == color && lastSegment.group == group) {
+				segments->pop_back();
+				railSwitchIds[resetSwitchIndex] = 0;
+			}
+			return true;
+		//we clicked next to the last segment, check if we can add a segment here
+		} else if (segmentDist == 1) {
+			//the color matches the last segment- we can add a segment if the group isn't already there
+			if (color == lastSegment.color) {
+				for (ResetSwitch::Segment& segment : (*segments)) {
+					if (segment.color == color && segment.group == group)
 						return false;
-				//this would be a third color, we can't add a segment here
-				} else
+				}
+			//this is the start of the second color, we can add it if it's group 0
+			} else if (lastSegment.color == segments->front().color) {
+				if (group != 0)
 					return false;
-			//we clicked too far from the last segment, we can't add a segment here
+			//this would be a third color, we can't add a segment here
 			} else
 				return false;
-		}
-
-		//if we get here, we can add this segment
-		railSwitchIds[resetSwitchIndex] = resetSwitchId;
-		segments->push_back(ResetSwitch::Segment(x, y, color, group, 0));
-		//fix sprite indices
-		int lastEndX = baseX;
-		int lastEndY = baseY;
-		ResetSwitch::Segment& end = segments->back();
-		if (segments->size() > 1) {
-			ResetSwitch::Segment& lastEnd = (*segments)[segments->size() - 2];
-			lastEndX = lastEnd.x;
-			lastEndY = lastEnd.y;
-			int secondLastX = baseX;
-			int secondLastY = baseY;
-			if (segments->size() >= 3) {
-				ResetSwitch::Segment& secondLastEnd = (*segments)[segments->size() - 3];
-				secondLastX = secondLastEnd.x;
-				secondLastY = secondLastEnd.y;
-			}
-			lastEnd.spriteHorizontalIndex =
-				Rail::middleSegmentSpriteHorizontalIndex(secondLastX, secondLastY, lastEndX, lastEndY, x, y);
-		}
-		end.spriteHorizontalIndex = Rail::extentSegmentSpriteHorizontalIndex(lastEndX, lastEndY, x, y);
-		return true;
+		//we clicked too far from the last segment, we can't add a segment here
+		} else
+			return false;
 	}
-	//set a reset switch, or delete one if we can
-	void MapState::editorSetResetSwitch(int x, int bottomY) {
-		//a reset switch occupies a 1x2 square, and must be surrounded by a 1-tile ring of no-swich-or-rail tiles
-		if (x - 1 < 0 || bottomY - 2 < 0 || x + 1 >= width || bottomY + 1 >= height)
-			return;
 
-		short newResetSwitchId = (short)resetSwitches.size() | resetSwitchIdValue;
-		for (int checkY = bottomY - 2; checkY <= bottomY + 1; checkY++) {
-			for (int checkX = x - 1; checkX <= x + 1; checkX++) {
-				//no rail or switch here, keep looking
-				if (!tileHasRailOrSwitch(checkX, checkY))
-					continue;
+	//if we get here, we can add this segment
+	railSwitchIds[resetSwitchIndex] = resetSwitchId;
+	segments->push_back(ResetSwitch::Segment(x, y, color, group, 0));
+	//fix sprite indices
+	int lastEndX = baseX;
+	int lastEndY = baseY;
+	ResetSwitch::Segment& end = segments->back();
+	if (segments->size() > 1) {
+		ResetSwitch::Segment& lastEnd = (*segments)[segments->size() - 2];
+		lastEndX = lastEnd.x;
+		lastEndY = lastEnd.y;
+		int secondLastX = baseX;
+		int secondLastY = baseY;
+		if (segments->size() >= 3) {
+			ResetSwitch::Segment& secondLastEnd = (*segments)[segments->size() - 3];
+			secondLastX = secondLastEnd.x;
+			secondLastY = secondLastEnd.y;
+		}
+		lastEnd.spriteHorizontalIndex =
+			Rail::middleSegmentSpriteHorizontalIndex(secondLastX, secondLastY, lastEndX, lastEndY, x, y);
+	}
+	end.spriteHorizontalIndex = Rail::extentSegmentSpriteHorizontalIndex(lastEndX, lastEndY, x, y);
+	return true;
+}
+//set a reset switch, or delete one if we can
+void MapState::editorSetResetSwitch(int x, int bottomY) {
+	//a reset switch occupies a 1x2 square, and must be surrounded by a 1-tile ring of no-swich-or-rail tiles
+	if (x - 1 < 0 || bottomY - 2 < 0 || x + 1 >= width || bottomY + 1 >= height)
+		return;
 
-				//this is not a reset switch, we can't place a new rail here
-				short otherRailSwitchId = getRailSwitchId(checkX, checkY);
-				if ((otherRailSwitchId & railSwitchIdBitmask) != resetSwitchIdValue)
+	short newResetSwitchId = (short)resetSwitches.size() | resetSwitchIdValue;
+	for (int checkY = bottomY - 2; checkY <= bottomY + 1; checkY++) {
+		for (int checkX = x - 1; checkX <= x + 1; checkX++) {
+			//no rail or switch here, keep looking
+			if (!tileHasRailOrSwitch(checkX, checkY))
+				continue;
+
+			//this is not a reset switch, we can't place a new rail here
+			short otherRailSwitchId = getRailSwitchId(checkX, checkY);
+			if ((otherRailSwitchId & railSwitchIdBitmask) != resetSwitchIdValue)
+				return;
+
+			ResetSwitch* resetSwitch = resetSwitches[otherRailSwitchId & railSwitchIndexBitmask];
+			//we clicked on a reset switch in the same spot as the one we're placing, mark it as deleted and set
+			//	newResetSwitchId to 0 so that we can use the regular reset-switch-placing logic to clear the reset switch
+			if (checkX == x && checkY == bottomY - 1) {
+				//but if it has segments, don't do anything to it
+				if (resetSwitch->leftSegments.size() > 0
+						|| resetSwitch->bottomSegments.size() > 0
+						|| resetSwitch->rightSegments.size() > 0)
 					return;
-
-				ResetSwitch* resetSwitch = resetSwitches[otherRailSwitchId & railSwitchIndexBitmask];
-				//we clicked on a reset switch in the same spot as the one we're placing, mark it as deleted and set
-				//	newResetSwitchId to 0 so that we can use the regular reset-switch-placing logic to clear the reset switch
-				if (checkX == x && checkY == bottomY - 1) {
-					//but if it has segments, don't do anything to it
-					if (resetSwitch->leftSegments.size() > 0
-							|| resetSwitch->bottomSegments.size() > 0
-							|| resetSwitch->rightSegments.size() > 0)
-						return;
-					resetSwitch->editorIsDeleted = true;
-					newResetSwitchId = 0;
-					checkY = bottomY + 2;
-					break;
-				//we didn't click on a reset switch in the same spot as this one, don't try to place a new one
-				} else
-					return;
-			}
+				resetSwitch->editorIsDeleted = true;
+				newResetSwitchId = 0;
+				checkY = bottomY + 2;
+				break;
+			//we didn't click on a reset switch in the same spot as this one, don't try to place a new one
+			} else
+				return;
 		}
+	}
 
-		railSwitchIds[bottomY * width + x] = newResetSwitchId;
-		railSwitchIds[(bottomY - 1) * width + x] = newResetSwitchId;
-		if (newResetSwitchId != 0)
-			resetSwitches.push_back(newResetSwitch(x, bottomY));
-	}
-	//adjust the tile offset of the rail here, if there is one
-	void MapState::editorAdjustRailInitialTileOffset(int x, int y, char tileOffset) {
-		int railSwitchId = getRailSwitchId(x, y);
-		if ((railSwitchId & railSwitchIdBitmask) == railIdValue)
-			rails[railSwitchId & railSwitchIndexBitmask]->editorAdjustInitialTileOffset(x, y, tileOffset);
-	}
-	//check if we're saving a rail or switch to the floor file, and if so get the data we need at this tile
-	char MapState::editorGetRailSwitchFloorSaveData(int x, int y) {
-		int railSwitchId = getRailSwitchId(x, y);
-		int railSwitchIdValue = railSwitchId & railSwitchIdBitmask;
-		if (railSwitchIdValue == railIdValue)
-			return rails[railSwitchId & railSwitchIndexBitmask]->editorGetFloorSaveData(x, y);
-		else if (railSwitchIdValue == switchIdValue)
-			return switches[railSwitchId & railSwitchIndexBitmask]->editorGetFloorSaveData(x, y);
-		else if (railSwitchIdValue == resetSwitchIdValue)
-			return resetSwitches[railSwitchId & railSwitchIndexBitmask]->editorGetFloorSaveData(x, y);
-		else
-			return 0;
-	}
+	railSwitchIds[bottomY * width + x] = newResetSwitchId;
+	railSwitchIds[(bottomY - 1) * width + x] = newResetSwitchId;
+	if (newResetSwitchId != 0)
+		resetSwitches.push_back(newResetSwitch(x, bottomY));
+}
+//adjust the tile offset of the rail here, if there is one
+void MapState::editorAdjustRailInitialTileOffset(int x, int y, char tileOffset) {
+	int railSwitchId = getRailSwitchId(x, y);
+	if ((railSwitchId & railSwitchIdBitmask) == railIdValue)
+		rails[railSwitchId & railSwitchIndexBitmask]->editorAdjustInitialTileOffset(x, y, tileOffset);
+}
+//check if we're saving a rail or switch to the floor file, and if so get the data we need at this tile
+char MapState::editorGetRailSwitchFloorSaveData(int x, int y) {
+	int railSwitchId = getRailSwitchId(x, y);
+	int railSwitchIdValue = railSwitchId & railSwitchIdBitmask;
+	if (railSwitchIdValue == railIdValue)
+		return rails[railSwitchId & railSwitchIndexBitmask]->editorGetFloorSaveData(x, y);
+	else if (railSwitchIdValue == switchIdValue)
+		return switches[railSwitchId & railSwitchIndexBitmask]->editorGetFloorSaveData(x, y);
+	else if (railSwitchIdValue == resetSwitchIdValue)
+		return resetSwitches[railSwitchId & railSwitchIndexBitmask]->editorGetFloorSaveData(x, y);
+	else
+		return 0;
+}
 #endif

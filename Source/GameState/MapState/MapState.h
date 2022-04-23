@@ -127,7 +127,7 @@ private:
 	static int width;
 	static int height;
 	#ifdef EDITOR
-		static int editorNonTilesHidingState;
+	static int editorNonTilesHidingState;
 	#endif
 
 	vector<RailState*> railStates;
@@ -168,8 +168,8 @@ public:
 	bool getFinishedConnectionsTutorial() { return finishedConnectionsTutorial; }
 	int getRadioWavesAnimationTicksDuration() { return radioWavesState.get()->getAnimationTicksDuration(); }
 	#ifdef EDITOR
-		static void editorSetTile(int x, int y, char tile) { tiles[y * width + x] = tile; }
-		static void editorSetHeight(int x, int y, char height) { heights[y * width + x] = height; }
+	static void editorSetTile(int x, int y, char tile) { tiles[y * width + x] = tile; }
+	static void editorSetHeight(int x, int y, char height) { heights[y * width + x] = height; }
 	#endif
 	static MapState* produce(objCounterParameters());
 	virtual void release();
@@ -223,24 +223,24 @@ public:
 	void sortInitialRails();
 	void resetMap();
 	#ifdef EDITOR
-		static void editorSetAppropriateDefaultFloorTile(int x, int y, char expectedFloorHeight);
-		static bool editorHasFloorTileCreatingShadowForHeight(int x, int y, char height);
-		static void editorSetSwitch(int leftX, int topY, char color, char group);
-		static void editorSetRail(int x, int y, char color, char group);
-		static bool editorUpdateResetSwitchGroups(
-			int x,
-			int y,
-			char color,
-			char group,
-			short resetSwitchId,
-			int resetSwitchIndex,
-			int baseX,
-			int baseY,
-			int newRailGroupX,
-			int newRailGroupY,
-			Holder_RessetSwitchSegmentVector* segmentsHolder);
-		static void editorSetResetSwitch(int x, int bottomY);
-		static void editorAdjustRailInitialTileOffset(int x, int y, char tileOffset);
-		static char editorGetRailSwitchFloorSaveData(int x, int y);
+	static void editorSetAppropriateDefaultFloorTile(int x, int y, char expectedFloorHeight);
+	static bool editorHasFloorTileCreatingShadowForHeight(int x, int y, char height);
+	static void editorSetSwitch(int leftX, int topY, char color, char group);
+	static void editorSetRail(int x, int y, char color, char group);
+	static bool editorUpdateResetSwitchGroups(
+		int x,
+		int y,
+		char color,
+		char group,
+		short resetSwitchId,
+		int resetSwitchIndex,
+		int baseX,
+		int baseY,
+		int newRailGroupX,
+		int newRailGroupY,
+		Holder_RessetSwitchSegmentVector* segmentsHolder);
+	static void editorSetResetSwitch(int x, int bottomY);
+	static void editorAdjustRailInitialTileOffset(int x, int y, char tileOffset);
+	static char editorGetRailSwitchFloorSaveData(int x, int y);
 	#endif
 };

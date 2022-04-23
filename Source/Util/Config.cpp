@@ -44,11 +44,11 @@ Config::KickIndicators::~KickIndicators() {}
 
 //////////////////////////////// Config ////////////////////////////////
 #ifdef EDITOR
-	const float Config::defaultPixelWidth = 3.0f;
-	const float Config::defaultPixelHeight = 3.0f;
+const float Config::defaultPixelWidth = 3.0f;
+const float Config::defaultPixelHeight = 3.0f;
 #else
-	const float Config::defaultPixelWidth = 4.0f;
-	const float Config::defaultPixelHeight = 4.0f;
+const float Config::defaultPixelWidth = 4.0f;
+const float Config::defaultPixelHeight = 4.0f;
 #endif
 //TODO: settle on final background color
 const float Config::backgroundColorRed = 3.0f / 16.0f;

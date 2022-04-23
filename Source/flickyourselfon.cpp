@@ -1,6 +1,6 @@
 #include "flickyourselfon.h"
 #ifdef EDITOR
-	#include "Editor/Editor.h"
+#include "Editor/Editor.h"
 #endif
 #include "GameState/CollisionRect.h"
 #include "GameState/DynamicValue.h"
