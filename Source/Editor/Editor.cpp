@@ -7,7 +7,6 @@
 #include "Util/Config.h"
 #include "Util/FileUtils.h"
 
-#ifdef EDITOR
 #define newSaveButton(zone, leftX, topY) newWithArgs(Editor::SaveButton, zone, leftX, topY)
 #define newExportMapButton(zone, leftX, topY) newWithArgs(Editor::ExportMapButton, zone, leftX, topY)
 #define newTileButton(zone, leftX, topY, tile) newWithArgs(Editor::TileButton, zone, leftX, topY, tile)
@@ -28,7 +27,6 @@
 #define newResetSwitchButton(zone, leftX, topY) newWithArgs(Editor::ResetSwitchButton, zone, leftX, topY)
 #define newRailSwitchGroupButton(zone, leftX, topY, railSwitchGroup) \
 	newWithArgs(Editor::RailSwitchGroupButton, zone, leftX, topY, railSwitchGroup)
-#endif
 
 //////////////////////////////// Editor::EditingMutexLocker ////////////////////////////////
 Editor::EditingMutexLocker::EditingMutexLocker() {
@@ -40,7 +38,6 @@ Editor::EditingMutexLocker::~EditingMutexLocker() {
 		editingMutex.unlock();
 }
 
-#ifdef EDITOR
 //////////////////////////////// Editor::RGB ////////////////////////////////
 Editor::RGB::RGB(float pRed, float pGreen, float pBlue)
 : red(pRed)
@@ -767,12 +764,8 @@ void Editor::RailSwitchGroupButton::onClick() {
 const Editor::RGB Editor::backgroundRGB (0.25f, 0.75f, 0.75f);
 const Editor::RGB Editor::heightFloorRGB (0.0f, 0.75f, 9.0f / 16.0f);
 const Editor::RGB Editor::heightWallRGB (5.0f / 8.0f, 3.0f / 8.0f, 0.25f);
-bool Editor::isActive = true;
-#else
 bool Editor::isActive = false;
-#endif
 mutex Editor::editingMutex;
-#ifdef EDITOR
 vector<Editor::Button*> Editor::buttons;
 Editor::EvenPaintBoxRadiusButton* Editor::evenPaintBoxXRadiusButton = nullptr;
 Editor::EvenPaintBoxRadiusButton* Editor::evenPaintBoxYRadiusButton = nullptr;
@@ -1093,4 +1086,3 @@ bool Editor::clickedAdjacentTile(int x, int y, MouseDragAction clickedAction) {
 	lastMouseDragMapY = y;
 	return true;
 }
-#endif

@@ -33,19 +33,14 @@ public:
 
 	static const int gameScreenWidth = 221;
 	static const int gameScreenHeight = 165;
-	#ifdef EDITOR
 	static const int editorMarginRight = 150;
 	static const int editorMarginBottom = 60;
-	static const int windowScreenWidth = gameScreenWidth + editorMarginRight;
-	static const int windowScreenHeight = gameScreenHeight + editorMarginBottom;
-	#else
-	static const int windowScreenWidth = gameScreenWidth;
-	static const int windowScreenHeight = gameScreenHeight;
-	#endif
 	static const int ticksPerSecond = 1000;
 	static const int updatesPerSecond = 48;
 	static const float defaultPixelWidth;
 	static const float defaultPixelHeight;
+	static const float editorDefaultPixelWidth;
+	static const float editorDefaultPixelHeight;
 	static const float backgroundColorRed;
 	static const float backgroundColorGreen;
 	static const float backgroundColorBlue;
@@ -65,6 +60,8 @@ public:
 
 	static float currentPixelWidth;
 	static float currentPixelHeight;
+	static int windowScreenWidth;
+	static int windowScreenHeight;
 	static int refreshRate;
 	static KeyBindings keyBindings;
 	static KeyBindings editingKeyBindings;

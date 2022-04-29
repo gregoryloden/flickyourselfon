@@ -1,7 +1,5 @@
 #include "flickyourselfon.h"
-#ifdef EDITOR
 #include "Editor/Editor.h"
-#endif
 #include "GameState/CollisionRect.h"
 #include "GameState/DynamicValue.h"
 #include "GameState/EntityAnimation.h"
@@ -33,8 +31,13 @@ int gameMain(int argc, char* argv[]) {
 		return initResult;
 
 	for (int i = 0; i < argc; i++) {
-		if (strcmp(argv[i], "--editor") == 0)
+		if (strcmp(argv[i], "--editor") == 0) {
 			Editor::isActive = true;
+			Config::currentPixelWidth = Config::editorDefaultPixelWidth;
+			Config::currentPixelHeight = Config::editorDefaultPixelHeight;
+			Config::windowScreenWidth += Config::editorMarginRight;
+			Config::windowScreenHeight += Config::editorMarginBottom;
+		}
 	}
 
 	#ifdef DEBUG
@@ -54,8 +57,8 @@ int gameMain(int argc, char* argv[]) {
 		GameState::titleGameName,
 		SDL_WINDOWPOS_CENTERED,
 		SDL_WINDOWPOS_CENTERED,
-		(int)((float)Config::windowScreenWidth * Config::defaultPixelWidth),
-		(int)((float)Config::windowScreenHeight * Config::defaultPixelHeight),
+		(int)((float)Config::windowScreenWidth * Config::currentPixelWidth),
+		(int)((float)Config::windowScreenHeight * Config::currentPixelHeight),
 		SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_OPENGL);
 
 	//get the refresh rate
@@ -131,9 +134,8 @@ int gameMain(int argc, char* argv[]) {
 
 	//cleanup
 	#ifdef DEBUG
-		#ifdef EDITOR
+		if (Editor::isActive)
 			Editor::unloadButtons();
-		#endif
 		PauseState::unloadMenu();
 		SpriteRegistry::unloadAll();
 		Text::unloadFont();
@@ -192,9 +194,8 @@ void renderLoop(CircularStateQueue<GameState>* gameStateQueue) {
 	Text::loadFont();
 	SpriteRegistry::loadAll();
 	PauseState::loadMenu();
-	#ifdef EDITOR
+	if (Editor::isActive)
 		Editor::loadButtons();
-	#endif
 	//load the initial state after loading all sprites
 	//the render thread normally shouldn't be writing updates to states, but because we load SpriteSheets here, we have to load
 	//	the state here too. The update thread is currently waiting for this to finish so we don't have to worry about threads

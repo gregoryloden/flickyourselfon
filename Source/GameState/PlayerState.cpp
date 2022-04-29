@@ -1,4 +1,5 @@
 #include "PlayerState.h"
+#include "Editor/Editor.h"
 #include "GameState/CollisionRect.h"
 #include "GameState/DynamicValue.h"
 #include "GameState/EntityAnimation.h"
@@ -163,14 +164,13 @@ void PlayerState::updateWithPreviousPlayerState(PlayerState* prev, int ticksTime
 
 	//update this player state normally by reading from the last state
 	updatePositionWithPreviousPlayerState(prev, ticksTime);
-	#ifndef EDITOR
+	if (!Editor::isActive)
 		collideWithEnvironmentWithPreviousPlayerState(prev);
-	#endif
 	updateSpriteWithPreviousPlayerState(prev, ticksTime, !previousStateHadEntityAnimation);
-	#ifndef EDITOR
+	if (!Editor::isActive) {
 		setKickAction();
 		tryAutoClimbFall(prev, ticksTime);
-	#endif
+	}
 
 	//copy the position to the save values
 	lastControlledX = x.get()->getValue(0);
@@ -183,10 +183,8 @@ void PlayerState::updatePositionWithPreviousPlayerState(PlayerState* prev, int t
 	yDirection = (char)(keyboardState[Config::keyBindings.downKey] - keyboardState[Config::keyBindings.upKey]);
 	float speedPerTick =
 		((xDirection & yDirection) != 0 ? diagonalSpeedPerSecond : speedPerSecond) / (float)Config::ticksPerSecond;
-	#ifdef EDITOR
-	if (keyboardState[Config::keyBindings.kickKey] != 0)
+	if (Editor::isActive && keyboardState[Config::keyBindings.kickKey] != 0)
 		speedPerTick *= 8.0f;
-	#endif
 
 	int ticksSinceLastUpdate = ticksTime - prev->lastUpdateTicksTime;
 	DynamicValue* prevX = prev->x.get();

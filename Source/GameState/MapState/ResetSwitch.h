@@ -30,9 +30,7 @@ public:
 private:
 	int flipOnTicksTime;
 public:
-	#ifdef EDITOR
 	bool editorIsDeleted;
-	#endif
 
 	ResetSwitch(objCounterParametersComma() int pCenterX, int pBottomY);
 	virtual ~ResetSwitch();
@@ -41,12 +39,10 @@ public:
 	int getBottomY() { return bottomY; }
 	bool hasGroupForColor(char group, char color);
 	void render(int screenLeftWorldX, int screenTopWorldY, bool isOn, bool showGroups);
-	#ifdef EDITOR
 public:
 	char editorGetFloorSaveData(int x, int y);
 private:
 	char editorGetSegmentFloorSaveData(int x, int y, vector<Segment>& segments);
-	#endif
 };
 class ResetSwitchState onlyInDebug(: public ObjCounter) {
 private:

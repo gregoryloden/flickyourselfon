@@ -1,4 +1,5 @@
 #include "ResetSwitch.h"
+#include "Editor/Editor.h"
 #include "GameState/MapState/MapState.h"
 #include "GameState/MapState/Rail.h"
 #include "Sprites/SpriteRegistry.h"
@@ -32,18 +33,13 @@ centerX(pCenterX)
 , leftSegments()
 , bottomSegments()
 , rightSegments()
-#ifdef EDITOR
-, editorIsDeleted(false)
-#endif
-{
+, editorIsDeleted(false) {
 }
 ResetSwitch::~ResetSwitch() {}
 //render the reset switch
 void ResetSwitch::render(int screenLeftWorldX, int screenTopWorldY, bool isOn, bool showGroups) {
-	#ifdef EDITOR
-	if (editorIsDeleted)
+	if (Editor::isActive && editorIsDeleted)
 		return;
-	#endif
 
 	glEnable(GL_BLEND);
 	GLint drawLeftX = (GLint)(centerX * MapState::tileSize - screenLeftWorldX);
@@ -73,7 +69,6 @@ bool ResetSwitch::hasGroupForColor(char group, char color) {
 	}
 	return false;
 }
-#ifdef EDITOR
 //we're saving this switch to the floor file, get the data we need at this tile
 char ResetSwitch::editorGetFloorSaveData(int x, int y) {
 	if (x == centerX && y == bottomY)
@@ -102,7 +97,6 @@ char ResetSwitch::editorGetSegmentFloorSaveData(int x, int y, vector<Segment>& s
 	}
 	return 0;
 }
-#endif
 
 //////////////////////////////// ResetSwitchState ////////////////////////////////
 ResetSwitchState::ResetSwitchState(objCounterParametersComma() ResetSwitch* pResetSwitch)

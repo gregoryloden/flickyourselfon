@@ -1,7 +1,5 @@
 #include "GameState.h"
-#ifdef EDITOR
 #include "Editor/Editor.h"
-#endif
 #include "GameState/DynamicValue.h"
 #include "GameState/EntityAnimation.h"
 #include "GameState/PauseState.h"
@@ -94,14 +92,12 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 				saveState();
 			}
 			//don't reset the game in editor mode
-			#ifndef EDITOR
-			if ((endPauseDecision & (int)PauseState::EndPauseDecision::Reset) != 0) {
+			if ((endPauseDecision & (int)PauseState::EndPauseDecision::Reset) != 0 && !Editor::isActive) {
 				Logger::gameplayLogger.log("  reset game");
 				resetGame(ticksTime);
 				//don't check for Exit, just return here
 				return;
 			}
-			#endif
 			if ((endPauseDecision & (int)PauseState::EndPauseDecision::Exit) != 0)
 				shouldQuitGame = true;
 			else if (endPauseDecision != 0)
@@ -138,38 +134,35 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 				shouldQuitGame = true;
 				break;
 			case SDL_KEYDOWN:
-				#ifndef EDITOR
-				if (gameEvent.key.keysym.scancode == Config::keyBindings.kickKey) {
+				if (gameEvent.key.keysym.scancode == Config::keyBindings.kickKey && !Editor::isActive) {
 					playerState.get()->beginKicking(gameTicksTime);
 					break;
 				}
-				#endif
 				if (gameEvent.key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
 					pauseState.set(newBasePauseState());
 					pauseStartTicksTime = ticksTime;
 				}
 				break;
-			#ifdef EDITOR
 			case SDL_MOUSEBUTTONDOWN:
-				Editor::handleClick(gameEvent.button, false, camera, gameTicksTime);
+				if (Editor::isActive)
+					Editor::handleClick(gameEvent.button, false, camera, gameTicksTime);
 				break;
 			case SDL_MOUSEMOTION:
-				if ((SDL_GetMouseState(nullptr, nullptr) & (SDL_BUTTON_LMASK | SDL_BUTTON_MMASK | SDL_BUTTON_RMASK)) != 0)
+				if (Editor::isActive
+						&& (SDL_GetMouseState(nullptr, nullptr) & (SDL_BUTTON_LMASK | SDL_BUTTON_MMASK | SDL_BUTTON_RMASK))
+							!= 0)
 					Editor::handleClick(gameEvent.button, true, camera, gameTicksTime);
 				break;
-			#endif
 			default:
 				break;
 		}
 	}
 
-	#ifdef EDITOR
 	//if we saved the floor file, the editor requests that we save the game too, since rail/switch ids may have changed
 	if (Editor::needsGameStateSave) {
 		saveState();
 		Editor::needsGameStateSave = false;
 	}
-	#endif
 }
 //set our camera to our player
 void GameState::setPlayerCamera() {
@@ -316,9 +309,8 @@ void GameState::render(int ticksTime) {
 
 	if (pauseState.get() != nullptr)
 		pauseState.get()->render();
-	#ifdef EDITOR
+	if (Editor::isActive)
 		Editor::render(camera, gameTicksTime);
-	#endif
 }
 //render the title animation at the given time
 void GameState::renderTextDisplay(int gameTicksTime) {
@@ -459,17 +451,15 @@ void GameState::loadInitialState(int ticksTime) {
 		Logger::gameplayLogger.log("  load state");
 
 	//and finally, setup any remaining initial state
-	#ifdef EDITOR
+	if (Editor::isActive)
 		playerState.get()->setHighestZ();
-	#else
+	else
 		playerState.get()->setInitialZ();
-	#endif
 	mapState.get()->sortInitialRails();
 
-	#ifdef EDITOR
+	if (Editor::isActive)
 		//always skip the intro animation for the editor, jump straight into walking
 		sawIntroAnimation = true;
-	#endif
 	if (sawIntroAnimation) {
 		playerState.get()->obtainBoot();
 		camera = playerState.get();

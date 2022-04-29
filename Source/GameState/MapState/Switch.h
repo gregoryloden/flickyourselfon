@@ -12,9 +12,7 @@ private:
 	char color;
 	char group;
 public:
-	#ifdef EDITOR
 	bool editorIsDeleted;
-	#endif
 
 	Switch(objCounterParametersComma() int pLeftX, int pTopY, char pColor, char pGroup);
 	virtual ~Switch();
@@ -28,10 +26,8 @@ public:
 		int lastActivatedSwitchColorFadeInTicksOffset,
 		bool isOn,
 		bool showGroup);
-	#ifdef EDITOR
 	void editorMoveTo(int newLeftX, int newTopY);
 	char editorGetFloorSaveData(int x, int y);
-	#endif
 };
 class SwitchState onlyInDebug(: public ObjCounter) {
 private:

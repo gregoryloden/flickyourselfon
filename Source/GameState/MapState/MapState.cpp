@@ -1,7 +1,5 @@
 #include "MapState.h"
-#ifdef EDITOR
 #include "Editor/Editor.h"
-#endif
 #include "GameState/DynamicValue.h"
 #include "GameState/EntityAnimation.h"
 #include "GameState/EntityState.h"
@@ -82,9 +80,7 @@ vector<Switch*> MapState::switches;
 vector<ResetSwitch*> MapState::resetSwitches;
 int MapState::width = 1;
 int MapState::height = 1;
-#ifdef EDITOR
 int MapState::editorNonTilesHidingState = 1;
-#endif
 const string MapState::railOffsetFilePrefix = "rail ";
 const string MapState::lastActivatedSwitchColorFilePrefix = "lastActivatedSwitchColor ";
 const string MapState::finishedConnectionsTutorialFilePrefix = "finishedConnectionsTutorial ";
@@ -422,7 +418,7 @@ void MapState::updateWithPreviousMapState(MapState* prev, int ticksTime) {
 	shouldPlayRadioTowerAnimation = false;
 	switchesAnimationFadeInStartTicksTime = prev->switchesAnimationFadeInStartTicksTime;
 
-	#ifdef EDITOR
+	if (Editor::isActive) {
 		//since the editor can add switches and rails, make sure we update our list to track them
 		//we won't connect rail states to switch states since we can't kick switches in the editor
 		while (railStates.size() < rails.size())
@@ -431,7 +427,7 @@ void MapState::updateWithPreviousMapState(MapState* prev, int ticksTime) {
 			switchStates.push_back(newSwitchState(switches[switchStates.size()]));
 		while (resetSwitchStates.size() < resetSwitches.size())
 			resetSwitchStates.push_back(newResetSwitchState(resetSwitches[resetSwitchStates.size()]));
-	#endif
+	}
 	for (int i = 0; i < (int)prev->switchStates.size(); i++)
 		switchStates[i]->updateWithPreviousSwitchState(prev->switchStates[i]);
 	for (int i = 0; i < (int)prev->resetSwitchStates.size(); i++)
@@ -442,13 +438,13 @@ void MapState::updateWithPreviousMapState(MapState* prev, int ticksTime) {
 		railState->updateWithPreviousRailState(otherRailState, ticksTime);
 		insertRailByHeight(railState);
 	}
-	#ifdef EDITOR
+	if (Editor::isActive) {
 		//if we added rail states this update, add them to the height list too
 		//we know they're the last set of rails in the list
 		//if we added them in a previous state, they'll already be sorted
 		while (railStatesByHeight.size() < railStates.size())
 			railStatesByHeight.push_back(railStates[railStatesByHeight.size()]);
-	#endif
+	}
 
 	radioWavesState.get()->updateWithPreviousRadioWavesState(prev->radioWavesState.get(), ticksTime);
 }
@@ -548,9 +544,7 @@ void MapState::render(EntityState* camera, char playerZ, bool showConnections, i
 	int tileMinY = MathUtils::max(screenTopWorldY / tileSize, 0);
 	int tileMaxX = MathUtils::min((Config::gameScreenWidth + screenLeftWorldX - 1) / tileSize + 1, width);
 	int tileMaxY = MathUtils::min((Config::gameScreenHeight + screenTopWorldY - 1) / tileSize + 1, height);
-	#ifdef EDITOR
-	char editorSelectedHeight = Editor::getSelectedHeight();
-	#endif
+	char editorSelectedHeight = Editor::isActive ? Editor::getSelectedHeight() : -1;
 	for (int y = tileMinY; y < tileMaxY; y++) {
 		for (int x = tileMinX; x < tileMaxX; x++) {
 			//consider any tile at the max height to be filler
@@ -562,15 +556,13 @@ void MapState::render(EntityState* camera, char playerZ, bool showConnections, i
 			GLint leftX = (GLint)(x * tileSize - screenLeftWorldX);
 			GLint topY = (GLint)(y * tileSize - screenTopWorldY);
 			SpriteRegistry::tiles->renderSpriteAtScreenPosition((int)(tiles[mapIndex]), 0, leftX, topY);
-			#ifdef EDITOR
-			if (editorSelectedHeight != -1 && editorSelectedHeight != mapHeight)
+			if (Editor::isActive && editorSelectedHeight != -1 && editorSelectedHeight != mapHeight)
 				SpriteSheet::renderFilledRectangle(
 					0.0f, 0.0f, 0.0f, 0.5f, leftX, topY, leftX + (GLint)tileSize, topY + (GLint)tileSize);
-			#endif
 		}
 	}
 
-	#ifdef EDITOR
+	if (Editor::isActive) {
 		if (showConnections == (editorNonTilesHidingState % 2 == 1))
 			editorNonTilesHidingState = (editorNonTilesHidingState + 1) % 6;
 		//by default, show the connections
@@ -582,7 +574,7 @@ void MapState::render(EntityState* camera, char playerZ, bool showConnections, i
 		//on the 2nd press of the show-connections button, hide everything other than the tiles
 		else
 			return;
-	#endif
+	}
 
 	//draw rail shadows, rails (that are below the player), and switches
 	for (RailState* railState : railStates)
@@ -607,14 +599,12 @@ void MapState::render(EntityState* camera, char playerZ, bool showConnections, i
 
 	//draw the radio tower after drawing everything else
 	glEnable(GL_BLEND);
-	#ifdef EDITOR
+	if (Editor::isActive)
 		glColor4f(1.0f, 1.0f, 1.0f, 2.0f / 3.0f);
-	#endif
 	SpriteRegistry::radioTower->renderSpriteAtScreenPosition(
 		0, 0, (GLint)(radioTowerLeftXOffset - screenLeftWorldX), (GLint)(radioTowerTopYOffset - screenTopWorldY));
-	#ifdef EDITOR
+	if (Editor::isActive)
 		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-	#endif
 
 	glColor4f(
 		(lastActivatedSwitchColor == MapState::squareColor || lastActivatedSwitchColor == MapState::sineColor) ? 1.0f : 0.0f,
@@ -627,7 +617,7 @@ void MapState::render(EntityState* camera, char playerZ, bool showConnections, i
 //draw anything (rails, groups) that render above the player
 //assumes render() has already been called to set the rails above the player
 void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int ticksTime) {
-	#ifdef EDITOR
+	if (Editor::isActive) {
 		//by default, show the connections
 		if (editorNonTilesHidingState / 2 == 0)
 			showConnections = true;
@@ -637,7 +627,7 @@ void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int 
 		//on the 2nd press of the show-connections button, hide everything other than the tiles
 		else
 			return;
-	#endif
+	}
 
 	int screenLeftWorldX = getScreenLeftWorldX(camera, ticksTime);
 	int screenTopWorldY = getScreenTopWorldY(camera, ticksTime);
@@ -753,14 +743,12 @@ void MapState::saveState(ofstream& file) {
 	if (finishedConnectionsTutorial)
 		file << finishedConnectionsTutorialFilePrefix << "true\n";
 
-	#ifdef EDITOR
 	//don't save the rail states if we're saving the floor file
 	//also write that we unlocked all the switches
 	if (Editor::needsGameStateSave) {
 		file << lastActivatedSwitchColorFilePrefix << "100\n";
 		return;
 	}
-	#endif
 	for (int i = 0; i < (int)railStates.size(); i++) {
 		RailState* railState = railStates[i];
 		char targetTileOffset = (char)railState->getTargetTileOffset();
@@ -795,7 +783,6 @@ void MapState::resetMap() {
 	for (RailState* railState : railStates)
 		railState->reset();
 }
-#ifdef EDITOR
 //examine the neighboring tiles and pick an appropriate default tile, but only if we match the expected floor height
 //wall tiles and floor tiles of a different height will be ignored
 void MapState::editorSetAppropriateDefaultFloorTile(int x, int y, char expectedFloorHeight) {
@@ -1218,4 +1205,3 @@ char MapState::editorGetRailSwitchFloorSaveData(int x, int y) {
 	else
 		return 0;
 }
-#endif

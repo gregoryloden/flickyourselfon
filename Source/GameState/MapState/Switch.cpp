@@ -1,4 +1,5 @@
 #include "Switch.h"
+#include "Editor/Editor.h"
 #include "GameState/MapState/MapState.h"
 #include "GameState/MapState/Rail.h"
 #include "Sprites/SpriteRegistry.h"
@@ -11,10 +12,7 @@ leftX(pLeftX)
 , topY(pTopY)
 , color(pColor)
 , group(pGroup)
-#ifdef EDITOR
-, editorIsDeleted(false)
-#endif
-{
+, editorIsDeleted(false) {
 }
 Switch::~Switch() {}
 //render the switch
@@ -26,18 +24,18 @@ void Switch::render(
 	bool isOn,
 	bool showGroup)
 {
-	#ifdef EDITOR
+	if (Editor::isActive) {
 		if (editorIsDeleted)
 			return;
 		//always render the activated color for all switches up to sine
 		lastActivatedSwitchColor = MapState::sineColor;
 		lastActivatedSwitchColorFadeInTicksOffset = MapState::switchesFadeInDuration;
 		isOn = true;
-	#else
+	} else {
 		//group 0 is the turn-on-all-switches switch, don't render it if we're not in the editor
 		if (group == 0)
 			return;
-	#endif
+	}
 
 	glEnable(GL_BLEND);
 	GLint drawLeftX = (GLint)(leftX * MapState::tileSize - screenLeftWorldX);
@@ -67,7 +65,6 @@ void Switch::render(
 	if (showGroup)
 		MapState::renderGroupRect(group, drawLeftX + 4, drawTopY + 4, drawLeftX + 8, drawTopY + 8);
 }
-#ifdef EDITOR
 //update the position of this switch
 void Switch::editorMoveTo(int newLeftX, int newTopY) {
 	leftX = newLeftX;
@@ -85,7 +82,6 @@ char Switch::editorGetFloorSaveData(int x, int y) {
 	else
 		return MapState::floorRailSwitchTailValue;
 }
-#endif
 
 //////////////////////////////// SwitchState ////////////////////////////////
 SwitchState::SwitchState(objCounterParametersComma() Switch* pSwitch0)

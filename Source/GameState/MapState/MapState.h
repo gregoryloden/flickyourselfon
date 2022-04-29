@@ -126,9 +126,7 @@ private:
 	static vector<ResetSwitch*> resetSwitches;
 	static int width;
 	static int height;
-	#ifdef EDITOR
 	static int editorNonTilesHidingState;
-	#endif
 
 	vector<RailState*> railStates;
 	vector<RailState*> railStatesByHeight;
@@ -167,10 +165,8 @@ public:
 	char getLastActivatedSwitchColor() { return lastActivatedSwitchColor; }
 	bool getFinishedConnectionsTutorial() { return finishedConnectionsTutorial; }
 	int getRadioWavesAnimationTicksDuration() { return radioWavesState.get()->getAnimationTicksDuration(); }
-	#ifdef EDITOR
 	static void editorSetTile(int x, int y, char tile) { tiles[y * width + x] = tile; }
 	static void editorSetHeight(int x, int y, char height) { heights[y * width + x] = height; }
-	#endif
 	static MapState* produce(objCounterParameters());
 	virtual void release();
 protected:
@@ -222,7 +218,6 @@ public:
 	bool loadState(string& line);
 	void sortInitialRails();
 	void resetMap();
-	#ifdef EDITOR
 	static void editorSetAppropriateDefaultFloorTile(int x, int y, char expectedFloorHeight);
 	static bool editorHasFloorTileCreatingShadowForHeight(int x, int y, char height);
 	static void editorSetSwitch(int leftX, int topY, char color, char group);
@@ -242,5 +237,4 @@ public:
 	static void editorSetResetSwitch(int x, int bottomY);
 	static void editorAdjustRailInitialTileOffset(int x, int y, char tileOffset);
 	static char editorGetRailSwitchFloorSaveData(int x, int y);
-	#endif
 };

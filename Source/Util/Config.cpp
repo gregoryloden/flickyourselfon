@@ -43,13 +43,10 @@ Config::KickIndicators::KickIndicators()
 Config::KickIndicators::~KickIndicators() {}
 
 //////////////////////////////// Config ////////////////////////////////
-#ifdef EDITOR
-const float Config::defaultPixelWidth = 3.0f;
-const float Config::defaultPixelHeight = 3.0f;
-#else
 const float Config::defaultPixelWidth = 4.0f;
 const float Config::defaultPixelHeight = 4.0f;
-#endif
+const float Config::editorDefaultPixelWidth = 3.0f;
+const float Config::editorDefaultPixelHeight = 3.0f;
 //TODO: settle on final background color
 const float Config::backgroundColorRed = 3.0f / 16.0f;
 const float Config::backgroundColorGreen = 0.0f;
@@ -69,6 +66,8 @@ const string Config::switchKickIndicatorFilePrefix = "switch ";
 const string Config::resetSwitchKickIndicatorFilePrefix = "resetSwitch ";
 float Config::currentPixelWidth = Config::defaultPixelWidth;
 float Config::currentPixelHeight = Config::defaultPixelHeight;
+int Config::windowScreenWidth = Config::gameScreenWidth;
+int Config::windowScreenHeight = Config::gameScreenHeight;
 int Config::refreshRate = 60;
 Config::KeyBindings Config::keyBindings;
 Config::KeyBindings Config::editingKeyBindings;

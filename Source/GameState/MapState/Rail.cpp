@@ -1,4 +1,5 @@
 #include "Rail.h"
+#include "Editor/Editor.h"
 #include "GameState/MapState/MapState.h"
 #include "Sprites/SpriteRegistry.h"
 #include "Sprites/SpriteSheet.h"
@@ -32,10 +33,7 @@ baseHeight(pBaseHeight)
 , initialTileOffset(pInitialTileOffset)
 //give a default tile offset extending to the lowest height, we'll correct it as we add segments
 , maxTileOffset(pBaseHeight / 2)
-#ifdef EDITOR
-, editorIsDeleted(false)
-#endif
-{
+, editorIsDeleted(false) {
 	segments->push_back(Segment(x, y, 0));
 }
 Rail::~Rail() {
@@ -153,10 +151,8 @@ void Rail::addSegment(int x, int y) {
 }
 //render this rail at its position by rendering each segment
 void Rail::render(int screenLeftWorldX, int screenTopWorldY, float tileOffset) {
-	#ifdef EDITOR
-	if (editorIsDeleted)
+	if (Editor::isActive && editorIsDeleted)
 		return;
-	#endif
 
 	setSegmentColor(MathUtils::fmin(1.0f, tileOffset / 3.0f), color);
 	int lastSegmentIndex = (int)segments->size() - 1;
@@ -169,10 +165,8 @@ void Rail::render(int screenLeftWorldX, int screenTopWorldY, float tileOffset) {
 }
 //render the shadow below the rail
 void Rail::renderShadow(int screenLeftWorldX, int screenTopWorldY) {
-	#ifdef EDITOR
-	if (editorIsDeleted)
+	if (Editor::isActive && editorIsDeleted)
 		return;
-	#endif
 	glEnable(GL_BLEND);
 
 	int lastSegmentIndex = (int)segments->size() - 1;
@@ -189,10 +183,8 @@ void Rail::renderShadow(int screenLeftWorldX, int screenTopWorldY) {
 }
 //render groups where the rail would be at 0 offset
 void Rail::renderGroups(int screenLeftWorldX, int screenTopWorldY) {
-	#ifdef EDITOR
-	if (editorIsDeleted)
+	if (Editor::isActive && editorIsDeleted)
 		return;
-	#endif
 
 	int lastSegmentIndex = (int)segments->size() - 1;
 	bool hasGroups = groups.size() > 0;
@@ -244,10 +236,8 @@ void Rail::renderSegment(int screenLeftWorldX, int screenTopWorldY, float tileOf
 	}
 
 	if (topShadow || bottomShadow) {
-		#ifdef EDITOR
-		if (segment.spriteHorizontalIndex > 6)
+		if (Editor::isActive && segment.spriteHorizontalIndex > 6)
 			return;
-		#endif
 		int topSpriteHeight = bottomTileY * MapState::tileSize - topWorldY;
 		int spriteX = (segment.spriteHorizontalIndex + 16) * MapState::tileSize;
 		int spriteTop = topShadow ? 0 : topSpriteHeight;
@@ -263,7 +253,6 @@ void Rail::renderSegment(int screenLeftWorldX, int screenTopWorldY, float tileOf
 			drawTopY + (GLint)spriteBottom);
 	}
 }
-#ifdef EDITOR
 //remove this group from the rail if it contains it
 void Rail::editorRemoveGroup(char group) {
 	for (int i = 0; i < (int)groups.size(); i++) {
@@ -312,7 +301,6 @@ char Rail::editorGetFloorSaveData(int x, int y) {
 	//no data but still part of this rail
 	return MapState::floorRailSwitchTailValue;
 }
-#endif
 
 //////////////////////////////// RailState ////////////////////////////////
 const float RailState::tileOffsetPerTick = 3.0f / (float)Config::ticksPerSecond;
@@ -340,9 +328,8 @@ void RailState::updateWithPreviousRailState(RailState* prev, int ticksTime) {
 		tileOffset = targetTileOffset;
 	lastUpdateTicksTime = ticksTime;
 
-	#ifdef EDITOR
+	if (Editor::isActive)
 		tileOffset = (float)rail->getInitialTileOffset();
-	#endif
 }
 //swap the tile offset between 0 and the max tile offset
 void RailState::squareToggleOffset() {
