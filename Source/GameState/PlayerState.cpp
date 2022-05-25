@@ -187,8 +187,8 @@ void PlayerState::updatePositionWithPreviousPlayerState(PlayerState* prev, int t
 	yDirection = (char)(keyboardState[Config::keyBindings.downKey] - keyboardState[Config::keyBindings.upKey]);
 	float speedPerTick =
 		((xDirection & yDirection) != 0 ? diagonalSpeedPerSecond : speedPerSecond) / (float)Config::ticksPerSecond;
-	if (Editor::isActive && keyboardState[Config::keyBindings.kickKey] != 0)
-		speedPerTick *= 8.0f;
+	if (Editor::isActive)
+		speedPerTick *= keyboardState[Config::keyBindings.kickKey] == 0 ? 2.5f : 8.0f;
 
 	int ticksSinceLastUpdate = ticksTime - prev->lastUpdateTicksTime;
 	DynamicValue* prevX = prev->x.get();
