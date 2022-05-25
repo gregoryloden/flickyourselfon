@@ -19,7 +19,8 @@ KickAction* KickAction::produce(
 	float pTargetPlayerX,
 	float pTargetPlayerY,
 	char pFallHeight,
-	short pRailSwitchId)
+	short pRailSwitchId,
+	int pRailSegmentIndex)
 {
 	initializeWithNewFromPool(k, KickAction)
 	k->type = pType;
@@ -27,6 +28,7 @@ KickAction* KickAction::produce(
 	k->targetPlayerY = pTargetPlayerY;
 	k->fallHeight = pFallHeight;
 	k->railSwitchId = pRailSwitchId;
+	k->railSegmentIndex = pRailSegmentIndex;
 	return k;
 }
 pooledReferenceCounterDefineRelease(KickAction)

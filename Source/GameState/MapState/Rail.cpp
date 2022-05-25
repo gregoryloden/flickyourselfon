@@ -39,7 +39,7 @@ baseHeight(pBaseHeight)
 Rail::~Rail() {
 	delete segments;
 }
-//get the sprite index based on which direction this end segment extends towards
+//get the sprite index based on which direction the center of this end segment extends towards the rest of the rail
 int Rail::endSegmentSpriteHorizontalIndex(int xExtents, int yExtents) {
 	return yExtents != 0 ? 8 + (1 - yExtents) / 2 : 6 + (1 - xExtents) / 2;
 }

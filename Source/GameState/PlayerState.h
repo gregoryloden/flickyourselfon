@@ -14,7 +14,7 @@ class SpriteAnimation;
 class PlayerState: public EntityState {
 private:
 	static const int railToRailTicksDuration = 80;
-	static const int autoClimbFallTriggerDelay = 500;
+	static const int autoKickTriggerDelay = 400;
 	static const float playerWidth;
 	static const float playerHeight;
 	static const float boundingBoxLeftOffset;
@@ -49,8 +49,8 @@ private:
 	int ghostSpriteStartTicksTime;
 	ReferenceCounterHolder<MapState> mapState;
 	ReferenceCounterHolder<KickAction> availableKickAction;
-	int autoClimbFallStartTicksTime;
-	bool canImmediatelyAutoClimbFall;
+	int autoKickStartTicksTime;
+	bool canImmediatelyAutoKick;
 	float lastControlledX;
 	float lastControlledY;
 
@@ -89,7 +89,7 @@ private:
 	bool setResetSwitchKickAction(float xPosition, float yPosition);
 	bool setClimbKickAction(float xPosition, float yPosition);
 	bool setFallKickAction(float xPosition, float yPosition);
-	void tryAutoClimbFall(PlayerState* prev, int ticksTime);
+	void tryAutoKick(PlayerState* prev, int ticksTime);
 public:
 	void beginKicking(int ticksTime);
 private:

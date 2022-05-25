@@ -1,7 +1,7 @@
 #include "Util/PooledReferenceCounter.h"
 
-#define newKickAction(type, targetPlayerX, targetPlayerY, fallHeight, railSwitchId) \
-	produceWithArgs(KickAction, type, targetPlayerX, targetPlayerY, fallHeight, railSwitchId)
+#define newKickAction(type, targetPlayerX, targetPlayerY, fallHeight, railSwitchId, railSegmentIndex) \
+	produceWithArgs(KickAction, type, targetPlayerX, targetPlayerY, fallHeight, railSwitchId, railSegmentIndex)
 
 enum class KickActionType: int {
 	None = -1,
@@ -23,6 +23,7 @@ private:
 	float targetPlayerY;
 	char fallHeight;
 	short railSwitchId;
+	int railSegmentIndex;
 
 public:
 	KickAction(objCounterParameters());
@@ -33,6 +34,7 @@ public:
 	float getTargetPlayerY() { return targetPlayerY; }
 	char getFallHeight() { return fallHeight; }
 	short getRailSwitchId() { return railSwitchId; }
+	int getRailSegmentIndex() { return railSegmentIndex; }
 	virtual void release();
 	static KickAction* produce(
 		objCounterParametersComma()
@@ -40,6 +42,7 @@ public:
 		float pTargetPlayerX,
 		float pTargetPlayerY,
 		char pFallHeight,
-		short pRailSwitchId);
+		short pRailSwitchId,
+		int pRailSegmentIndex);
 	void render(float centerX, float bottomY, bool hasRailsToReset);
 };

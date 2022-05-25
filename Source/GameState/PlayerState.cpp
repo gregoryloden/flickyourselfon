@@ -20,6 +20,10 @@
 #ifdef DEBUG
 	//**/#define SHOW_PLAYER_BOUNDING_BOX 1
 #endif
+#define newClimbFallKickAction(type, targetPlayerX, targetPlayerY, fallHeight) \
+	newKickAction(type, targetPlayerX, targetPlayerY, fallHeight, MapState::absentRailSwitchId, -1)
+#define newRailSwitchKickAction(type, railSwitchId, railSegmentIndex) \
+	newKickAction(type, -1, -1, MapState::invalidHeight, railSwitchId, railSegmentIndex)
 
 const float PlayerState::playerWidth = 11.0f;
 const float PlayerState::playerHeight = 5.0f;
@@ -53,8 +57,8 @@ PlayerState::PlayerState(objCounterParameters())
 , ghostSpriteStartTicksTime(0)
 , mapState(nullptr)
 , availableKickAction(nullptr)
-, autoClimbFallStartTicksTime(-1)
-, canImmediatelyAutoClimbFall(false)
+, autoKickStartTicksTime(-1)
+, canImmediatelyAutoKick(false)
 , lastControlledX(0.0f)
 , lastControlledY(0.0f) {
 	lastControlledX = x.get()->getValue(0);
@@ -90,8 +94,8 @@ void PlayerState::copyPlayerState(PlayerState* other) {
 	ghostSpriteStartTicksTime = other->ghostSpriteStartTicksTime;
 	//don't copy map state, it was provided when this player state was produced
 	availableKickAction.set(other->availableKickAction.get());
-	autoClimbFallStartTicksTime = other->autoClimbFallStartTicksTime;
-	canImmediatelyAutoClimbFall = other->canImmediatelyAutoClimbFall;
+	autoKickStartTicksTime = other->autoKickStartTicksTime;
+	canImmediatelyAutoKick = other->canImmediatelyAutoKick;
 	lastControlledX = other->lastControlledX;
 	lastControlledY = other->lastControlledY;
 }
@@ -169,7 +173,7 @@ void PlayerState::updateWithPreviousPlayerState(PlayerState* prev, int ticksTime
 	updateSpriteWithPreviousPlayerState(prev, ticksTime, !previousStateHadEntityAnimation);
 	if (!Editor::isActive) {
 		setKickAction();
-		tryAutoClimbFall(prev, ticksTime);
+		tryAutoKick(prev, ticksTime);
 	}
 
 	//copy the position to the save values
@@ -414,24 +418,23 @@ bool PlayerState::setRailKickAction(float xPosition, float yPosition) {
 		return false;
 	//if it's lowered, we can't ride it but don't allow falling
 	if (!railState->canRide()) {
-		availableKickAction.set(newKickAction(KickActionType::NoRail, 0, 0, 0, MapState::absentRailSwitchId));
+		availableKickAction.set(newRailSwitchKickAction(KickActionType::NoRail, MapState::absentRailSwitchId, -1));
 		return true;
 	}
 
 	//ensure it's the start or end of the rail
-	int endSegmentIndex = rail->getSegmentCount() - 1;
+	int railSegmentIndex = rail->getSegmentCount() - 1;
 	Rail::Segment* startSegment = rail->getSegment(0);
-	Rail::Segment* endSegment = rail->getSegment(endSegmentIndex);
-	bool useStart;
+	Rail::Segment* endSegment = rail->getSegment(railSegmentIndex);
 	if (startSegment->x == railMapX && startSegment->y == railMapY)
-		useStart = true;
+		railSegmentIndex = 0;
 	else if (endSegment->x == railMapX && endSegment->y == railMapY)
-		useStart = false;
+		;
 	else
 		return false;
 
 	availableKickAction.set(
-		newKickAction(KickActionType::Rail, 0, 0, 0, MapState::getRailSwitchId(railMapX, railMapY)));
+		newRailSwitchKickAction(KickActionType::Rail, MapState::getRailSwitchId(railMapX, railMapY), railSegmentIndex));
 	return true;
 }
 //set a switch kick action if there is a switch in front of the player
@@ -481,7 +484,7 @@ bool PlayerState::setSwitchKickAction(float xPosition, float yPosition) {
 	if (switchKickActionType == KickActionType::None)
 		return false;
 
-	availableKickAction.set(newKickAction(switchKickActionType, 0, 0, 0, switchId));
+	availableKickAction.set(newRailSwitchKickAction(switchKickActionType, switchId, -1));
 	return true;
 }
 //set a reset switch kick action if we can reset switch
@@ -520,7 +523,7 @@ bool PlayerState::setResetSwitchKickAction(float xPosition, float yPosition) {
 		return false;
 
 	short resetSwitchId = MapState::getRailSwitchId(resetSwitchMapX, resetSwitchMapY);
-	availableKickAction.set(newKickAction(KickActionType::ResetSwitch, 0, 0, 0, resetSwitchId));
+	availableKickAction.set(newRailSwitchKickAction(KickActionType::ResetSwitch, resetSwitchId, -1));
 	return true;
 }
 //set a climb kick action if we can climb
@@ -545,7 +548,7 @@ bool PlayerState::setClimbKickAction(float xPosition, float yPosition) {
 	//set a distance such that the bottom of the player is slightly past the edge of the ledge
 	float targetYPosition =
 		(float)(oneTileUpMapY * MapState::tileSize) - boundingBoxBottomOffset - MapState::smallDistance;
-	availableKickAction.set(newKickAction(KickActionType::Climb, 0, targetYPosition, 0, MapState::absentRailSwitchId));
+	availableKickAction.set(newClimbFallKickAction(KickActionType::Climb, 0, targetYPosition, 0));
 	return true;
 }
 //set a fall kick action if we can fall
@@ -639,41 +642,55 @@ bool PlayerState::setFallKickAction(float xPosition, float yPosition) {
 		}
 	}
 
-	availableKickAction.set(
-		newKickAction(KickActionType::Fall, targetXPosition, targetYPosition, fallHeight, MapState::absentRailSwitchId));
+	availableKickAction.set(newClimbFallKickAction(KickActionType::Fall, targetXPosition, targetYPosition, fallHeight));
 	return true;
 }
-//auto-climb or auto-fall if we can
-void PlayerState::tryAutoClimbFall(PlayerState* prev, int ticksTime) {
-	canImmediatelyAutoClimbFall = yDirection != 0 && prev->canImmediatelyAutoClimbFall;
-
-	autoClimbFallStartTicksTime = -1;
+//auto-climb, auto-fall, or auto-ride-rail if we can
+void PlayerState::tryAutoKick(PlayerState* prev, int ticksTime) {
+	autoKickStartTicksTime = -1;
+	canImmediatelyAutoKick = (xDirection != 0 || yDirection != 0) && prev->canImmediatelyAutoKick;
 	if (availableKickAction.get() == nullptr)
 		return;
-	KickActionType kickActionType = availableKickAction.get()->getType();
 
-	//ensure we have an auto-compatible kick action
-	if (kickActionType == KickActionType::Climb
-			|| (kickActionType == KickActionType::Fall && availableKickAction.get()->getFallHeight() == z - 2))
-		;
-	else
-		return;
-	//don't auto-climb or auto-fall if the player isn't moving directly up or down
-	if (xDirection != 0 || yDirection == 0)
-		return;
+	//ensure we have an auto-compatible kick action and check any secondary requirements
+	switch (availableKickAction.get()->getType()) {
+		case KickActionType::Climb:
+			//no auto-climb if the player isn't moving directly up
+			if (xDirection != 0 || yDirection != -1)
+				return;
+			break;
+		case KickActionType::Fall:
+			//no auto-fall if the player isn't moving directly down towards a floor they can climb back up from
+			if (xDirection != 0 || yDirection != 1 || availableKickAction.get()->getFallHeight() != z - 2)
+				return;
+			break;
+		case KickActionType::Rail: {
+			//no auto-ride-rail if the player isn't moving straight
+			if ((xDirection != 0) == (yDirection != 0))
+				return;
+			Rail* rail = mapState.get()->getRailFromId(availableKickAction.get()->getRailSwitchId());
+			Rail::Segment* startEndSegment = rail->getSegment(availableKickAction.get()->getRailSegmentIndex());
+			//ensure the rail matches our movement direction
+			if (Rail::endSegmentSpriteHorizontalIndex(xDirection, yDirection) != startEndSegment->spriteHorizontalIndex)
+				return;
+			break;
+		}
+		default:
+			return;
+	}
 
-	autoClimbFallStartTicksTime = ticksTime + autoClimbFallTriggerDelay;
+	autoKickStartTicksTime = ticksTime + autoKickTriggerDelay;
 	//we had a kick action before and it's the same climb/fall as we have now, copy its start time
 	if (prev->availableKickAction.get() != nullptr
-			&& prev->availableKickAction.get()->getType() == kickActionType
-			&& prev->autoClimbFallStartTicksTime != -1)
-		autoClimbFallStartTicksTime = prev->autoClimbFallStartTicksTime;
+			&& prev->availableKickAction.get()->getType() == availableKickAction.get()->getType()
+			&& prev->autoKickStartTicksTime != -1)
+		autoKickStartTicksTime = prev->autoKickStartTicksTime;
 
 	//if we've reached the threshold, start kicking now
-	if (ticksTime >= autoClimbFallStartTicksTime || canImmediatelyAutoClimbFall) {
+	if (ticksTime >= autoKickStartTicksTime || canImmediatelyAutoKick) {
 		beginKicking(ticksTime);
-		autoClimbFallStartTicksTime = -1;
-		canImmediatelyAutoClimbFall = true;
+		autoKickStartTicksTime = -1;
+		canImmediatelyAutoKick = true;
 	}
 }
 //if we don't have a kicking animation, start one
@@ -682,8 +699,6 @@ void PlayerState::beginKicking(int ticksTime) {
 	if (entityAnimation.get() != nullptr)
 		return;
 
-	xDirection = 0;
-	yDirection = 0;
 	renderInterpolatedX = true;
 	renderInterpolatedY = true;
 
@@ -1158,8 +1173,8 @@ void PlayerState::reset() {
 	availableKickAction.set(nullptr);
 	z = 0;
 	hasBoot = false;
-	autoClimbFallStartTicksTime = -1;
-	canImmediatelyAutoClimbFall = false;
+	autoKickStartTicksTime = -1;
+	canImmediatelyAutoKick = false;
 }
 #ifdef DEBUG
 	//move the player as high as possible so that all rails render under
