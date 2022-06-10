@@ -24,8 +24,8 @@ MapState::RadioWavesState::RadioWavesState(objCounterParameters())
 , spriteAnimation(nullptr)
 , spriteAnimationStartTicksTime(0)
 {
-	x.set(newCompositeQuarticValue(antennaCenterWorldX(), 0.0f, 0.0f, 0.0f, 0.0f));
-	y.set(newCompositeQuarticValue(antennaCenterWorldY(), 0.0f, 0.0f, 0.0f, 0.0f));
+	x.set(newConstantValue(antennaCenterWorldX()));
+	y.set(newConstantValue(antennaCenterWorldY()));
 }
 MapState::RadioWavesState::~RadioWavesState() {
 	//don't delete the sprite animation, SpriteRegistry owns it
@@ -38,8 +38,7 @@ MapState::RadioWavesState* MapState::RadioWavesState::produce(objCounterParamete
 //copy the other state
 void MapState::RadioWavesState::copyRadioWavesState(RadioWavesState* other) {
 	copyEntityState(other);
-	spriteAnimation = other->spriteAnimation;
-	spriteAnimationStartTicksTime = other->spriteAnimationStartTicksTime;
+	setSpriteAnimation(other->spriteAnimation, other->spriteAnimationStartTicksTime);
 }
 pooledReferenceCounterDefineRelease(MapState::RadioWavesState)
 //set the animation to the given animation at the given time
