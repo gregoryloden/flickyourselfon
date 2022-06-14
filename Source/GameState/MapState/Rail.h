@@ -1,6 +1,7 @@
 #include "General/General.h"
 
-#define newRail(x, y, baseHeight, color, initialTileOffset) newWithArgs(Rail, x, y, baseHeight, color, initialTileOffset)
+#define newRail(x, y, baseHeight, color, initialTileOffset, movementDirection) \
+	newWithArgs(Rail, x, y, baseHeight, color, initialTileOffset, movementDirection)
 #define newRailState(rail, railIndex) newWithArgs(RailState, rail, railIndex)
 
 class Rail onlyInDebug(: public ObjCounter) {
@@ -29,10 +30,18 @@ private:
 	vector<char> groups;
 	char initialTileOffset;
 	char maxTileOffset;
+	char movementDirection;
 public:
 	bool editorIsDeleted;
 
-	Rail(objCounterParametersComma() int x, int y, char pBaseHeight, char pColor, char pInitialTileOffset);
+	Rail(
+		objCounterParametersComma()
+		int x,
+		int y,
+		char pBaseHeight,
+		char pColor,
+		char pInitialTileOffset,
+		char pMovementDirection);
 	virtual ~Rail();
 
 	char getBaseHeight() { return baseHeight; }

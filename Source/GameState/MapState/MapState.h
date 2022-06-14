@@ -100,9 +100,11 @@ public:
 	static const char floorRailSwitchColorPostShiftBitmask = 0x3;
 	static const char floorRailSwitchGroupPostShiftBitmask = 0x3F;
 	static const char floorRailInitialTileOffsetPostShiftBitmask = 0x7;
+	static const char floorRailMovementDirectionPostShiftBitmask = 1;
 	static const int floorRailSwitchColorDataShift = 3;
 	static const int floorRailSwitchGroupDataShift = 2;
 	static const int floorRailInitialTileOffsetDataShift = 5;
+	static const int floorRailByte2DataShift = 2;
 	static const int floorRailHeadValue = floorRailSwitchAndHeadValue;
 	static const int floorSwitchHeadValue = floorRailSwitchAndHeadValue | floorIsSwitchBitmask;
 	static const int floorResetSwitchHeadValue = floorSwitchHeadValue | floorIsResetSwitchBitmask;

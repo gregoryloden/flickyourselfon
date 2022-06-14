@@ -179,7 +179,10 @@ void MapState::buildMap() {
 		//	bits 3-4: color (R/B/G/W)
 		//	switch bit 5 indicates switch (0) vs reset switch (1)
 		//	rail bits 5-7: initial tile offset
-		//tail byte 2+:
+		//rail secondary byte 2:
+		//	bit 1: 0 (indicates tail byte)
+		//	bit 2: direction (0 for down, 1 for up)
+		//switch tail byte 2 / rail tail byte 3+:
 		//	bit 1: 0 (indicates tail byte)
 		//	bits 2-7: group number
 		char color = (railSwitchValue >> floorRailSwitchColorDataShift) & floorRailSwitchColorPostShiftBitmask;
@@ -211,13 +214,20 @@ void MapState::buildMap() {
 		//this is a rail
 		} else {
 			short newRailId = (short)rails.size() | railIdValue;
-			char initialTileOffset =
-				(railSwitchValue >> floorRailInitialTileOffsetDataShift) & floorRailInitialTileOffsetPostShiftBitmask;
-			Rail* rail = newRail(headX, headY, heights[i], color, initialTileOffset);
-			rails.push_back(rail);
 			railSwitchIds[i] = newRailId;
 			//rails can extend in any direction after this head byte tile
 			vector<int> railIndices = parseRail(pixels, redShift, i, newRailId);
+			int railByte2Index = railIndices[0];
+			railIndices.erase(railIndices.begin());
+			//collect secondary data and build the rail
+			char initialTileOffset =
+				(railSwitchValue >> floorRailInitialTileOffsetDataShift) & floorRailInitialTileOffsetPostShiftBitmask;
+			char railByte2PostShift = (char)((pixels[railByte2Index] & redMask) >> (redShift + floorRailByte2DataShift));
+			char movementDirection = (railByte2PostShift & floorRailMovementDirectionPostShiftBitmask) * 2 - 1;
+			Rail* rail = newRail(headX, headY, heights[i], color, initialTileOffset, movementDirection);
+			rails.push_back(rail);
+			rail->addSegment(railByte2Index % width, railByte2Index / width);
+			//add all the groups
 			int floorRailGroupShiftedShift = redShift + floorRailSwitchGroupDataShift;
 			for (int railIndex : railIndices) {
 				rail->addSegment(railIndex % width, railIndex / width);
@@ -977,7 +987,7 @@ void MapState::editorSetRail(int x, int y, char color, char group) {
 	//we're adding a new rail
 	if (editingRailSwitchId == -1) {
 		railSwitchIds[railSwitchIndex] = (short)rails.size() | railIdValue;
-		rails.push_back(newRail(x, y, getHeight(x, y), color, 0));
+		rails.push_back(newRail(x, y, getHeight(x, y), color, 0, 1));
 		return;
 	}
 

@@ -24,7 +24,8 @@ float Rail::Segment::tileCenterY() {
 }
 
 //////////////////////////////// Rail ////////////////////////////////
-Rail::Rail(objCounterParametersComma() int x, int y, char pBaseHeight, char pColor, char pInitialTileOffset)
+Rail::Rail(
+	objCounterParametersComma() int x, int y, char pBaseHeight, char pColor, char pInitialTileOffset, char pMovementDirection)
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
 baseHeight(pBaseHeight)
 , color(pColor)
@@ -33,6 +34,7 @@ baseHeight(pBaseHeight)
 , initialTileOffset(pInitialTileOffset)
 //give a default tile offset extending to the lowest height, we'll correct it as we add segments
 , maxTileOffset(pBaseHeight / 2)
+, movementDirection(pMovementDirection)
 , editorIsDeleted(false) {
 	segments->push_back(Segment(x, y, 0));
 }
@@ -291,12 +293,13 @@ char Rail::editorGetFloorSaveData(int x, int y) {
 		return (color << MapState::floorRailSwitchColorDataShift)
 			| (initialTileOffset << MapState::floorRailInitialTileOffsetDataShift)
 			| MapState::floorRailHeadValue;
-	else {
-		for (int i = 1; i - 1 < (int)groups.size() && i < (int)segments->size(); i++) {
-			Segment& segment = (*segments)[i];
-			if (segment.x == x && segment.y == y)
-				return groups[i - 1] << MapState::floorRailSwitchGroupDataShift | MapState::floorIsRailSwitchBitmask;
-		}
+	Segment& second = (*segments)[1];
+	if (x == second.x && y == second.y)
+		return (((movementDirection + 1) / 2) << MapState::floorRailByte2DataShift) | MapState::floorIsRailSwitchBitmask;
+	for (int i = 0; i < (int)groups.size() && i + 2 < (int)segments->size(); i++) {
+		Segment& segment = (*segments)[i + 2];
+		if (segment.x == x && segment.y == y)
+			return groups[i] << MapState::floorRailSwitchGroupDataShift | MapState::floorIsRailSwitchBitmask;
 	}
 	//no data but still part of this rail
 	return MapState::floorRailSwitchTailValue;
