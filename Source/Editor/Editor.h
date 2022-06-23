@@ -21,6 +21,9 @@ private:
 public:
 	//Should only be allocated on the stack
 	class EditingMutexLocker {
+	private:
+		static mutex editingMutex;
+
 	public:
 		EditingMutexLocker();
 		virtual ~EditingMutexLocker();
@@ -38,7 +41,7 @@ private:
 	};
 	class Button onlyInDebug(: public ObjCounter) {
 	private:
-		static const float buttonGrayRGB;
+		static const RGB buttonGrayRGB;
 
 	protected:
 		int leftX;
@@ -50,11 +53,13 @@ private:
 		Button(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY);
 		virtual ~Button();
 
+		//draw the contents of this button over the background
+		virtual void renderOverButton() {}
 		//do anything that should happen only once after painting
 		virtual void postPaint() {}
 		void setWidthAndHeight(int width, int height);
 		bool tryHandleClick(int x, int y);
-		virtual void render();
+		void render();
 		void renderFadedOverlay();
 		void renderHighlightOutline();
 		virtual void paintMap(int x, int y);
@@ -76,14 +81,16 @@ private:
 		TextButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY, string pText);
 		virtual ~TextButton();
 
-		virtual void render();
+		//draw the contents of this text button over the background
+		virtual void renderOverTextButton() {}
+		void renderOverButton();
 	};
 	class SaveButton: public TextButton {
 	public:
 		SaveButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY);
 		virtual ~SaveButton();
 
-		virtual void render();
+		virtual void renderOverTextButton();
 		virtual void onClick();
 	};
 	class ExportMapButton: public TextButton {
@@ -94,7 +101,7 @@ private:
 		ExportMapButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY);
 		virtual ~ExportMapButton();
 
-		virtual void render();
+		virtual void renderOverTextButton();
 		virtual void onClick();
 	};
 	class TileButton: public Button {
@@ -108,7 +115,7 @@ private:
 		TileButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY, char pTile);
 		virtual ~TileButton();
 
-		virtual void render();
+		virtual void renderOverButton();
 		virtual void onClick();
 		virtual void paintMap(int x, int y);
 	};
@@ -125,7 +132,7 @@ private:
 		virtual ~HeightButton();
 
 		char getHeight() { return height; }
-		virtual void render();
+		virtual void renderOverButton();
 		virtual void onClick();
 		virtual void paintMap(int x, int y);
 	};
@@ -143,7 +150,7 @@ private:
 		virtual ~PaintBoxRadiusButton();
 
 		char getRadius() { return radius; }
-		virtual void render();
+		virtual void renderOverButton();
 		virtual void onClick();
 	};
 	class EvenPaintBoxRadiusButton: public Button {
@@ -160,7 +167,7 @@ private:
 		EvenPaintBoxRadiusButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY, bool pIsXEvenRadius);
 		virtual ~EvenPaintBoxRadiusButton();
 
-		virtual void render();
+		virtual void renderOverButton();
 		virtual void onClick();
 	};
 	class NoiseButton: public TextButton {
@@ -182,7 +189,7 @@ private:
 		NoiseTileButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY);
 		virtual ~NoiseTileButton();
 
-		virtual void render();
+		virtual void renderOverButton();
 		virtual void onClick();
 	};
 	class RaiseLowerTileButton: public Button {
@@ -197,7 +204,7 @@ private:
 		RaiseLowerTileButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY, bool pIsRaiseTileButton);
 		virtual ~RaiseLowerTileButton();
 
-		virtual void render();
+		virtual void renderOverButton();
 		virtual void onClick();
 		virtual void paintMap(int x, int y);
 		virtual void postPaint();
@@ -213,7 +220,7 @@ private:
 		ShuffleTileButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY);
 		virtual ~ShuffleTileButton();
 
-		virtual void render();
+		virtual void renderOverButton();
 		virtual void onClick();
 		virtual void paintMap(int x, int y);
 		static bool shuffleTile(int x, int y);
@@ -229,7 +236,7 @@ private:
 		SwitchButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY, char pColor);
 		virtual ~SwitchButton();
 
-		virtual void render();
+		virtual void renderOverButton();
 		virtual void onClick();
 		virtual void paintMap(int x, int y);
 	};
@@ -244,12 +251,13 @@ private:
 		RailButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY, char pColor);
 		virtual ~RailButton();
 
-		virtual void render();
+		virtual void renderOverButton();
 		virtual void onClick();
 		virtual void paintMap(int x, int y);
 	};
 	class RailTileOffsetButton: public Button {
 	public:
+		static const RGB arrowRGB;
 		static const int buttonSize;
 
 	private:
@@ -259,7 +267,7 @@ private:
 		RailTileOffsetButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY, char pTileOffset);
 		virtual ~RailTileOffsetButton();
 
-		virtual void render();
+		virtual void renderOverButton();
 		virtual void onClick();
 		virtual void paintMap(int x, int y);
 	};
@@ -271,7 +279,7 @@ private:
 		ResetSwitchButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY);
 		virtual ~ResetSwitchButton();
 
-		virtual void render();
+		virtual void renderOverButton();
 		virtual void onClick();
 		virtual void paintMap(int x, int y);
 	};
@@ -289,13 +297,15 @@ private:
 		virtual ~RailSwitchGroupButton();
 
 		char getRailSwitchGroup() { return railSwitchGroup; }
-		virtual void render();
+		virtual void renderOverButton();
 		virtual void onClick();
 	};
 
 	static const int paintBoxMaxRadius = 7;
 	static const int noiseTileButtonMaxCount = 16;
 	static const int railSwitchGroupCount = 64;
+	static const RGB blackRGB;
+	static const RGB whiteRGB;
 	static const RGB backgroundRGB;
 	static const RGB heightFloorRGB;
 	static const RGB heightWallRGB;
@@ -303,7 +313,6 @@ private:
 public:
 	static bool isActive;
 private:
-	static mutex editingMutex;
 	static vector<Button*> buttons;
 	static EvenPaintBoxRadiusButton* evenPaintBoxXRadiusButton;
 	static EvenPaintBoxRadiusButton* evenPaintBoxYRadiusButton;

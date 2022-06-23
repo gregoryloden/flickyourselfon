@@ -29,6 +29,7 @@
 	newWithArgs(Editor::RailSwitchGroupButton, zone, leftX, topY, railSwitchGroup)
 
 //////////////////////////////// Editor::EditingMutexLocker ////////////////////////////////
+mutex Editor::EditingMutexLocker::editingMutex;
 Editor::EditingMutexLocker::EditingMutexLocker() {
 	if (isActive)
 		editingMutex.lock();
@@ -47,7 +48,7 @@ Editor::RGB::RGB(float pRed, float pGreen, float pBlue)
 Editor::RGB::~RGB() {}
 
 //////////////////////////////// Editor::Button ////////////////////////////////
-const float Editor::Button::buttonGrayRGB = 0.5f;
+const Editor::RGB Editor::Button::buttonGrayRGB (0.5f, 0.5f, 0.5f);
 Editor::Button::Button(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY)
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
 leftX(zone == Zone::Right ? zoneLeftX + Config::gameScreenWidth : zoneLeftX)
@@ -74,20 +75,12 @@ bool Editor::Button::tryHandleClick(int x, int y) {
 }
 //render the button background
 void Editor::Button::render() {
-	SpriteSheet::renderFilledRectangle(
-		buttonGrayRGB, buttonGrayRGB, buttonGrayRGB, 1.0f, (GLint)leftX, (GLint)topY, (GLint)rightX, (GLint)bottomY);
+	renderRGBRect(buttonGrayRGB, 1.0f, leftX, topY, rightX, bottomY);
+	renderOverButton();
 }
 //render a rectangle the color of the background to fade this button
 void Editor::Button::renderFadedOverlay() {
-	SpriteSheet::renderFilledRectangle(
-		backgroundRGB.red,
-		backgroundRGB.green,
-		backgroundRGB.blue,
-		0.5f,
-		(GLint)leftX,
-		(GLint)topY,
-		(GLint)rightX,
-		(GLint)bottomY);
+	renderRGBRect(backgroundRGB, 0.5f, leftX, topY, rightX, bottomY);
 }
 //render a rectangle outline within the border of this button
 void Editor::Button::renderHighlightOutline() {
@@ -115,9 +108,9 @@ Editor::TextButton::TextButton(objCounterParametersComma() Zone zone, int zoneLe
 }
 Editor::TextButton::~TextButton() {}
 //render the text above the button background
-void Editor::TextButton::render() {
-	Button::render();
+void Editor::TextButton::renderOverButton() {
 	Text::render(text.c_str(), textLeftX, textBaselineY, textMetrics.fontScale);
+	renderOverTextButton();
 }
 
 //////////////////////////////// Editor::SaveButton ////////////////////////////////
@@ -126,8 +119,7 @@ Editor::SaveButton::SaveButton(objCounterParametersComma() Zone zone, int zoneLe
 }
 Editor::SaveButton::~SaveButton() {}
 //fade the save button if it's disabled
-void Editor::SaveButton::render() {
-	TextButton::render();
+void Editor::SaveButton::renderOverTextButton() {
 	if (saveButtonDisabled)
 		renderFadedOverlay();
 }
@@ -194,8 +186,7 @@ Editor::ExportMapButton::ExportMapButton(objCounterParametersComma() Zone zone, 
 }
 Editor::ExportMapButton::~ExportMapButton() {}
 //fade the export map button if it's disabled
-void Editor::ExportMapButton::render() {
-	TextButton::render();
+void Editor::ExportMapButton::renderOverTextButton() {
 	if (exportMapButtonDisabled)
 		renderFadedOverlay();
 }
@@ -252,20 +243,19 @@ Editor::TileButton::TileButton(objCounterParametersComma() Zone zone, int zoneLe
 }
 Editor::TileButton::~TileButton() {}
 //render the tile above the button
-void Editor::TileButton::render() {
-	Button::render();
+void Editor::TileButton::renderOverButton() {
 	glDisable(GL_BLEND);
 	SpriteRegistry::tiles->renderSpriteAtScreenPosition((int)tile, 0, (GLint)leftX + 1, (GLint)topY + 1);
 }
 //if noisy tile selection is off, highlight this tile for tile painting
 //if noisy tile selection is on, add this tile to the noisy tile list
 void Editor::TileButton::onClick() {
-	if (selectedButton == this)
-		selectedButton = nullptr;
-	else if (selectedButton != noiseButton)
-		selectedButton = this;
-	else
+	if (selectedButton == noiseButton)
 		addNoiseTile(tile);
+	else if (selectedButton == this)
+		selectedButton = nullptr;
+	else
+		selectedButton = this;
 }
 //set the tile at this position
 void Editor::TileButton::paintMap(int x, int y) {
@@ -282,25 +272,14 @@ Editor::HeightButton::HeightButton(objCounterParametersComma() Zone zone, int zo
 }
 Editor::HeightButton::~HeightButton() {}
 //render the height graphic above the button
-void Editor::HeightButton::render() {
-	Button::render();
+void Editor::HeightButton::renderOverButton() {
 	if (height == MapState::emptySpaceHeight)
-		SpriteSheet::renderFilledRectangle(
-			1.0f, 1.0f, 1.0f, 1.0f, (GLint)leftX + 1, (GLint)topY + 1, (GLint)rightX - 1, (GLint)bottomY - 1);
+		renderRGBRect(whiteRGB, 1.0f, leftX + 1, topY + 1, rightX - 1, bottomY - 1);
 	else {
-		SpriteSheet::renderFilledRectangle(
-			0.0f, 0.0f, 0.0f, 1.0f, (GLint)leftX + 1, (GLint)topY + 1, (GLint)rightX - 1, (GLint)bottomY - 1);
-		const RGB* heightRGB = (height & 1) == 0 ? &heightFloorRGB : &heightWallRGB;
+		renderRGBRect(blackRGB, 1.0f, leftX + 1, topY + 1, rightX - 1, bottomY - 1);
+		const RGB& heightRGB = (height & 1) == 0 ? heightFloorRGB : heightWallRGB;
 		GLint heightY = topY + (GLint)MapState::heightCount / 2 - (GLint)((height + 1) / 2);
-		SpriteSheet::renderFilledRectangle(
-			heightRGB->red,
-			heightRGB->green,
-			heightRGB->blue,
-			1.0f,
-			(GLint)leftX + 1,
-			heightY,
-			(GLint)rightX - 1,
-			heightY + 1);
+		renderRGBRect(heightRGB, 1.0f, leftX + 1, heightY, rightX - 1, heightY + 1);
 	}
 }
 //select a height as the painting action
@@ -325,20 +304,16 @@ Editor::PaintBoxRadiusButton::PaintBoxRadiusButton(
 }
 Editor::PaintBoxRadiusButton::~PaintBoxRadiusButton() {}
 //render the box radius above the button
-void Editor::PaintBoxRadiusButton::render() {
-	Button::render();
-	SpriteSheet::renderFilledRectangle(
-		0.0f, 0.0f, 0.0f, 1.0f, (GLint)leftX + 1, (GLint)topY + 1, (GLint)rightX - 1, (GLint)bottomY - 1);
+void Editor::PaintBoxRadiusButton::renderOverButton() {
+	renderRGBRect(blackRGB, 1.0f, leftX + 1, topY + 1, rightX - 1, bottomY - 1);
 	if (isXRadius) {
-		GLint boxLeftX = (GLint)leftX + 1;
-		GLint boxTopY = (GLint)topY + 3;
-		SpriteSheet::renderFilledRectangle(
-			boxRGB.red, boxRGB.green, boxRGB.blue, 1.0f, boxLeftX, boxTopY, boxLeftX + (GLint)radius + 1, boxTopY + 3);
+		int boxLeftX = leftX + 1;
+		int boxTopY = topY + 3;
+		renderRGBRect(boxRGB, 1.0f, boxLeftX, boxTopY, boxLeftX + radius + 1, boxTopY + 3);
 	} else {
-		GLint boxLeftX = (GLint)leftX + 3;
-		GLint boxTopY = (GLint)topY + 1;
-		SpriteSheet::renderFilledRectangle(
-			boxRGB.red, boxRGB.green, boxRGB.blue, 1.0f, boxLeftX, boxTopY, boxLeftX + 3, boxTopY + (GLint)radius + 1);
+		int boxLeftX = leftX + 3;
+		int boxTopY = topY + 1;
+		renderRGBRect(boxRGB, 1.0f, boxLeftX, boxTopY, boxLeftX + 3, boxTopY + radius + 1);
 	}
 }
 //select a radius to use when painting
@@ -362,26 +337,20 @@ Editor::EvenPaintBoxRadiusButton::EvenPaintBoxRadiusButton(
 }
 Editor::EvenPaintBoxRadiusButton::~EvenPaintBoxRadiusButton() {}
 //render the box radius extension above the button
-void Editor::EvenPaintBoxRadiusButton::render() {
-	Button::render();
-	SpriteSheet::renderFilledRectangle(
-		0.0f, 0.0f, 0.0f, 1.0f, (GLint)leftX + 1, (GLint)topY + 1, (GLint)rightX - 1, (GLint)bottomY - 1);
+void Editor::EvenPaintBoxRadiusButton::renderOverButton() {
+	renderRGBRect(blackRGB, 1.0f, leftX + 1, topY + 1, rightX - 1, bottomY - 1);
 	if (isXEvenRadius) {
-		GLint boxLeftX = (GLint)leftX + 3;
-		GLint boxTopY = (GLint)topY + 1;
-		GLint boxBottomY = (GLint)bottomY - 1;
-		SpriteSheet::renderFilledRectangle(
-			boxRGB.red, boxRGB.green, boxRGB.blue, 1.0f, boxLeftX, boxTopY, boxLeftX + 3, boxBottomY);
-		SpriteSheet::renderFilledRectangle(
-			lineRGB.red, lineRGB.green, lineRGB.blue, 1.0f, boxLeftX + 3, boxTopY, boxLeftX + 4, boxBottomY);
+		int boxLeftX = leftX + 3;
+		int boxTopY = topY + 1;
+		int boxBottomY = bottomY - 1;
+		renderRGBRect(boxRGB, 1.0f, boxLeftX, boxTopY, boxLeftX + 3, boxBottomY);
+		renderRGBRect(lineRGB, 1.0f, boxLeftX + 3, boxTopY, boxLeftX + 4, boxBottomY);
 	} else {
-		GLint boxTopY = (GLint)topY + 3;
-		GLint boxLeftX = (GLint)leftX + 1;
-		GLint boxRightX = (GLint)rightX - 1;
-		SpriteSheet::renderFilledRectangle(
-			boxRGB.red, boxRGB.green, boxRGB.blue, 1.0f, boxLeftX, boxTopY, boxRightX, boxTopY + 3);
-		SpriteSheet::renderFilledRectangle(
-			lineRGB.red, lineRGB.green, lineRGB.blue, 1.0f, boxLeftX, boxTopY + 3, boxRightX, boxTopY + 4);
+		int boxTopY = topY + 3;
+		int boxLeftX = leftX + 1;
+		int boxRightX = rightX - 1;
+		renderRGBRect(boxRGB, 1.0f, boxLeftX, boxTopY, boxRightX, boxTopY + 3);
+		renderRGBRect(lineRGB, 1.0f, boxLeftX, boxTopY + 3, boxRightX, boxTopY + 4);
 	}
 }
 //add or remove an extra row below/to the right of the paint box
@@ -415,8 +384,7 @@ Editor::NoiseTileButton::NoiseTileButton(objCounterParametersComma() Zone zone, 
 }
 Editor::NoiseTileButton::~NoiseTileButton() {}
 //render the tile above the button, as well as the count below it in base 4
-void Editor::NoiseTileButton::render() {
-	Button::render();
+void Editor::NoiseTileButton::renderOverButton() {
 	if (tile >= 0) {
 		glDisable(GL_BLEND);
 		SpriteRegistry::tiles->renderSpriteAtScreenPosition((int)tile, 0, (GLint)leftX + 1, (GLint)topY + 1);
@@ -429,8 +397,7 @@ void Editor::NoiseTileButton::render() {
 			SpriteSheet::renderFilledRectangle(digitRGB, digitRGB, digitRGB, 1.0f, dotLeft, dotTop, dotLeft + 1, dotTop + 2);
 		}
 	} else
-		SpriteSheet::renderFilledRectangle(
-			0.0f, 0.0f, 0.0f, 1.0f, (GLint)leftX + 1, (GLint)topY + 1, (GLint)rightX - 1, (GLint)bottomY - 1);
+		renderRGBRect(blackRGB, 1.0f, leftX + 1, topY + 1, rightX - 1, bottomY - 1);
 }
 //remove a count from this button
 void Editor::NoiseTileButton::onClick() {
@@ -449,10 +416,8 @@ Editor::RaiseLowerTileButton::RaiseLowerTileButton(
 }
 Editor::RaiseLowerTileButton::~RaiseLowerTileButton() {}
 //render a raised or lowered platform above the button
-void Editor::RaiseLowerTileButton::render() {
-	Button::render();
-	SpriteSheet::renderFilledRectangle(
-		0.0f, 0.0f, 0.0f, 1.0f, (GLint)leftX + 1, (GLint)topY + 1, (GLint)rightX - 1, (GLint)bottomY - 1);
+void Editor::RaiseLowerTileButton::renderOverButton() {
+	renderRGBRect(blackRGB, 1.0f, leftX + 1, topY + 1, rightX - 1, bottomY - 1);
 	if (isRaiseTileButton) {
 		renderRGBRect(heightFloorRGB, 1.0f, leftX + 2, topY + 2, rightX - 2, bottomY - 4);
 		renderRGBRect(heightWallRGB, 1.0f, leftX + 2, bottomY - 4, rightX - 2, bottomY - 2);
@@ -559,11 +524,9 @@ Editor::ShuffleTileButton::ShuffleTileButton(objCounterParametersComma() Zone zo
 	setWidthAndHeight(buttonWidth, buttonHeight);
 }
 Editor::ShuffleTileButton::~ShuffleTileButton() {}
-//render floor and wall tiles with arrows pointing between tthem
-void Editor::ShuffleTileButton::render() {
-	Button::render();
-	SpriteSheet::renderFilledRectangle(
-		0.0f, 0.0f, 0.0f, 1.0f, (GLint)leftX + 1, (GLint)topY + 1, (GLint)rightX - 1, (GLint)bottomY - 1);
+//render floor and wall tiles with arrows pointing between them
+void Editor::ShuffleTileButton::renderOverButton() {
+	renderRGBRect(blackRGB, 1.0f, leftX + 1, topY + 1, rightX - 1, bottomY - 1);
 	renderRGBRect(heightFloorRGB, 1.0f, leftX + 2, topY + 2, leftX + 5, topY + 5);
 	renderRGBRect(heightFloorRGB, 1.0f, rightX - 5, topY + 2, rightX - 2, topY + 5);
 	renderRGBRect(heightWallRGB, 1.0f, leftX + 2, bottomY - 5, leftX + 5, bottomY - 2);
@@ -628,10 +591,8 @@ Editor::SwitchButton::SwitchButton(objCounterParametersComma() Zone zone, int zo
 }
 Editor::SwitchButton::~SwitchButton() {}
 //render the switch above the button
-void Editor::SwitchButton::render() {
-	Button::render();
-	SpriteSheet::renderFilledRectangle(
-		0.0f, 0.0f, 0.0f, 1.0f, (GLint)leftX + 1, (GLint)topY + 1, (GLint)rightX - 1, (GLint)bottomY - 1);
+void Editor::SwitchButton::renderOverButton() {
+	renderRGBRect(blackRGB, 1.0f, leftX + 1, topY + 1, rightX - 1, bottomY - 1);
 	glEnable(GL_BLEND);
 	SpriteRegistry::switches->renderSpriteAtScreenPosition((int)(color * 2 + 1), 0, (GLint)leftX + 1, (GLint)topY + 1);
 }
@@ -655,8 +616,7 @@ Editor::RailButton::RailButton(objCounterParametersComma() Zone zone, int zoneLe
 }
 Editor::RailButton::~RailButton() {}
 //render the rail above the button
-void Editor::RailButton::render() {
-	Button::render();
+void Editor::RailButton::renderOverButton() {
 	SpriteSheet::renderFilledRectangle(
 		(color == MapState::squareColor || color == MapState::sineColor) ? 0.75f : 0.0f,
 		(color == MapState::sawColor || color == MapState::sineColor) ? 0.75f : 0.0f,
@@ -681,6 +641,7 @@ void Editor::RailButton::paintMap(int x, int y) {
 }
 
 //////////////////////////////// Editor::RailTileOffsetButton ////////////////////////////////
+const Editor::RGB Editor::RailTileOffsetButton::arrowRGB (0.75f, 0.75f, 0.75f);
 const int Editor::RailTileOffsetButton::buttonSize = MapState::tileSize + 2;
 Editor::RailTileOffsetButton::RailTileOffsetButton(
 	objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY, char pTileOffset)
@@ -690,18 +651,14 @@ Editor::RailTileOffsetButton::RailTileOffsetButton(
 }
 Editor::RailTileOffsetButton::~RailTileOffsetButton() {}
 //render the rail above the button
-void Editor::RailTileOffsetButton::render() {
-	Button::render();
-	SpriteSheet::renderFilledRectangle(
-		0.0f, 0.0f, 0.0f, 1.0f, (GLint)leftX + 1, (GLint)topY + 1, (GLint)rightX - 1, (GLint)bottomY - 1);
+void Editor::RailTileOffsetButton::renderOverButton() {
+	renderRGBRect(blackRGB, 1.0f, leftX + 1, topY + 1, rightX - 1, bottomY - 1);
 	glEnable(GL_BLEND);
 	SpriteRegistry::rails->renderSpriteAtScreenPosition(0, 0, (GLint)leftX + 1, (GLint)topY + 1);
-	GLint arrowTopY1 = (GLint)(tileOffset < 0 ? topY + 1 : bottomY - 2);
-	GLint arrowTopY2 = (GLint)(tileOffset < 0 ? topY + 2 : bottomY - 3);
-	SpriteSheet::renderFilledRectangle(
-		0.75f, 0.75f, 0.75f, 1.0f, (GLint)leftX + 3, arrowTopY1, (GLint)rightX - 3, arrowTopY1 + 1);
-	SpriteSheet::renderFilledRectangle(
-		0.75f, 0.75f, 0.75f, 1.0f, (GLint)leftX + 2, arrowTopY2, (GLint)rightX - 2, arrowTopY2 + 1);
+	int arrowTopY1 = tileOffset < 0 ? topY + 1 : bottomY - 2;
+	int arrowTopY2 = tileOffset < 0 ? topY + 2 : bottomY - 3;
+	renderRGBRect(arrowRGB, 1.0f, leftX + 3, arrowTopY1, rightX - 3, arrowTopY1 + 1);
+	renderRGBRect(arrowRGB, 1.0f, leftX + 2, arrowTopY2, rightX - 2, arrowTopY2 + 1);
 }
 //select this rail tile offset as the painting action
 void Editor::RailTileOffsetButton::onClick() {
@@ -722,10 +679,8 @@ Editor::ResetSwitchButton::ResetSwitchButton(objCounterParametersComma() Zone zo
 }
 Editor::ResetSwitchButton::~ResetSwitchButton() {}
 //render the reset switch above the button
-void Editor::ResetSwitchButton::render() {
-	Button::render();
-	SpriteSheet::renderFilledRectangle(
-		0.0f, 0.0f, 0.0f, 1.0f, (GLint)leftX + 1, (GLint)topY + 1, (GLint)rightX - 1, (GLint)bottomY - 1);
+void Editor::ResetSwitchButton::renderOverButton() {
+	renderRGBRect(blackRGB, 1.0f, leftX + 1, topY + 1, rightX - 1, bottomY - 1);
 	glEnable(GL_BLEND);
 	SpriteRegistry::resetSwitch->renderSpriteAtScreenPosition(0, 0, (GLint)leftX + 1, (GLint)topY + 1);
 }
@@ -751,8 +706,7 @@ Editor::RailSwitchGroupButton::RailSwitchGroupButton(
 }
 Editor::RailSwitchGroupButton::~RailSwitchGroupButton() {}
 //render the group above the button
-void Editor::RailSwitchGroupButton::render() {
-	Button::render();
+void Editor::RailSwitchGroupButton::renderOverButton() {
 	MapState::renderGroupRect(railSwitchGroup, (GLint)leftX + 1, (GLint)topY + 1, (GLint)rightX - 1, (GLint)bottomY - 1);
 }
 //select a group to use when painting switches or rails
@@ -761,11 +715,12 @@ void Editor::RailSwitchGroupButton::onClick() {
 }
 
 //////////////////////////////// Editor ////////////////////////////////
+const Editor::RGB Editor::blackRGB (0.0f, 0.0f, 0.0f);
+const Editor::RGB Editor::whiteRGB (1.0f, 1.0f, 1.0f);
 const Editor::RGB Editor::backgroundRGB (0.25f, 0.75f, 0.75f);
 const Editor::RGB Editor::heightFloorRGB (0.0f, 0.75f, 9.0f / 16.0f);
 const Editor::RGB Editor::heightWallRGB (5.0f / 8.0f, 3.0f / 8.0f, 0.25f);
 bool Editor::isActive = false;
-mutex Editor::editingMutex;
 vector<Editor::Button*> Editor::buttons;
 Editor::EvenPaintBoxRadiusButton* Editor::evenPaintBoxXRadiusButton = nullptr;
 Editor::EvenPaintBoxRadiusButton* Editor::evenPaintBoxYRadiusButton = nullptr;
@@ -986,14 +941,14 @@ void Editor::render(EntityState* camera, int ticksTime) {
 		} else {
 			boxLeftMapOffset = (int)selectedPaintBoxXRadiusButton->getRadius();
 			boxTopMapOffset = (int)selectedPaintBoxYRadiusButton->getRadius();
-			boxMapWidth = (boxLeftMapOffset * 2 + 1 + (evenPaintBoxXRadiusButton->isSelected ? 1 : 0));
-			boxMapHeight = (boxTopMapOffset * 2 + 1 + (evenPaintBoxYRadiusButton->isSelected ? 1 : 0));
+			boxMapWidth = (boxLeftMapOffset * 2 + (evenPaintBoxXRadiusButton->isSelected ? 2 : 1));
+			boxMapHeight = (boxTopMapOffset * 2 + (evenPaintBoxYRadiusButton->isSelected ? 2 : 1));
 		}
-		GLint boxLeftX = (GLint)((mouseMapX - boxLeftMapOffset) * MapState::tileSize - screenLeftWorldX);
-		GLint boxTopY = (GLint)((mouseMapY - boxTopMapOffset) * MapState::tileSize - screenTopWorldY);
-		GLint boxRightX = boxLeftX + (GLint)(boxMapWidth * MapState::tileSize);
-		GLint boxBottomY = boxTopY + (GLint)(boxMapHeight * MapState::tileSize);
-		SpriteSheet::renderRectangleOutline(1.0f, 1.0f, 1.0f, 1.0f, boxLeftX, boxTopY, boxRightX, boxBottomY);
+		int boxLeftX = (mouseMapX - boxLeftMapOffset) * MapState::tileSize - screenLeftWorldX;
+		int boxTopY = (mouseMapY - boxTopMapOffset) * MapState::tileSize - screenTopWorldY;
+		int boxRightX = boxLeftX + boxMapWidth * MapState::tileSize;
+		int boxBottomY = boxTopY + boxMapHeight * MapState::tileSize;
+		renderRGBRect(whiteRGB, 1.0f, boxLeftX, boxTopY, boxRightX, boxBottomY);
 	}
 
 	//draw the right and bottom background rectangles around the game view
@@ -1042,7 +997,7 @@ void Editor::addNoiseTile(char tile) {
 			break;
 		};
 	}
-	//we found a tile
+	//we found either a matching tile or an empty tile
 	NoiseTileButton* button = noiseTileButtons[foundTileIndex];
 	if (foundFreeTile) {
 		button->tile = tile;
