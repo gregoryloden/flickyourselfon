@@ -17,6 +17,9 @@
 #include "Util/StringUtils.h"
 
 #define newRadioWavesState() produceWithoutArgs(MapState::RadioWavesState)
+#define spriteAnimationAfterDelay(animation, delay) \
+	newEntityAnimationDelay(delay), \
+	newEntityAnimationSetSpriteAnimation(animation)
 
 //////////////////////////////// MapState::RadioWavesState ////////////////////////////////
 MapState::RadioWavesState::RadioWavesState(objCounterParameters())
@@ -71,6 +74,9 @@ const char* MapState::floorFileName = "floor.png";
 const float MapState::smallDistance = 1.0f / 256.0f;
 const float MapState::introAnimationCameraCenterX = (float)(MapState::tileSize * introAnimationBootTileX) + 4.5f;
 const float MapState::introAnimationCameraCenterY = (float)(MapState::tileSize * introAnimationBootTileY) - 4.5f;
+const string MapState::railOffsetFilePrefix = "rail ";
+const string MapState::lastActivatedSwitchColorFilePrefix = "lastActivatedSwitchColor ";
+const string MapState::finishedConnectionsTutorialFilePrefix = "finishedConnectionsTutorial ";
 char* MapState::tiles = nullptr;
 char* MapState::heights = nullptr;
 short* MapState::railSwitchIds = nullptr;
@@ -80,9 +86,6 @@ vector<ResetSwitch*> MapState::resetSwitches;
 int MapState::width = 1;
 int MapState::height = 1;
 int MapState::editorNonTilesHidingState = 1;
-const string MapState::railOffsetFilePrefix = "rail ";
-const string MapState::lastActivatedSwitchColorFilePrefix = "lastActivatedSwitchColor ";
-const string MapState::finishedConnectionsTutorialFilePrefix = "finishedConnectionsTutorial ";
 MapState::MapState(objCounterParameters())
 : PooledReferenceCounter(objCounterArguments())
 , railStates()
@@ -506,14 +509,10 @@ void MapState::flipResetSwitch(short resetSwitchId, int ticksTime) {
 //begin a radio waves animation
 void MapState::startRadioWavesAnimation(int initialTicksDelay, int ticksTime) {
 	vector<ReferenceCounterHolder<EntityAnimation::Component>> radioWavesAnimationComponents ({
-		newEntityAnimationDelay(initialTicksDelay),
-		newEntityAnimationSetSpriteAnimation(SpriteRegistry::radioWavesAnimation),
-		newEntityAnimationDelay(SpriteRegistry::radioWavesAnimation->getTotalTicksDuration()),
-		newEntityAnimationSetSpriteAnimation(nullptr),
-		newEntityAnimationDelay(RadioWavesState::interRadioWavesAnimationTicks),
-		newEntityAnimationSetSpriteAnimation(SpriteRegistry::radioWavesAnimation),
-		newEntityAnimationDelay(SpriteRegistry::radioWavesAnimation->getTotalTicksDuration()),
-		newEntityAnimationSetSpriteAnimation(nullptr)
+		spriteAnimationAfterDelay(SpriteRegistry::radioWavesAnimation, initialTicksDelay),
+		spriteAnimationAfterDelay(nullptr, SpriteRegistry::radioWavesAnimation->getTotalTicksDuration()),
+		spriteAnimationAfterDelay(SpriteRegistry::radioWavesAnimation, RadioWavesState::interRadioWavesAnimationTicks),
+		spriteAnimationAfterDelay(nullptr, SpriteRegistry::radioWavesAnimation->getTotalTicksDuration())
 	});
 	Holder_EntityAnimationComponentVector radioWavesAnimationComponentsHolder (&radioWavesAnimationComponents);
 	radioWavesState.get()->beginEntityAnimation(&radioWavesAnimationComponentsHolder, ticksTime);
@@ -1036,45 +1035,27 @@ void MapState::editorSetRail(int x, int y, char color, char group) {
 		if (!editingAdjacentRailSwitch || (xSpan > 1 && ySpan > 1 && !clickedOnRailSwitch))
 			return;
 		//one side at a time, see if we can add a segment to end of the reset switch
-		Holder_RessetSwitchSegmentVector leftSegmentsHolder (&editingResetSwitch->leftSegments);
-		Holder_RessetSwitchSegmentVector bottomSegmentsHolder (&editingResetSwitch->bottomSegments);
-		Holder_RessetSwitchSegmentVector rightSegmentsHolder (&editingResetSwitch->rightSegments);
-		editorUpdateResetSwitchGroups(
-				x,
-				y,
-				color,
-				group,
-				editingRailSwitchId,
-				railSwitchIndex,
-				editingResetSwitchX,
-				editingResetSwitchBottomY,
-				editingResetSwitchX - 1,
-				editingResetSwitchBottomY,
-				&leftSegmentsHolder)
-			|| editorUpdateResetSwitchGroups(
-				x,
-				y,
-				color,
-				group,
-				editingRailSwitchId,
-				railSwitchIndex,
-				editingResetSwitchX,
-				editingResetSwitchBottomY,
-				editingResetSwitchX,
-				editingResetSwitchBottomY + 1,
-				&bottomSegmentsHolder)
-			|| editorUpdateResetSwitchGroups(
-				x,
-				y,
-				color,
-				group,
-				editingRailSwitchId,
-				railSwitchIndex,
-				editingResetSwitchX,
-				editingResetSwitchBottomY,
-				editingResetSwitchX + 1,
-				editingResetSwitchBottomY,
-				&rightSegmentsHolder);
+		auto editorUpdateResetSwitchGroupsAt =
+			[=](int newRailGroupX, int newRailGroupY, std::vector<ResetSwitch::Segment>* segments) {
+				Holder_RessetSwitchSegmentVector segmentsHolder (segments);
+				return editorUpdateResetSwitchGroups(
+					x,
+					y,
+					color,
+					group,
+					editingRailSwitchId,
+					railSwitchIndex,
+					editingResetSwitchX,
+					editingResetSwitchBottomY,
+					newRailGroupX,
+					newRailGroupY,
+					&segmentsHolder);
+			};
+		editorUpdateResetSwitchGroupsAt(editingResetSwitchX - 1, editingResetSwitchBottomY, &editingResetSwitch->leftSegments)
+			|| editorUpdateResetSwitchGroupsAt(
+				editingResetSwitchX, editingResetSwitchBottomY + 1, &editingResetSwitch->bottomSegments)
+			|| editorUpdateResetSwitchGroupsAt(
+				editingResetSwitchX + 1, editingResetSwitchBottomY, &editingResetSwitch->rightSegments);
 	}
 }
 //remove a rail segment if we clicked on the last segment of the list, or add a segment if it's adjacent to the last segment of
