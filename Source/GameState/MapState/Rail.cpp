@@ -346,14 +346,6 @@ void RailState::moveToDefaultTileOffset() {
 void RailState::render(int screenLeftWorldX, int screenTopWorldY) {
 	rail->render(screenLeftWorldX, screenTopWorldY, tileOffset);
 }
-//render a shadow below the rail
-void RailState::renderShadow(int screenLeftWorldX, int screenTopWorldY) {
-	rail->renderShadow(screenLeftWorldX, screenTopWorldY);
-}
-//render groups where the rail would be at 0 offset
-void RailState::renderGroups(int screenLeftWorldX, int screenTopWorldY) {
-	rail->renderGroups(screenLeftWorldX, screenTopWorldY);
-}
 //set this rail to the initial tile offset, not moving
 void RailState::loadState(float pTileOffset) {
 	tileOffset = pTileOffset;

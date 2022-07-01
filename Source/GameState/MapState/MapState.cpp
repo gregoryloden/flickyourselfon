@@ -17,7 +17,7 @@
 #include "Util/StringUtils.h"
 
 #define newRadioWavesState() produceWithoutArgs(MapState::RadioWavesState)
-#define spriteAnimationAfterDelay(animation, delay) \
+#define entityAnimationSpriteAnimationAfterDelay(animation, delay) \
 	newEntityAnimationDelay(delay), \
 	newEntityAnimationSetSpriteAnimation(animation)
 
@@ -509,10 +509,11 @@ void MapState::flipResetSwitch(short resetSwitchId, int ticksTime) {
 //begin a radio waves animation
 void MapState::startRadioWavesAnimation(int initialTicksDelay, int ticksTime) {
 	vector<ReferenceCounterHolder<EntityAnimation::Component>> radioWavesAnimationComponents ({
-		spriteAnimationAfterDelay(SpriteRegistry::radioWavesAnimation, initialTicksDelay),
-		spriteAnimationAfterDelay(nullptr, SpriteRegistry::radioWavesAnimation->getTotalTicksDuration()),
-		spriteAnimationAfterDelay(SpriteRegistry::radioWavesAnimation, RadioWavesState::interRadioWavesAnimationTicks),
-		spriteAnimationAfterDelay(nullptr, SpriteRegistry::radioWavesAnimation->getTotalTicksDuration())
+		entityAnimationSpriteAnimationAfterDelay(SpriteRegistry::radioWavesAnimation, initialTicksDelay),
+		entityAnimationSpriteAnimationAfterDelay(nullptr, SpriteRegistry::radioWavesAnimation->getTotalTicksDuration()),
+		entityAnimationSpriteAnimationAfterDelay(
+			SpriteRegistry::radioWavesAnimation, RadioWavesState::interRadioWavesAnimationTicks),
+		entityAnimationSpriteAnimationAfterDelay(nullptr, SpriteRegistry::radioWavesAnimation->getTotalTicksDuration())
 	});
 	Holder_EntityAnimationComponentVector radioWavesAnimationComponentsHolder (&radioWavesAnimationComponents);
 	radioWavesState.get()->beginEntityAnimation(&radioWavesAnimationComponentsHolder, ticksTime);
@@ -586,7 +587,7 @@ void MapState::render(EntityState* camera, char playerZ, bool showConnections, i
 
 	//draw rail shadows, rails (that are below the player), and switches
 	for (RailState* railState : railStates)
-		railState->renderShadow(screenLeftWorldX, screenTopWorldY);
+		railState->getRail()->renderShadow(screenLeftWorldX, screenTopWorldY);
 	railsBelowPlayerZ = 0;
 	for (RailState* railState : railStatesByHeight) {
 		if (railState->isAbovePlayerZ(playerZ))
@@ -644,7 +645,7 @@ void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int 
 	if (showConnections) {
 		//show groups above the player for all rails
 		for (RailState* railState : railStates)
-			railState->renderGroups(screenLeftWorldX, screenTopWorldY);
+			railState->getRail()->renderGroups(screenLeftWorldX, screenTopWorldY);
 		if (!finishedConnectionsTutorial && SDL_GetKeyboardState(nullptr)[Config::keyBindings.showConnectionsKey] == 0) {
 			const char* showConnectionsText = "show connections: ";
 			const float leftX = 10.0f;
@@ -674,7 +675,7 @@ bool MapState::renderGroupsForRailsToReset(EntityState* camera, short resetSwitc
 		for (char railGroup : rail->getGroups()) {
 			//the reset switch has a group for this rail, render groups for it
 			if (resetSwitch->hasGroupForColor(railGroup, railColor)) {
-				railState->renderGroups(screenLeftWorldX, screenTopWorldY);
+				rail->renderGroups(screenLeftWorldX, screenTopWorldY);
 				hasRailsToReset = true;
 				break;
 			}
@@ -864,11 +865,11 @@ void MapState::editorSetSwitch(int leftX, int topY, char color, char group) {
 				continue;
 
 			//this is not a switch, we can't delete, move, or place a switch here
-			short otherRailSwitchId = getRailSwitchId(checkX, checkY);
-			if ((otherRailSwitchId & railSwitchIdBitmask) != switchIdValue)
+			if (!tileHasSwitch(checkX, checkY))
 				return;
 
 			//there is a switch here but we won't delete it because it isn't exactly the same as the switch we're placing
+			short otherRailSwitchId = getRailSwitchId(checkX, checkY);
 			Switch* switch0 = switches[otherRailSwitchId & railSwitchIndexBitmask];
 			if (switch0->getColor() != color || switch0->getGroup() != group)
 				return;
@@ -945,7 +946,7 @@ void MapState::editorSetRail(int x, int y, char color, char group) {
 	if (!foundMatchingSwitch)
 		return;
 
-	short editingRailSwitchId = -1;
+	short editingRailSwitchId = absentRailSwitchId;
 	bool editingAdjacentRailSwitch = false;
 	bool clickedOnRailSwitch = false;
 	int minCheckX = 1000000;
@@ -959,12 +960,11 @@ void MapState::editorSetRail(int x, int y, char color, char group) {
 				continue;
 
 			//if this is not a rail or reset switch, we can't place a new rail here
-			short otherRailSwitchId = getRailSwitchId(checkX, checkY);
-			short otherRailSwitchIdValue = otherRailSwitchId & railSwitchIdBitmask;
-			if (otherRailSwitchIdValue != railIdValue && otherRailSwitchIdValue != resetSwitchIdValue)
+			if (!tileHasRail(checkX, checkY) && !tileHasResetSwitch(checkX, checkY))
 				return;
 
 			//we haven't seen any rail or switch yet, save it
+			short otherRailSwitchId = getRailSwitchId(checkX, checkY);
 			if (editingRailSwitchId == -1)
 				editingRailSwitchId = otherRailSwitchId;
 			//we saw an id before and we found a different id now, we can't place a rail here
@@ -984,7 +984,7 @@ void MapState::editorSetRail(int x, int y, char color, char group) {
 
 	int railSwitchIndex = y * width + x;
 	//we're adding a new rail
-	if (editingRailSwitchId == -1) {
+	if (editingRailSwitchId == absentRailSwitchId) {
 		railSwitchIds[railSwitchIndex] = (short)rails.size() | railIdValue;
 		rails.push_back(newRail(x, y, getHeight(x, y), color, 0, 1));
 		return;
@@ -1098,7 +1098,7 @@ bool MapState::editorUpdateResetSwitchGroups(
 					if (segment.color == color && segment.group == group)
 						return false;
 				}
-			//this is the start of the second color, we can add it if it's group 0
+			//this is the start of the second color, we can add it but only if it's group 0
 			} else if (lastSegment.color == segments->front().color) {
 				if (group != 0)
 					return false;
@@ -1148,10 +1148,10 @@ void MapState::editorSetResetSwitch(int x, int bottomY) {
 				continue;
 
 			//this is not a reset switch, we can't place a new rail here
-			short otherRailSwitchId = getRailSwitchId(checkX, checkY);
-			if ((otherRailSwitchId & railSwitchIdBitmask) != resetSwitchIdValue)
+			if (!tileHasResetSwitch(checkX, checkY))
 				return;
 
+			short otherRailSwitchId = getRailSwitchId(checkX, checkY);
 			ResetSwitch* resetSwitch = resetSwitches[otherRailSwitchId & railSwitchIndexBitmask];
 			//we clicked on a reset switch in the same spot as the one we're placing, mark it as deleted and set
 			//	newResetSwitchId to 0 so that we can use the regular reset-switch-placing logic to clear the reset switch
@@ -1178,20 +1178,17 @@ void MapState::editorSetResetSwitch(int x, int bottomY) {
 }
 //adjust the tile offset of the rail here, if there is one
 void MapState::editorAdjustRailInitialTileOffset(int x, int y, char tileOffset) {
-	int railSwitchId = getRailSwitchId(x, y);
-	if ((railSwitchId & railSwitchIdBitmask) == railIdValue)
-		rails[railSwitchId & railSwitchIndexBitmask]->editorAdjustInitialTileOffset(x, y, tileOffset);
+	if (tileHasRail(x, y))
+		rails[getRailSwitchId(x, y) & railSwitchIndexBitmask]->editorAdjustInitialTileOffset(x, y, tileOffset);
 }
 //check if we're saving a rail or switch to the floor file, and if so get the data we need at this tile
 char MapState::editorGetRailSwitchFloorSaveData(int x, int y) {
-	int railSwitchId = getRailSwitchId(x, y);
-	int railSwitchIdValue = railSwitchId & railSwitchIdBitmask;
-	if (railSwitchIdValue == railIdValue)
-		return rails[railSwitchId & railSwitchIndexBitmask]->editorGetFloorSaveData(x, y);
-	else if (railSwitchIdValue == switchIdValue)
-		return switches[railSwitchId & railSwitchIndexBitmask]->editorGetFloorSaveData(x, y);
-	else if (railSwitchIdValue == resetSwitchIdValue)
-		return resetSwitches[railSwitchId & railSwitchIndexBitmask]->editorGetFloorSaveData(x, y);
+	if (tileHasRail(x, y))
+		return rails[getRailSwitchId(x, y) & railSwitchIndexBitmask]->editorGetFloorSaveData(x, y);
+	else if (tileHasSwitch(x, y))
+		return switches[getRailSwitchId(x, y) & railSwitchIndexBitmask]->editorGetFloorSaveData(x, y);
+	else if (tileHasResetSwitch(x, y))
+		return resetSwitches[getRailSwitchId(x, y) & railSwitchIndexBitmask]->editorGetFloorSaveData(x, y);
 	else
 		return 0;
 }
