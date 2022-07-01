@@ -144,7 +144,7 @@ Text::Metrics PauseState::KeyBindingOption::getDisplayTextMetrics() {
 //return metrics that include either the key-selecting text or the key name and background
 Text::Metrics PauseState::KeyBindingOption::getSelectingDisplayTextMetrics(bool selecting) {
 	Text::Metrics metrics = PauseOption::getDisplayTextMetrics();
-	ensureCachedKeyMetrics(selecting);
+	ensureCachedKeyMetrics();
 
 	metrics.charactersWidth +=
 		(float)interKeyActionAndKeyBackgroundSpacing
@@ -168,7 +168,7 @@ void PauseState::KeyBindingOption::renderSelecting(float leftX, float baselineY,
 	//render the action
 	PauseOption::render(leftX, baselineY);
 
-	ensureCachedKeyMetrics(selecting);
+	ensureCachedKeyMetrics();
 	leftX += PauseOption::getDisplayTextMetrics().charactersWidth + (float)interKeyActionAndKeyBackgroundSpacing;
 
 	//render the key-selecting text
@@ -180,7 +180,7 @@ void PauseState::KeyBindingOption::renderSelecting(float leftX, float baselineY,
 			cachedKeyName.c_str(), leftX, baselineY, &cachedKeyTextMetrics, &cachedKeyBackgroundMetrics);
 }
 //if we have a new bound key, cache its metrics
-void PauseState::KeyBindingOption::ensureCachedKeyMetrics(bool selecting) {
+void PauseState::KeyBindingOption::ensureCachedKeyMetrics() {
 	SDL_Scancode currentBoundKeyScancode = getBoundKeyScancode();
 	if (currentBoundKeyScancode != cachedKeyScancode) {
 		cachedKeyScancode = currentBoundKeyScancode;

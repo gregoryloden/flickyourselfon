@@ -112,8 +112,8 @@ void PlayerState::setSpriteAnimation(SpriteAnimation* pSpriteAnimation, int pSpr
 //set the position of the ghost sprite, or clear it
 void PlayerState::setGhostSprite(bool show, float x, float y, int ticksTime) {
 	if (show) {
-		ghostSpriteX.set(newCompositeQuarticValue(x, 0.0f, 0.0f, 0.0f, 0.0f));
-		ghostSpriteY.set(newCompositeQuarticValue(y, 0.0f, 0.0f, 0.0f, 0.0f));
+		ghostSpriteX.set(newConstantValue(x));
+		ghostSpriteY.set(newConstantValue(y));
 		ghostSpriteStartTicksTime = ticksTime;
 	} else {
 		ghostSpriteX.set(nullptr);

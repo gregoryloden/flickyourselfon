@@ -36,15 +36,23 @@ pooledReferenceCounterDefineRelease(KickAction)
 void KickAction::render(float centerX, float bottomY, bool hasRailsToReset) {
 	bool showKickIndicator = false;
 	switch (type) {
-		case KickActionType::Climb: showKickIndicator = Config::kickIndicators.climb; break;
-		case KickActionType::Fall: showKickIndicator = Config::kickIndicators.fall; break;
+		case KickActionType::Climb:
+			showKickIndicator = Config::kickIndicators.climb;
+			break;
+		case KickActionType::Fall:
+			showKickIndicator = Config::kickIndicators.fall;
+			break;
 		case KickActionType::Rail:
-		case KickActionType::NoRail: showKickIndicator = Config::kickIndicators.rail; break;
+		case KickActionType::NoRail:
+			showKickIndicator = Config::kickIndicators.rail;
+			break;
 		case KickActionType::Switch:
 		case KickActionType::Square:
 		case KickActionType::Triangle:
 		case KickActionType::Saw:
-		case KickActionType::Sine: showKickIndicator = Config::kickIndicators.switch0; break;
+		case KickActionType::Sine:
+			showKickIndicator = Config::kickIndicators.switch0;
+			break;
 		case KickActionType::ResetSwitch: {
 			if (!Config::kickIndicators.resetSwitch || !hasRailsToReset)
 				return;

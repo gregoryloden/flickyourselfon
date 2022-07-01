@@ -451,15 +451,14 @@ void GameState::loadInitialState(int ticksTime) {
 		Logger::gameplayLogger.log("  load state");
 
 	//and finally, setup any remaining initial state
-	if (Editor::isActive)
+	if (Editor::isActive) {
 		playerState.get()->setHighestZ();
-	else
+		//always skip the intro animation for the editor, jump straight into walking
+		sawIntroAnimation = true;
+	} else
 		playerState.get()->setInitialZ();
 	mapState.get()->sortInitialRails();
 
-	if (Editor::isActive)
-		//always skip the intro animation for the editor, jump straight into walking
-		sawIntroAnimation = true;
 	if (sawIntroAnimation) {
 		playerState.get()->obtainBoot();
 		camera = playerState.get();

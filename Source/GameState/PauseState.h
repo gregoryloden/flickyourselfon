@@ -106,7 +106,7 @@ private:
 		virtual void render(float leftX, float baselineY);
 		void renderSelecting(float leftX, float baselineY, bool selecting);
 	private:
-		void ensureCachedKeyMetrics(bool selecting);
+		void ensureCachedKeyMetrics();
 		static string getBoundKeyActionText(BoundKey pBoundKey);
 		SDL_Scancode getBoundKeyScancode();
 	public:
