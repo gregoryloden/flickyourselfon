@@ -944,11 +944,11 @@ void Editor::render(EntityState* camera, int ticksTime) {
 			boxMapWidth = (boxLeftMapOffset * 2 + (evenPaintBoxXRadiusButton->isSelected ? 2 : 1));
 			boxMapHeight = (boxTopMapOffset * 2 + (evenPaintBoxYRadiusButton->isSelected ? 2 : 1));
 		}
-		int boxLeftX = (mouseMapX - boxLeftMapOffset) * MapState::tileSize - screenLeftWorldX;
-		int boxTopY = (mouseMapY - boxTopMapOffset) * MapState::tileSize - screenTopWorldY;
-		int boxRightX = boxLeftX + boxMapWidth * MapState::tileSize;
-		int boxBottomY = boxTopY + boxMapHeight * MapState::tileSize;
-		renderRGBRect(whiteRGB, 1.0f, boxLeftX, boxTopY, boxRightX, boxBottomY);
+		GLint boxLeftX = (GLint)((mouseMapX - boxLeftMapOffset) * MapState::tileSize - screenLeftWorldX);
+		GLint boxTopY = (GLint)((mouseMapY - boxTopMapOffset) * MapState::tileSize - screenTopWorldY);
+		GLint boxRightX = boxLeftX + (GLint)(boxMapWidth * MapState::tileSize);
+		GLint boxBottomY = boxTopY + (GLint)(boxMapHeight * MapState::tileSize);
+		SpriteSheet::renderRectangleOutline(1.0f, 1.0f, 1.0f, 1.0f, boxLeftX, boxTopY, boxRightX, boxBottomY);
 	}
 
 	//draw the right and bottom background rectangles around the game view
