@@ -94,7 +94,7 @@ public:
 	void beginKicking(int ticksTime);
 private:
 	void kickAir(int ticksTime);
-	void kickClimb(float yMoveDistance, int ticksTime);
+	void kickClimb(float xMoveDistance, float yMoveDistance, int ticksTime);
 	void kickFall(float xMoveDistance, float yMoveDistance, char fallHeight, int ticksTime);
 	void kickRail(short railId, float xPosition, float yPosition, int ticksTime);
 public:

@@ -407,7 +407,7 @@ KickActionType MapState::getSwitchKickActionType(short switchId) {
 	} else
 		return KickActionType::Switch;
 }
-//check the height of all the tiles in the row, and return it if they're all the same or -1 if they differ
+//check the height of all the tiles in the row (indices inclusive), and return it if they're all the same or -1 if any differ
 char MapState::horizontalTilesHeight(int lowMapX, int highMapX, int mapY) {
 	char foundHeight = getHeight(lowMapX, mapY);
 	for (int mapX = lowMapX + 1; mapX <= highMapX; mapX++) {

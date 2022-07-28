@@ -28,7 +28,7 @@
 const float PlayerState::playerWidth = 11.0f;
 const float PlayerState::playerHeight = 5.0f;
 const float PlayerState::boundingBoxLeftOffset = PlayerState::playerWidth * -0.5f;
-const float PlayerState::boundingBoxRightOffset = PlayerState::boundingBoxLeftOffset + PlayerState::playerWidth;
+const float PlayerState::boundingBoxRightOffset = PlayerState::playerWidth * 0.5f;
 const float PlayerState::boundingBoxTopOffset = 4.5f;
 const float PlayerState::boundingBoxBottomOffset = PlayerState::boundingBoxTopOffset + PlayerState::playerHeight;
 const float PlayerState::boundingBoxCenterYOffset =
@@ -529,26 +529,43 @@ bool PlayerState::setResetSwitchKickAction(float xPosition, float yPosition) {
 //set a climb kick action if we can climb
 //returns whether it was set
 bool PlayerState::setClimbKickAction(float xPosition, float yPosition) {
-	//we can only climb when facing up
-	if (spriteDirection != SpriteDirection::Up)
-		return false;
+	float targetXPosition;
+	float targetYPosition;
+	if (spriteDirection == SpriteDirection::Up || spriteDirection == SpriteDirection::Down) {
+		targetXPosition = xPosition;
+		if (spriteDirection == SpriteDirection::Up) {
+			//set a distance such that the bottom of the player is slightly past the edge of the ledge
+			int bottomMapY = (int)(yPosition + boundingBoxTopOffset - kickingDistanceLimit) / MapState::tileSize;
+			targetYPosition = (float)(bottomMapY * MapState::tileSize) - boundingBoxBottomOffset - MapState::smallDistance;
+		} else {
+			//set a distance such that the top of the player is slightly past the edge of the ledge
+			int topMapY = (int)(yPosition + boundingBoxBottomOffset + kickingDistanceLimit) / MapState::tileSize;
+			targetYPosition = (float)(topMapY * MapState::tileSize) - boundingBoxTopOffset + MapState::smallDistance;
+		}
+	} else {
+		targetYPosition = yPosition - (float)MapState::tileSize;
+		if (spriteDirection == SpriteDirection::Left) {
+			//set a distance such that the right of the player is slightly past the edge of the ledge
+			int rightMapX = (int)(xPosition + boundingBoxLeftOffset - kickingDistanceLimit) / MapState::tileSize + 1;
+			targetXPosition = (float)(rightMapX * MapState::tileSize) - boundingBoxRightOffset - MapState::smallDistance;
+		} else {
+			//set a distance such that the left of the player is slightly past the edge of the ledge
+			int leftMapX = (int)(xPosition + boundingBoxRightOffset + kickingDistanceLimit) / MapState::tileSize;
+			targetXPosition = (float)(leftMapX * MapState::tileSize) - boundingBoxLeftOffset + MapState::smallDistance;
+		}
+	}
 
-	int lowMapX = (int)(xPosition + boundingBoxLeftOffset) / MapState::tileSize;
-	int highMapX = (int)(xPosition + boundingBoxRightOffset) / MapState::tileSize;
-	int oneTileUpMapY = (int)(yPosition + boundingBoxTopOffset - kickingDistanceLimit) / MapState::tileSize;
-	char oneTileUpHeight = MapState::horizontalTilesHeight(lowMapX, highMapX, oneTileUpMapY);
-	//make sure tiles are all at the same height
-	if (oneTileUpHeight == MapState::invalidHeight)
-		return false;
+	//ensure every tile in our target area is the climbing height
+	int lowMapX = (int)(targetXPosition + boundingBoxLeftOffset) / MapState::tileSize;
+	int highMapX = (int)(targetXPosition + boundingBoxRightOffset) / MapState::tileSize;
+	int lowMapY = (int)(targetYPosition + boundingBoxTopOffset) / MapState::tileSize;
+	int highMapY = (int)(targetYPosition + boundingBoxBottomOffset) / MapState::tileSize;
+	for (int mapY = lowMapY; mapY <= highMapY; mapY++) {
+		if (MapState::horizontalTilesHeight(lowMapX, highMapX, mapY) != z + 2)
+			return false;
+	}
 
-	//make sure the next tiles are 1 height up and the row after that is 2 height up, the next available floor
-	if (oneTileUpHeight != z + 1 || MapState::horizontalTilesHeight(lowMapX, highMapX, oneTileUpMapY - 1) != z + 2)
-		return false;
-
-	//set a distance such that the bottom of the player is slightly past the edge of the ledge
-	float targetYPosition =
-		(float)(oneTileUpMapY * MapState::tileSize) - boundingBoxBottomOffset - MapState::smallDistance;
-	availableKickAction.set(newClimbFallKickAction(KickActionType::Climb, 0, targetYPosition, 0));
+	availableKickAction.set(newClimbFallKickAction(KickActionType::Climb, targetXPosition, targetYPosition, 0));
 	return true;
 }
 //set a fall kick action if we can fall
@@ -576,7 +593,7 @@ bool PlayerState::setFallKickAction(float xPosition, float yPosition) {
 		int tileOffset = 0;
 		for (; true; tileOffset++) {
 			fallHeight = MapState::horizontalTilesHeight(lowMapX, highMapX, oneTileDownMapY + tileOffset);
-			//stop looking if the heights differ
+			//stop looking if the heights differ, because this means we'd land partially off a cliff edge
 			if (fallHeight == MapState::invalidHeight)
 				return false;
 			//cliff face, keep looking
@@ -655,13 +672,13 @@ void PlayerState::tryAutoKick(PlayerState* prev, int ticksTime) {
 	//ensure we have an auto-compatible kick action and check any secondary requirements
 	switch (availableKickAction.get()->getType()) {
 		case KickActionType::Climb:
-			//no auto-climb if the player isn't moving directly up
-			if (xDirection != 0 || yDirection != -1)
+			//no auto-climb if the player isn't moving straight
+			if ((xDirection != 0) == (yDirection != 0))
 				return;
 			break;
 		case KickActionType::Fall:
-			//no auto-fall if the player isn't moving directly down towards a floor they can climb back up from
-			if (xDirection != 0 || yDirection != 1 || availableKickAction.get()->getFallHeight() != z - 2)
+			//no auto-fall if the player isn't moving straight towards a floor they can climb back up from
+			if (((xDirection != 0) == (yDirection != 0)) || availableKickAction.get()->getFallHeight() != z - 2)
 				return;
 			break;
 		case KickActionType::Rail: {
@@ -713,7 +730,7 @@ void PlayerState::beginKicking(int ticksTime) {
 	float yPosition = y.get()->getValue(0);
 	switch (kickAction->getType()) {
 		case KickActionType::Climb:
-			kickClimb(kickAction->getTargetPlayerY() - yPosition, ticksTime);
+			kickClimb(kickAction->getTargetPlayerX() - xPosition, kickAction->getTargetPlayerY() - yPosition, ticksTime);
 			break;
 		case KickActionType::Fall:
 			kickFall(
@@ -755,37 +772,52 @@ void PlayerState::kickAir(int ticksTime) {
 	beginEntityAnimation(&kickAnimationComponentsHolder, ticksTime);
 }
 //begin a kicking animation and climb up to the next tile to the north
-void PlayerState::kickClimb(float yMoveDistance, int ticksTime) {
+void PlayerState::kickClimb(float xMoveDistance, float yMoveDistance, int ticksTime) {
 	stringstream message;
-	message << "  climb " << (int)(x.get()->getValue(0)) << " " << (int)(y.get()->getValue(0));
+	message << "  climb " << (int)(x.get()->getValue(0)) << " " << (int)(y.get()->getValue(0))
+		<< "  " << (int)(x.get()->getValue(0) + xMoveDistance) << " " << (int)(y.get()->getValue(0) + yMoveDistance);
 	Logger::gameplayLogger.logString(message.str());
 
 	int moveDuration =
 		SpriteRegistry::playerFastKickingAnimation->getTotalTicksDuration()
 			- SpriteRegistry::playerFastKickingAnimationTicksPerFrame;
 	float floatMoveDuration = (float)moveDuration;
-	float moveDurationCubed = floatMoveDuration * floatMoveDuration * floatMoveDuration;
-
-	float yCubicValuePerDuration = yMoveDistance / 2.0f;
-	float yQuarticValuePerDuration = yMoveDistance / 2.0f;
+	float moveDurationSquared = floatMoveDuration * floatMoveDuration;
+	float moveDurationCubed = moveDurationSquared * floatMoveDuration;
 
 	vector<ReferenceCounterHolder<EntityAnimation::Component>> kickingAnimationComponents ({
 		//start by stopping the player and delaying until the leg-sticking-out frame
 		newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f)),
 		newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerFastKickingAnimation),
-		newEntityAnimationDelay(SpriteRegistry::playerFastKickingAnimationTicksPerFrame),
-		//then set the climb velocity, delay for the rest of the animation, and then stop the player
-		newEntityAnimationSetVelocity(
-			newConstantValue(0.0f),
-			newCompositeQuarticValue(
-				0.0f,
-				0.0f,
-				0.0f,
-				yCubicValuePerDuration / moveDurationCubed,
-				yQuarticValuePerDuration / (moveDurationCubed * floatMoveDuration))),
-		newEntityAnimationDelay(moveDuration),
-		newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f))
+		newEntityAnimationDelay(SpriteRegistry::playerFastKickingAnimationTicksPerFrame)
 	});
+
+	//set the climb velocity
+	if (xMoveDistance == 0)
+		kickingAnimationComponents.push_back(
+			newEntityAnimationSetVelocity(
+				newConstantValue(0.0f),
+				newCompositeQuarticValue(
+					0.0f,
+					0.0f,
+					0.0f,
+					yMoveDistance / (moveDurationCubed * 2.0f),
+					yMoveDistance / (moveDurationCubed * floatMoveDuration * 2.0f))));
+	else
+		kickingAnimationComponents.push_back(
+			newEntityAnimationSetVelocity(
+				newCompositeQuarticValue(0.0f, 0.0f, xMoveDistance / moveDurationSquared, 0.0f, 0.0f),
+				newCompositeQuarticValue(
+					0.0f, 2.0f * yMoveDistance / floatMoveDuration, -yMoveDistance / moveDurationSquared, 0.0f, 0.0f)));
+
+	kickingAnimationComponents.insert(
+		kickingAnimationComponents.end(),
+		{
+			//then delay for the rest of the animation and stop the player
+			newEntityAnimationDelay(moveDuration),
+			newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f))
+		});
+
 
 	Holder_EntityAnimationComponentVector kickingAnimationComponentsHolder (&kickingAnimationComponents);
 	beginEntityAnimation(&kickingAnimationComponentsHolder, ticksTime);
