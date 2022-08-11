@@ -479,8 +479,8 @@ void GameState::loadInitialState(int ticksTime) {
 		Holder_EntityAnimationComponentVector replayComponentsHolder (&replayComponents);
 		while (getline(file, line)) {
 			const char* logMessage = line.c_str();
-			int timestamp = StringUtils::parseLogFileTimestamp(logMessage);
-			logMessage = logMessage + 13;
+			int timestamp;
+			logMessage = StringUtils::parseLogFileTimestamp(logMessage, &timestamp) + 2;
 			string logMessageString (logMessage);
 			if (!beganGameplay) {
 				if (!StringUtils::startsWith(logMessageString, "---- begin gameplay ----"))
@@ -507,11 +507,20 @@ void GameState::loadInitialState(int ticksTime) {
 				logMessage = logMessage + 8;
 				int climbStartX;
 				int climbStartY;
-				StringUtils::parsePosition(logMessage, &climbStartX, &climbStartY);
+				logMessage = StringUtils::parsePosition(logMessage, &climbStartX, &climbStartY);
+				int climbEndX;
+				int climbEndY;
+				StringUtils::parsePosition(logMessage, &climbEndX, &climbEndY);
 				addMoveWithGhost(
 					&replayComponentsHolder, lastX, lastY, (float)climbStartX, (float)climbStartY, timestamp - lastTimestamp);
-				lastX = (float)climbStartX;
-				lastY = (float)climbStartY - 12.0f;
+				//for backwards compatibility, a climb without an end position is an Up climb
+				if (climbEndX == 0 || climbEndY == 0) {
+					lastX = (float)climbStartX;
+					lastY = (float)climbStartY - 12.0f;
+				} else {
+					lastX = (float)climbEndX;
+					lastY = (float)climbEndY;
+				}
 				int climbDuration = SpriteRegistry::playerKickingAnimation->getTotalTicksDuration();
 				replayComponents.push_back(newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerKickingAnimation));
 				addMoveWithGhost(&replayComponentsHolder, (float)climbStartX, (float)climbStartY, lastX, lastY, climbDuration);
@@ -527,13 +536,22 @@ void GameState::loadInitialState(int ticksTime) {
 				logMessage = logMessage + 7;
 				int fallStartX;
 				int fallStartY;
-				StringUtils::parsePosition(logMessage, &fallStartX, &fallStartY);
+				logMessage = StringUtils::parsePosition(logMessage, &fallStartX, &fallStartY);
+				int fallEndX;
+				int fallEndY;
+				StringUtils::parsePosition(logMessage, &fallEndX, &fallEndY);
 				addMoveWithGhost(
 					&replayComponentsHolder, lastX, lastY, (float)fallStartX, (float)fallStartY, timestamp - lastTimestamp);
-				lastX = (float)fallStartX;
-				lastY = (float)fallStartY + 6.0f;
-				int fallDuration = SpriteRegistry::playerKickingAnimation->getTotalTicksDuration();
-				replayComponents.push_back(newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerKickingAnimation));
+				//a fall without an end position is treated as a 1-tile Down fall regardless of where it actually went
+				if (fallEndX == 0 || fallEndY == 0) {
+					lastX = (float)fallStartX;
+					lastY = (float)fallStartY + 6.0f;
+				} else {
+					lastX = (float)fallEndX;
+					lastY = (float)fallEndY;
+				}
+				int fallDuration = SpriteRegistry::playerFastKickingAnimation->getTotalTicksDuration();
+				replayComponents.push_back(newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerFastKickingAnimation));
 				addMoveWithGhost(&replayComponentsHolder, (float)fallStartX, (float)fallStartY, lastX, lastY, fallDuration);
 				replayComponents.insert(
 					replayComponents.end(),
@@ -546,8 +564,7 @@ void GameState::loadInitialState(int ticksTime) {
 			} else if (StringUtils::startsWith(logMessageString, "  rail ")) {
 				logMessage = logMessage + 7;
 				int railIndex;
-				logMessage = logMessage + StringUtils::parseNextInt(logMessage, &railIndex);
-				logMessage = logMessage + StringUtils::nonDigitPrefixLength(logMessage);
+				logMessage = StringUtils::parseNextInt(logMessage, &railIndex);
 				int startX;
 				int startY;
 				StringUtils::parsePosition(logMessage, &startX, &startY);

@@ -4,39 +4,43 @@
 bool StringUtils::startsWith(const string& s, const string& prefix) {
 	return s.compare(0, prefix.size(), prefix) == 0;
 }
-//returns the number of non-digit characters at the start of s
-int StringUtils::nonDigitPrefixLength(const char* s) {
-	for (int i = 0; true; i++) {
-		char c = s[i];
-		if (c >= '0' && c <= '9')
-			return i;
+//skip any non-digit characters, and then get the integer value at that position (or 0 if we reached the end of the string) and
+//	write it to outValue
+//returns the string at the first position after the parsed int, or the end of the string
+const char* StringUtils::parseNextInt(const char* s, int* outValue) {
+	char c;
+	for (; true; s++) {
+		c = *s;
+		if (c == 0) {
+			*outValue = 0;
+			return s;
+		} else if (c >= '0' && c <= '9')
+			break;
 	}
-}
-//get the integer value at the start of the string (or 0 if there is none) and write it to outValue
-//returns the number of characters parsed
-int StringUtils::parseNextInt(const char* s, int* outValue) {
+
 	int val = 0;
-	for (int i = 0; true; i++) {
-		char c = s[i];
-		if (c >= '0' && c <= '9')
-			val = val * 10 + (int)(c - '0');
-		else {
-			*outValue = val;
-			return i;
-		}
-	}
+	do {
+		val = val * 10 + (int)(c - '0');
+		s++;
+		c = *s;
+	} while (c >= '0' && c <= '9');
+
+	*outValue = val;
+	return s;
 }
 //find the 4-10 digits at the beginning of a log line, dropping the leading spaces and decimal point
-int StringUtils::parseLogFileTimestamp(const char* s) {
+//returns the string at the first position after the parsed timestamp
+const char* StringUtils::parseLogFileTimestamp(const char* s, int* outValue) {
 	int seconds;
 	int milliseconds;
-	s = s + nonDigitPrefixLength(s);
-	s = s + parseNextInt(s, &seconds);
-	parseNextInt(s + 1, &milliseconds);
-	return seconds * 1000 + milliseconds;
+	s = parseNextInt(s, &seconds);
+	s = parseNextInt(s, &milliseconds);
+	*outValue = seconds * 1000 + milliseconds;
+	return s;
 }
 //parse the two position values at the beginning of a string, separated by spaces
-void StringUtils::parsePosition(const char* s, int* outX, int* outY) {
-	s = s + parseNextInt(s, outX);
-	parseNextInt(s + nonDigitPrefixLength(s), outY);
+//returns the string at the first position after the parsed position
+const char* StringUtils::parsePosition(const char* s, int* outX, int* outY) {
+	s = parseNextInt(s, outX);
+	return parseNextInt(s, outY);
 }

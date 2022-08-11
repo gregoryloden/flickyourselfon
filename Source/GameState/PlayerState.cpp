@@ -826,13 +826,14 @@ void PlayerState::kickClimb(float xMoveDistance, float yMoveDistance, int ticksT
 //begin a kicking animation and fall in whatever direction we're facing
 void PlayerState::kickFall(float xMoveDistance, float yMoveDistance, char fallHeight, int ticksTime) {
 	stringstream message;
-	message << "  fall " << (int)(x.get()->getValue(0)) << " " << (int)(y.get()->getValue(0));
+	message << "  fall " << (int)(x.get()->getValue(0)) << " " << (int)(y.get()->getValue(0))
+		<< "  " << (int)(x.get()->getValue(0) + xMoveDistance) << " " << (int)(y.get()->getValue(0) + yMoveDistance);
 	Logger::gameplayLogger.logString(message.str());
 
-	bool useFastKickingAnimation = fallHeight == z - 2 && spriteDirection == SpriteDirection::Down;
+	bool useFastKickingAnimation = fallHeight == z - 2;
 	SpriteAnimation* fallAnimation =
 		useFastKickingAnimation ? SpriteRegistry::playerFastKickingAnimation : SpriteRegistry::playerKickingAnimation;
-	int fallAnimationTicksPerFrame = useFastKickingAnimation
+	int fallAnimationFirstFrameTicks = useFastKickingAnimation
 		? SpriteRegistry::playerFastKickingAnimationTicksPerFrame
 		: SpriteRegistry::playerKickingAnimationTicksPerFrame;
 
@@ -840,10 +841,10 @@ void PlayerState::kickFall(float xMoveDistance, float yMoveDistance, char fallHe
 	vector<ReferenceCounterHolder<EntityAnimation::Component>> kickingAnimationComponents ({
 		newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f)),
 		newEntityAnimationSetSpriteAnimation(fallAnimation),
-		newEntityAnimationDelay(fallAnimationTicksPerFrame)
+		newEntityAnimationDelay(fallAnimationFirstFrameTicks)
 	});
 
-	int moveDuration = fallAnimation->getTotalTicksDuration() - fallAnimationTicksPerFrame;
+	int moveDuration = fallAnimation->getTotalTicksDuration() - fallAnimationFirstFrameTicks;
 	float floatMoveDuration = (float)moveDuration;
 	float moveDurationSquared = floatMoveDuration * floatMoveDuration;
 
