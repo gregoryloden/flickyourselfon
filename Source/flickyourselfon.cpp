@@ -30,8 +30,8 @@ int gameMain(int argc, char* argv[]) {
 	if (initResult < 0)
 		return initResult;
 
-	for (int i = 0; i < argc; i++) {
-		if (strcmp(argv[i], "--editor") == 0) {
+	for (int i = 1; i < argc; i++) {
+		if (strcmp(argv[i], "--editor") == 0 && !Editor::isActive) {
 			Editor::isActive = true;
 			Config::currentPixelWidth = Config::editorDefaultPixelWidth;
 			Config::currentPixelHeight = Config::editorDefaultPixelHeight;
