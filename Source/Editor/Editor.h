@@ -357,5 +357,5 @@ private:
 	static void renderRGBRect(const RGB& rgb, float alpha, int leftX, int topY, int rightX, int bottomY);
 	static void addNoiseTile(char tile);
 	static void removeNoiseTile(char tile);
-	static bool clickedAdjacentTile(int x, int y, MouseDragAction mouseDragAction);
+	static bool clickedNewTile(int x, int y, MouseDragAction mouseDragAction);
 };

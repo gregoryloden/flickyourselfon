@@ -603,7 +603,7 @@ void Editor::SwitchButton::onClick() {
 }
 //set a switch at this position
 void Editor::SwitchButton::paintMap(int x, int y) {
-	if (clickedAdjacentTile(x, y, MouseDragAction::AddRemoveSwitch))
+	if (clickedNewTile(x, y, MouseDragAction::AddRemoveSwitch))
 		MapState::editorSetSwitch(x, y, color, selectedRailSwitchGroupButton->getRailSwitchGroup());
 }
 
@@ -636,7 +636,7 @@ void Editor::RailButton::onClick() {
 }
 //set a rail at this position
 void Editor::RailButton::paintMap(int x, int y) {
-	if (clickedAdjacentTile(x, y, MouseDragAction::AddRemoveRail))
+	if (clickedNewTile(x, y, MouseDragAction::AddRemoveRail))
 		MapState::editorSetRail(x, y, color, selectedRailSwitchGroupButton->getRailSwitchGroup());
 }
 
@@ -826,7 +826,9 @@ void Editor::unloadButtons() {
 }
 //return the height of the selected height button, or -1 if it's not selected
 char Editor::getSelectedHeight() {
-	return selectedButton != nullptr && selectedButton == lastSelectedHeightButton ? lastSelectedHeightButton->getHeight() : -1;
+	return selectedButton != nullptr && selectedButton == lastSelectedHeightButton
+		? lastSelectedHeightButton->getHeight()
+		: MapState::invalidHeight;
 }
 //convert the mouse position to map coordinates
 void Editor::getMouseMapXY(int screenLeftWorldX, int screenTopWorldY, int* outMapX, int* outMapY) {
@@ -1029,12 +1031,11 @@ void Editor::removeNoiseTile(char tile) {
 		button->tile = -1;
 	}
 }
-//returns true iff we clicked on a tile or dragged onto a new adjacent tile
-bool Editor::clickedAdjacentTile(int x, int y, MouseDragAction clickedAction) {
+//returns true iff we clicked on a tile or dragged onto a new tile
+bool Editor::clickedNewTile(int x, int y, MouseDragAction clickedAction) {
 	if (lastMouseDragAction == MouseDragAction::None)
 		lastMouseDragAction = clickedAction;
-	//if we're dragging, don't do anything unless we clicked 1 tile away from the last tile
-	else if (abs(x - lastMouseDragMapX) + abs(y - lastMouseDragMapY) != 1)
+	else if (x == lastMouseDragMapX && y == lastMouseDragMapY)
 		return false;
 
 	lastMouseDragMapX = x;
