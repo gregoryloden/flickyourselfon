@@ -237,9 +237,7 @@ void Rail::renderSegment(int screenLeftWorldX, int screenTopWorldY, float tileOf
 		topShadow = topTileHeight % 2 == 1 && topTileHeight != MapState::emptySpaceHeight;
 	}
 
-	if (topShadow || bottomShadow) {
-		if (Editor::isActive && segment.spriteHorizontalIndex > 6)
-			return;
+	if ((topShadow || bottomShadow) && segment.spriteHorizontalIndex < 6) {
 		int topSpriteHeight = bottomTileY * MapState::tileSize - topWorldY;
 		int spriteX = (segment.spriteHorizontalIndex + 16) * MapState::tileSize;
 		int spriteTop = topShadow ? 0 : topSpriteHeight;
@@ -265,12 +263,20 @@ void Rail::editorRemoveGroup(char group) {
 	}
 }
 //remove the segment on this tile from the rail
-void Rail::editorRemoveSegment(int x, int y) {
+//returns whether we removed a segment
+bool Rail::editorRemoveSegment(int x, int y, char pColor, char group) {
+	//make sure the colors match
+	if (pColor != color)
+		return false;
+	Segment& start = segments->front();
 	Segment& end = segments->back();
-	if (y == end.y && x == end.x)
+	if (y == start.y && x == start.x)
+		segments->erase(segments->begin());
+	else if (y == end.y && x == end.x)
 		segments->pop_back();
 	else
-		segments->erase(segments->begin());
+		return false;
+	editorRemoveGroup(group);
 	//reset the max tile offset, find the smallest offset among the non-end segments
 	maxTileOffset = baseHeight / 2;
 	for (int i = 1; i < (int)segments->size() - 1; i++) {
@@ -278,6 +284,39 @@ void Rail::editorRemoveSegment(int x, int y) {
 		if (segment.maxTileOffset != Segment::absentTileOffset)
 			maxTileOffset = MathUtils::min(segment.maxTileOffset, maxTileOffset);
 	}
+	if (segments->size() == 0)
+		editorIsDeleted = true;
+	return true;
+}
+//add a segment on this tile to the rail
+//returns whether we added a segment
+bool Rail::editorAddSegment(int x, int y, char pColor, char group, char tileHeight) {
+	//don't add a segment if it's on on a non-empty-space tile above the rail
+	if (tileHeight > baseHeight && tileHeight != MapState::emptySpaceHeight)
+		return false;
+	//make sure the colors match
+	if (pColor != color)
+		return false;
+	//make sure the new rail touches exactly one end segment
+	int checkMinIndex = 0;
+	int checkMaxIndex = segments->size();
+	Segment& start = segments->front();
+	Segment& end = segments->back();
+	if (abs(x - start.x) + abs(y - start.y) == 1)
+		checkMinIndex += 2;
+	else if (abs(x - end.x) + abs(y - end.y) == 1)
+		checkMaxIndex -= 2;
+	else
+		return false;
+	//make sure the new rail doesn't go near any other segments other than the near end of the rail
+	for (int checkIndex = checkMinIndex; checkIndex < checkMaxIndex; checkIndex++) {
+		Segment& checkSegment = (*segments)[checkIndex];
+		if (abs(x - checkSegment.x) <= 1 && abs(y - checkSegment.y) <= 1)
+			return false;
+	}
+	addGroup(group);
+	addSegment(x, y);
+	return true;
 }
 //adjust the initial tile offset of this rail if we're clicking on one of its end segments
 void Rail::editorAdjustInitialTileOffset(int x, int y, char tileOffset) {

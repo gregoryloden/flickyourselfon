@@ -39,7 +39,8 @@ public:
 	int getBottomY() { return bottomY; }
 	bool hasGroupForColor(char group, char color);
 	void render(int screenLeftWorldX, int screenTopWorldY, bool isOn, bool showGroups);
-public:
+	bool editorRemoveSegment(int x, int y, char color, char group);
+	bool editorAddSegment(int x, int y, char color, char group);
 	char editorGetFloorSaveData(int x, int y);
 private:
 	char editorGetSegmentFloorSaveData(int x, int y, vector<Segment>& segments);

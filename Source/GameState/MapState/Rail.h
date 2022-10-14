@@ -65,7 +65,8 @@ private:
 	void renderSegment(int screenLeftWorldX, int screenTopWorldY, float tileOffset, int segmentIndex);
 public:
 	void editorRemoveGroup(char group);
-	void editorRemoveSegment(int x, int y);
+	bool editorRemoveSegment(int x, int y, char pColor, char group);
+	bool editorAddSegment(int x, int y, char pColor, char group, char tileHeight);
 	void editorAdjustInitialTileOffset(int x, int y, char tileOffset);
 	char editorGetFloorSaveData(int x, int y);
 };

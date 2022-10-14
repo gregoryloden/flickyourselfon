@@ -69,6 +69,98 @@ bool ResetSwitch::hasGroupForColor(char group, char color) {
 	}
 	return false;
 }
+//remove a segment from this reset switch if it matches the end segment of one of the branches
+bool ResetSwitch::editorRemoveSegment(int x, int y, char color, char group) {
+	vector<Segment>* allSegments[3] { &leftSegments, &bottomSegments, &rightSegments };
+	for (vector<Segment>* segments : allSegments) {
+		if (segments->empty())
+			continue;
+		Segment& lastSegment = segments->back();
+		if (lastSegment.x == x && lastSegment.y == y && lastSegment.color == color && lastSegment.group == group) {
+			segments->pop_back();
+			return true;
+		}
+	}
+	return false;
+}
+//add a segment to this reset switch if it's new and the space is valid
+bool ResetSwitch::editorAddSegment(int x, int y, char color, char group) {
+	//make sure this color/group combination doesn't already exist, except for group 0
+	vector<Segment>* allSegments[3] { &leftSegments, &bottomSegments, &rightSegments };
+	for (vector<Segment>* segments : allSegments) {
+		for (Segment& segment : *segments) {
+			if (segment.color == color && segment.group == group && group != 0)
+				return false;
+		}
+	}
+	bool newColor = true;
+	vector<Segment>* segmentsToAddTo = nullptr;
+	//if this position is adjacent to the reset switch bottom, we can definitely place a segment here
+	if (x == centerX - 1 && y == bottomY)
+		segmentsToAddTo = &leftSegments;
+	else if (x == centerX && y == bottomY + 1)
+		segmentsToAddTo = &bottomSegments;
+	else if (x == centerX + 1 && y == bottomY)
+		segmentsToAddTo = &rightSegments;
+	//otherwise, make sure this new segment will be adjacent to the end of one of the segment lists, and that it isn't near any
+	//	other segments
+	else {
+		//don't place a segment near the top of the reset switch body
+		if (abs(x - centerX) <= 1 && y >= bottomY - 2 && y <= bottomY - 1)
+			return false;
+		for (vector<Segment>* segments : allSegments) {
+			//this segment list is empty, we already know we aren't placing it on this side because otherwise we would have
+			//	caught it in one of the above conditionals
+			if (segments->empty())
+				continue;
+			Segment& endSegment = segments->back();
+			int checkMaxIndex = segments->size();
+			//it's correct to place a segment adjacent to the last segment, if we don't already have a segments list to add to
+			if (abs(x - endSegment.x) + abs(y - endSegment.y) == 1 && segmentsToAddTo == nullptr) {
+				segmentsToAddTo = segments;
+				checkMaxIndex -= 2;
+			}
+			//make sure this isn't near any other segments
+			for (int i = 0; i < checkMaxIndex; i++) {
+				Segment& segment = (*segments)[i];
+				if (abs(x - segment.x) <= 1 && abs(y - segment.y) <= 1)
+					return false;
+			}
+		}
+		if (segmentsToAddTo == nullptr)
+			return false;
+		newColor = color != segmentsToAddTo->back().color;
+		//can't add a third color
+		if (newColor && segmentsToAddTo->front().color != segmentsToAddTo->back().color)
+			return false;
+	}
+	//adding a new color and group 0 must be paired with each other
+	if (newColor != (group == 0))
+		return false;
+
+	//if we get here, we can add this segment
+	segmentsToAddTo->push_back(ResetSwitch::Segment(x, y, color, group, 0));
+	//fix sprite indices
+	int lastEndX = centerX;
+	int lastEndY = bottomY;
+	ResetSwitch::Segment& end = segmentsToAddTo->back();
+	if (segmentsToAddTo->size() > 1) {
+		ResetSwitch::Segment& lastEnd = (*segmentsToAddTo)[segmentsToAddTo->size() - 2];
+		lastEndX = lastEnd.x;
+		lastEndY = lastEnd.y;
+		int secondLastX = centerX;
+		int secondLastY = bottomY;
+		if (segmentsToAddTo->size() >= 3) {
+			ResetSwitch::Segment& secondLastEnd = (*segmentsToAddTo)[segmentsToAddTo->size() - 3];
+			secondLastX = secondLastEnd.x;
+			secondLastY = secondLastEnd.y;
+		}
+		lastEnd.spriteHorizontalIndex =
+			Rail::middleSegmentSpriteHorizontalIndex(secondLastX, secondLastY, lastEndX, lastEndY, x, y);
+	}
+	end.spriteHorizontalIndex = Rail::extentSegmentSpriteHorizontalIndex(lastEndX, lastEndY, x, y);
+	return true;
+}
 //we're saving this switch to the floor file, get the data we need at this tile
 char ResetSwitch::editorGetFloorSaveData(int x, int y) {
 	if (x == centerX && y == bottomY)
