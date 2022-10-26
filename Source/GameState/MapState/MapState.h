@@ -2,7 +2,6 @@
 
 #define newMapState() produceWithoutArgs(MapState)
 
-class Holder_RessetSwitchSegmentVector;
 class Rail;
 class RailState;
 class ResetSwitch;
@@ -179,13 +178,7 @@ public:
 private:
 	static vector<int> parseRail(int* pixels, int redShift, int segmentIndex, int railSwitchId);
 	static void addResetSwitchSegments(
-		int* pixels,
-		int redShift,
-		int resetSwitchX,
-		int resetSwitchBottomY,
-		int firstSegmentIndex,
-		int resetSwitchId,
-		Holder_RessetSwitchSegmentVector* segmentsHolder);
+		int* pixels, int redShift, int firstSegmentIndex, int resetSwitchId, ResetSwitch* resetSwitch, char segmentsSection);
 public:
 	static void deleteMap();
 	static int getScreenLeftWorldX(EntityState* camera, int ticksTime);
@@ -208,7 +201,6 @@ public:
 	void flipResetSwitch(short resetSwitchId, int ticksTime);
 	void startRadioWavesAnimation(int initialTicksDelay, int ticksTime);
 	void startSwitchesFadeInAnimation(int ticksTime);
-	void resetMatchingRails(Holder_RessetSwitchSegmentVector* segmentsHolder);
 	void render(EntityState* camera, char playerZ, bool showConnections, int ticksTime);
 	void renderAbovePlayer(EntityState* camera, bool showConnections, int ticksTime);
 	bool renderGroupsForRailsToReset(EntityState* camera, short resetSwitchId, int ticksTime);

@@ -196,12 +196,9 @@ void MapState::buildMap() {
 			resetSwitches.push_back(resetSwitch);
 			railSwitchIds[i - width] = newResetSwitchId;
 			railSwitchIds[i] = newResetSwitchId;
-			Holder_RessetSwitchSegmentVector leftSegmentsHolder (&resetSwitch->leftSegments);
-			Holder_RessetSwitchSegmentVector bottomSegmentsHolder (&resetSwitch->bottomSegments);
-			Holder_RessetSwitchSegmentVector rightSegmentsHolder (&resetSwitch->rightSegments);
-			addResetSwitchSegments(pixels, redShift, headX, headY, i - 1, newResetSwitchId, &leftSegmentsHolder);
-			addResetSwitchSegments(pixels, redShift, headX, headY, i + width, newResetSwitchId, &bottomSegmentsHolder);
-			addResetSwitchSegments(pixels, redShift, headX, headY, i + 1, newResetSwitchId, &rightSegmentsHolder);
+			addResetSwitchSegments(pixels, redShift, i - 1, newResetSwitchId, resetSwitch, -1);
+			addResetSwitchSegments(pixels, redShift, i + width, newResetSwitchId, resetSwitch, 0);
+			addResetSwitchSegments(pixels, redShift, i + 1, newResetSwitchId, resetSwitch, 1);
 		//this is a regular switch
 		} else if (HAS_BITMASK(railSwitchValue, floorIsSwitchBitmask)) {
 			char switchByte2 = (char)((pixels[i + 1] & redMask) >> redShift);
@@ -270,15 +267,8 @@ vector<int> MapState::parseRail(int* pixels, int redShift, int segmentIndex, int
 }
 //read rail groups starting from the given tile, if there is a rail there
 void MapState::addResetSwitchSegments(
-	int* pixels,
-	int redShift,
-	int resetSwitchX,
-	int resetSwitchBottomY,
-	int firstSegmentIndex,
-	int resetSwitchId,
-	Holder_RessetSwitchSegmentVector* segmentsHolder)
+	int* pixels, int redShift, int firstSegmentIndex, int resetSwitchId, ResetSwitch* resetSwitch, char segmentsSection)
 {
-	vector<ResetSwitch::Segment>* segments = segmentsHolder->val;
 	int resetSwitchValue = pixels[firstSegmentIndex] >> redShift;
 	//no rails here
 	if ((resetSwitchValue & floorIsRailSwitchAndHeadBitmask) != floorRailSwitchTailValue)
@@ -290,32 +280,20 @@ void MapState::addResetSwitchSegments(
 	char color1 = (char)((resetSwitchValue >> floorRailSwitchGroupDataShift) & floorRailSwitchColorPostShiftBitmask);
 	char color2 = (char)((resetSwitchValue >> (floorRailSwitchGroupDataShift + 2)) & floorRailSwitchColorPostShiftBitmask);
 	railSwitchIds[firstSegmentIndex] = resetSwitchId;
-	int lastSegmentX = resetSwitchX;
-	int lastSegmentY = resetSwitchBottomY;
 	int segmentX = firstSegmentIndex % width;
 	int segmentY = firstSegmentIndex / width;
-	int firstSegmentSpriteHorizontalIndex =
-		Rail::extentSegmentSpriteHorizontalIndex(lastSegmentX, lastSegmentY, segmentX, segmentY);
-	segments->push_back(ResetSwitch::Segment(segmentX, segmentY, color1, 0, firstSegmentSpriteHorizontalIndex));
+	resetSwitch->addSegment(segmentX, segmentY, color1, 0, segmentsSection);
 
 	char segmentColor = color1;
 	vector<int> railIndices = parseRail(pixels, redShift, firstSegmentIndex, resetSwitchId);
 	for (int segmentIndex : railIndices) {
-		int secondLastSegmentX = lastSegmentX;
-		int secondLastSegmentY = lastSegmentY;
-		lastSegmentX = segmentX;
-		lastSegmentY = segmentY;
 		segmentX = segmentIndex % width;
 		segmentY = segmentIndex / width;
-		segments->back().spriteHorizontalIndex = Rail::middleSegmentSpriteHorizontalIndex(
-			secondLastSegmentX, secondLastSegmentY, lastSegmentX, lastSegmentY, segmentX, segmentY);
 
 		char group = (char)((pixels[segmentIndex] >> floorRailSwitchGroupDataShift) & floorRailSwitchGroupPostShiftBitmask);
 		if (group == 0)
 			segmentColor = color2;
-		int segmentSpriteHorizontalIndex =
-			Rail::extentSegmentSpriteHorizontalIndex(lastSegmentX, lastSegmentY, segmentX, segmentY);
-		segments->push_back(ResetSwitch::Segment(segmentX, segmentY, segmentColor, group, segmentSpriteHorizontalIndex));
+		resetSwitch->addSegment(segmentX, segmentY, segmentColor, group, segmentsSection);
 	}
 }
 //delete the resources used to handle the map
@@ -499,12 +477,7 @@ void MapState::flipSwitch(short switchId, bool allowRadioTowerAnimation, int tic
 void MapState::flipResetSwitch(short resetSwitchId, int ticksTime) {
 	ResetSwitchState* resetSwitchState = resetSwitchStates[resetSwitchId & railSwitchIndexBitmask];
 	ResetSwitch* resetSwitch = resetSwitchState->getResetSwitch();
-	Holder_RessetSwitchSegmentVector leftSegmentsHolder (&resetSwitch->leftSegments);
-	Holder_RessetSwitchSegmentVector bottomSegmentsHolder (&resetSwitch->bottomSegments);
-	Holder_RessetSwitchSegmentVector rightSegmentsHolder (&resetSwitch->rightSegments);
-	resetMatchingRails(&leftSegmentsHolder);
-	resetMatchingRails(&bottomSegmentsHolder);
-	resetMatchingRails(&rightSegmentsHolder);
+	resetSwitch->resetMatchingRails(&railStates);
 	resetSwitchState->flip(ticksTime);
 }
 //begin a radio waves animation
@@ -523,25 +496,6 @@ void MapState::startRadioWavesAnimation(int initialTicksDelay, int ticksTime) {
 void MapState::startSwitchesFadeInAnimation(int ticksTime) {
 	shouldPlayRadioTowerAnimation = false;
 	switchesAnimationFadeInStartTicksTime = ticksTime;
-}
-//reset any rails that match the segments
-void MapState::resetMatchingRails(Holder_RessetSwitchSegmentVector* segmentsHolder) {
-	vector<ResetSwitch::Segment>* segments = segmentsHolder->val;
-	for (ResetSwitch::Segment& segment : *segments) {
-		if (segment.group == 0)
-			continue;
-		for (RailState* railState : railStates) {
-			Rail* rail = railState->getRail();
-			if (rail->getColor() != segment.color)
-				continue;
-			for (char group : rail->getGroups()) {
-				if (group == segment.group) {
-					railState->moveToDefaultTileOffset();
-					break;
-				}
-			}
-		}
-	}
 }
 //draw the map
 void MapState::render(EntityState* camera, char playerZ, bool showConnections, int ticksTime) {
@@ -1026,9 +980,7 @@ void MapState::editorSetResetSwitch(int x, int bottomY) {
 			//	newResetSwitchId to 0 so that we can use the regular reset-switch-placing logic to clear the reset switch
 			if (checkX == x && checkY == bottomY - 1) {
 				//but if it has segments, don't do anything to it
-				if (resetSwitch->leftSegments.size() > 0
-						|| resetSwitch->bottomSegments.size() > 0
-						|| resetSwitch->rightSegments.size() > 0)
+				if (resetSwitch->hasAnySegments())
 					return;
 				resetSwitch->editorIsDeleted = true;
 				newResetSwitchId = 0;

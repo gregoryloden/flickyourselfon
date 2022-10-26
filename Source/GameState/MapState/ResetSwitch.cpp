@@ -36,6 +36,53 @@ centerX(pCenterX)
 , editorIsDeleted(false) {
 }
 ResetSwitch::~ResetSwitch() {}
+//add a segment to the specified segments list
+void ResetSwitch::addSegment(int x, int y, char color, char group, char segmentsSection) {
+	vector<Segment>* segments =
+		segmentsSection < 0 ? &leftSegments :
+		segmentsSection == 0 ? &bottomSegments :
+		&rightSegments;
+	addSegment(x, y, color, group, segments);
+}
+//add a segment to the given segments list
+void ResetSwitch::addSegment(int x, int y, char color, char group, vector<Segment>* segments) {
+	int spriteHorizontalIndex;
+	if (segments->empty())
+		spriteHorizontalIndex = Rail::extentSegmentSpriteHorizontalIndex(centerX, bottomY, x, y);
+	else {
+		Segment& last = segments->back();
+		spriteHorizontalIndex = Rail::extentSegmentSpriteHorizontalIndex(last.x, last.y, x, y);
+		if (segments->size() < 2)
+			last.spriteHorizontalIndex = Rail::middleSegmentSpriteHorizontalIndex(centerX, bottomY, last.x, last.y, x, y);
+		else {
+			Segment& secondLast = (*segments)[segments->size() - 2];
+			last.spriteHorizontalIndex =
+				Rail::middleSegmentSpriteHorizontalIndex(secondLast.x, secondLast.y, last.x, last.y, x, y);
+		}
+	}
+	segments->push_back(Segment(x, y, color, group, spriteHorizontalIndex));
+}
+//reset any rails that match the segments
+void ResetSwitch::resetMatchingRails(vector<RailState*>* railStates) {
+	vector<ResetSwitch::Segment>* allSegments[3] = { &leftSegments, &bottomSegments, &rightSegments };
+	for (vector<ResetSwitch::Segment>* segments : allSegments) {
+		for (ResetSwitch::Segment& segment : *segments) {
+			if (segment.group == 0)
+				continue;
+			for (RailState* railState : *railStates) {
+				Rail* rail = railState->getRail();
+				if (rail->getColor() != segment.color)
+					continue;
+				for (char group : rail->getGroups()) {
+					if (group == segment.group) {
+						railState->moveToDefaultTileOffset();
+						break;
+					}
+				}
+			}
+		}
+	}
+}
 //render the reset switch
 void ResetSwitch::render(int screenLeftWorldX, int screenTopWorldY, bool isOn, bool showGroups) {
 	if (Editor::isActive && editorIsDeleted)
@@ -139,39 +186,20 @@ bool ResetSwitch::editorAddSegment(int x, int y, char color, char group) {
 		return false;
 
 	//if we get here, we can add this segment
-	segmentsToAddTo->push_back(ResetSwitch::Segment(x, y, color, group, 0));
-	//fix sprite indices
-	int lastEndX = centerX;
-	int lastEndY = bottomY;
-	ResetSwitch::Segment& end = segmentsToAddTo->back();
-	if (segmentsToAddTo->size() > 1) {
-		ResetSwitch::Segment& lastEnd = (*segmentsToAddTo)[segmentsToAddTo->size() - 2];
-		lastEndX = lastEnd.x;
-		lastEndY = lastEnd.y;
-		int secondLastX = centerX;
-		int secondLastY = bottomY;
-		if (segmentsToAddTo->size() >= 3) {
-			ResetSwitch::Segment& secondLastEnd = (*segmentsToAddTo)[segmentsToAddTo->size() - 3];
-			secondLastX = secondLastEnd.x;
-			secondLastY = secondLastEnd.y;
-		}
-		lastEnd.spriteHorizontalIndex =
-			Rail::middleSegmentSpriteHorizontalIndex(secondLastX, secondLastY, lastEndX, lastEndY, x, y);
-	}
-	end.spriteHorizontalIndex = Rail::extentSegmentSpriteHorizontalIndex(lastEndX, lastEndY, x, y);
+	addSegment(x, y, color, group, segmentsToAddTo);
 	return true;
 }
 //we're saving this switch to the floor file, get the data we need at this tile
 char ResetSwitch::editorGetFloorSaveData(int x, int y) {
 	if (x == centerX && y == bottomY)
 		return MapState::floorResetSwitchHeadValue;
-	char leftFloorSaveData = editorGetSegmentFloorSaveData(x, y, leftSegments);
-	if (leftFloorSaveData != 0)
-		return leftFloorSaveData;
-	char bottomFloorSaveData = editorGetSegmentFloorSaveData(x, y, bottomSegments);
-	if (bottomFloorSaveData != 0)
-		return bottomFloorSaveData;
-	return editorGetSegmentFloorSaveData(x, y, rightSegments);
+	vector<Segment>* allSegments[3] { &leftSegments, &bottomSegments, &rightSegments };
+	for (vector<Segment>* segments : allSegments) {
+		char floorSaveData = editorGetSegmentFloorSaveData(x, y, *segments);
+		if (floorSaveData != 0)
+			return floorSaveData;
+	}
+	return 0;
 }
 //get the save value for this tile if the coordinates match one of the given segments
 char ResetSwitch::editorGetSegmentFloorSaveData(int x, int y, vector<Segment>& segments) {
@@ -208,12 +236,4 @@ void ResetSwitchState::updateWithPreviousResetSwitchState(ResetSwitchState* prev
 //render the reset switch
 void ResetSwitchState::render(int screenLeftWorldX, int screenTopWorldY, bool showGroups, int ticksTime) {
 	resetSwitch->render(screenLeftWorldX, screenTopWorldY, ticksTime < flipOffTicksTime, showGroups);
-}
-
-//////////////////////////////// Holder_RessetSwitchSegmentVector ////////////////////////////////
-Holder_RessetSwitchSegmentVector::Holder_RessetSwitchSegmentVector(vector<ResetSwitch::Segment>* pVal)
-: val(pVal) {
-}
-Holder_RessetSwitchSegmentVector::~Holder_RessetSwitchSegmentVector() {
-	//don't delete the vector, it's owned by something else
 }
