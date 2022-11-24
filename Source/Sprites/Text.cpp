@@ -31,18 +31,13 @@ Text::GlyphRow::~GlyphRow() {
 	for (Glyph* glyph : glyphs)
 		delete glyph;
 }
-//add a glyph to this row and bump up the unicode range
 void Text::GlyphRow::addGlyph(Glyph* glyph) {
 	glyphs.push_back(glyph);
 	unicodeEnd++;
 }
-//returns whether this row has a unicode range that ends after the provided value
-//used to binary search for the row containing the glyph for a value-
-//	only the first row that ends after the value could contain the right glyph
 bool Text::GlyphRow::endsAfter(int unicodeValue) {
 	return unicodeEnd > unicodeValue;
 }
-//returns the glyph associated with the given unicode value, or nullptr if this row does not contain it
 Text::Glyph* Text::GlyphRow::getGlyph(int unicodeValue) {
 	return (unicodeValue >= unicodeStart && unicodeValue < unicodeEnd) ? glyphs[unicodeValue - unicodeStart] : nullptr;
 }
@@ -63,7 +58,6 @@ const char* Text::keyBackgroundFileName = "keybackground.png";
 SpriteSheet* Text::font = nullptr;
 SpriteSheet* Text::keyBackground = nullptr;
 vector<Text::GlyphRow*> Text::glyphRows;
-//load the font sprite sheet and find which glyphs we have
 void Text::loadFont() {
 	SDL_Surface* fontSurface = FileUtils::loadImage(fontFileName);
 	font = newSpriteSheet(fontSurface, 1, 1, false);
@@ -142,7 +136,6 @@ void Text::loadFont() {
 
 	SDL_FreeSurface(fontSurface);
 }
-//delete the font sprite sheet
 void Text::unloadFont() {
 	delete font;
 	delete keyBackground;
@@ -150,7 +143,6 @@ void Text::unloadFont() {
 		delete glyphRow;
 	glyphRows.clear();
 }
-//return the glyph as indicated by the character at the given index, and increment the index to the following character
 Text::Glyph* Text::getNextGlyph(const char* text, int* inOutCharIndexPointer) {
 	int charIndex = *inOutCharIndexPointer;
 	char c = text[charIndex];
@@ -191,7 +183,6 @@ Text::Glyph* Text::getNextGlyph(const char* text, int* inOutCharIndexPointer) {
 	//this row may or may not contain the glyph, but all lower rows definitely do not contain it
 	return glyphRows[glyphRowLow]->getGlyph(unicodeValue);
 }
-//get the metrics of the text that would be drawn by drawing the given text at the given font scale
 Text::Metrics Text::getMetrics(const char* text, float fontScale) {
 	int charIndex = 0;
 	int charactersWidth = 0;
@@ -218,7 +209,6 @@ Text::Metrics Text::getMetrics(const char* text, float fontScale) {
 	metrics.fontScale = fontScale;
 	return metrics;
 }
-//get the metrics of the key background for text of the given width
 Text::Metrics Text::getKeyBackgroundMetrics(Metrics* textMetrics) {
 	const int belowBaselineSpacing = 5;
 
@@ -235,7 +225,6 @@ Text::Metrics Text::getKeyBackgroundMetrics(Metrics* textMetrics) {
 	metrics.bottomPadding = 0.0f;
 	return metrics;
 }
-//render the given text, scaling it as specified
 void Text::render(const char* text, float leftX, float baselineY, float fontScale) {
 	glEnable(GL_BLEND);
 	int charIndex = 0;
@@ -260,13 +249,11 @@ void Text::render(const char* text, float leftX, float baselineY, float fontScal
 		leftX += (float)(glyphWidth + defaultInterCharacterSpacing) * fontScale;
 	}
 }
-//draw text with a key background behind it, with the key background placed at the left x
 void Text::renderWithKeyBackground(const char* text, float leftX, float baselineY, float fontScale) {
 	Metrics textMetrics = getMetrics(text, fontScale);
 	Metrics keyBackgroundMetrics = getKeyBackgroundMetrics(&textMetrics);
 	renderWithKeyBackgroundWithMetrics(text, leftX, baselineY, &textMetrics, &keyBackgroundMetrics);
 }
-//draw text with a key background behind it, with the key background placed at the left x, using the pre-computed metrics
 void Text::renderWithKeyBackgroundWithMetrics(
 	const char* text, float leftX, float baselineY, Metrics* textMetrics, Metrics* keyBackgroundMetrics)
 {
@@ -275,7 +262,6 @@ void Text::renderWithKeyBackgroundWithMetrics(
 	//the key background has 1 pixel on the left border and 3 on the right, render text 1 font pixel to the left
 	Text::render(text, leftX - textMetrics->fontScale, baselineY, textMetrics->fontScale);
 }
-//draw a key background to be drawn behind text
 void Text::renderKeyBackground(float leftX, float baselineY, Metrics* keyBackgroundMetrics) {
 	int originalBackgroundWidth = (int)(keyBackgroundMetrics->charactersWidth / keyBackgroundMetrics->fontScale);
 	int leftHalfSpriteWidth = keyBackground->getSpriteWidth() / 2;
@@ -313,7 +299,6 @@ void Text::renderKeyBackground(float leftX, float baselineY, Metrics* keyBackgro
 		(GLint)(leftX + keyBackgroundMetrics->charactersWidth),
 		bottomY);
 }
-//render lines of text vertically centered
 void Text::renderLines(vector<string>& lines, vector<Metrics> linesMetrics) {
 	float totalHeight = -linesMetrics.front().topPadding - linesMetrics.back().bottomPadding;
 	for (Metrics& metrics : linesMetrics) {

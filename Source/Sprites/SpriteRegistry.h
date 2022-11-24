@@ -35,6 +35,9 @@ public:
 	static SpriteAnimation* playerRidingRailAnimation;
 	static SpriteAnimation* radioWavesAnimation;
 
+	//load all the sprite sheets
+	//this should only be called after the gl context has been created
 	static void loadAll();
+	//delete all the sprite sheets
 	static void unloadAll();
 };

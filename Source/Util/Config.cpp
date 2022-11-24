@@ -12,7 +12,6 @@ Config::KeyBindings::KeyBindings()
 , showConnectionsKey(SDL_SCANCODE_Z) {
 }
 Config::KeyBindings::~KeyBindings() {}
-//copy the key bindings from the other KeyBindings
 void Config::KeyBindings::set(const KeyBindings* other) {
 	upKey = other->upKey;
 	rightKey = other->rightKey;
@@ -21,7 +20,6 @@ void Config::KeyBindings::set(const KeyBindings* other) {
 	kickKey = other->kickKey;
 	showConnectionsKey = other->showConnectionsKey;
 }
-//get the name for this key code
 const char* Config::KeyBindings::getKeyName(SDL_Scancode key) {
 	switch (key) {
 		case SDL_SCANCODE_LEFT: return u8"←";
@@ -72,7 +70,6 @@ int Config::refreshRate = 60;
 Config::KeyBindings Config::keyBindings;
 Config::KeyBindings Config::editingKeyBindings;
 Config::KickIndicators Config::kickIndicators;
-//save the key bindings to the save file
 void Config::saveSettings() {
 	ofstream file;
 	FileUtils::openFileForWrite(&file, optionsFileName, ios::out | ios::trunc);
@@ -100,7 +97,6 @@ void Config::saveSettings() {
 		file << resetSwitchKickIndicatorFilePrefix << "off\n";
 	file.close();
 }
-//load the key bindings from the save file, if it exists
 void Config::loadSettings() {
 	ifstream file;
 	FileUtils::openFileForRead(&file, optionsFileName);

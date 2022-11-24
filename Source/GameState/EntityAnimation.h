@@ -42,8 +42,11 @@ public:
 		virtual ~Delay();
 
 		virtual int getDelayTicksDuration() { return ticksDuration; }
+		//initialize and return a Delay
 		static Delay* produce(objCounterParametersComma() int pTicksDuration);
+		//release a reference to this Delay and return it to the pool if applicable
 		virtual void release();
+		//return that the animation should not continue updating without checking that the delay is finished
 		virtual bool handle(EntityState* entityState, int ticksTime);
 	};
 	class SetPosition: public Component {
@@ -55,8 +58,11 @@ public:
 		SetPosition(objCounterParameters());
 		virtual ~SetPosition();
 
+		//initialize and return a SetPosition
 		static SetPosition* produce(objCounterParametersComma() float pX, float pY);
+		//release a reference to this SetPosition and return it to the pool if applicable
 		virtual void release();
+		//return that the animation should continue updating after setting the position on the entity state
 		virtual bool handle(EntityState* entityState, int ticksTime);
 	};
 	class SetVelocity: public Component {
@@ -68,12 +74,17 @@ public:
 		SetVelocity(objCounterParameters());
 		virtual ~SetVelocity();
 
+		//initialize and return a SetVelocity
 		static SetVelocity* produce(objCounterParametersComma() DynamicValue* pVx, DynamicValue* pVy);
+		//release a reference to this SetVelocity and return it to the pool if applicable
 		virtual void release();
 	protected:
+		//release components before this is returned to the pool
 		virtual void prepareReturnToPool();
 	public:
+		//return that the animation should continue updating after setting the velocity on the entity state
 		virtual bool handle(EntityState* entityState, int ticksTime);
+		//return a SetVelocity that follows a curve from (0, 0) to (1, 1) with 0 slope at (0, 0) and (1, 1)
 		static SetVelocity* cubicInterpolation(float xMoveDistance, float yMoveDistance, float ticksDuration);
 	};
 	class SetSpriteAnimation: public Component {
@@ -84,8 +95,11 @@ public:
 		SetSpriteAnimation(objCounterParameters());
 		virtual ~SetSpriteAnimation();
 
+		//initialize and return a SetSpriteAnimation
 		static SetSpriteAnimation* produce(objCounterParametersComma() SpriteAnimation* pAnimation);
+		//release a reference to this SetSpriteAnimation and return it to the pool if applicable
 		virtual void release();
+		//return that the animation should continue updating after setting the sprite animation on the entity state
 		virtual bool handle(EntityState* entityState, int ticksTime);
 	};
 	class SetSpriteDirection: public Component {
@@ -96,8 +110,11 @@ public:
 		SetSpriteDirection(objCounterParameters());
 		virtual ~SetSpriteDirection();
 
+		//initialize and return a SetSpriteDirection
 		static SetSpriteDirection* produce(objCounterParametersComma() SpriteDirection pDirection);
+		//release a reference to this SetSpriteDirection and return it to the pool if applicable
 		virtual void release();
+		//return that the animation should continue updating after setting the sprite direction on the entity state
 		virtual bool handle(EntityState* entityState, int ticksTime);
 	};
 	class SetGhostSprite: public Component {
@@ -110,8 +127,11 @@ public:
 		SetGhostSprite(objCounterParameters());
 		virtual ~SetGhostSprite();
 
+		//initialize and return a SetGhostSprite
 		static SetGhostSprite* produce(objCounterParametersComma() bool pShow, float pX, float pY);
+		//release a reference to this SetGhostSprite and return it to the pool if applicable
 		virtual void release();
+		//return that the animation should continue updating after setting the ghost sprite on the entity state
 		virtual bool handle(EntityState* entityState, int ticksTime);
 	};
 	class SetScreenOverlayColor: public Component {
@@ -125,9 +145,12 @@ public:
 		SetScreenOverlayColor(objCounterParameters());
 		virtual ~SetScreenOverlayColor();
 
+		//initialize and return a SetScreenOverlayColor
 		static SetScreenOverlayColor* produce(
 			objCounterParametersComma() DynamicValue* pR, DynamicValue* pG, DynamicValue* pB, DynamicValue* pA);
+		//release a reference to this SetScreenOverlayColor and return it to the pool if applicable
 		virtual void release();
+		//return that the animation should continue updating after setting the screen overlay color on the entity state
 		virtual bool handle(EntityState* entityState, int ticksTime);
 	};
 	class MapKickSwitch: public Component {
@@ -139,8 +162,11 @@ public:
 		MapKickSwitch(objCounterParameters());
 		virtual ~MapKickSwitch();
 
+		//initialize and return a MapKickSwitch
 		static MapKickSwitch* produce(objCounterParametersComma() short pSwitchId, bool pAllowRadioTowerAnimation);
+		//release a reference to this MapKickSwitch and return it to the pool if applicable
 		virtual void release();
+		//return that the animation should continue updating after telling the map to kick the switch
 		virtual bool handle(EntityState* entityState, int ticksTime);
 	};
 	class MapKickResetSwitch: public Component {
@@ -151,8 +177,11 @@ public:
 		MapKickResetSwitch(objCounterParameters());
 		virtual ~MapKickResetSwitch();
 
+		//initialize and return a MapKickResetSwitch
 		static MapKickResetSwitch* produce(objCounterParametersComma() short pResetSwitchId);
+		//release a reference to this MapKickResetSwitch and return it to the pool if applicable
 		virtual void release();
+		//return that the animation should continue updating after telling the map to kick the reset switch
 		virtual bool handle(EntityState* entityState, int ticksTime);
 	};
 	class SwitchToPlayerCamera: public Component {
@@ -160,8 +189,12 @@ public:
 		SwitchToPlayerCamera(objCounterParameters());
 		virtual ~SwitchToPlayerCamera();
 
+		//initialize and return a SwitchToPlayerCamera
 		static SwitchToPlayerCamera* produce(objCounterParameters());
+		//release a reference to this SwitchToPlayerCamera and return it to the pool if applicable
 		virtual void release();
+		//return that the animation should continue updating after setting that the entity state should switch to the player
+		//	camera
 		virtual bool handle(EntityState* entityState, int ticksTime);
 	};
 
@@ -174,14 +207,22 @@ public:
 	EntityAnimation(objCounterParameters());
 	virtual ~EntityAnimation();
 
+	//initialize and return an EntityAnimation
 	static EntityAnimation* produce(
 		objCounterParametersComma() int pStartTicksTime, vector<ReferenceCounterHolder<Component>>* pComponents);
+	//release a reference to this EntityAnimation and return it to the pool if applicable
 	virtual void release();
 protected:
+	//release components before this is returned to the pool
 	virtual void prepareReturnToPool();
 public:
+	//update this animation- process any components that happened since the last time this was updated
+	//while this is state that is both shared across game states and mutated, the mutations only affect the state being updated
+	//return whether the given state was updated (false means that the default update logic for the state should be used)
 	bool update(EntityState* entityState, int ticksTime);
+	//return the total ticks duration of all the components (really just the Delays)
 	static int getComponentTotalTicksDuration(vector<ReferenceCounterHolder<Component>>& pComponents);
+	//get the total ticks duration of this animation's components
 	int getTotalTicksDuration();
 };
 //Should only be allocated within an object, on the stack, or as a static object

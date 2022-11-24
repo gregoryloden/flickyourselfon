@@ -67,7 +67,6 @@ PlayerState::PlayerState(objCounterParameters())
 PlayerState::~PlayerState() {
 	delete collisionRect;
 }
-//initialize and return a PlayerState
 PlayerState* PlayerState::produce(objCounterParametersComma() MapState* mapState) {
 	initializeWithNewFromPool(p, PlayerState)
 	p->z = 0;
@@ -76,7 +75,6 @@ PlayerState* PlayerState::produce(objCounterParametersComma() MapState* mapState
 	p->availableKickAction.set(nullptr);
 	return p;
 }
-//copy the other state
 void PlayerState::copyPlayerState(PlayerState* other) {
 	copyEntityState(other);
 	z = other->z;
@@ -100,16 +98,13 @@ void PlayerState::copyPlayerState(PlayerState* other) {
 	lastControlledY = other->lastControlledY;
 }
 pooledReferenceCounterDefineRelease(PlayerState)
-//use the player as the next camera anchor, we will handle switching to a different camera somewhere else
 void PlayerState::setNextCamera(GameState* nextGameState, int ticksTime) {
 	nextGameState->setPlayerCamera();
 }
-//set the animation to the given animation at the given time
 void PlayerState::setSpriteAnimation(SpriteAnimation* pSpriteAnimation, int pSpriteAnimationStartTicksTime) {
 	spriteAnimation = pSpriteAnimation;
 	spriteAnimationStartTicksTime = pSpriteAnimationStartTicksTime;
 }
-//set the position of the ghost sprite, or clear it
 void PlayerState::setGhostSprite(bool show, float x, float y, int ticksTime) {
 	if (show) {
 		ghostSpriteX.set(newConstantValue(x));
@@ -120,15 +115,12 @@ void PlayerState::setGhostSprite(bool show, float x, float y, int ticksTime) {
 		ghostSpriteY.set(nullptr);
 	}
 }
-//tell the map to kick a switch
 void PlayerState::mapKickSwitch(short switchId, bool allowRadioTowerAnimation, int ticksTime) {
 	mapState.get()->flipSwitch(switchId, allowRadioTowerAnimation, ticksTime);
 }
-//tell the map to kick a reset switch
 void PlayerState::mapKickResetSwitch(short resetSwitchId, int ticksTime) {
 	mapState.get()->flipResetSwitch(resetSwitchId, ticksTime);
 }
-//return whether we have a kick action where we can show connections
 bool PlayerState::showTutorialConnectionsForKickAction() {
 	KickAction* kickAction = availableKickAction.get();
 	if (kickAction == nullptr)
@@ -143,13 +135,11 @@ bool PlayerState::showTutorialConnectionsForKickAction() {
 			return false;
 	}
 }
-//if we have a reset switch kick action, return its id
 short PlayerState::getKickActionResetSwitchId() {
 	return availableKickAction.get() != nullptr && availableKickAction.get()->getType() == KickActionType::ResetSwitch
 		? availableKickAction.get()->getRailSwitchId()
 		: MapState::absentRailSwitchId;
 }
-//update this player state by reading from the previous state
 void PlayerState::updateWithPreviousPlayerState(PlayerState* prev, int ticksTime) {
 	bool previousStateHadEntityAnimation = prev->entityAnimation.get() != nullptr;
 
@@ -180,7 +170,6 @@ void PlayerState::updateWithPreviousPlayerState(PlayerState* prev, int ticksTime
 	lastControlledX = x.get()->getValue(0);
 	lastControlledY = y.get()->getValue(0);
 }
-//update the position of this player state by reading from the previous state
 void PlayerState::updatePositionWithPreviousPlayerState(PlayerState* prev, int ticksTime) {
 	const Uint8* keyboardState = SDL_GetKeyboardState(nullptr);
 	xDirection = (char)(keyboardState[Config::keyBindings.rightKey] - keyboardState[Config::keyBindings.leftKey]);
@@ -204,22 +193,18 @@ void PlayerState::updatePositionWithPreviousPlayerState(PlayerState* prev, int t
 	renderInterpolatedY = true;
 	z = prev->z;
 }
-//set the new value and update the left and right
 void PlayerState::setXAndUpdateCollisionRect(DynamicValue* newX) {
 	x.set(newX);
 	float xPosition = x.get()->getValue(0);
 	collisionRect->left = xPosition + boundingBoxLeftOffset;
 	collisionRect->right = xPosition + boundingBoxRightOffset;
 }
-//set the new value and update the top and bottom
 void PlayerState::setYAndUpdateCollisionRect(DynamicValue* newY) {
 	y.set(newY);
 	float yPosition = y.get()->getValue(0);
 	collisionRect->top = yPosition + boundingBoxTopOffset;
 	collisionRect->bottom = yPosition + boundingBoxBottomOffset;
 }
-//check if we moved onto map tiles of a different height, using the previous move direction to figure out where to look
-//if we did, move the player and don't render interpolated positions
 void PlayerState::collideWithEnvironmentWithPreviousPlayerState(PlayerState* prev) {
 	//find the row and column of tiles that we could collide with
 	int lowMapX = (int)collisionRect->left / MapState::tileSize;
@@ -284,7 +269,6 @@ void PlayerState::collideWithEnvironmentWithPreviousPlayerState(PlayerState* pre
 		collidedRects.erase(collidedRects.begin() + mostCollidedRectIndex);
 	}
 }
-//check for collisions at the map tile, either because of a different height or because there's a new switch there
 void PlayerState::addMapCollisions(
 	int mapX, int mapY, vector<ReferenceCounterHolder<CollisionRect>>& collidedRects, vector<short> seenSwitchIds)
 {
@@ -323,24 +307,19 @@ void PlayerState::addMapCollisions(
 				(float)((mapX + 1) * MapState::tileSize),
 				(float)((mapY + 1) * MapState::tileSize)));
 }
-//returns the fraction of the update spent within the bounds of the given rect; since a collision only happens once the player
-//	is within the bounds in both directions, this is the min of the two collision durations
 float PlayerState::netCollisionDuration(CollisionRect* other) {
 	return MathUtils::fmin(xCollisionDuration(other), yCollisionDuration(other));
 }
-//returns the fraction of the update spent within the x bounds of the given rect, based on the velocity this frame
 float PlayerState::xCollisionDuration(CollisionRect* other) {
 	return lastXMovedDelta < 0
 		? (collisionRect->left - other->right) / lastXMovedDelta
 		: (collisionRect->right - other->left) / lastXMovedDelta;
 }
-//returns the fraction of the update spent within the y bounds of the given rect, based on the velocity this frame
 float PlayerState::yCollisionDuration(CollisionRect* other) {
 	return lastYMovedDelta < 0
 		? (collisionRect->top - other->bottom) / lastYMovedDelta
 		: (collisionRect->bottom - other->top) / lastYMovedDelta;
 }
-//update the sprite (and possibly the animation) of this player state by reading from the previous state
 void PlayerState::updateSpriteWithPreviousPlayerState(PlayerState* prev, int ticksTime, bool usePreviousStateSpriteAnimation) {
 	bool moving = (xDirection | yDirection) != 0;
 	//update the sprite direction
@@ -373,7 +352,6 @@ void PlayerState::updateSpriteWithPreviousPlayerState(PlayerState* prev, int tic
 		spriteAnimationStartTicksTime = ticksTime;
 	}
 }
-//set the kick action if one is available
 void PlayerState::setKickAction() {
 	float xPosition = x.get()->getValue(0);
 	float yPosition = y.get()->getValue(0);
@@ -384,8 +362,6 @@ void PlayerState::setKickAction() {
 		|| setFallKickAction(xPosition, yPosition)
 		|| setClimbKickAction(xPosition, yPosition);
 }
-//set a rail kick action if there is a raised rail we can ride across
-//returns whether it was set
 bool PlayerState::setRailKickAction(float xPosition, float yPosition) {
 	float railCheckXPosition;
 	float railCheckYPosition;
@@ -437,8 +413,6 @@ bool PlayerState::setRailKickAction(float xPosition, float yPosition) {
 		newRailSwitchKickAction(KickActionType::Rail, MapState::getRailSwitchId(railMapX, railMapY), railSegmentIndex));
 	return true;
 }
-//set a switch kick action if there is a switch in front of the player
-//returns whether it was set
 bool PlayerState::setSwitchKickAction(float xPosition, float yPosition) {
 	//no switch kicking when facing down
 	if (spriteDirection == SpriteDirection::Down)
@@ -487,8 +461,6 @@ bool PlayerState::setSwitchKickAction(float xPosition, float yPosition) {
 	availableKickAction.set(newRailSwitchKickAction(switchKickActionType, switchId, -1));
 	return true;
 }
-//set a reset switch kick action if we can reset switch
-//returns whether it was set
 bool PlayerState::setResetSwitchKickAction(float xPosition, float yPosition) {
 	int resetSwitchMapX = -1;
 	int resetSwitchMapY = -1;
@@ -526,8 +498,6 @@ bool PlayerState::setResetSwitchKickAction(float xPosition, float yPosition) {
 	availableKickAction.set(newRailSwitchKickAction(KickActionType::ResetSwitch, resetSwitchId, -1));
 	return true;
 }
-//set a climb kick action if we can climb
-//returns whether it was set
 bool PlayerState::setClimbKickAction(float xPosition, float yPosition) {
 	float targetXPosition;
 	float targetYPosition;
@@ -568,8 +538,6 @@ bool PlayerState::setClimbKickAction(float xPosition, float yPosition) {
 	availableKickAction.set(newClimbFallKickAction(KickActionType::Climb, targetXPosition, targetYPosition, 0));
 	return true;
 }
-//set a fall kick action if we can fall
-//returns whether it was set
 bool PlayerState::setFallKickAction(float xPosition, float yPosition) {
 	int lowMapX = (int)(xPosition + boundingBoxLeftOffset) / MapState::tileSize;
 	int highMapX = (int)(xPosition + boundingBoxRightOffset) / MapState::tileSize;
@@ -662,7 +630,6 @@ bool PlayerState::setFallKickAction(float xPosition, float yPosition) {
 	availableKickAction.set(newClimbFallKickAction(KickActionType::Fall, targetXPosition, targetYPosition, fallHeight));
 	return true;
 }
-//auto-climb, auto-fall, or auto-ride-rail if we can
 void PlayerState::tryAutoKick(PlayerState* prev, int ticksTime) {
 	autoKickStartTicksTime = -1;
 	canImmediatelyAutoKick = (xDirection != 0 || yDirection != 0) && prev->canImmediatelyAutoKick;
@@ -710,8 +677,6 @@ void PlayerState::tryAutoKick(PlayerState* prev, int ticksTime) {
 		canImmediatelyAutoKick = true;
 	}
 }
-//if we don't have a kicking animation, start one
-//this should be called after the player has been updated
 void PlayerState::beginKicking(int ticksTime) {
 	if (entityAnimation.get() != nullptr)
 		return;
@@ -758,7 +723,6 @@ void PlayerState::beginKicking(int ticksTime) {
 	}
 	availableKickAction.set(nullptr);
 }
-//begin a kicking animation without changing any state
 void PlayerState::kickAir(int ticksTime) {
 	SpriteAnimation* kickingSpriteAnimation = hasBoot
 		? SpriteRegistry::playerKickingAnimation
@@ -771,7 +735,6 @@ void PlayerState::kickAir(int ticksTime) {
 	Holder_EntityAnimationComponentVector kickAnimationComponentsHolder (&kickAnimationComponents);
 	beginEntityAnimation(&kickAnimationComponentsHolder, ticksTime);
 }
-//begin a kicking animation and climb up to the next tile to the north
 void PlayerState::kickClimb(float xMoveDistance, float yMoveDistance, int ticksTime) {
 	stringstream message;
 	message << "  climb " << (int)(x.get()->getValue(0)) << " " << (int)(y.get()->getValue(0))
@@ -823,7 +786,6 @@ void PlayerState::kickClimb(float xMoveDistance, float yMoveDistance, int ticksT
 	beginEntityAnimation(&kickingAnimationComponentsHolder, ticksTime);
 	z += 2;
 }
-//begin a kicking animation and fall in whatever direction we're facing
 void PlayerState::kickFall(float xMoveDistance, float yMoveDistance, char fallHeight, int ticksTime) {
 	stringstream message;
 	message << "  fall " << (int)(x.get()->getValue(0)) << " " << (int)(y.get()->getValue(0))
@@ -911,7 +873,6 @@ void PlayerState::kickFall(float xMoveDistance, float yMoveDistance, char fallHe
 	beginEntityAnimation(&kickingAnimationComponentsHolder, ticksTime);
 	z = fallHeight;
 }
-//begin a rail-riding animation and follow it to its other end
 void PlayerState::kickRail(short railId, float xPosition, float yPosition, int ticksTime) {
 	MapState::logRailRide(railId, (int)xPosition, (int)yPosition);
 	vector<ReferenceCounterHolder<EntityAnimation::Component>> ridingRailAnimationComponents;
@@ -919,7 +880,6 @@ void PlayerState::kickRail(short railId, float xPosition, float yPosition, int t
 	addRailRideComponents(railId, &ridingRailAnimationComponentsHolder, xPosition, yPosition, nullptr, nullptr);
 	beginEntityAnimation(&ridingRailAnimationComponentsHolder, ticksTime);
 }
-//add the components for a rail-riding animation
 void PlayerState::addRailRideComponents(
 	short railId,
 	Holder_EntityAnimationComponentVector* componentsHolder,
@@ -1085,7 +1045,6 @@ void PlayerState::addRailRideComponents(
 	if (outFinalYPosition != nullptr)
 		*outFinalYPosition = finalYPosition;
 }
-//begin a kicking animation and set the switch to flip
 void PlayerState::kickSwitch(short switchId, int ticksTime) {
 	MapState::logSwitchKick(switchId);
 	vector<ReferenceCounterHolder<EntityAnimation::Component>> kickAnimationComponents;
@@ -1093,7 +1052,6 @@ void PlayerState::kickSwitch(short switchId, int ticksTime) {
 	addKickSwitchComponents(switchId, &kickAnimationComponentsHolder, true);
 	beginEntityAnimation(&kickAnimationComponentsHolder, ticksTime);
 }
-//add the animation components for a switch kicking animation
 void PlayerState::addKickSwitchComponents(
 	short switchId, Holder_EntityAnimationComponentVector* componentsHolder, bool allowRadioTowerAnimation)
 {
@@ -1110,7 +1068,6 @@ void PlayerState::addKickSwitchComponents(
 					- SpriteRegistry::playerKickingAnimationTicksPerFrame)
 		});
 }
-//begin a kicking animation and set the reset switch to flip
 void PlayerState::kickResetSwitch(short resetSwitchId, int ticksTime) {
 	MapState::logResetSwitchKick(resetSwitchId);
 	vector<ReferenceCounterHolder<EntityAnimation::Component>> kickAnimationComponents;
@@ -1118,7 +1075,6 @@ void PlayerState::kickResetSwitch(short resetSwitchId, int ticksTime) {
 	addKickResetSwitchComponents(resetSwitchId, &kickAnimationComponentsHolder);
 	beginEntityAnimation(&kickAnimationComponentsHolder, ticksTime);
 }
-//add the animation components for a reset switch kicking animation
 void PlayerState::addKickResetSwitchComponents(short resetSwitchId, Holder_EntityAnimationComponentVector* componentsHolder) {
 	vector<ReferenceCounterHolder<EntityAnimation::Component>>* components = componentsHolder->val;
 	components->insert(
@@ -1133,7 +1089,6 @@ void PlayerState::addKickResetSwitchComponents(short resetSwitchId, Holder_Entit
 					- SpriteRegistry::playerKickingAnimationTicksPerFrame)
 		});
 }
-//render this player state, which was deemed to be the last state to need rendering
 void PlayerState::render(EntityState* camera, int ticksTime) {
 	if (ghostSpriteX.get() != nullptr && ghostSpriteY.get() != nullptr) {
 		float ghostRenderCenterX = getRenderCenterScreenXFromWorldX(
@@ -1169,7 +1124,6 @@ void PlayerState::render(EntityState* camera, int ticksTime) {
 			(GLint)(renderCenterY + boundingBoxBottomOffset));
 	#endif
 }
-//render the kick action for this player state if one is available
 void PlayerState::renderKickAction(EntityState* camera, bool hasRailsToReset, int ticksTime) {
 	if (!hasBoot || availableKickAction.get() == nullptr)
 		return;
@@ -1177,12 +1131,10 @@ void PlayerState::renderKickAction(EntityState* camera, bool hasRailsToReset, in
 	float renderTopY = getRenderCenterScreenY(camera,  ticksTime) - (float)SpriteRegistry::player->getSpriteHeight() / 2.0f;
 	availableKickAction.get()->render(renderCenterX, renderTopY, hasRailsToReset);
 }
-//save this player state to the file
 void PlayerState::saveState(ofstream& file) {
 	file << playerXFilePrefix << lastControlledX << "\n";
 	file << playerYFilePrefix << lastControlledY << "\n";
 }
-//try to load state from the line of the file, return whether state was loaded
 bool PlayerState::loadState(string& line) {
 	if (StringUtils::startsWith(line, playerXFilePrefix)) {
 		lastControlledX = (float)atof(line.c_str() + playerXFilePrefix.size());
@@ -1194,14 +1146,11 @@ bool PlayerState::loadState(string& line) {
 		return false;
 	return true;
 }
-//set the initial z for the player after loading the position
-//this isn't technically loading anything from the file but it is part of setting the initial state
 void PlayerState::setInitialZ() {
 	z = MapState::getHeight(
 		(int)x.get()->getValue(0) / MapState::tileSize,
 		(int)(y.get()->getValue(0) + boundingBoxCenterYOffset) / MapState::tileSize);
 }
-//reset any state on the player that shouldn't exist for the intro animation
 void PlayerState::reset() {
 	availableKickAction.set(nullptr);
 	z = 0;
@@ -1210,7 +1159,6 @@ void PlayerState::reset() {
 	canImmediatelyAutoKick = false;
 }
 #ifdef DEBUG
-	//move the player as high as possible so that all rails render under
 	void PlayerState::setHighestZ() {
 		z = MapState::highestFloorHeight;
 	}

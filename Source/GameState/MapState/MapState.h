@@ -24,13 +24,20 @@ public:
 		RadioWavesState(objCounterParameters());
 		virtual ~RadioWavesState();
 
-		static RadioWavesState* produce(objCounterParameters());
-		void copyRadioWavesState(RadioWavesState* other);
-		virtual void release();
-		virtual void setSpriteAnimation(SpriteAnimation* pSpriteAnimation, int pSpriteAnimationStartTicksTime);
-		void updateWithPreviousRadioWavesState(RadioWavesState* prev, int ticksTime);
-		void render(EntityState* camera, int ticksTime);
+		//don't do anything based on a camera change
 		virtual void setNextCamera(GameState* nextGameState, int ticksTime) {}
+		//initialize and return a RadioWavesState
+		static RadioWavesState* produce(objCounterParameters());
+		//copy the state of the other RadioWavesState
+		void copyRadioWavesState(RadioWavesState* other);
+		//release a reference to this RadioWavesState and return it to the pool if applicable
+		virtual void release();
+		//set the animation to the given animation at the given time
+		virtual void setSpriteAnimation(SpriteAnimation* pSpriteAnimation, int pSpriteAnimationStartTicksTime);
+		//update this RadioWavesState by reading from the previous state
+		void updateWithPreviousRadioWavesState(RadioWavesState* prev, int ticksTime);
+		//render the radio waves if we've got an animation
+		void render(EntityState* camera, int ticksTime);
 	};
 
 	//map state
@@ -169,55 +176,108 @@ public:
 	static void editorSetTile(int x, int y, char tile) { tiles[y * width + x] = tile; }
 	static void editorSetHeight(int x, int y, char height) { heights[y * width + x] = height; }
 	static void editorSetRailSwitchId(int x, int y, short railSwitchId) { railSwitchIds[y * width + x] = railSwitchId; }
+	//initialize and return a MapState
 	static MapState* produce(objCounterParameters());
+	//release a reference to this MapState and return it to the pool if applicable
 	virtual void release();
 protected:
+	//release the radio waves state before this is returned to the pool
 	virtual void prepareReturnToPool();
 public:
+	//load the map and extract all the map data from it
 	static void buildMap();
 private:
+	//go along the path and add rail segment indices to a list, and set the given id over those tiles
+	//the given rail index is assumed to already have its tile marked
+	//returns the indices of the parsed segments
 	static vector<int> parseRail(int* pixels, int redShift, int segmentIndex, int railSwitchId);
+	//read rail colors and groups from the reset switch segments starting from the given tile, if there is a segment there
 	static void addResetSwitchSegments(
 		int* pixels, int redShift, int firstSegmentIndex, int resetSwitchId, ResetSwitch* resetSwitch, char segmentsSection);
 public:
+	//delete the resources used to handle the map
 	static void deleteMap();
+	//get the world position of the left edge of the screen using the camera as the center of the screen
 	static int getScreenLeftWorldX(EntityState* camera, int ticksTime);
+	//get the world position of the top edge of the screen using the camera as the center of the screen
 	static int getScreenTopWorldY(EntityState* camera, int ticksTime);
 	#ifdef DEBUG
+		//find the switch for the given index and write its top left corner
+		//does not write map coordinates if it doesn't find any
 		static void getSwitchMapTopLeft(short switchIndex, int* outMapLeftX, int* outMapTopY);
+		//find the reset switch for the given index and write its top center coordinate
+		//does not write map coordinates if it doesn't find any
 		static void getResetSwitchMapTopCenter(short resetSwitchIndex, int* outMapCenterX, int* outMapTopY);
 	#endif
+	//get the center x of the radio tower antenna
 	static float antennaCenterWorldX();
+	//get the center y of the radio tower antenna
 	static float antennaCenterWorldY();
+	//check that the tile has the main section of the reset switch, not just one of the rail segments
 	static bool tileHasResetSwitchBody(int x, int y);
+	//a switch can only be kicked if it's group 0 or if its color is activated
 	KickActionType getSwitchKickActionType(short switchId);
+	//check the height of all the tiles in the row (indices inclusive), and return it if they're all the same or invalidHeight
+	//	if any differ
 	static char horizontalTilesHeight(int lowMapX, int highMapX, int mapY);
+	//change one of the tiles to be the boot tile
 	static void setIntroAnimationBootTile(bool showBootTile);
+	//update the rails and switches of the MapState by reading from the previous state
 	void updateWithPreviousMapState(MapState* prev, int ticksTime);
 private:
+	//via insertion sort, add a rail state to the list of above- or below-player rail states
 	void insertRailByHeight(RailState* railState);
 public:
+	//flip a switch
 	void flipSwitch(short switchId, bool allowRadioTowerAnimation, int ticksTime);
+	//flip a reset switch
 	void flipResetSwitch(short resetSwitchId, int ticksTime);
+	//begin a radio waves animation
 	void startRadioWavesAnimation(int initialTicksDelay, int ticksTime);
+	//activate the next switch color and set the start of the animation
 	void startSwitchesFadeInAnimation(int ticksTime);
+	//draw the map
 	void render(EntityState* camera, char playerZ, bool showConnections, int ticksTime);
+	//draw anything (rails, groups) that render above the player
+	//assumes render() has already been called to set the rails above the player
 	void renderAbovePlayer(EntityState* camera, bool showConnections, int ticksTime);
+	//render the groups for rails that are not in their default position that have a group that this reset switch also has
+	//return whether any groups were drawn
 	bool renderGroupsForRailsToReset(EntityState* camera, short resetSwitchId, int ticksTime);
+	//draw a graphic to represent this rail/switch group
 	static void renderGroupRect(char group, GLint leftX, GLint topY, GLint rightX, GLint bottomY);
+private:
+	//log the colors of the group to the message
 	static void logGroup(char group, stringstream* message);
+public:
+	//log that the switch was kicked
 	static void logSwitchKick(short switchId);
+	//log that the reset switch was kicked
 	static void logResetSwitchKick(short resetSwitchId);
+	//log that the player rode on the rail
 	static void logRailRide(short railId, int playerX, int playerY);
+	//save the map state to the file
 	void saveState(ofstream& file);
+	//try to load state from the line of the file, return whether state was loaded
 	bool loadState(string& line);
+	//we don't have previous rails to update from so sort the rails from our base list
 	void sortInitialRails();
+	//reset the rails and switches
 	void resetMap();
+	//examine the neighboring tiles and pick an appropriate default tile, but only if we match the expected floor height
+	//wall tiles and floor tiles of a different height will be ignored
 	static void editorSetAppropriateDefaultFloorTile(int x, int y, char expectedFloorHeight);
+	//check to see if there is a floor tile at this x that is effectively "above" an adjacent tile at the given y
+	//go up the tiles, and if we find a floor tile with the right height, return true, or if it's too low, return false
 	static bool editorHasFloorTileCreatingShadowForHeight(int x, int y, char height);
+	//set a switch if there's room, or delete one if we can
 	static void editorSetSwitch(int leftX, int topY, char color, char group);
+	//set a rail or reset switch segment, or delete one if we can
 	static void editorSetRail(int x, int y, char color, char group);
+	//set a reset switch body, or delete one if we can
 	static void editorSetResetSwitch(int x, int bottomY);
+	//adjust the tile offset of the rail here, if there is one
 	static void editorAdjustRailInitialTileOffset(int x, int y, char tileOffset);
+	//check if we're saving a rail or switch to the floor file, and if so get the data we need at this tile
 	static char editorGetRailSwitchFloorSaveData(int x, int y);
 };

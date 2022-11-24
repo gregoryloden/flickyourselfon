@@ -178,7 +178,6 @@ int gameMain(int argc, char* argv[]) {
 
 	return 0;
 }
-//main render loop for the game
 void renderLoop(CircularStateQueue<GameState>* gameStateQueue) {
 	Logger::setupLogQueue();
 

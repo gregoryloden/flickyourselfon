@@ -34,8 +34,13 @@ private:
 		GlyphRow(objCounterParametersComma() int pUnicodeStart, Glyph* firstGlyph);
 		virtual ~GlyphRow();
 
+		//add a glyph to this row and bump up the unicode range
 		void addGlyph(Glyph* glyph);
+		//returns whether this row has a unicode range that ends after the provided value
+		//used to binary search for the row containing the glyph for a value- only the first row that ends after the value could
+		//	contain the right glyph
 		bool endsAfter(int unicodeValue);
+		//returns the glyph associated with the given unicode value, or nullptr if this row does not contain it
 		Glyph* getGlyph(int unicodeValue);
 	};
 public:
@@ -70,16 +75,26 @@ private:
 	static vector<GlyphRow*> glyphRows;
 
 public:
+	//load the font sprite sheet and find which glyphs we have
 	static void loadFont();
+	//delete the font sprite sheet
 	static void unloadFont();
+	//return the glyph as indicated by the character at the given index, and increment the index to the following character
 	static Glyph* getNextGlyph(const char* text, int* inOutCharIndexPointer);
+	//get the metrics of the text that would be drawn by drawing the given text at the given font scale
 	static Metrics getMetrics(const char* text, float fontScale);
+	//get the metrics of the key background for text of the given width
 	static Metrics getKeyBackgroundMetrics(Metrics* textMetrics);
+	//render the given text, scaling it as specified
 	static void render(const char* text, float leftX, float baselineY, float fontScale);
+	//draw text with a key background behind it, with the key background placed at the left x
 	static void renderWithKeyBackground(const char* text, float leftX, float baselineY, float fontScale);
+	//draw text with a key background behind it, with the key background placed at the left x, using the pre-computed metrics
 	static void renderWithKeyBackgroundWithMetrics(
 		const char* text, float leftX, float baselineY, Metrics* textMetrics, Metrics* keyBackgroundMetrics);
+	//draw a key background to be drawn behind text
 	static void renderKeyBackground(float leftX, float baselineY, Metrics* keyBackgroundMetrics);
+	//render lines of text vertically and horizontally centered
 	static void renderLines(vector<string>& lines, vector<Metrics> linesMetrics);
 };
 #endif

@@ -35,7 +35,7 @@ public:
 	char getFallHeight() { return fallHeight; }
 	short getRailSwitchId() { return railSwitchId; }
 	int getRailSegmentIndex() { return railSegmentIndex; }
-	virtual void release();
+	//initialize and return a KickAction
 	static KickAction* produce(
 		objCounterParametersComma()
 		KickActionType pType,
@@ -44,5 +44,8 @@ public:
 		char pFallHeight,
 		short pRailSwitchId,
 		int pRailSegmentIndex);
+	//release a reference to this KickAction and return it to the pool if applicable
+	virtual void release();
+	//render this kick action
 	void render(float centerX, float bottomY, bool hasRailsToReset);
 };

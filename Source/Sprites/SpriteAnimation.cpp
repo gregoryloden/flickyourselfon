@@ -33,7 +33,6 @@ SpriteAnimation::~SpriteAnimation() {
 	}
 	delete[] frameSearchPredecingTicksDurations;
 }
-//binary search for the referenced frame
 SpriteAnimation::Frame* SpriteAnimation::findFrame(int animationTicksElapsed) {
 	//if we aren't looping the animation, stop at the last frame
 	if (!loopAnimation && animationTicksElapsed >= totalTicksDuration)
@@ -52,7 +51,6 @@ SpriteAnimation::Frame* SpriteAnimation::findFrame(int animationTicksElapsed) {
 	}
 	return frames[low];
 }
-//render the appropriate sprite for this frame, using the given center
 void SpriteAnimation::renderUsingCenter(
 	float centerX, float centerY, int animationTicksElapsed, int fallbackSpriteHorizontalIndex, int fallbackSpriteVerticalIndex)
 {

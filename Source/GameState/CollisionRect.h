@@ -12,7 +12,10 @@ public:
 	CollisionRect(objCounterParameters());
 	virtual ~CollisionRect();
 
-	virtual void release();
+	//initialize and return a CollisionRect
 	static CollisionRect* produce(objCounterParametersComma() float pLeft, float pTop, float pRight, float pBottom);
+	//release a reference to this CollisionRect and return it to the pool if applicable
+	virtual void release();
+	//check if this CollisionRect has any overlap with the other CollisionRect
 	bool intersects(CollisionRect* other);
 };

@@ -59,7 +59,6 @@ Logger::Logger(const char* pFileName, ios_base::openmode pFileFlags)
 Logger::~Logger() {
 	//don't delete the file, assume it was already closed
 }
-//open the file for writing on a single thread and add this to the list of loggers
 void Logger::beginLogging() {
 	if (Editor::isActive && this != &debugLogger)
 		return;
@@ -67,14 +66,10 @@ void Logger::beginLogging() {
 	FileUtils::openFileForWrite(file, fileName, fileFlags);
 	loggers.push_back(this);
 }
-//start the logging thread
-//this should only be called on the main thread
 void Logger::beginMultiThreadedLogging() {
 	threadRunning = true;
 	logThread = new thread(logLoop);
 }
-//create the log queue for this thread
-//does not lock- callers are responsible for ensuring only one thread runs this at a time
 void Logger::setupLogQueue() {
 	//create our new objects, these may cause logs so don't assign them to the static values yet
 	int preQueueTimestamp = (int)SDL_GetTicks();
@@ -92,7 +87,6 @@ void Logger::setupLogQueue() {
 		logger->queueMessage(&logger->preQueueMessages, preQueueTimestamp);
 	}
 }
-//stop the logging thread and delete the queues, but leave the files open for single threaded logging
 void Logger::endMultiThreadedLogging() {
 	threadRunning = false;
 	logThread->join();
@@ -103,7 +97,6 @@ void Logger::endMultiThreadedLogging() {
 	delete logQueueStack;
 	logQueueStack = nullptr;
 }
-//finally close the file and remove this from the list of loggers
 void Logger::endLogging() {
 	if (Editor::isActive && this != &debugLogger)
 		return;
@@ -116,7 +109,6 @@ void Logger::endLogging() {
 	file->close();
 	delete file;
 }
-//loop and process any log messages that were written in another thread
 void Logger::logLoop() {
 	Logger* lastWrittenLogger = &debugLogger;
 	while (true) {
@@ -160,11 +152,9 @@ void Logger::logLoop() {
 		SDL_Delay(1);
 	}
 }
-//log a message to the current thread's log queue
 void Logger::log(const char* message) {
 	logString(string(message));
 }
-//log a message to the current thread's log queue
 void Logger::logString(const string& message) {
 	if (Editor::isActive && this != &debugLogger)
 		return;
@@ -200,7 +190,6 @@ void Logger::logString(const string& message) {
 
 	queueMessage(&messageWithTimestamp, timestamp);
 }
-//add a message to the queue, creating a new Message if necessary
 void Logger::queueMessage(stringstream* message, int timestamp) {
 	Message* writableMessage = currentThreadLogQueue->getNextWritableState();
 	//if we don't have any matching pending messages and we don't have any writable messages, make a new one
@@ -216,7 +205,6 @@ void Logger::queueMessage(stringstream* message, int timestamp) {
 	writableMessage->owningLogger = this;
 	currentThreadLogQueue->finishWritingToState();
 }
-//write any pending messages to the file
 void Logger::writePendingMessages() {
 	*file << messagesToWrite.str();
 	messagesToWrite.str(string());

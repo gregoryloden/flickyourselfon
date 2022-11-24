@@ -44,7 +44,9 @@
 		ObjCounter(objCounterParameters());
 		virtual ~ObjCounter();
 
+		//assign the initial object ID to exclude any statically-allocated ObjCounters
 		static void start();
+		//check for any non-deallocated objects
 		static void end();
 	};
 #endif

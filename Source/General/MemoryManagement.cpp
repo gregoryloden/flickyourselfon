@@ -56,7 +56,6 @@
 				headObjCounter = nextObjCounter;
 		#endif
 	}
-	//assign the initial object ID to exclude any statically-allocated ObjCounters
 	void ObjCounter::start() {
 		untrackedObjCount = nextObjID;
 		#ifdef TRACK_OBJ_IDS
@@ -65,7 +64,6 @@
 			tailObjCounter = nullptr;
 		#endif
 	}
-	//check for any non-deallocated objects
 	void ObjCounter::end() {
 		stringstream logMessage;
 		#ifdef TRACK_OBJ_IDS

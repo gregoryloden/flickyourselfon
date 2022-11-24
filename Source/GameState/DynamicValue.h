@@ -26,9 +26,13 @@ public:
 	ConstantValue(objCounterParameters());
 	virtual ~ConstantValue();
 
+	//initialize and return a ConstantValue
 	static ConstantValue* produce(objCounterParametersComma() float pValue);
+	//release a reference to this ConstantValue and return it to the pool if applicable
 	virtual void release();
+	//return a new ConstantValue with the provided value
 	virtual DynamicValue* copyWithConstantValue(float pConstantValue);
+	//get the value at the given time
 	virtual float getValue(int ticksElapsed);
 };
 class CompositeQuarticValue: public DynamicValue {
@@ -43,6 +47,7 @@ public:
 	CompositeQuarticValue(objCounterParameters());
 	virtual ~CompositeQuarticValue();
 
+	//initialize and return a CompositeQuarticValue
 	static CompositeQuarticValue* produce(
 		objCounterParametersComma()
 		float pConstantValue,
@@ -50,8 +55,11 @@ public:
 		float pQuadraticValuePerTick,
 		float pCubicValuePerTick,
 		float pQuarticValuePerTick);
+	//release a reference to this CompositeQuarticValue and return it to the pool if applicable
 	virtual void release();
+	//set the constant value to the provided value
 	virtual DynamicValue* copyWithConstantValue(float pConstantValue);
+	//get the value at the given time
 	virtual float getValue(int ticksElapsed);
 };
 class LinearInterpolatedValue: public DynamicValue {
@@ -77,8 +85,12 @@ public:
 	LinearInterpolatedValue(objCounterParameters());
 	virtual ~LinearInterpolatedValue();
 
+	//initialize and return a LinearInterpolatedValue
 	static LinearInterpolatedValue* produce(objCounterParametersComma() vector<ValueAtTime> valuesAtTimes);
+	//release a reference to this LinearInterpolatedValue and return it to the pool if applicable
 	virtual void release();
+	//return a new value with all the values shifted so that it's 0 at time 0
 	virtual DynamicValue* copyWithConstantValue(float pConstantValue);
+	//get the value at the given time
 	virtual float getValue(int ticksElapsed);
 };

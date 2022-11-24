@@ -28,8 +28,6 @@ SpriteAnimation* SpriteRegistry::playerFastKickingAnimation = nullptr;
 SpriteAnimation* SpriteRegistry::playerBootLiftAnimation = nullptr;
 SpriteAnimation* SpriteRegistry::playerRidingRailAnimation = nullptr;
 SpriteAnimation* SpriteRegistry::radioWavesAnimation = nullptr;
-//load all the sprite sheets
-//this should only be called after the gl context has been created
 void SpriteRegistry::loadAll() {
 	player = newSpriteSheetWithImagePath(playerFileName, 10, 4, false);
 	tiles = newSpriteSheetWithImagePath(tilesFileName, MapState::tileCount, 1, true);
@@ -89,7 +87,6 @@ void SpriteRegistry::loadAll() {
 		});
 	radioWavesAnimation->disableLooping();
 }
-//delete all the sprite sheets
 void SpriteRegistry::unloadAll() {
 	delete player;
 	delete tiles;

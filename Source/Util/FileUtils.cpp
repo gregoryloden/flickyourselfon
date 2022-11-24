@@ -10,7 +10,6 @@ const string FileUtils::imagesFolder = "images/";
 #ifdef __APPLE__
 	const char* FileUtils::fileIoIntermediatePath = "/Library/Application Support/kickyourselfon";
 #endif
-//load an image
 SDL_Surface* FileUtils::loadImage(const char *imagePath) {
 	#ifdef WIN32
 		string fullPath = imagesFolder + imagePath;
@@ -29,12 +28,10 @@ SDL_Surface* FileUtils::loadImage(const char *imagePath) {
 		return image;
 	#endif
 }
-//save an image
 void FileUtils::saveImage(SDL_Surface* image, const char* imagePath) {
 	string fullPath = imagesFolder + imagePath;
 	IMG_SavePNG(image, fullPath.c_str());
 }
-//open a file for read
 void FileUtils::openFileForRead(ifstream* file, const char* filePath) {
 	#ifdef WIN32
 		file->open(filePath);
@@ -43,7 +40,6 @@ void FileUtils::openFileForRead(ifstream* file, const char* filePath) {
 		file->open(fullPath.c_str());
 	#endif
 }
-//open a file for write
 void FileUtils::openFileForWrite(ofstream* file, const char* filePath, ios_base::openmode fileFlags) {
 	#ifdef WIN32
 		file->open(filePath, fileFlags);
@@ -55,7 +51,6 @@ void FileUtils::openFileForWrite(ofstream* file, const char* filePath, ios_base:
 	#endif
 }
 #ifdef __APPLE__
-	//expand the user's home directory in the file io prefix
 	string FileUtils::getExpandedFileIoPrefix() {
 		passwd* p = getpwuid(getuid());
 		return string(p->pw_dir) + fileIoIntermediatePath;

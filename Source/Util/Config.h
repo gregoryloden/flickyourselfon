@@ -15,7 +15,9 @@ public:
 		KeyBindings();
 		virtual ~KeyBindings();
 
+		//copy the key bindings from the other KeyBindings
 		void set(const KeyBindings* other);
+		//get the name for this key code
 		static const char* getKeyName(SDL_Scancode key);
 	};
 	//Should only be allocated within an object, on the stack, or as a static object
@@ -67,6 +69,8 @@ public:
 	static KeyBindings editingKeyBindings;
 	static KickIndicators kickIndicators;
 
+	//save the key bindings to the save file
 	static void saveSettings();
+	//load the key bindings from the save file, if it exists
 	static void loadSettings();
 };

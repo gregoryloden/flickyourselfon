@@ -40,7 +40,6 @@ textureId(0)
 	}
 }
 SpriteSheet::~SpriteSheet() {}
-//load the surface at the image path and then build a SpriteSheet
 SpriteSheet* SpriteSheet::produce(
 	objCounterParametersComma()
 	const char* imagePath,
@@ -53,7 +52,6 @@ SpriteSheet* SpriteSheet::produce(
 	SDL_FreeSurface(surface);
 	return spriteSheet;
 }
-//draw the specified region of the sprite sheet
 void SpriteSheet::renderSpriteSheetRegionAtScreenRegion(
 	int spriteLeftX,
 	int spriteTopY,
@@ -82,7 +80,6 @@ void SpriteSheet::renderSpriteSheetRegionAtScreenRegion(
 	glEnd();
 	glDisable(GL_TEXTURE_2D);
 }
-//draw the specified sprite image with its top-left corner at the specified coordinate
 void SpriteSheet::renderSpriteAtScreenPosition(
 	int spriteHorizontalIndex, int spriteVerticalIndex, GLint drawLeftX, GLint drawTopY)
 {
@@ -98,7 +95,6 @@ void SpriteSheet::renderSpriteAtScreenPosition(
 		drawLeftX + spriteWidth,
 		drawTopY + spriteHeight);
 }
-//draw the specified sprite image with its center at the specified coordinate
 void SpriteSheet::renderSpriteCenteredAtScreenPosition(
 	int spriteHorizontalIndex, int spriteVerticalIndex, float drawCenterX, float drawCenterY)
 {
@@ -108,7 +104,6 @@ void SpriteSheet::renderSpriteCenteredAtScreenPosition(
 		(GLint)(drawCenterX - (float)spriteWidth * 0.5f),
 		(GLint)(drawCenterY - (float)spriteHeight * 0.5f));
 }
-//render a rectangle filled with the specified color at the specified region of the screen
 void SpriteSheet::renderFilledRectangle(
 	GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha, GLint leftX, GLint topY, GLint rightX, GLint bottomY)
 {
@@ -121,7 +116,6 @@ void SpriteSheet::renderFilledRectangle(
 	glEnd();
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 }
-//render a rectangle outline using the specified color at the specified region of the screen
 //TODO: this doesn't draw it pixellated, do something different so that its pixel grid matches the game screen pixel grid
 void SpriteSheet::renderRectangleOutline(
 	GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha, GLint leftX, GLint topY, GLint rightX, GLint bottomY)
@@ -141,7 +135,6 @@ void SpriteSheet::renderRectangleOutline(
 	glEnd();
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 }
-//set the color and enable blending as determined by the alpha
 void SpriteSheet::setColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha) {
 	if (alpha >= 1.0f) {
 		glDisable(GL_BLEND);

@@ -14,11 +14,9 @@ Rail::Segment::Segment(int pX, int pY, char pMaxTileOffset)
 , maxTileOffset(pMaxTileOffset) {
 }
 Rail::Segment::~Segment() {}
-//get the center x of the tile that this segment is on (when raised)
 float Rail::Segment::tileCenterX() {
 	return ((float)x + 0.5f) * (float)MapState::tileSize;
 }
-//get the center y of the tile that this segment is on (when raised)
 float Rail::Segment::tileCenterY() {
 	return ((float)y + 0.5f) * (float)MapState::tileSize;
 }
@@ -41,11 +39,9 @@ baseHeight(pBaseHeight)
 Rail::~Rail() {
 	delete segments;
 }
-//get the sprite index based on which direction the center of this end segment extends towards the rest of the rail
 int Rail::endSegmentSpriteHorizontalIndex(int xExtents, int yExtents) {
 	return yExtents != 0 ? 8 + (1 - yExtents) / 2 : 6 + (1 - xExtents) / 2;
 }
-//get the sprite index based on which other segments this segment extends towards
 int Rail::middleSegmentSpriteHorizontalIndex(int prevX, int prevY, int x, int y, int nextX, int nextY) {
 	//vertical rail if they have the same x
 	if (prevX == nextX)
@@ -60,12 +56,9 @@ int Rail::middleSegmentSpriteHorizontalIndex(int prevX, int prevY, int x, int y,
 		return 3 - yExtentsSum + (1 - xExtentsSum) / 2;
 	}
 }
-//get the sprite index that extends straight from the previous segment
 int Rail::extentSegmentSpriteHorizontalIndex(int prevX, int prevY, int x, int y) {
 	return middleSegmentSpriteHorizontalIndex(prevX, prevY, x, y, x + (x - prevX), y + (y - prevY));
 }
-//set the color mask for segments of the given rail color based on how much it's been lowered, using a scale from 0 (fully
-//	raised) to 1 (fully lowered)
 void Rail::setSegmentColor(float loweredScale, int railColor) {
 	const float nonColorIntensity = 9.0f / 16.0f;
 	const float sineColorIntensity = 14.0f / 16.0f;
@@ -86,7 +79,6 @@ void Rail::setSegmentColor(float loweredScale, int railColor) {
 		blueColor * raisedScale + loweredColorIntensity * loweredScale,
 		raisedScale + loweredAlphaIntensity * loweredScale);
 }
-//reverse the order of the segments
 void Rail::reverseSegments() {
 	vector<Segment>* newSegments = new vector<Segment>();
 	for (int i = (int)segments->size() - 1; i >= 0; i--)
@@ -94,7 +86,6 @@ void Rail::reverseSegments() {
 	delete segments;
 	segments = newSegments;
 }
-//add this group to the rail if it does not already contain it
 void Rail::addGroup(char group) {
 	if (group == 0)
 		return;
@@ -104,7 +95,6 @@ void Rail::addGroup(char group) {
 	}
 	groups.push_back(group);
 }
-//add a segment on this tile to the rail
 void Rail::addSegment(int x, int y) {
 	//if we aren't adding at the end, reverse the list before continuing
 	Segment* end = &segments->back();
@@ -151,7 +141,6 @@ void Rail::addSegment(int x, int y) {
 	} else
 		lastEnd->spriteHorizontalIndex = endSegmentSpriteHorizontalIndex(end->x - lastEnd->x, end->y - lastEnd->y);
 }
-//render this rail at its position by rendering each segment
 void Rail::render(int screenLeftWorldX, int screenTopWorldY, float tileOffset) {
 	if (Editor::isActive && editorIsDeleted)
 		return;
@@ -165,7 +154,6 @@ void Rail::render(int screenLeftWorldX, int screenTopWorldY, float tileOffset) {
 	renderSegment(screenLeftWorldX, screenTopWorldY, 0.0f, lastSegmentIndex);
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 }
-//render the shadow below the rail
 void Rail::renderShadow(int screenLeftWorldX, int screenTopWorldY) {
 	if (Editor::isActive && editorIsDeleted)
 		return;
@@ -183,7 +171,6 @@ void Rail::renderShadow(int screenLeftWorldX, int screenTopWorldY) {
 				(GLint)((segment.y + (int)segment.maxTileOffset) * MapState::tileSize - screenTopWorldY));
 	}
 }
-//render groups where the rail would be at 0 offset
 void Rail::renderGroups(int screenLeftWorldX, int screenTopWorldY) {
 	if (Editor::isActive && editorIsDeleted)
 		return;
@@ -199,7 +186,6 @@ void Rail::renderGroups(int screenLeftWorldX, int screenTopWorldY) {
 			hasGroups ? groups[i % groups.size()] : 0, drawLeftX + 2, drawTopY + 2, drawLeftX + 4, drawTopY + 4);
 	}
 }
-//render the rail segment at its position, clipping it if part of the map is higher than it
 void Rail::renderSegment(int screenLeftWorldX, int screenTopWorldY, float tileOffset, int segmentIndex) {
 	Segment& segment = (*segments)[segmentIndex];
 	int yPixelOffset = (int)(tileOffset * (float)MapState::tileSize + 0.5f);
@@ -253,7 +239,6 @@ void Rail::renderSegment(int screenLeftWorldX, int screenTopWorldY, float tileOf
 			drawTopY + (GLint)spriteBottom);
 	}
 }
-//remove this group from the rail if it contains it
 void Rail::editorRemoveGroup(char group) {
 	for (int i = 0; i < (int)groups.size(); i++) {
 		if (groups[i] == group) {
@@ -262,12 +247,11 @@ void Rail::editorRemoveGroup(char group) {
 		}
 	}
 }
-//remove the segment on this tile from the rail
-//returns whether we removed a segment
 bool Rail::editorRemoveSegment(int x, int y, char pColor, char group) {
 	//make sure the colors match
 	if (pColor != color)
 		return false;
+	//can only remove a segment from the start or end of the rail
 	Segment& start = segments->front();
 	Segment& end = segments->back();
 	if (y == start.y && x == start.x)
@@ -288,8 +272,6 @@ bool Rail::editorRemoveSegment(int x, int y, char pColor, char group) {
 		editorIsDeleted = true;
 	return true;
 }
-//add a segment on this tile to the rail
-//returns whether we added a segment
 bool Rail::editorAddSegment(int x, int y, char pColor, char group, char tileHeight) {
 	//don't add a segment if it's on on a non-empty-space tile above the rail
 	if (tileHeight > baseHeight && tileHeight != MapState::emptySpaceHeight)
@@ -318,14 +300,12 @@ bool Rail::editorAddSegment(int x, int y, char pColor, char group, char tileHeig
 	addSegment(x, y);
 	return true;
 }
-//adjust the initial tile offset of this rail if we're clicking on one of its end segments
 void Rail::editorAdjustInitialTileOffset(int x, int y, char tileOffset) {
 	Segment& start = segments->front();
 	Segment& end = segments->back();
 	if ((x == start.x && y == start.y) || (x == end.x && y == end.y))
 		initialTileOffset = MathUtils::max(0, MathUtils::min(maxTileOffset, initialTileOffset + tileOffset));
 }
-//we're saving this rail to the floor file, get the data we need at this tile
 char Rail::editorGetFloorSaveData(int x, int y) {
 	Segment& start = segments->front();
 	if (x == start.x && y == start.y)
@@ -358,7 +338,6 @@ rail(pRail)
 RailState::~RailState() {
 	//don't delete the rail, it's owned by MapState
 }
-//check if we need to start/stop moving
 void RailState::updateWithPreviousRailState(RailState* prev, int ticksTime) {
 	targetTileOffset = prev->targetTileOffset;
 	if (prev->tileOffset != prev->targetTileOffset) {
@@ -373,24 +352,19 @@ void RailState::updateWithPreviousRailState(RailState* prev, int ticksTime) {
 	if (Editor::isActive)
 		tileOffset = (float)rail->getInitialTileOffset();
 }
-//swap the tile offset between 0 and the max tile offset
 void RailState::squareToggleOffset() {
 	targetTileOffset = targetTileOffset == 0.0f ? rail->getMaxTileOffset() : 0.0f;
 }
-//reset the tile offset to 0 so that the rail moves back to its default position
 void RailState::moveToDefaultTileOffset() {
 	targetTileOffset = (float)rail->getInitialTileOffset();
 }
-//render the rail, possibly with groups
 void RailState::render(int screenLeftWorldX, int screenTopWorldY) {
 	rail->render(screenLeftWorldX, screenTopWorldY, tileOffset);
 }
-//set this rail to the initial tile offset, not moving
 void RailState::loadState(float pTileOffset) {
 	tileOffset = pTileOffset;
 	targetTileOffset = pTileOffset;
 }
-//reset the offset
 void RailState::reset() {
 	loadState((float)rail->getInitialTileOffset());
 }

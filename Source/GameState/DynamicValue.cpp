@@ -12,18 +12,15 @@ ConstantValue::ConstantValue(objCounterParameters())
 , value(0.0f) {
 }
 ConstantValue::~ConstantValue() {}
-//initialize and return a ConstantValue
 ConstantValue* ConstantValue::produce(objCounterParametersComma() float pValue) {
 	initializeWithNewFromPool(c, ConstantValue)
 	c->value = pValue;
 	return c;
 }
 pooledReferenceCounterDefineRelease(ConstantValue)
-//return a new ConstantValue with the provided value
 DynamicValue* ConstantValue::copyWithConstantValue(float pConstantValue) {
 	return newConstantValue(pConstantValue);
 }
-//get the value at the given time
 float ConstantValue::getValue(int ticksElapsed) {
 	return value;
 }
@@ -38,7 +35,6 @@ CompositeQuarticValue::CompositeQuarticValue(objCounterParameters())
 , quarticValuePerTick(0.0f) {
 }
 CompositeQuarticValue::~CompositeQuarticValue() {}
-//initialize and return a CompositeQuarticValue
 CompositeQuarticValue* CompositeQuarticValue::produce(
 	objCounterParametersComma()
 	float pConstantValue,
@@ -56,12 +52,10 @@ CompositeQuarticValue* CompositeQuarticValue::produce(
 	return c;
 }
 pooledReferenceCounterDefineRelease(CompositeQuarticValue)
-//set the constant value to the provided value
 DynamicValue* CompositeQuarticValue::copyWithConstantValue(float pConstantValue) {
 	return newCompositeQuarticValue(
 		pConstantValue, linearValuePerTick, quadraticValuePerTick, cubicValuePerTick, quarticValuePerTick);
 }
-//get the value at the given time
 float CompositeQuarticValue::getValue(int ticksElapsed) {
 	float floatTicksElapsed = (float)ticksElapsed;
 	float ticksElapsedSquared = floatTicksElapsed * floatTicksElapsed;
@@ -86,7 +80,6 @@ LinearInterpolatedValue::LinearInterpolatedValue(objCounterParameters())
 , valuesAtTimes() {
 }
 LinearInterpolatedValue::~LinearInterpolatedValue() {}
-//initialize and return a LinearInterpolatedValue
 LinearInterpolatedValue* LinearInterpolatedValue::produce(objCounterParametersComma() vector<ValueAtTime> valuesAtTimes) {
 	initializeWithNewFromPool(l, LinearInterpolatedValue)
 	l->valuesAtTimes = valuesAtTimes;
@@ -94,11 +87,9 @@ LinearInterpolatedValue* LinearInterpolatedValue::produce(objCounterParametersCo
 }
 pooledReferenceCounterDefineRelease(LinearInterpolatedValue)
 //TODO: find where 0 is and shift all the values properly
-//return a new value with all the values shifted so that it's 0 at time 0
 DynamicValue* LinearInterpolatedValue::copyWithConstantValue(float pConstantValue) {
 	return this;
 }
-//get the value at the given time
 float LinearInterpolatedValue::getValue(int ticksElapsed) {
 	//use the last value if we're after the last ticks time
 	int highIndex = (int)valuesAtTimes.size() - 1;

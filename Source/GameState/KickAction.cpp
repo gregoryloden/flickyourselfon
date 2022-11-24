@@ -32,7 +32,6 @@ KickAction* KickAction::produce(
 	return k;
 }
 pooledReferenceCounterDefineRelease(KickAction)
-//render this kick action
 void KickAction::render(float centerX, float bottomY, bool hasRailsToReset) {
 	bool showKickIndicator = false;
 	switch (type) {

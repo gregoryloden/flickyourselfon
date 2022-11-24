@@ -59,7 +59,6 @@ sawIntroAnimation(false)
 GameState::~GameState() {
 	//don't delete the camera, it's one of our other states
 }
-//update this game state by reading from the previous state
 void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 	//first things first: dump all our previous state so that we can start fresh
 	mapState.set(nullptr);
@@ -164,7 +163,6 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 		Editor::needsGameStateSave = false;
 	}
 }
-//set our camera to our player
 void GameState::setPlayerCamera() {
 	camera = playerState.get();
 
@@ -175,11 +173,9 @@ void GameState::setPlayerCamera() {
 		playerState.get()->setInitialZ();
 	}
 }
-//set our camera to the dynamic camera anchor
 void GameState::setDynamicCamera() {
 	camera = dynamicCameraAnchor.get();
 }
-//begin a radio tower animation for the various states
 void GameState::startRadioTowerAnimation(int ticksTime) {
 	float playerX = playerState.get()->getRenderCenterWorldX(ticksTime);
 	float playerY = playerState.get()->getRenderCenterWorldY(ticksTime);
@@ -275,7 +271,6 @@ void GameState::startRadioTowerAnimation(int ticksTime) {
 	Holder_EntityAnimationComponentVector playerAnimationComponentsHolder (&playerAnimationComponents);
 	playerState.get()->beginEntityAnimation(&playerAnimationComponentsHolder, ticksTime);
 }
-//render this state, which was deemed to be the last state to need rendering
 void GameState::render(int ticksTime) {
 	Editor::EditingMutexLocker editingMutexLocker;
 	int gameTicksTime = (pauseState.get() != nullptr ? pauseStartTicksTime : ticksTime) - gameTimeOffsetTicksDuration;
@@ -312,7 +307,6 @@ void GameState::render(int ticksTime) {
 	if (Editor::isActive)
 		Editor::render(camera, gameTicksTime);
 }
-//render the title animation at the given time
 void GameState::renderTextDisplay(int gameTicksTime) {
 	vector<string> textDisplayStrings;
 	vector<Text::Metrics> textDisplayMetrics;
@@ -409,7 +403,6 @@ void GameState::renderTextDisplay(int gameTicksTime) {
 	Text::renderLines(textDisplayStrings, textDisplayMetrics);
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 }
-//save the state to a file
 void GameState::saveState() {
 	ofstream file;
 	FileUtils::openFileForWrite(&file, savedGameFileName, ios::out | ios::trunc);
@@ -419,7 +412,6 @@ void GameState::saveState() {
 	mapState.get()->saveState(file);
 	file.close();
 }
-//initialize our state and load the state from the save file if there is one
 void GameState::loadInitialState(int ticksTime) {
 	//first things first, we need some state
 	mapState.set(newMapState());
@@ -466,7 +458,6 @@ void GameState::loadInitialState(int ticksTime) {
 		beginIntroAnimation(ticksTime);
 }
 #ifdef DEBUG
-	//load a replay and finish initialization if a replay is available, return whether it was
 	bool GameState::loadReplay() {
 		ifstream file;
 		FileUtils::openFileForRead(&file, replayFileName);
@@ -644,7 +635,6 @@ void GameState::loadInitialState(int ticksTime) {
 		mapState.get()->sortInitialRails();
 		return true;
 	}
-	//move from one position to another, showing a ghost sprite at the end position
 	void GameState::addMoveWithGhost(
 		Holder_EntityAnimationComponentVector* replayComponentsHolder,
 		float startX,
@@ -669,7 +659,6 @@ void GameState::loadInitialState(int ticksTime) {
 			});
 	}
 #endif
-//give the camera and player their intro animations
 void GameState::beginIntroAnimation(int ticksTime) {
 	MapState::setIntroAnimationBootTile(true);
 	camera = dynamicCameraAnchor.get();
@@ -807,7 +796,6 @@ void GameState::beginIntroAnimation(int ticksTime) {
 	Holder_EntityAnimationComponentVector cameraAnimationComponentsHolder (&cameraAnimationComponents);
 	dynamicCameraAnchor.get()->beginEntityAnimation(&cameraAnimationComponentsHolder, ticksTime);
 }
-//reset all state
 void GameState::resetGame(int ticksTime) {
 	sawIntroAnimation = false;
 	gameTimeOffsetTicksDuration = 0;

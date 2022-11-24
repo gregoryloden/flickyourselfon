@@ -104,16 +104,26 @@ public:
 
 	//return whether updates and renders should stop
 	bool getShouldQuitGame() { return shouldQuitGame; }
+	//update this GameState by reading from the previous state
 	void updateWithPreviousGameState(GameState* prev, int ticksTime);
+	//set our camera to our player
 	void setPlayerCamera();
+	//set our camera to the dynamic camera anchor
 	void setDynamicCamera();
+	//begin a radio tower animation for the various states
 	void startRadioTowerAnimation(int ticksTime);
+	//render this state, which was deemed to be the last state to need rendering
 	void render(int ticksTime);
+	//render the title animation at the given time
 	void renderTextDisplay(int gameTicksTime);
+	//save the state to a file
 	void saveState();
+	//initialize our state and load the state from the save file if there is one
 	void loadInitialState(int ticksTime);
 	#ifdef DEBUG
+		//load a replay and finish initialization if a replay is available, return whether it was
 		bool loadReplay();
+		//move from one position to another, showing a ghost sprite at the end position
 		void addMoveWithGhost(
 			Holder_EntityAnimationComponentVector* replayComponentsHolder,
 			float startX,
@@ -122,6 +132,8 @@ public:
 			float endY,
 			int ticksDuration);
 	#endif
+	//give the camera and player their intro animations
 	void beginIntroAnimation(int ticksTime);
+	//reset all state
 	void resetGame(int ticksTime);
 };

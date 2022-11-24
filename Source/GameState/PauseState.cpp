@@ -27,7 +27,6 @@ PauseState::PauseMenu::~PauseMenu() {
 	for (PauseOption* option : options)
 		delete option;
 }
-//render this menu
 void PauseState::PauseMenu::render(int selectedOption, KeyBindingOption* selectingKeyBindingOption) {
 	//render a translucent rectangle
 	SpriteSheet::renderFilledRectangle(
@@ -90,11 +89,9 @@ displayText(pDisplayText)
 , displayTextMetrics(Text::getMetrics(pDisplayText.c_str(), displayTextFontScale)) {
 }
 PauseState::PauseOption::~PauseOption() {}
-//render the NavigationOption
 void PauseState::PauseOption::render(float leftX, float baselineY) {
 	Text::render(displayText.c_str(), leftX, baselineY, displayTextFontScale);
 }
-//update the deisplay text and its metrics
 void PauseState::PauseOption::updateDisplayText(string& newDisplayText) {
 	displayText = newDisplayText;
 	displayTextMetrics = Text::getMetrics(newDisplayText.c_str(), displayTextFontScale);
@@ -108,7 +105,6 @@ PauseState::NavigationOption::NavigationOption(objCounterParametersComma() strin
 PauseState::NavigationOption::~NavigationOption() {
 	delete subMenu;
 }
-//navigate to this option's submenu
 PauseState* PauseState::NavigationOption::handle(PauseState* currentState) {
 	return currentState->navigateToMenu(subMenu);
 }
@@ -118,7 +114,6 @@ PauseState::ControlsNavigationOption::ControlsNavigationOption(objCounterParamet
 : NavigationOption(objCounterArgumentsComma() "controls", pSubMenu) {
 }
 PauseState::ControlsNavigationOption::~ControlsNavigationOption() {}
-//navigate to the controls submenu after setting up the menu key bindings
 PauseState* PauseState::ControlsNavigationOption::handle(PauseState* currentState) {
 	Config::editingKeyBindings.set(&Config::keyBindings);
 	return NavigationOption::handle(currentState);
@@ -137,11 +132,9 @@ PauseState::KeyBindingOption::KeyBindingOption(objCounterParametersComma() Bound
 , cachedKeyBackgroundMetrics() {
 }
 PauseState::KeyBindingOption::~KeyBindingOption() {}
-//return metrics that include the key name and background
 Text::Metrics PauseState::KeyBindingOption::getDisplayTextMetrics() {
 	return getSelectingDisplayTextMetrics(false);
 }
-//return metrics that include either the key-selecting text or the key name and background
 Text::Metrics PauseState::KeyBindingOption::getSelectingDisplayTextMetrics(bool selecting) {
 	Text::Metrics metrics = PauseOption::getDisplayTextMetrics();
 	ensureCachedKeyMetrics();
@@ -155,15 +148,12 @@ Text::Metrics PauseState::KeyBindingOption::getSelectingDisplayTextMetrics(bool 
 	metrics.bottomPadding = cachedKeyBackgroundMetrics.bottomPadding;
 	return metrics;
 }
-//start selecting a key for this option
 PauseState* PauseState::KeyBindingOption::handle(PauseState* currentState) {
 	return currentState->beginKeySelection(this);
 }
-//render the text, the key name, and the key background
 void PauseState::KeyBindingOption::render(float leftX, float baselineY) {
 	renderSelecting(leftX, baselineY, false);
 }
-//render the text and either the key-selecting text or the key name and background
 void PauseState::KeyBindingOption::renderSelecting(float leftX, float baselineY, bool selecting) {
 	//render the action
 	PauseOption::render(leftX, baselineY);
@@ -179,7 +169,6 @@ void PauseState::KeyBindingOption::renderSelecting(float leftX, float baselineY,
 		Text::renderWithKeyBackgroundWithMetrics(
 			cachedKeyName.c_str(), leftX, baselineY, &cachedKeyTextMetrics, &cachedKeyBackgroundMetrics);
 }
-//if we have a new bound key, cache its metrics
 void PauseState::KeyBindingOption::ensureCachedKeyMetrics() {
 	SDL_Scancode currentBoundKeyScancode = getBoundKeyScancode();
 	if (currentBoundKeyScancode != cachedKeyScancode) {
@@ -193,8 +182,6 @@ void PauseState::KeyBindingOption::ensureCachedKeyMetrics() {
 		cachedKeySelectingTextWidth = Text::getMetrics(keySelectingText, cachedKeySelectingTextFontScale).charactersWidth;
 	}
 }
-//get the name of the action we're binding a key to
-//static so that we can use it in the option's constructor
 string PauseState::KeyBindingOption::getBoundKeyActionText(BoundKey pBoundKey) {
 	switch (pBoundKey) {
 		case BoundKey::Up: return "up:";
@@ -206,7 +193,6 @@ string PauseState::KeyBindingOption::getBoundKeyActionText(BoundKey pBoundKey) {
 		default: return "";
 	}
 }
-//get the currently-editing scancode for our bound key
 SDL_Scancode PauseState::KeyBindingOption::getBoundKeyScancode() {
 	switch (boundKey) {
 		case BoundKey::Up: return Config::editingKeyBindings.upKey;
@@ -218,9 +204,6 @@ SDL_Scancode PauseState::KeyBindingOption::getBoundKeyScancode() {
 		default: return SDL_SCANCODE_UNKNOWN;
 	}
 }
-//update the scancode for this option's bound key
-//this also changes the scancode for past states, but since this is atomic and scancodes are retrieved only once per frame,
-//	this shouldn't be a problem
 void PauseState::KeyBindingOption::setBoundKeyScancode(SDL_Scancode keyScancode) {
 	switch (boundKey) {
 		case BoundKey::Up: Config::editingKeyBindings.upKey = keyScancode; break;
@@ -238,7 +221,6 @@ PauseState::DefaultKeyBindingsOption::DefaultKeyBindingsOption(objCounterParamet
 : PauseOption(objCounterArgumentsComma() "defaults") {
 }
 PauseState::DefaultKeyBindingsOption::~DefaultKeyBindingsOption() {}
-//reset the currently editing keys to the defaults
 PauseState* PauseState::DefaultKeyBindingsOption::handle(PauseState* currentState) {
 	Config::editingKeyBindings.set(&Config::defaultKeyBindings);
 	return currentState;
@@ -249,7 +231,6 @@ PauseState::AcceptKeyBindingsOption::AcceptKeyBindingsOption(objCounterParameter
 : PauseOption(objCounterArgumentsComma() "accept") {
 }
 PauseState::AcceptKeyBindingsOption::~AcceptKeyBindingsOption() {}
-//reset the currently editing keys to the defaults
 PauseState* PauseState::AcceptKeyBindingsOption::handle(PauseState* currentState) {
 	Config::keyBindings.set(&Config::editingKeyBindings);
 	Config::saveSettings();
@@ -262,7 +243,6 @@ PauseState::KickIndicatorOption::KickIndicatorOption(objCounterParametersComma()
 , action(pAction) {
 }
 PauseState::KickIndicatorOption::~KickIndicatorOption() {}
-//toggle the kick indicator for this action
 PauseState* PauseState::KickIndicatorOption::handle(PauseState* currentState) {
 	if (action == KickActionType::Climb)
 		Config::kickIndicators.climb = !Config::kickIndicators.climb;
@@ -278,8 +258,6 @@ PauseState* PauseState::KickIndicatorOption::handle(PauseState* currentState) {
 	Config::saveSettings();
 	return currentState;
 }
-//get the name of the action we're binding a key to, and its current config setting
-//static so that we can use it in the option's constructor
 string PauseState::KickIndicatorOption::getKickActionSettingText(KickActionType pAction) {
 	string actionTitle;
 	bool isOn = false;
@@ -318,11 +296,11 @@ PauseState::EndPauseOption::EndPauseOption(objCounterParametersComma() int pEndP
 		pEndPauseDecision == (int)EndPauseDecision::Exit ? string("exit") :
 		pEndPauseDecision == ((int)EndPauseDecision::Save | (int)EndPauseDecision::Exit) ? string("save + exit") :
 		pEndPauseDecision == (int)EndPauseDecision::Reset ? string("reset game") :
+		//this should never happen, pEndPauseDecision should always be one of the above values
 		string("-"))
 , endPauseDecision(pEndPauseDecision) {
 }
 PauseState::EndPauseOption::~EndPauseOption() {}
-//return a pause state to quit the game
 PauseState* PauseState::EndPauseOption::handle(PauseState* currentState) {
 	return currentState->produceEndPauseState(endPauseDecision);
 }
@@ -338,7 +316,6 @@ PauseState::PauseState(objCounterParameters())
 , endPauseDecision(0) {
 }
 PauseState::~PauseState() {}
-//initialize and return a PauseState
 PauseState* PauseState::produce(
 	objCounterParametersComma()
 	PauseState* pParentState,
@@ -355,16 +332,13 @@ PauseState* PauseState::produce(
 	p->endPauseDecision = pEndPauseDecision;
 	return p;
 }
-//return a new pause state at the base menu
 PauseState* PauseState::produce(objCounterParameters()) {
 	return produce(objCounterArgumentsComma() nullptr, baseMenu, 0, nullptr, 0);
 }
 pooledReferenceCounterDefineRelease(PauseState)
-//release the parent state before this is returned to the pool
 void PauseState::prepareReturnToPool() {
 	parentState.set(nullptr);
 }
-//build the base pause menu
 void PauseState::loadMenu() {
 	baseMenu = newPauseMenu(
 		"Pause",
@@ -402,12 +376,9 @@ void PauseState::loadMenu() {
 			newEndPauseOption((int)EndPauseDecision::Exit)
 		});
 }
-//delete the base menu
 void PauseState::unloadMenu() {
 	delete baseMenu;
 }
-//if any keys were pressed, return a new updated pause state, otherwise return this non-updated state
-//if the game was closed, return whatever intermediate state we have specifying to quit the game
 PauseState* PauseState::getNextPauseState() {
 	PauseState* nextPauseState = this;
 	//handle events
@@ -430,7 +401,6 @@ PauseState* PauseState::getNextPauseState() {
 	}
 	return nextPauseState;
 }
-//handle the keypress and return the resulting new pause state
 PauseState* PauseState::handleKeyPress(SDL_Scancode keyScancode) {
 	if (selectingKeyBindingOption != nullptr) {
 		if (keyScancode != SDL_SCANCODE_ESCAPE)
@@ -454,19 +424,15 @@ PauseState* PauseState::handleKeyPress(SDL_Scancode keyScancode) {
 			return this;
 	}
 }
-//if we were given a menu, return a pause state with that pause menu, otherwise go up a level
 PauseState* PauseState::navigateToMenu(PauseMenu* menu) {
 	return menu != nullptr ? newPauseState(this, menu, 0, nullptr, 0) : parentState.get();
 }
-//return a copy of this pause state set to listen for a key selection
 PauseState* PauseState::beginKeySelection(KeyBindingOption* pSelectingKeyBindingOption) {
 	return newPauseState(parentState.get(), pauseMenu, pauseOption, pSelectingKeyBindingOption, 0);
 }
-//return a clone of this state that specifies that we should resume the game or exit
 PauseState* PauseState::produceEndPauseState(int pEndPauseDecision) {
 	return newPauseState(parentState.get(), pauseMenu, pauseOption, selectingKeyBindingOption, pEndPauseDecision);
 }
-//render the pause menu over the screen
 void PauseState::render() {
 	pauseMenu->render(pauseOption, selectingKeyBindingOption);
 }

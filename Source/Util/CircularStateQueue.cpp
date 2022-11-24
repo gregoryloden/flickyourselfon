@@ -37,22 +37,18 @@ template <class Type> CircularStateQueue<Type>::~CircularStateQueue() {
 		delete nodeToDelete;
 	}
 }
-//if the write head's next state is writable, return it
 template <class Type> Type* CircularStateQueue<Type>::getNextWritableState() {
 	return writeHead->next != readHead ? writeHead->next->state : nullptr;
 }
-//insert a writable state after the write head
 template <class Type> void CircularStateQueue<Type>::addWritableState(Type* state) {
 	Node* nextWritableNode = newNode(state);
 	nextWritableNode->next = writeHead->next;
 	writeHead->next = nextWritableNode;
 	statesCount++;
 }
-//advance the write head to the next state and set the read head if necessary
 template <class Type> void CircularStateQueue<Type>::finishWritingToState() {
 	writeHead = writeHead->next;
 }
-//if there is a state we can read from, return it
 template <class Type> Type* CircularStateQueue<Type>::getNextReadableState() {
 	//we haven't read from the read head yet, return the state
 	if (!lastStateWasRead)
@@ -66,14 +62,12 @@ template <class Type> Type* CircularStateQueue<Type>::getNextReadableState() {
 	} else
 		return nullptr;
 }
-//advance the read head if there are more readable states
 template <class Type> void CircularStateQueue<Type>::finishReadingFromState() {
 	if (readHead == writeHead)
 		lastStateWasRead = true;
 	else
 		readHead = readHead->next;
 }
-//if there are multiple readable states, return the last one and mark the rest as writable
 template <class Type> Type* CircularStateQueue<Type>::advanceToLastReadableState() {
 	Type* state = getNextReadableState();
 	if (state == nullptr)

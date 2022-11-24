@@ -14,7 +14,6 @@ ResetSwitch::Segment::Segment(int pX, int pY, char pColor, char pGroup, int pSpr
 , spriteHorizontalIndex(pSpriteHorizontalIndex) {
 }
 ResetSwitch::Segment::~Segment() {}
-//render this reset switch segment
 void ResetSwitch::Segment::render(int screenLeftWorldX, int screenTopWorldY, bool showGroup) {
 	glEnable(GL_BLEND);
 	Rail::setSegmentColor(0.0f, color);
@@ -36,7 +35,6 @@ centerX(pCenterX)
 , editorIsDeleted(false) {
 }
 ResetSwitch::~ResetSwitch() {}
-//add a segment to the specified segments list
 void ResetSwitch::addSegment(int x, int y, char color, char group, char segmentsSection) {
 	vector<Segment>* segments =
 		segmentsSection < 0 ? &leftSegments :
@@ -44,7 +42,6 @@ void ResetSwitch::addSegment(int x, int y, char color, char group, char segments
 		&rightSegments;
 	addSegment(x, y, color, group, segments);
 }
-//add a segment to the given segments list
 void ResetSwitch::addSegment(int x, int y, char color, char group, vector<Segment>* segments) {
 	int spriteHorizontalIndex;
 	if (segments->empty())
@@ -62,7 +59,21 @@ void ResetSwitch::addSegment(int x, int y, char color, char group, vector<Segmen
 	}
 	segments->push_back(Segment(x, y, color, group, spriteHorizontalIndex));
 }
-//reset any rails that match the segments
+bool ResetSwitch::hasGroupForColor(char group, char color) {
+	for (Segment& segment : leftSegments) {
+		if (segment.group == group && segment.color == color)
+			return true;
+	}
+	for (Segment& segment : bottomSegments) {
+		if (segment.group == group && segment.color == color)
+			return true;
+	}
+	for (Segment& segment : rightSegments) {
+		if (segment.group == group && segment.color == color)
+			return true;
+	}
+	return false;
+}
 void ResetSwitch::resetMatchingRails(vector<RailState*>* railStates) {
 	vector<ResetSwitch::Segment>* allSegments[3] = { &leftSegments, &bottomSegments, &rightSegments };
 	for (vector<ResetSwitch::Segment>* segments : allSegments) {
@@ -83,7 +94,6 @@ void ResetSwitch::resetMatchingRails(vector<RailState*>* railStates) {
 		}
 	}
 }
-//render the reset switch
 void ResetSwitch::render(int screenLeftWorldX, int screenTopWorldY, bool isOn, bool showGroups) {
 	if (Editor::isActive && editorIsDeleted)
 		return;
@@ -100,23 +110,6 @@ void ResetSwitch::render(int screenLeftWorldX, int screenTopWorldY, bool isOn, b
 		segment.render(screenLeftWorldX, screenTopWorldY, showGroups);
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 }
-//returns whether the group can be found in any of the segments
-bool ResetSwitch::hasGroupForColor(char group, char color) {
-	for (Segment& segment : leftSegments) {
-		if (segment.group == group && segment.color == color)
-			return true;
-	}
-	for (Segment& segment : bottomSegments) {
-		if (segment.group == group && segment.color == color)
-			return true;
-	}
-	for (Segment& segment : rightSegments) {
-		if (segment.group == group && segment.color == color)
-			return true;
-	}
-	return false;
-}
-//remove a segment from this reset switch if it matches the end segment of one of the branches
 bool ResetSwitch::editorRemoveSegment(int x, int y, char color, char group) {
 	vector<Segment>* allSegments[3] { &leftSegments, &bottomSegments, &rightSegments };
 	for (vector<Segment>* segments : allSegments) {
@@ -130,7 +123,6 @@ bool ResetSwitch::editorRemoveSegment(int x, int y, char color, char group) {
 	}
 	return false;
 }
-//add a segment to this reset switch if it's new and the space is valid
 bool ResetSwitch::editorAddSegment(int x, int y, char color, char group) {
 	//make sure this color/group combination doesn't already exist, except for group 0
 	vector<Segment>* allSegments[3] { &leftSegments, &bottomSegments, &rightSegments };
@@ -189,7 +181,6 @@ bool ResetSwitch::editorAddSegment(int x, int y, char color, char group) {
 	addSegment(x, y, color, group, segmentsToAddTo);
 	return true;
 }
-//we're saving this switch to the floor file, get the data we need at this tile
 char ResetSwitch::editorGetFloorSaveData(int x, int y) {
 	if (x == centerX && y == bottomY)
 		return MapState::floorResetSwitchHeadValue;
@@ -201,7 +192,6 @@ char ResetSwitch::editorGetFloorSaveData(int x, int y) {
 	}
 	return 0;
 }
-//get the save value for this tile if the coordinates match one of the given segments
 char ResetSwitch::editorGetSegmentFloorSaveData(int x, int y, vector<Segment>& segments) {
 	for (int i = 0; i < (int)segments.size(); i++) {
 		Segment& segment = segments[i];
@@ -225,15 +215,12 @@ resetSwitch(pResetSwitch)
 , flipOffTicksTime(0) {
 }
 ResetSwitchState::~ResetSwitchState() {}
-//set the time that this reset switch should turn off
 void ResetSwitchState::flip(int flipOnTicksTime) {
 	flipOffTicksTime = flipOnTicksTime + MapState::switchFlipDuration;
 }
-//save the time that this reset switch should turn back off
 void ResetSwitchState::updateWithPreviousResetSwitchState(ResetSwitchState* prev) {
 	flipOffTicksTime = prev->flipOffTicksTime;
 }
-//render the reset switch
 void ResetSwitchState::render(int screenLeftWorldX, int screenTopWorldY, bool showGroups, int ticksTime) {
 	resetSwitch->render(screenLeftWorldX, screenTopWorldY, ticksTime < flipOffTicksTime, showGroups);
 }

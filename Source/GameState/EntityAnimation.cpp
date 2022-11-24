@@ -15,14 +15,12 @@ EntityAnimation::Delay::Delay(objCounterParameters())
 , ticksDuration(0) {
 }
 EntityAnimation::Delay::~Delay() {}
-//initialize and return a Delay
 EntityAnimation::Delay* EntityAnimation::Delay::produce(objCounterParametersComma() int pTicksDuration) {
 	initializeWithNewFromPool(d, EntityAnimation::Delay)
 	d->ticksDuration = pTicksDuration;
 	return d;
 }
 pooledReferenceCounterDefineRelease(EntityAnimation::Delay)
-//return that the animation should not continue updating without checking that the delay is finished
 bool EntityAnimation::Delay::handle(EntityState* entityState, int ticksTime) {
 	return false;
 }
@@ -34,7 +32,6 @@ EntityAnimation::SetPosition::SetPosition(objCounterParameters())
 , y(0.0f) {
 }
 EntityAnimation::SetPosition::~SetPosition() {}
-//initialize and return a SetPosition
 EntityAnimation::SetPosition* EntityAnimation::SetPosition::produce(objCounterParametersComma() float pX, float pY) {
 	initializeWithNewFromPool(s, EntityAnimation::SetPosition)
 	s->x = pX;
@@ -42,7 +39,6 @@ EntityAnimation::SetPosition* EntityAnimation::SetPosition::produce(objCounterPa
 	return s;
 }
 pooledReferenceCounterDefineRelease(EntityAnimation::SetPosition)
-//return that the animation should continue updating after setting the position on the entity state
 bool EntityAnimation::SetPosition::handle(EntityState* entityState, int ticksTime) {
 	entityState->setPosition(x, y, ticksTime);
 	return true;
@@ -55,7 +51,6 @@ EntityAnimation::SetVelocity::SetVelocity(objCounterParameters())
 , vy(nullptr) {
 }
 EntityAnimation::SetVelocity::~SetVelocity() {}
-//initialize and return a SetVelocity
 EntityAnimation::SetVelocity* EntityAnimation::SetVelocity::produce(
 	objCounterParametersComma() DynamicValue* pVx, DynamicValue* pVy)
 {
@@ -65,17 +60,14 @@ EntityAnimation::SetVelocity* EntityAnimation::SetVelocity::produce(
 	return s;
 }
 pooledReferenceCounterDefineRelease(EntityAnimation::SetVelocity)
-//release components before this is returned to the pool
 void EntityAnimation::SetVelocity::prepareReturnToPool() {
 	vx.set(nullptr);
 	vy.set(nullptr);
 }
-//return that the animation should continue updating after setting the velocity on the entity state
 bool EntityAnimation::SetVelocity::handle(EntityState* entityState, int ticksTime) {
 	entityState->setVelocity(vx.get(), vy.get(), ticksTime);
 	return true;
 }
-//return a SetVelocity that follows a curve from (0, 0) to (1, 1) with 0 slope at (0, 0) and (1, 1)
 EntityAnimation::SetVelocity* EntityAnimation::SetVelocity::cubicInterpolation(
 	float xMoveDistance, float yMoveDistance, float ticksDuration)
 {
@@ -101,7 +93,6 @@ EntityAnimation::SetSpriteAnimation::SetSpriteAnimation(objCounterParameters())
 EntityAnimation::SetSpriteAnimation::~SetSpriteAnimation() {
 	//don't delete the animation, something else owns it
 }
-//initialize and return a SetSpriteAnimation
 EntityAnimation::SetSpriteAnimation* EntityAnimation::SetSpriteAnimation::produce(
 	objCounterParametersComma() SpriteAnimation* pAnimation)
 {
@@ -110,7 +101,6 @@ EntityAnimation::SetSpriteAnimation* EntityAnimation::SetSpriteAnimation::produc
 	return s;
 }
 pooledReferenceCounterDefineRelease(EntityAnimation::SetSpriteAnimation)
-//return that the animation should continue updating after setting the sprite animation on the entity state
 bool EntityAnimation::SetSpriteAnimation::handle(EntityState* entityState, int ticksTime) {
 	entityState->setSpriteAnimation(animation, ticksTime);
 	return true;
@@ -122,7 +112,6 @@ EntityAnimation::SetSpriteDirection::SetSpriteDirection(objCounterParameters())
 , direction(SpriteDirection::Right) {
 }
 EntityAnimation::SetSpriteDirection::~SetSpriteDirection() {}
-//initialize and return a SetSpriteDirection
 EntityAnimation::SetSpriteDirection* EntityAnimation::SetSpriteDirection::produce(
 	objCounterParametersComma() SpriteDirection pDirection)
 {
@@ -131,7 +120,6 @@ EntityAnimation::SetSpriteDirection* EntityAnimation::SetSpriteDirection::produc
 	return s;
 }
 pooledReferenceCounterDefineRelease(EntityAnimation::SetSpriteDirection)
-//return that the animation should continue updating after setting the sprite direction on the entity state
 bool EntityAnimation::SetSpriteDirection::handle(EntityState* entityState, int ticksTime) {
 	entityState->setSpriteDirection(direction);
 	return true;
@@ -145,7 +133,6 @@ EntityAnimation::SetGhostSprite::SetGhostSprite(objCounterParameters())
 , y(0.0f) {
 }
 EntityAnimation::SetGhostSprite::~SetGhostSprite() {}
-//initialize and return a SetGhostSprite
 EntityAnimation::SetGhostSprite* EntityAnimation::SetGhostSprite::produce(
 	objCounterParametersComma() bool pShow, float pX, float pY)
 {
@@ -156,7 +143,6 @@ EntityAnimation::SetGhostSprite* EntityAnimation::SetGhostSprite::produce(
 	return s;
 }
 pooledReferenceCounterDefineRelease(EntityAnimation::SetGhostSprite)
-//return that the animation should continue updating after setting the ghost sprite on the entity state
 bool EntityAnimation::SetGhostSprite::handle(EntityState* entityState, int ticksTime) {
 	entityState->setGhostSprite(show, x, y, ticksTime);
 	return true;
@@ -171,7 +157,6 @@ EntityAnimation::SetScreenOverlayColor::SetScreenOverlayColor(objCounterParamete
 , a(nullptr) {
 }
 EntityAnimation::SetScreenOverlayColor::~SetScreenOverlayColor() {}
-//initialize and return a SetScreenOverlayColor
 EntityAnimation::SetScreenOverlayColor* EntityAnimation::SetScreenOverlayColor::produce(
 	objCounterParametersComma() DynamicValue* pR, DynamicValue* pG, DynamicValue* pB, DynamicValue* pA)
 {
@@ -183,7 +168,6 @@ EntityAnimation::SetScreenOverlayColor* EntityAnimation::SetScreenOverlayColor::
 	return s;
 }
 pooledReferenceCounterDefineRelease(EntityAnimation::SetScreenOverlayColor)
-//return that the animation should continue updating after setting the screen overlay color on the entity state
 bool EntityAnimation::SetScreenOverlayColor::handle(EntityState* entityState, int ticksTime) {
 	entityState->setScreenOverlayColor(r.get(), g.get(), b.get(), a.get(), ticksTime);
 	return true;
@@ -196,7 +180,6 @@ EntityAnimation::MapKickSwitch::MapKickSwitch(objCounterParameters())
 , allowRadioTowerAnimation(true) {
 }
 EntityAnimation::MapKickSwitch::~MapKickSwitch() {}
-//initialize and return a MapKickSwitch
 EntityAnimation::MapKickSwitch* EntityAnimation::MapKickSwitch::produce(
 	objCounterParametersComma() short pSwitchId, bool pAllowRadioTowerAnimation)
 {
@@ -206,7 +189,6 @@ EntityAnimation::MapKickSwitch* EntityAnimation::MapKickSwitch::produce(
 	return m;
 }
 pooledReferenceCounterDefineRelease(EntityAnimation::MapKickSwitch)
-//return that the animation should continue updating after telling the map to kick the switch
 bool EntityAnimation::MapKickSwitch::handle(EntityState* entityState, int ticksTime) {
 	entityState->mapKickSwitch(switchId, allowRadioTowerAnimation, ticksTime);
 	return true;
@@ -218,7 +200,6 @@ EntityAnimation::MapKickResetSwitch::MapKickResetSwitch(objCounterParameters())
 , resetSwitchId(0) {
 }
 EntityAnimation::MapKickResetSwitch::~MapKickResetSwitch() {}
-//initialize and return a MapKickSwitch
 EntityAnimation::MapKickResetSwitch* EntityAnimation::MapKickResetSwitch::produce(
 	objCounterParametersComma() short pResetSwitchId)
 {
@@ -227,7 +208,6 @@ EntityAnimation::MapKickResetSwitch* EntityAnimation::MapKickResetSwitch::produc
 	return m;
 }
 pooledReferenceCounterDefineRelease(EntityAnimation::MapKickResetSwitch)
-//return that the animation should continue updating after telling the map to kick the reset switch
 bool EntityAnimation::MapKickResetSwitch::handle(EntityState* entityState, int ticksTime) {
 	entityState->mapKickResetSwitch(resetSwitchId, ticksTime);
 	return true;
@@ -238,13 +218,11 @@ EntityAnimation::SwitchToPlayerCamera::SwitchToPlayerCamera(objCounterParameters
 : Component(objCounterArguments()) {
 }
 EntityAnimation::SwitchToPlayerCamera::~SwitchToPlayerCamera() {}
-//initialize and return a SwitchToPlayerCamera
 EntityAnimation::SwitchToPlayerCamera* EntityAnimation::SwitchToPlayerCamera::produce(objCounterParameters()) {
 	initializeWithNewFromPool(s, EntityAnimation::SwitchToPlayerCamera)
 	return s;
 }
 pooledReferenceCounterDefineRelease(EntityAnimation::SwitchToPlayerCamera)
-//return that the animation should continue updating after setting that the entity state should switch to the player camera
 bool EntityAnimation::SwitchToPlayerCamera::handle(EntityState* entityState, int ticksTime) {
 	entityState->setShouldSwitchToPlayerCamera();
 	return true;
@@ -258,7 +236,6 @@ EntityAnimation::EntityAnimation(objCounterParameters())
 , nextComponentIndex(0) {
 }
 EntityAnimation::~EntityAnimation() {}
-//initialize and return an EntityAnimation
 EntityAnimation* EntityAnimation::produce(
 	objCounterParametersComma() int pStartTicksTime, vector<ReferenceCounterHolder<Component>>* pComponents)
 {
@@ -269,13 +246,9 @@ EntityAnimation* EntityAnimation::produce(
 	return e;
 }
 pooledReferenceCounterDefineRelease(EntityAnimation)
-//release components before this is returned to the pool
 void EntityAnimation::prepareReturnToPool() {
 	components.clear();
 }
-//update this animation- process any components that happened since the last time this was updated
-//while this is state that is both shared across game states and mutated, the mutations only affect the state being updated
-//return whether the given state was updated (false means that the default update logic for the state should be used)
 bool EntityAnimation::update(EntityState* entityState, int ticksTime) {
 	bool updated = false;
 	while (nextComponentIndex < (int)components.size()) {
@@ -294,14 +267,12 @@ bool EntityAnimation::update(EntityState* entityState, int ticksTime) {
 	}
 	return updated;
 }
-//return the total ticks duration of all the components (really just the Delays)
 int EntityAnimation::getComponentTotalTicksDuration(vector<ReferenceCounterHolder<Component>>& pComponents) {
 	int totalTicksDuration = 0;
 	for (ReferenceCounterHolder<Component>& component : pComponents)
 		totalTicksDuration += component.get()->getDelayTicksDuration();
 	return totalTicksDuration;
 }
-//get the total ticks duration of this animation's components
 int EntityAnimation::getTotalTicksDuration() {
 	return getComponentTotalTicksDuration(components);
 }

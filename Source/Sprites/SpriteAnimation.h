@@ -37,8 +37,10 @@ public:
 	int getTotalTicksDuration() { return totalTicksDuration; }
 	void disableLooping() { loopAnimation = false; }
 private:
+	//binary search for the referenced frame
 	Frame* findFrame(int animationTicksElapsed);
 public:
+	//render the appropriate sprite for this frame, using the given center
 	void renderUsingCenter(
 		float centerX,
 		float centerY,

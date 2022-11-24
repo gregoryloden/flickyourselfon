@@ -19,6 +19,7 @@ public:
 
 	char getColor() { return color; }
 	char getGroup() { return group; }
+	//render the switch
 	void render(
 		int screenLeftWorldX,
 		int screenTopWorldY,
@@ -26,7 +27,9 @@ public:
 		int lastActivatedSwitchColorFadeInTicksOffset,
 		bool isOn,
 		bool showGroup);
+	//update the position of this switch
 	void editorMoveTo(int newLeftX, int newTopY);
+	//we're saving this switch to the floor file, get the data we need at this tile
 	char editorGetFloorSaveData(int x, int y);
 };
 class SwitchState onlyInDebug(: public ObjCounter) {
@@ -40,9 +43,13 @@ public:
 	virtual ~SwitchState();
 
 	Switch* getSwitch() { return switch0; }
+	//add a rail state to be affected by this switch state
 	void addConnectedRailState(RailState* railState);
+	//activate rails of the same group and color because this switch was kicked
 	void flip(int flipOffTicksTime);
+	//save the time that this switch should turn back on
 	void updateWithPreviousSwitchState(SwitchState* prev);
+	//render the switch
 	void render(
 		int screenLeftWorldX,
 		int screenTopWorldY,

@@ -15,7 +15,6 @@ leftX(pLeftX)
 , editorIsDeleted(false) {
 }
 Switch::~Switch() {}
-//render the switch
 void Switch::render(
 	int screenLeftWorldX,
 	int screenTopWorldY,
@@ -65,12 +64,10 @@ void Switch::render(
 	if (showGroup)
 		MapState::renderGroupRect(group, drawLeftX + 4, drawTopY + 4, drawLeftX + 8, drawTopY + 8);
 }
-//update the position of this switch
 void Switch::editorMoveTo(int newLeftX, int newTopY) {
 	leftX = newLeftX;
 	topY = newTopY;
 }
-//we're saving this switch to the floor file, get the data we need at this tile
 char Switch::editorGetFloorSaveData(int x, int y) {
 	//head byte, write our color
 	if (x == leftX && y == topY)
@@ -93,11 +90,9 @@ switch0(pSwitch0)
 SwitchState::~SwitchState() {
 	//don't delete the switch, it's owned by MapState
 }
-//add a rail state to be affected by this switch state
 void SwitchState::addConnectedRailState(RailState* railState) {
 	connectedRailStates.push_back(railState);
 }
-//activate rails of the same group and color because this switch was kicked
 void SwitchState::flip(int flipOffTicksTime) {
 	char color = switch0->getColor();
 	//square wave switch: just toggle the target tile offset of the rails
@@ -108,11 +103,9 @@ void SwitchState::flip(int flipOffTicksTime) {
 	}
 	flipOnTicksTime = flipOffTicksTime + MapState::switchFlipDuration;
 }
-//save the time that this switch should turn back on
 void SwitchState::updateWithPreviousSwitchState(SwitchState* prev) {
 	flipOnTicksTime = prev->flipOnTicksTime;
 }
-//render the switch
 void SwitchState::render(
 	int screenLeftWorldX,
 	int screenTopWorldY,

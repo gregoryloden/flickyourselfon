@@ -17,7 +17,6 @@ PooledReferenceCounter::PooledReferenceCounter(objCounterParameters())
 referenceCount(0) {
 }
 PooledReferenceCounter::~PooledReferenceCounter() {}
-//increment the reference count of this object
 void PooledReferenceCounter::retain() {
 	referenceCount++;
 }
@@ -45,7 +44,6 @@ template <class ReferenceCountedObject> ReferenceCounterHolder<ReferenceCountedO
 	if (object != nullptr)
 		object->release();
 }
-//hold the new object and release/retain objects as appropriate
 template <class ReferenceCountedObject> void ReferenceCounterHolder<ReferenceCountedObject>::set(
 	ReferenceCountedObject* pObject)
 {
@@ -72,7 +70,6 @@ ReferenceCounterHolder<ReferenceCountedObject>& ReferenceCounterHolder<Reference
 
 //////////////////////////////// ObjectPool ////////////////////////////////
 template <class PooledObject> vector<PooledObject*> ObjectPool<PooledObject>::pool;
-//if we have objects in the pool then remove one and return it, otherwise make a new object
 template <class PooledObject> PooledObject* ObjectPool<PooledObject>::newFromPool(objCounterParameters()) {
 	if (pool.size() > 0) {
 		PooledObject* p = pool.back();
@@ -81,11 +78,9 @@ template <class PooledObject> PooledObject* ObjectPool<PooledObject>::newFromPoo
 	}
 	return new PooledObject(objCounterArguments());
 }
-//add this object back to the pool
 template <class PooledObject> void ObjectPool<PooledObject>::returnToPool(PooledObject* p) {
 	pool.push_back(p);
 }
-//clear the pool, deleting all the objects in it
 template <class PooledObject> void ObjectPool<PooledObject>::clearPool() {
 	for (PooledObject* p : pool) {
 		delete p;
@@ -93,7 +88,7 @@ template <class PooledObject> void ObjectPool<PooledObject>::clearPool() {
 	pool.clear();
 }
 
-//many subclasses only need their own pool, they are not held directly
+//many subclasses only need their own pool, they are not held as the subclass itself
 template class ObjectPool<CompositeQuarticValue>;
 template class ObjectPool<ConstantValue>;
 template class ObjectPool<EntityAnimation::Delay>;

@@ -24,12 +24,14 @@ public:
 
 	int getSpriteWidth() { return spriteWidth; }
 	int getSpriteHeight() { return spriteHeight; }
+	//load the surface at the image path and then build a SpriteSheet
 	static SpriteSheet* produce(
 		objCounterParametersComma()
 		const char* imagePath,
 		int horizontalSpriteCount,
 		int verticalSpriteCount,
 		bool hasBottomRightPixelBorder);
+	//draw the specified region of the sprite sheet
 	void renderSpriteSheetRegionAtScreenRegion(
 		int spriteLeftX,
 		int spriteTopY,
@@ -39,13 +41,18 @@ public:
 		GLint drawTopY,
 		GLint drawRightX,
 		GLint drawBottomY);
+	//draw the specified sprite image with its top-left corner at the specified coordinate
 	void renderSpriteAtScreenPosition(int spriteHorizontalIndex, int spriteVerticalIndex, GLint drawLeftX, GLint drawTopY);
+	//draw the specified sprite image with its center at the specified coordinate
 	void renderSpriteCenteredAtScreenPosition(
 		int spriteHorizontalIndex, int spriteVerticalIndex, float drawCenterX, float drawCenterY);
+	//render a rectangle filled with the specified color at the specified region of the screen
 	static void renderFilledRectangle(
 		GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha, GLint leftX, GLint topY, GLint rightX, GLint bottomY);
+	//render a rectangle outline using the specified color at the specified region of the screen
 	static void renderRectangleOutline(
 		GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha, GLint leftX, GLint topY, GLint rightX, GLint bottomY);
 private:
+	//set the color and enable blending as determined by the alpha
 	static void setColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
 };

@@ -23,7 +23,9 @@ public:
 protected:
 	virtual void prepareReturnToPool() {}
 public:
+	//increment the reference count of this object
 	void retain();
+	//release a reference to this PooledReferenceCounter and return it to the pool if applicable
 	virtual void release() = 0;
 };
 //Should only be allocated within an object, or on the stack if its internal object will not be returned
@@ -38,6 +40,7 @@ public:
 	virtual ~ReferenceCounterHolder();
 
 	ReferenceCountedObject* get() { return object; }
+	//hold the new object and release/retain objects as appropriate
 	void set(ReferenceCountedObject* pObject);
 
 	ReferenceCounterHolder<ReferenceCountedObject>& operator =(const ReferenceCounterHolder<ReferenceCountedObject>& other);
@@ -48,8 +51,11 @@ private:
 	static vector<PooledObject*> pool;
 
 public:
+	//if we have objects in the pool then remove one and return it, otherwise make a new object
 	static PooledObject* newFromPool(objCounterParameters());
+	//add this object back to the pool
 	static void returnToPool(PooledObject* p);
+	//clear the pool, deleting all the objects in it
 	static void clearPool();
 };
 #endif

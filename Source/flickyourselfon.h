@@ -3,8 +3,7 @@
 template <class Type> class CircularStateQueue;
 class GameState;
 
-#ifdef __cplusplus
-extern "C"
-#endif
+//main runner of the game
 int gameMain(int argc, char* argv[]);
+//main render loop for the game
 void renderLoop(CircularStateQueue<GameState>* gameStateQueue);
