@@ -451,15 +451,14 @@ void MapState::flipResetSwitch(short resetSwitchId, int ticksTime) {
 	resetSwitchState->flip(ticksTime);
 }
 void MapState::startRadioWavesAnimation(int initialTicksDelay, int ticksTime) {
-	vector<ReferenceCounterHolder<EntityAnimation::Component>> radioWavesAnimationComponents ({
+	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> radioWavesAnimationComponents ({
 		entityAnimationSpriteAnimationAfterDelay(SpriteRegistry::radioWavesAnimation, initialTicksDelay),
 		entityAnimationSpriteAnimationAfterDelay(nullptr, SpriteRegistry::radioWavesAnimation->getTotalTicksDuration()),
 		entityAnimationSpriteAnimationAfterDelay(
 			SpriteRegistry::radioWavesAnimation, RadioWavesState::interRadioWavesAnimationTicks),
 		entityAnimationSpriteAnimationAfterDelay(nullptr, SpriteRegistry::radioWavesAnimation->getTotalTicksDuration())
 	});
-	Holder_EntityAnimationComponentVector radioWavesAnimationComponentsHolder (&radioWavesAnimationComponents);
-	radioWavesState.get()->beginEntityAnimation(&radioWavesAnimationComponentsHolder, ticksTime);
+	radioWavesState.get()->beginEntityAnimation(&radioWavesAnimationComponents, ticksTime);
 }
 void MapState::startSwitchesFadeInAnimation(int ticksTime) {
 	shouldPlayRadioTowerAnimation = false;

@@ -18,10 +18,7 @@ class EntityState;
 class SpriteAnimation;
 enum class SpriteDirection: int;
 
-//a single EntityAnimation instance is shared across multiple game states
-//it gets mutated but does not mutate a game state unless it's in the middle of updating
-class EntityAnimation: public PooledReferenceCounter {
-public:
+namespace EntityAnimationTypes {
 	//components are exclusively held by EntityAnimations
 	class Component: public PooledReferenceCounter {
 	public:
@@ -33,7 +30,12 @@ public:
 		//return whether this component is done handling the state and we can move on to the next component
 		virtual bool handle(EntityState* entityState, int ticksTime) = 0;
 	};
-	class Delay: public Component {
+}
+//a single EntityAnimation instance is shared across multiple game states
+//it gets mutated but does not mutate a game state unless it's in the middle of updating
+class EntityAnimation: public PooledReferenceCounter {
+public:
+	class Delay: public EntityAnimationTypes::Component {
 	private:
 		int ticksDuration;
 
@@ -49,7 +51,7 @@ public:
 		//return that the animation should not continue updating without checking that the delay is finished
 		virtual bool handle(EntityState* entityState, int ticksTime);
 	};
-	class SetPosition: public Component {
+	class SetPosition: public EntityAnimationTypes::Component {
 	private:
 		float x;
 		float y;
@@ -65,7 +67,7 @@ public:
 		//return that the animation should continue updating after setting the position on the entity state
 		virtual bool handle(EntityState* entityState, int ticksTime);
 	};
-	class SetVelocity: public Component {
+	class SetVelocity: public EntityAnimationTypes::Component {
 	private:
 		ReferenceCounterHolder<DynamicValue> vx;
 		ReferenceCounterHolder<DynamicValue> vy;
@@ -87,7 +89,7 @@ public:
 		//return a SetVelocity that follows a curve from (0, 0) to (1, 1) with 0 slope at (0, 0) and (1, 1)
 		static SetVelocity* cubicInterpolation(float xMoveDistance, float yMoveDistance, float ticksDuration);
 	};
-	class SetSpriteAnimation: public Component {
+	class SetSpriteAnimation: public EntityAnimationTypes::Component {
 	private:
 		SpriteAnimation* animation;
 
@@ -102,7 +104,7 @@ public:
 		//return that the animation should continue updating after setting the sprite animation on the entity state
 		virtual bool handle(EntityState* entityState, int ticksTime);
 	};
-	class SetSpriteDirection: public Component {
+	class SetSpriteDirection: public EntityAnimationTypes::Component {
 	private:
 		SpriteDirection direction;
 
@@ -117,7 +119,7 @@ public:
 		//return that the animation should continue updating after setting the sprite direction on the entity state
 		virtual bool handle(EntityState* entityState, int ticksTime);
 	};
-	class SetGhostSprite: public Component {
+	class SetGhostSprite: public EntityAnimationTypes::Component {
 	private:
 		bool show;
 		float x;
@@ -134,7 +136,7 @@ public:
 		//return that the animation should continue updating after setting the ghost sprite on the entity state
 		virtual bool handle(EntityState* entityState, int ticksTime);
 	};
-	class SetScreenOverlayColor: public Component {
+	class SetScreenOverlayColor: public EntityAnimationTypes::Component {
 	private:
 		ReferenceCounterHolder<DynamicValue> r;
 		ReferenceCounterHolder<DynamicValue> g;
@@ -153,7 +155,7 @@ public:
 		//return that the animation should continue updating after setting the screen overlay color on the entity state
 		virtual bool handle(EntityState* entityState, int ticksTime);
 	};
-	class MapKickSwitch: public Component {
+	class MapKickSwitch: public EntityAnimationTypes::Component {
 	private:
 		short switchId;
 		bool allowRadioTowerAnimation;
@@ -169,7 +171,7 @@ public:
 		//return that the animation should continue updating after telling the map to kick the switch
 		virtual bool handle(EntityState* entityState, int ticksTime);
 	};
-	class MapKickResetSwitch: public Component {
+	class MapKickResetSwitch: public EntityAnimationTypes::Component {
 	private:
 		short resetSwitchId;
 
@@ -184,7 +186,7 @@ public:
 		//return that the animation should continue updating after telling the map to kick the reset switch
 		virtual bool handle(EntityState* entityState, int ticksTime);
 	};
-	class SwitchToPlayerCamera: public Component {
+	class SwitchToPlayerCamera: public EntityAnimationTypes::Component {
 	public:
 		SwitchToPlayerCamera(objCounterParameters());
 		virtual ~SwitchToPlayerCamera();
@@ -200,7 +202,7 @@ public:
 
 private:
 	int lastUpdateTicksTime;
-	vector<ReferenceCounterHolder<Component>> components;
+	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> components;
 	int nextComponentIndex;
 
 public:
@@ -209,7 +211,9 @@ public:
 
 	//initialize and return an EntityAnimation
 	static EntityAnimation* produce(
-		objCounterParametersComma() int pStartTicksTime, vector<ReferenceCounterHolder<Component>>* pComponents);
+		objCounterParametersComma()
+		int pStartTicksTime,
+		vector<ReferenceCounterHolder<EntityAnimationTypes::Component>>* pComponents);
 	//release a reference to this EntityAnimation and return it to the pool if applicable
 	virtual void release();
 protected:
@@ -221,15 +225,7 @@ public:
 	//return whether the given state was updated (false means that the default update logic for the state should be used)
 	bool update(EntityState* entityState, int ticksTime);
 	//return the total ticks duration of all the components (really just the Delays)
-	static int getComponentTotalTicksDuration(vector<ReferenceCounterHolder<Component>>& pComponents);
+	static int getComponentTotalTicksDuration(vector<ReferenceCounterHolder<EntityAnimationTypes::Component>>& pComponents);
 	//get the total ticks duration of this animation's components
 	int getTotalTicksDuration();
-};
-//Should only be allocated within an object, on the stack, or as a static object
-class Holder_EntityAnimationComponentVector {
-public:
-	vector<ReferenceCounterHolder<EntityAnimation::Component>>* val;
-
-	Holder_EntityAnimationComponentVector(vector<ReferenceCounterHolder<EntityAnimation::Component>>* pVal);
-	virtual ~Holder_EntityAnimationComponentVector();
 };

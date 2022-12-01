@@ -21,9 +21,6 @@ SDL_Window* window = nullptr;
 SDL_GLContext glContext = nullptr;
 bool renderThreadReadyForUpdates = false;
 
-#ifdef __cplusplus
-extern "C"
-#endif
 int gameMain(int argc, char* argv[]) {
 	//initialize SDL before we do anything else, we need it to log timestamps
 	int initResult = SDL_Init(SDL_INIT_EVERYTHING);

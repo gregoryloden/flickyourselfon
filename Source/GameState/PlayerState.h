@@ -4,12 +4,14 @@
 
 class CollisionRect;
 class EntityAnimation;
-class Holder_EntityAnimationComponentVector;
 class KickAction;
 class MapState;
 class PositionState;
 class Rail;
 class SpriteAnimation;
+namespace EntityAnimationTypes {
+	class Component;
+}
 
 class PlayerState: public EntityState {
 private:
@@ -142,7 +144,7 @@ public:
 	//add the components for a rail-riding animation
 	static void addRailRideComponents(
 		short railId,
-		Holder_EntityAnimationComponentVector* componentsHolder,
+		vector<ReferenceCounterHolder<EntityAnimationTypes::Component>>* components,
 		float xPosition,
 		float yPosition,
 		float* outFinalXPosition,
@@ -153,13 +155,16 @@ private:
 public:
 	//add the animation components for a switch kicking animation
 	static void addKickSwitchComponents(
-		short switchId, Holder_EntityAnimationComponentVector* componentsHolder, bool allowRadioTowerAnimation);
+		short switchId,
+		vector<ReferenceCounterHolder<EntityAnimationTypes::Component>>* components,
+		bool allowRadioTowerAnimation);
 private:
 	//begin a kicking animation and set the reset switch to flip
 	void kickResetSwitch(short resetSwitchId, int ticksTime);
 public:
 	//add the animation components for a reset switch kicking animation
-	static void addKickResetSwitchComponents(short resetSwitchId, Holder_EntityAnimationComponentVector* componentsHolder);
+	static void addKickResetSwitchComponents(
+		short resetSwitchId, vector<ReferenceCounterHolder<EntityAnimationTypes::Component>>* components);
 	//render this player state, which was deemed to be the last state to need rendering
 	void render(EntityState* camera, int ticksTime);
 	//render the kick action for this player state if one is available

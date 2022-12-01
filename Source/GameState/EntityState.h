@@ -7,8 +7,10 @@
 class DynamicValue;
 class EntityAnimation;
 class GameState;
-class Holder_EntityAnimationComponentVector;
 class SpriteAnimation;
+namespace EntityAnimationTypes {
+	class Component;
+}
 
 enum class SpriteDirection: int {
 	Right = 0,
@@ -69,7 +71,7 @@ public:
 	//set the velocity to the given velocity at the given time, preserving the position
 	void setVelocity(DynamicValue* vx, DynamicValue* vy, int pLastUpdateTicksTime);
 	//start the given entity animation
-	void beginEntityAnimation(Holder_EntityAnimationComponentVector* componentsHolder, int ticksTime);
+	void beginEntityAnimation(vector<ReferenceCounterHolder<EntityAnimationTypes::Component>>* components, int ticksTime);
 	//set the camera on the next game state, based on this being the previous game state's camera
 	virtual void setNextCamera(GameState* nextGameState, int ticksTime) = 0;
 };

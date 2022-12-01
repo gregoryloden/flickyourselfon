@@ -72,8 +72,10 @@ void EntityState::setVelocity(DynamicValue* vx, DynamicValue* vy, int pLastUpdat
 	y.set(vy->copyWithConstantValue(y.get()->getValue(timediff)));
 	lastUpdateTicksTime = pLastUpdateTicksTime;
 }
-void EntityState::beginEntityAnimation(Holder_EntityAnimationComponentVector* componentsHolder, int ticksTime) {
-	entityAnimation.set(newEntityAnimation(ticksTime, componentsHolder->val));
+void EntityState::beginEntityAnimation(
+	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>>* components, int ticksTime)
+{
+	entityAnimation.set(newEntityAnimation(ticksTime, components));
 	//update it once to get it started
 	entityAnimation.get()->update(this, ticksTime);
 }

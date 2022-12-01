@@ -104,7 +104,7 @@ template class ObjectPool<EntityAnimation::SwitchToPlayerCamera>;
 template class ObjectPool<LinearInterpolatedValue>;
 //superclasses only need holders, the classes themselves are not allocated
 template class ReferenceCounterHolder<DynamicValue>;
-template class ReferenceCounterHolder<EntityAnimation::Component>;
+template class ReferenceCounterHolder<EntityAnimationTypes::Component>;
 template class ReferenceCounterHolder<EntityState>;
 //solo-concrete classes or held subclasses need both their own pools and holders
 instantiateObjectPoolAndReferenceCounterHolder(CollisionRect)

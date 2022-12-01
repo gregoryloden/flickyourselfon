@@ -202,7 +202,7 @@ void GameState::startRadioTowerAnimation(int ticksTime) {
 	}
 
 	//build the animation until right before the radio waves animation
-	vector<ReferenceCounterHolder<EntityAnimation::Component>> dynamicCameraAnchorAnimationComponents ({
+	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> dynamicCameraAnchorAnimationComponents ({
 		newEntityAnimationSetPosition(playerX, playerY),
 		stopMoving,
 		newEntityAnimationDelay(radioTowerInitialPauseAnimationTicks),
@@ -253,23 +253,20 @@ void GameState::startRadioTowerAnimation(int ticksTime) {
 			stopMoving,
 			newEntityAnimationSwitchToPlayerCamera()
 	});
-	Holder_EntityAnimationComponentVector dynamicCameraAnchorAnimationComponentsHolder (
-		&dynamicCameraAnchorAnimationComponents);
-	dynamicCameraAnchor.get()->beginEntityAnimation(&dynamicCameraAnchorAnimationComponentsHolder, ticksTime);
+	dynamicCameraAnchor.get()->beginEntityAnimation(&dynamicCameraAnchorAnimationComponents, ticksTime);
 
 	//delay the player for the duration of the animation
 	int remainingKickingAimationTicksDuration =
 		SpriteRegistry::playerKickingAnimation->getTotalTicksDuration()
 			- SpriteRegistry::playerKickingAnimationTicksPerFrame;
-	vector<ReferenceCounterHolder<EntityAnimation::Component>> playerAnimationComponents ({
+	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> playerAnimationComponents ({
 		newEntityAnimationDelay(remainingKickingAimationTicksDuration),
 		newEntityAnimationSetSpriteAnimation(nullptr),
 		newEntityAnimationDelay(
 			EntityAnimation::getComponentTotalTicksDuration(dynamicCameraAnchorAnimationComponents)
 				- remainingKickingAimationTicksDuration)
 	});
-	Holder_EntityAnimationComponentVector playerAnimationComponentsHolder (&playerAnimationComponents);
-	playerState.get()->beginEntityAnimation(&playerAnimationComponentsHolder, ticksTime);
+	playerState.get()->beginEntityAnimation(&playerAnimationComponents, ticksTime);
 }
 void GameState::render(int ticksTime) {
 	Editor::EditingMutexLocker editingMutexLocker;
@@ -466,8 +463,7 @@ void GameState::loadInitialState(int ticksTime) {
 		int lastTimestamp = 0;
 		float lastX = 0.0f;
 		float lastY = 0.0f;
-		vector<ReferenceCounterHolder<EntityAnimation::Component>> replayComponents;
-		Holder_EntityAnimationComponentVector replayComponentsHolder (&replayComponents);
+		vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> replayComponents;
 		while (getline(file, line)) {
 			const char* logMessage = line.c_str();
 			int timestamp;
@@ -503,7 +499,7 @@ void GameState::loadInitialState(int ticksTime) {
 				int climbEndY;
 				StringUtils::parsePosition(logMessage, &climbEndX, &climbEndY);
 				addMoveWithGhost(
-					&replayComponentsHolder, lastX, lastY, (float)climbStartX, (float)climbStartY, timestamp - lastTimestamp);
+					&replayComponents, lastX, lastY, (float)climbStartX, (float)climbStartY, timestamp - lastTimestamp);
 				//for backwards compatibility, a climb without an end position is an Up climb
 				if (climbEndX == 0 || climbEndY == 0) {
 					lastX = (float)climbStartX;
@@ -514,7 +510,7 @@ void GameState::loadInitialState(int ticksTime) {
 				}
 				int climbDuration = SpriteRegistry::playerKickingAnimation->getTotalTicksDuration();
 				replayComponents.push_back(newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerKickingAnimation));
-				addMoveWithGhost(&replayComponentsHolder, (float)climbStartX, (float)climbStartY, lastX, lastY, climbDuration);
+				addMoveWithGhost(&replayComponents, (float)climbStartX, (float)climbStartY, lastX, lastY, climbDuration);
 				replayComponents.insert(
 					replayComponents.end(),
 					{
@@ -532,7 +528,7 @@ void GameState::loadInitialState(int ticksTime) {
 				int fallEndY;
 				StringUtils::parsePosition(logMessage, &fallEndX, &fallEndY);
 				addMoveWithGhost(
-					&replayComponentsHolder, lastX, lastY, (float)fallStartX, (float)fallStartY, timestamp - lastTimestamp);
+					&replayComponents, lastX, lastY, (float)fallStartX, (float)fallStartY, timestamp - lastTimestamp);
 				//a fall without an end position is treated as a 1-tile Down fall regardless of where it actually went
 				if (fallEndX == 0 || fallEndY == 0) {
 					lastX = (float)fallStartX;
@@ -543,7 +539,7 @@ void GameState::loadInitialState(int ticksTime) {
 				}
 				int fallDuration = SpriteRegistry::playerFastKickingAnimation->getTotalTicksDuration();
 				replayComponents.push_back(newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerFastKickingAnimation));
-				addMoveWithGhost(&replayComponentsHolder, (float)fallStartX, (float)fallStartY, lastX, lastY, fallDuration);
+				addMoveWithGhost(&replayComponents, (float)fallStartX, (float)fallStartY, lastX, lastY, fallDuration);
 				replayComponents.insert(
 					replayComponents.end(),
 					{
@@ -559,8 +555,7 @@ void GameState::loadInitialState(int ticksTime) {
 				int startX;
 				int startY;
 				StringUtils::parsePosition(logMessage, &startX, &startY);
-				addMoveWithGhost(
-					&replayComponentsHolder, lastX, lastY, (float)startX, (float)startY, timestamp - lastTimestamp);
+				addMoveWithGhost(&replayComponents, lastX, lastY, (float)startX, (float)startY, timestamp - lastTimestamp);
 				replayComponents.insert(
 					replayComponents.end(),
 					{
@@ -569,7 +564,7 @@ void GameState::loadInitialState(int ticksTime) {
 					});
 				PlayerState::addRailRideComponents(
 					MapState::getIdFromRailIndex(railIndex),
-					&replayComponentsHolder,
+					&replayComponents,
 					(float)startX,
 					(float)startY,
 					&lastX,
@@ -585,15 +580,14 @@ void GameState::loadInitialState(int ticksTime) {
 				MapState::getSwitchMapTopLeft(switchIndex, &switchMapLeftX, &switchMapTopY);
 				float moveX = (float)((switchMapLeftX + 1) * MapState::tileSize);
 				float moveY = (float)((switchMapTopY + 1) * MapState::tileSize);
-				addMoveWithGhost(&replayComponentsHolder, lastX, lastY, moveX, moveY, timestamp - lastTimestamp);
+				addMoveWithGhost(&replayComponents, lastX, lastY, moveX, moveY, timestamp - lastTimestamp);
 				replayComponents.insert(
 					replayComponents.end(),
 					{
 						newEntityAnimationSetGhostSprite(false, 0.0f, 0.0f),
 						newEntityAnimationSetSpriteDirection(SpriteDirection::Down)
 					});
-				PlayerState::addKickSwitchComponents(
-					MapState::getIdFromSwitchIndex(switchIndex), &replayComponentsHolder, false);
+				PlayerState::addKickSwitchComponents(MapState::getIdFromSwitchIndex(switchIndex), &replayComponents, false);
 				replayComponents.push_back(newEntityAnimationSetSpriteAnimation(nullptr));
 				lastX = moveX;
 				lastY = moveY;
@@ -607,7 +601,7 @@ void GameState::loadInitialState(int ticksTime) {
 				MapState::getResetSwitchMapTopCenter(resetSwitchIndex, &resetSwitchMapCenterX, &resetSwitchMapTopY);
 				float moveX = ((float)resetSwitchMapCenterX + 0.5f) * (float)MapState::tileSize;
 				float moveY = (float)(resetSwitchMapTopY * MapState::tileSize);
-				addMoveWithGhost(&replayComponentsHolder, lastX, lastY, moveX, moveY, timestamp - lastTimestamp);
+				addMoveWithGhost(&replayComponents, lastX, lastY, moveX, moveY, timestamp - lastTimestamp);
 				replayComponents.insert(
 					replayComponents.end(),
 					{
@@ -615,7 +609,7 @@ void GameState::loadInitialState(int ticksTime) {
 						newEntityAnimationSetSpriteDirection(SpriteDirection::Down)
 					});
 				PlayerState::addKickResetSwitchComponents(
-					MapState::getIdFromResetSwitchIndex(resetSwitchIndex), &replayComponentsHolder);
+					MapState::getIdFromResetSwitchIndex(resetSwitchIndex), &replayComponents);
 				replayComponents.push_back(newEntityAnimationSetSpriteAnimation(nullptr));
 				lastX = moveX;
 				lastY = moveY;
@@ -627,7 +621,7 @@ void GameState::loadInitialState(int ticksTime) {
 		if (replayComponents.empty())
 			return false;
 
-		playerState.get()->beginEntityAnimation(&replayComponentsHolder, 0);
+		playerState.get()->beginEntityAnimation(&replayComponents, 0);
 		playerState.get()->setHighestZ();
 		playerState.get()->obtainBoot();
 		camera = playerState.get();
@@ -636,14 +630,13 @@ void GameState::loadInitialState(int ticksTime) {
 		return true;
 	}
 	void GameState::addMoveWithGhost(
-		Holder_EntityAnimationComponentVector* replayComponentsHolder,
+		vector<ReferenceCounterHolder<EntityAnimationTypes::Component>>* replayComponents,
 		float startX,
 		float startY,
 		float endX,
 		float endY,
 		int ticksDuration)
 	{
-		vector<ReferenceCounterHolder<EntityAnimation::Component>>* replayComponents = replayComponentsHolder->val;
 		float moveX = (endX - startX) / (float)ticksDuration;
 		float moveY = (endY - startY) / (float)ticksDuration;
 		SpriteDirection spriteDirection = EntityState::getSpriteDirection(moveX, moveY);
@@ -681,7 +674,7 @@ void GameState::beginIntroAnimation(int ticksTime) {
 		newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerWalkingAnimation);
 	EntityAnimation::SetSpriteAnimation* clearSpriteAnimation = newEntityAnimationSetSpriteAnimation(nullptr);
 
-	vector<ReferenceCounterHolder<EntityAnimation::Component>> playerAnimationComponents ({
+	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> playerAnimationComponents ({
 		stopMoving,
 		newEntityAnimationSetPosition(
 			PlayerState::introAnimationPlayerCenterX, PlayerState::introAnimationPlayerCenterY),
@@ -770,13 +763,12 @@ void GameState::beginIntroAnimation(int ticksTime) {
 		stopMoving,
 		clearSpriteAnimation
 	});
-	Holder_EntityAnimationComponentVector playerAnimationComponentsHolder (&playerAnimationComponents);
-	playerState.get()->beginEntityAnimation(&playerAnimationComponentsHolder, ticksTime);
+	playerState.get()->beginEntityAnimation(&playerAnimationComponents, ticksTime);
 
 	int blackScreenFadeOutEndTime = introAnimationStartTicksTime + 1000;
 	int animationEndTicksTime = EntityAnimation::getComponentTotalTicksDuration(playerAnimationComponents);
 	int legLiftStartTime = animationEndTicksTime - SpriteRegistry::playerLegLiftAnimation->getTotalTicksDuration();
-	vector<ReferenceCounterHolder<EntityAnimation::Component>> cameraAnimationComponents ({
+	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> cameraAnimationComponents ({
 		newEntityAnimationSetPosition(MapState::introAnimationCameraCenterX, MapState::introAnimationCameraCenterY),
 		newEntityAnimationSetScreenOverlayColor(
 			newConstantValue(0.0f),
@@ -793,8 +785,7 @@ void GameState::beginIntroAnimation(int ticksTime) {
 			newConstantValue(0.0f), newConstantValue(0.0f), newConstantValue(0.0f), newConstantValue(0.0f)),
 		newEntityAnimationSwitchToPlayerCamera()
 	});
-	Holder_EntityAnimationComponentVector cameraAnimationComponentsHolder (&cameraAnimationComponents);
-	dynamicCameraAnchor.get()->beginEntityAnimation(&cameraAnimationComponentsHolder, ticksTime);
+	dynamicCameraAnchor.get()->beginEntityAnimation(&cameraAnimationComponents, ticksTime);
 }
 void GameState::resetGame(int ticksTime) {
 	sawIntroAnimation = false;

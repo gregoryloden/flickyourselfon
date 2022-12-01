@@ -727,13 +727,12 @@ void PlayerState::kickAir(int ticksTime) {
 	SpriteAnimation* kickingSpriteAnimation = hasBoot
 		? SpriteRegistry::playerKickingAnimation
 		: SpriteRegistry::playerLegLiftAnimation;
-	vector<ReferenceCounterHolder<EntityAnimation::Component>> kickAnimationComponents ({
+	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> kickAnimationComponents ({
 		newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f)),
 		newEntityAnimationSetSpriteAnimation(kickingSpriteAnimation),
 		newEntityAnimationDelay(kickingSpriteAnimation->getTotalTicksDuration())
 	});
-	Holder_EntityAnimationComponentVector kickAnimationComponentsHolder (&kickAnimationComponents);
-	beginEntityAnimation(&kickAnimationComponentsHolder, ticksTime);
+	beginEntityAnimation(&kickAnimationComponents, ticksTime);
 }
 void PlayerState::kickClimb(float xMoveDistance, float yMoveDistance, int ticksTime) {
 	stringstream message;
@@ -748,7 +747,7 @@ void PlayerState::kickClimb(float xMoveDistance, float yMoveDistance, int ticksT
 	float moveDurationSquared = floatMoveDuration * floatMoveDuration;
 	float moveDurationCubed = moveDurationSquared * floatMoveDuration;
 
-	vector<ReferenceCounterHolder<EntityAnimation::Component>> kickingAnimationComponents ({
+	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> kickingAnimationComponents ({
 		//start by stopping the player and delaying until the leg-sticking-out frame
 		newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f)),
 		newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerFastKickingAnimation),
@@ -782,8 +781,7 @@ void PlayerState::kickClimb(float xMoveDistance, float yMoveDistance, int ticksT
 		});
 
 
-	Holder_EntityAnimationComponentVector kickingAnimationComponentsHolder (&kickingAnimationComponents);
-	beginEntityAnimation(&kickingAnimationComponentsHolder, ticksTime);
+	beginEntityAnimation(&kickingAnimationComponents, ticksTime);
 	z += 2;
 }
 void PlayerState::kickFall(float xMoveDistance, float yMoveDistance, char fallHeight, int ticksTime) {
@@ -800,7 +798,7 @@ void PlayerState::kickFall(float xMoveDistance, float yMoveDistance, char fallHe
 		: SpriteRegistry::playerKickingAnimationTicksPerFrame;
 
 	//start by stopping the player and delaying until the leg-sticking-out frame
-	vector<ReferenceCounterHolder<EntityAnimation::Component>> kickingAnimationComponents ({
+	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> kickingAnimationComponents ({
 		newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f)),
 		newEntityAnimationSetSpriteAnimation(fallAnimation),
 		newEntityAnimationDelay(fallAnimationFirstFrameTicks)
@@ -869,26 +867,23 @@ void PlayerState::kickFall(float xMoveDistance, float yMoveDistance, char fallHe
 			newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f))
 		});
 
-	Holder_EntityAnimationComponentVector kickingAnimationComponentsHolder (&kickingAnimationComponents);
-	beginEntityAnimation(&kickingAnimationComponentsHolder, ticksTime);
+	beginEntityAnimation(&kickingAnimationComponents, ticksTime);
 	z = fallHeight;
 }
 void PlayerState::kickRail(short railId, float xPosition, float yPosition, int ticksTime) {
 	MapState::logRailRide(railId, (int)xPosition, (int)yPosition);
-	vector<ReferenceCounterHolder<EntityAnimation::Component>> ridingRailAnimationComponents;
-	Holder_EntityAnimationComponentVector ridingRailAnimationComponentsHolder (&ridingRailAnimationComponents);
-	addRailRideComponents(railId, &ridingRailAnimationComponentsHolder, xPosition, yPosition, nullptr, nullptr);
-	beginEntityAnimation(&ridingRailAnimationComponentsHolder, ticksTime);
+	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> ridingRailAnimationComponents;
+	addRailRideComponents(railId, &ridingRailAnimationComponents, xPosition, yPosition, nullptr, nullptr);
+	beginEntityAnimation(&ridingRailAnimationComponents, ticksTime);
 }
 void PlayerState::addRailRideComponents(
 	short railId,
-	Holder_EntityAnimationComponentVector* componentsHolder,
+	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>>* components,
 	float xPosition,
 	float yPosition,
 	float* outFinalXPosition,
 	float* outFinalYPosition)
 {
-	vector<ReferenceCounterHolder<EntityAnimation::Component>>* components = componentsHolder->val;
 	Rail* rail = MapState::getRailFromId(railId);
 	Rail::Segment* startSegment = rail->getSegment(0);
 	Rail::Segment* endSegment = rail->getSegment(rail->getSegmentCount() - 1);
@@ -1047,15 +1042,13 @@ void PlayerState::addRailRideComponents(
 }
 void PlayerState::kickSwitch(short switchId, int ticksTime) {
 	MapState::logSwitchKick(switchId);
-	vector<ReferenceCounterHolder<EntityAnimation::Component>> kickAnimationComponents;
-	Holder_EntityAnimationComponentVector kickAnimationComponentsHolder (&kickAnimationComponents);
-	addKickSwitchComponents(switchId, &kickAnimationComponentsHolder, true);
-	beginEntityAnimation(&kickAnimationComponentsHolder, ticksTime);
+	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> kickAnimationComponents;
+	addKickSwitchComponents(switchId, &kickAnimationComponents, true);
+	beginEntityAnimation(&kickAnimationComponents, ticksTime);
 }
 void PlayerState::addKickSwitchComponents(
-	short switchId, Holder_EntityAnimationComponentVector* componentsHolder, bool allowRadioTowerAnimation)
+	short switchId, vector<ReferenceCounterHolder<EntityAnimationTypes::Component>>* components, bool allowRadioTowerAnimation)
 {
-	vector<ReferenceCounterHolder<EntityAnimation::Component>>* components = componentsHolder->val;
 	components->insert(
 		components->end(),
 		{
@@ -1070,13 +1063,13 @@ void PlayerState::addKickSwitchComponents(
 }
 void PlayerState::kickResetSwitch(short resetSwitchId, int ticksTime) {
 	MapState::logResetSwitchKick(resetSwitchId);
-	vector<ReferenceCounterHolder<EntityAnimation::Component>> kickAnimationComponents;
-	Holder_EntityAnimationComponentVector kickAnimationComponentsHolder (&kickAnimationComponents);
-	addKickResetSwitchComponents(resetSwitchId, &kickAnimationComponentsHolder);
-	beginEntityAnimation(&kickAnimationComponentsHolder, ticksTime);
+	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> kickAnimationComponents;
+	addKickResetSwitchComponents(resetSwitchId, &kickAnimationComponents);
+	beginEntityAnimation(&kickAnimationComponents, ticksTime);
 }
-void PlayerState::addKickResetSwitchComponents(short resetSwitchId, Holder_EntityAnimationComponentVector* componentsHolder) {
-	vector<ReferenceCounterHolder<EntityAnimation::Component>>* components = componentsHolder->val;
+void PlayerState::addKickResetSwitchComponents(
+	short resetSwitchId, vector<ReferenceCounterHolder<EntityAnimationTypes::Component>>* components)
+{
 	components->insert(
 		components->end(),
 		{

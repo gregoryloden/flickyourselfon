@@ -3,11 +3,12 @@
 #include "GameState/EntityState.h"
 #include "Sprites/SpriteAnimation.h"
 
-//////////////////////////////// EntityAnimation::Component ////////////////////////////////
-EntityAnimation::Component::Component(objCounterParameters())
+//////////////////////////////// EntityAnimationTypes::Component ////////////////////////////////
+EntityAnimationTypes::Component::Component(objCounterParameters())
 : PooledReferenceCounter(objCounterArguments()) {
 }
-EntityAnimation::Component::~Component() {}
+EntityAnimationTypes::Component::~Component() {}
+using EntityAnimationTypes::Component;
 
 //////////////////////////////// EntityAnimation::Delay ////////////////////////////////
 EntityAnimation::Delay::Delay(objCounterParameters())
@@ -275,13 +276,4 @@ int EntityAnimation::getComponentTotalTicksDuration(vector<ReferenceCounterHolde
 }
 int EntityAnimation::getTotalTicksDuration() {
 	return getComponentTotalTicksDuration(components);
-}
-
-//////////////////////////////// Holder_EntityAnimationComponentVector ////////////////////////////////
-Holder_EntityAnimationComponentVector::Holder_EntityAnimationComponentVector(
-	vector<ReferenceCounterHolder<EntityAnimation::Component>>* pVal)
-: val(pVal) {
-}
-Holder_EntityAnimationComponentVector::~Holder_EntityAnimationComponentVector() {
-	//don't delete the vector, it's owned by something else
 }

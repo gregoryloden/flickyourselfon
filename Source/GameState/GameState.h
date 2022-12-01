@@ -4,10 +4,12 @@
 
 class DynamicCameraAnchor;
 class EntityState;
-class Holder_EntityAnimationComponentVector;
 class MapState;
 class PauseState;
 class PlayerState;
+namespace EntityAnimationTypes {
+	class Component;
+}
 
 class GameState onlyInDebug(: public ObjCounter) {
 private:
@@ -125,7 +127,7 @@ public:
 		bool loadReplay();
 		//move from one position to another, showing a ghost sprite at the end position
 		void addMoveWithGhost(
-			Holder_EntityAnimationComponentVector* replayComponentsHolder,
+			vector<ReferenceCounterHolder<EntityAnimationTypes::Component>>* replayComponents,
 			float startX,
 			float startY,
 			float endX,
