@@ -107,22 +107,22 @@ bool EntityAnimation::SetSpriteAnimation::handle(EntityState* entityState, int t
 	return true;
 }
 
-//////////////////////////////// EntityAnimation::SetSpriteDirection ////////////////////////////////
-EntityAnimation::SetSpriteDirection::SetSpriteDirection(objCounterParameters())
+//////////////////////////////// EntityAnimation::SetDirection ////////////////////////////////
+EntityAnimation::SetDirection::SetDirection(objCounterParameters())
 : Component(objCounterArguments())
 , direction(SpriteDirection::Right) {
 }
-EntityAnimation::SetSpriteDirection::~SetSpriteDirection() {}
-EntityAnimation::SetSpriteDirection* EntityAnimation::SetSpriteDirection::produce(
+EntityAnimation::SetDirection::~SetDirection() {}
+EntityAnimation::SetDirection* EntityAnimation::SetDirection::produce(
 	objCounterParametersComma() SpriteDirection pDirection)
 {
-	initializeWithNewFromPool(s, EntityAnimation::SetSpriteDirection)
+	initializeWithNewFromPool(s, EntityAnimation::SetDirection)
 	s->direction = pDirection;
 	return s;
 }
-pooledReferenceCounterDefineRelease(EntityAnimation::SetSpriteDirection)
-bool EntityAnimation::SetSpriteDirection::handle(EntityState* entityState, int ticksTime) {
-	entityState->setSpriteDirection(direction);
+pooledReferenceCounterDefineRelease(EntityAnimation::SetDirection)
+bool EntityAnimation::SetDirection::handle(EntityState* entityState, int ticksTime) {
+	entityState->setDirection(direction);
 	return true;
 }
 

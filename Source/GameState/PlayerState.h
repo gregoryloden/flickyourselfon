@@ -60,7 +60,6 @@ public:
 	PlayerState(objCounterParameters());
 	virtual ~PlayerState();
 
-	virtual void setSpriteDirection(SpriteDirection pSpriteDirection) { spriteDirection = pSpriteDirection; }
 	char getZ() { return z; }
 	void obtainBoot() { hasBoot = true; }
 	//initialize and return a PlayerState
@@ -69,6 +68,8 @@ public:
 	void copyPlayerState(PlayerState* other);
 	//release a reference to this PlayerState and return it to the pool if applicable
 	virtual void release();
+	//set the sprite direction, and also set x and y directions to match
+	virtual void setDirection(SpriteDirection pSpriteDirection);
 	//tell the game state to use the player as the next camera anchor, we will handle actually switching to a different camera
 	//	somewhere else
 	virtual void setNextCamera(GameState* nextGameState, int ticksTime);

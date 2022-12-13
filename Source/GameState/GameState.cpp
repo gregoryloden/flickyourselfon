@@ -585,7 +585,7 @@ void GameState::loadInitialState(int ticksTime) {
 					replayComponents.end(),
 					{
 						newEntityAnimationSetGhostSprite(false, 0.0f, 0.0f),
-						newEntityAnimationSetSpriteDirection(SpriteDirection::Down)
+						newEntityAnimationSetDirection(SpriteDirection::Down)
 					});
 				PlayerState::addKickSwitchComponents(MapState::getIdFromSwitchIndex(switchIndex), &replayComponents, false);
 				replayComponents.push_back(newEntityAnimationSetSpriteAnimation(nullptr));
@@ -606,7 +606,7 @@ void GameState::loadInitialState(int ticksTime) {
 					replayComponents.end(),
 					{
 						newEntityAnimationSetGhostSprite(false, 0.0f, 0.0f),
-						newEntityAnimationSetSpriteDirection(SpriteDirection::Down)
+						newEntityAnimationSetDirection(SpriteDirection::Down)
 					});
 				PlayerState::addKickResetSwitchComponents(
 					MapState::getIdFromResetSwitchIndex(resetSwitchIndex), &replayComponents);
@@ -647,7 +647,7 @@ void GameState::loadInitialState(int ticksTime) {
 				newEntityAnimationSetVelocity(
 					newCompositeQuarticValue(0.0f, moveX, 0.0f, 0.0f, 0.0f),
 					newCompositeQuarticValue(0.0f, moveY, 0.0f, 0.0f, 0.0f)),
-				newEntityAnimationSetSpriteDirection(spriteDirection),
+				newEntityAnimationSetDirection(spriteDirection),
 				newEntityAnimationDelay(ticksDuration)
 			});
 	}
@@ -683,19 +683,19 @@ void GameState::beginIntroAnimation(int ticksTime) {
 		//walk to the wall
 		walkRight,
 		setWalkingAnimation,
-		newEntityAnimationSetSpriteDirection(SpriteDirection::Right),
+		newEntityAnimationSetDirection(SpriteDirection::Right),
 		newEntityAnimationDelay(2200),
 		//walk down, stop at the boot
 		walkDown,
-		newEntityAnimationSetSpriteDirection(SpriteDirection::Down),
+		newEntityAnimationSetDirection(SpriteDirection::Down),
 		newEntityAnimationDelay(1000),
 		stopMoving,
 		clearSpriteAnimation,
 		newEntityAnimationDelay(3000),
 		//look at the boot
-		newEntityAnimationSetSpriteDirection(SpriteDirection::Right),
+		newEntityAnimationSetDirection(SpriteDirection::Right),
 		newEntityAnimationDelay(800),
-		newEntityAnimationSetSpriteDirection(SpriteDirection::Down),
+		newEntityAnimationSetDirection(SpriteDirection::Down),
 		newEntityAnimationDelay(1000),
 		//walk around the boot
 		walkDown,
@@ -706,22 +706,22 @@ void GameState::beginIntroAnimation(int ticksTime) {
 		newEntityAnimationDelay(700),
 		walkRight,
 		setWalkingAnimation,
-		newEntityAnimationSetSpriteDirection(SpriteDirection::Right),
+		newEntityAnimationSetDirection(SpriteDirection::Right),
 		newEntityAnimationDelay(1800),
 		//stop and look around
 		stopMoving,
 		clearSpriteAnimation,
 		newEntityAnimationDelay(700),
-		newEntityAnimationSetSpriteDirection(SpriteDirection::Up),
+		newEntityAnimationSetDirection(SpriteDirection::Up),
 		newEntityAnimationDelay(700),
-		newEntityAnimationSetSpriteDirection(SpriteDirection::Down),
+		newEntityAnimationSetDirection(SpriteDirection::Down),
 		newEntityAnimationDelay(500),
-		newEntityAnimationSetSpriteDirection(SpriteDirection::Left),
+		newEntityAnimationSetDirection(SpriteDirection::Left),
 		newEntityAnimationDelay(350),
-		newEntityAnimationSetSpriteDirection(SpriteDirection::Right),
+		newEntityAnimationSetDirection(SpriteDirection::Right),
 		newEntityAnimationDelay(1000),
 		//walk up
-		newEntityAnimationSetSpriteDirection(SpriteDirection::Up),
+		newEntityAnimationSetDirection(SpriteDirection::Up),
 		walkUp,
 		setWalkingAnimation,
 		newEntityAnimationDelay(1700),
@@ -729,19 +729,19 @@ void GameState::beginIntroAnimation(int ticksTime) {
 		stopMoving,
 		clearSpriteAnimation,
 		newEntityAnimationDelay(1000),
-		newEntityAnimationSetSpriteDirection(SpriteDirection::Right),
+		newEntityAnimationSetDirection(SpriteDirection::Right),
 		newEntityAnimationDelay(600),
-		newEntityAnimationSetSpriteDirection(SpriteDirection::Left),
+		newEntityAnimationSetDirection(SpriteDirection::Left),
 		newEntityAnimationDelay(400),
-		newEntityAnimationSetSpriteDirection(SpriteDirection::Up),
+		newEntityAnimationSetDirection(SpriteDirection::Up),
 		newEntityAnimationDelay(1200),
 		//walk back down to the boot
 		walkDown,
 		setWalkingAnimation,
-		newEntityAnimationSetSpriteDirection(SpriteDirection::Down),
+		newEntityAnimationSetDirection(SpriteDirection::Down),
 		newEntityAnimationDelay(900),
 		walkLeft,
-		newEntityAnimationSetSpriteDirection(SpriteDirection::Left),
+		newEntityAnimationSetDirection(SpriteDirection::Left),
 		newEntityAnimationDelay(400),
 		stopMoving,
 		clearSpriteAnimation,

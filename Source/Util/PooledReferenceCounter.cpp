@@ -98,7 +98,7 @@ template class ObjectPool<EntityAnimation::SetGhostSprite>;
 template class ObjectPool<EntityAnimation::SetPosition>;
 template class ObjectPool<EntityAnimation::SetScreenOverlayColor>;
 template class ObjectPool<EntityAnimation::SetSpriteAnimation>;
-template class ObjectPool<EntityAnimation::SetSpriteDirection>;
+template class ObjectPool<EntityAnimation::SetDirection>;
 template class ObjectPool<EntityAnimation::SetVelocity>;
 template class ObjectPool<EntityAnimation::SwitchToPlayerCamera>;
 template class ObjectPool<LinearInterpolatedValue>;

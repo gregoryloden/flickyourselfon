@@ -5,7 +5,7 @@
 #define newEntityAnimationSetPosition(x, y) produceWithArgs(EntityAnimation::SetPosition, x, y)
 #define newEntityAnimationSetVelocity(vx, vy) produceWithArgs(EntityAnimation::SetVelocity, vx, vy)
 #define newEntityAnimationSetSpriteAnimation(animation) produceWithArgs(EntityAnimation::SetSpriteAnimation, animation)
-#define newEntityAnimationSetSpriteDirection(direction) produceWithArgs(EntityAnimation::SetSpriteDirection, direction)
+#define newEntityAnimationSetDirection(direction) produceWithArgs(EntityAnimation::SetDirection, direction)
 #define newEntityAnimationSetGhostSprite(show, x, y) produceWithArgs(EntityAnimation::SetGhostSprite, show, x, y)
 #define newEntityAnimationSetScreenOverlayColor(r, g, b, a) produceWithArgs(EntityAnimation::SetScreenOverlayColor, r, g, b, a)
 #define newEntityAnimationMapKickSwitch(switchId, allowRadioTowerAnimation) \
@@ -104,17 +104,17 @@ public:
 		//return that the animation should continue updating after setting the sprite animation on the entity state
 		virtual bool handle(EntityState* entityState, int ticksTime);
 	};
-	class SetSpriteDirection: public EntityAnimationTypes::Component {
+	class SetDirection: public EntityAnimationTypes::Component {
 	private:
 		SpriteDirection direction;
 
 	public:
-		SetSpriteDirection(objCounterParameters());
-		virtual ~SetSpriteDirection();
+		SetDirection(objCounterParameters());
+		virtual ~SetDirection();
 
-		//initialize and return a SetSpriteDirection
-		static SetSpriteDirection* produce(objCounterParametersComma() SpriteDirection pDirection);
-		//release a reference to this SetSpriteDirection and return it to the pool if applicable
+		//initialize and return a SetDirection
+		static SetDirection* produce(objCounterParametersComma() SpriteDirection pDirection);
+		//release a reference to this SetDirection and return it to the pool if applicable
 		virtual void release();
 		//return that the animation should continue updating after setting the sprite direction on the entity state
 		virtual bool handle(EntityState* entityState, int ticksTime);

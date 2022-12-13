@@ -34,7 +34,7 @@ public:
 	//begin a sprite animation if applicable
 	virtual void setSpriteAnimation(SpriteAnimation* spriteAnimation, int pAnimationStartTicksTime) {}
 	//set the direction for this state's sprite, if it has one
-	virtual void setSpriteDirection(SpriteDirection pSpriteDirection) {}
+	virtual void setDirection(SpriteDirection pSpriteDirection) {}
 	//set the position of a ghost sprite that this entity state should render
 	virtual void setGhostSprite(bool show, float x, float y, int ticksTime) {}
 	//mark that the player camera should be used as the next camera

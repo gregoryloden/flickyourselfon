@@ -98,6 +98,11 @@ void PlayerState::copyPlayerState(PlayerState* other) {
 	lastControlledY = other->lastControlledY;
 }
 pooledReferenceCounterDefineRelease(PlayerState)
+void PlayerState::setDirection(SpriteDirection pSpriteDirection) {
+	spriteDirection = pSpriteDirection;
+	xDirection = pSpriteDirection == SpriteDirection::Left ? -1 : pSpriteDirection == SpriteDirection::Right ? 1 : 0;
+	yDirection = pSpriteDirection == SpriteDirection::Up ? -1 : pSpriteDirection == SpriteDirection::Down ? 1 : 0;
+}
 void PlayerState::setNextCamera(GameState* nextGameState, int ticksTime) {
 	nextGameState->setPlayerCamera();
 }
@@ -962,7 +967,7 @@ void PlayerState::addRailRideComponents(
 						newCompositeQuarticValue(0.0f, yMoveDistance / bootLiftDuration, 0.0f, 0.0f, 0.0f)),
 					newEntityAnimationDelay(SpriteRegistry::playerKickingAnimationTicksPerFrame),
 					newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerRidingRailAnimation),
-					newEntityAnimationSetSpriteDirection(nextSpriteDirection)
+					newEntityAnimationSetDirection(nextSpriteDirection)
 				});
 			firstMove = false;
 		//straight section
@@ -1004,7 +1009,7 @@ void PlayerState::addRailRideComponents(
 				components->end(),
 				{
 					newEntityAnimationDelay(halfRailToRailTicksDuration),
-					newEntityAnimationSetSpriteDirection(nextSpriteDirection),
+					newEntityAnimationSetDirection(nextSpriteDirection),
 					newEntityAnimationDelay(railToRailTicksDuration - halfRailToRailTicksDuration)
 				});
 		}
