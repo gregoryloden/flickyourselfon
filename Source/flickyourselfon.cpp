@@ -155,7 +155,7 @@ int gameMain(int argc, char* argv[]) {
 		ObjectPool<EntityAnimation::SetPosition>::clearPool();
 		ObjectPool<EntityAnimation::SetGhostSprite>::clearPool();
 		ObjectPool<EntityAnimation::SetSpriteAnimation>::clearPool();
-		ObjectPool<EntityAnimation::SetSpriteDirection>::clearPool();
+		ObjectPool<EntityAnimation::SetDirection>::clearPool();
 		ObjectPool<EntityAnimation::SwitchToPlayerCamera>::clearPool();
 		ObjectPool<EntityAnimation::MapKickSwitch>::clearPool();
 		ObjectPool<EntityAnimation::MapKickResetSwitch>::clearPool();
