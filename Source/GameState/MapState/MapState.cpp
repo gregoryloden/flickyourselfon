@@ -65,10 +65,6 @@ void MapState::RadioWavesState::render(EntityState* camera, int ticksTime) {
 }
 
 //////////////////////////////// MapState ////////////////////////////////
-const char* MapState::floorFileName = "floor.png";
-const float MapState::smallDistance = 1.0f / 256.0f;
-const float MapState::introAnimationCameraCenterX = (float)(MapState::tileSize * introAnimationBootTileX) + 4.5f;
-const float MapState::introAnimationCameraCenterY = (float)(MapState::tileSize * introAnimationBootTileY) - 4.5f;
 const string MapState::railOffsetFilePrefix = "rail ";
 const string MapState::lastActivatedSwitchColorFilePrefix = "lastActivatedSwitchColor ";
 const string MapState::finishedConnectionsTutorialFilePrefix = "finishedConnectionsTutorial ";
@@ -574,15 +570,12 @@ void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int 
 		for (RailState* railState : railStates)
 			railState->getRail()->renderGroups(screenLeftWorldX, screenTopWorldY);
 		if (!finishedConnectionsTutorial && SDL_GetKeyboardState(nullptr)[Config::keyBindings.showConnectionsKey] == 0) {
-			const char* showConnectionsText = "show connections: ";
-			const float leftX = 10.0f;
-			const float baselineY = 20.0f;
 			Text::Metrics showConnectionsMetrics = Text::getMetrics(showConnectionsText, 1.0f);
-			Text::render(showConnectionsText, leftX, baselineY, 1.0f);
+			Text::render(showConnectionsText, showConnectionsTextLeftX, showConnectionsTextBaselineY, 1.0f);
 			Text::renderWithKeyBackground(
 				Config::KeyBindings::getKeyName(Config::keyBindings.showConnectionsKey),
-				leftX + showConnectionsMetrics.charactersWidth,
-				baselineY,
+				showConnectionsTextLeftX + showConnectionsMetrics.charactersWidth,
+				showConnectionsTextBaselineY,
 				1.0f);
 		}
 	}

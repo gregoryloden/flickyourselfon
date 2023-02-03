@@ -1,4 +1,4 @@
-#include "General/General.h"
+#include "Util/Config.h"
 
 #define newRail(x, y, baseHeight, color, initialTileOffset, movementDirection) \
 	newWithArgs(Rail, x, y, baseHeight, color, initialTileOffset, movementDirection)
@@ -93,7 +93,7 @@ public:
 };
 class RailState onlyInDebug(: public ObjCounter) {
 private:
-	static const float tileOffsetPerTick;
+	static constexpr float tileOffsetPerTick = 3.0f / (float)Config::ticksPerSecond;
 
 	Rail* rail;
 	int railIndex;

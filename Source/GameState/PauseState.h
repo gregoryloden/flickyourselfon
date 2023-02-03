@@ -21,8 +21,8 @@ public:
 private:
 	class PauseMenu onlyInDebug(: public ObjCounter) {
 	private:
-		static const float titleFontScale;
-		static const float selectedOptionAngleBracketPadding;
+		static constexpr float titleFontScale = 2.0f;
+		static constexpr float selectedOptionAngleBracketPadding = 4.0f;
 
 		string title;
 		Text::Metrics titleMetrics;
@@ -42,7 +42,7 @@ private:
 		string displayText;
 		Text::Metrics displayTextMetrics;
 	public:
-		static const float displayTextFontScale;
+		static constexpr float displayTextFontScale = 1.0f;
 
 		PauseOption(objCounterParametersComma() string pDisplayText);
 		virtual ~PauseOption();

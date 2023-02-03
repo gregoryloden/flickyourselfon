@@ -1,7 +1,6 @@
 #include "General/General.h"
 
 template <class Type> class CircularStateQueue;
-class GameState;
 
 //Should only be allocated within an object, on the stack, or as a static object
 class Logger {

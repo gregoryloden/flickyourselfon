@@ -1,10 +1,7 @@
-#include "Util/PooledReferenceCounter.h"
+#include "MapState/MapState.h"
 
 #define newGameState() newWithoutArgs(GameState)
 
-class DynamicCameraAnchor;
-class EntityState;
-class MapState;
 class PauseState;
 class PlayerState;
 namespace EntityAnimationTypes {
@@ -55,36 +52,38 @@ private:
 	static const int postSwitchesFadeInAnimationTicks = 1000;
 	static const int switchesToPlayerAnimationTicks = 2000;
 	//switches color activation positions
-	static const float squareSwitchesAnimationCenterWorldX;
-	static const float squareSwitchesAnimationCenterWorldY;
-	static const float triangleSwitchesAnimationCenterWorldX;
-	static const float triangleSwitchesAnimationCenterWorldY;
-	static const float sawSwitchesAnimationCenterWorldX;
-	static const float sawSwitchesAnimationCenterWorldY;
-	static const float sineSwitchesAnimationCenterWorldX;
-	static const float sineSwitchesAnimationCenterWorldY;
+	static constexpr float squareSwitchesAnimationCenterWorldX =
+		280.0f + (float)(MapState::firstLevelTileOffsetX * MapState::tileSize);
+	static constexpr float squareSwitchesAnimationCenterWorldY =
+		80.0f + (float)(MapState::firstLevelTileOffsetY * MapState::tileSize);
+	static constexpr float triangleSwitchesAnimationCenterWorldX = 100.0f; //todo: pick a position
+	static constexpr float triangleSwitchesAnimationCenterWorldY = 100.0f; //todo: pick a position
+	static constexpr float sawSwitchesAnimationCenterWorldX = 100.0f; //todo: pick a position
+	static constexpr float sawSwitchesAnimationCenterWorldY = 100.0f; //todo: pick a position
+	static constexpr float sineSwitchesAnimationCenterWorldX = 100.0f; //todo: pick a position
+	static constexpr float sineSwitchesAnimationCenterWorldY = 100.0f; //todo: pick a position
 	//title screen and intro explanation text
 public:
-	static const char* titleGameName;
+	static constexpr char* titleGameName = "Kick Yourself On";
 private:
-	static const char* titleCreditsLine1;
-	static const char* titleCreditsLine2;
-	static const char* titlePostCreditsMessage;
-	static const char* bootExplanationMessage1;
-	static const char* bootExplanationMessage2;
-	static const char* radioTowerExplanationMessageLine1;
-	static const char* radioTowerExplanationMessageLine2;
-	static const char* radioTowerExplanationMessageLine3;
-	static const char* radioTowerExplanationMessageLine4;
-	static const char* goalExplanationMessageLine1;
-	static const char* goalExplanationMessageLine2;
-	static const char* goalExplanationMessageLine3;
+	static constexpr char* titleCreditsLine1 = "A game by";
+	static constexpr char* titleCreditsLine2 = "Gregory Loden";
+	static constexpr char* titlePostCreditsMessage = "Thanks for playing!";
+	static constexpr char* bootExplanationMessage1 = "You are";
+	static constexpr char* bootExplanationMessage2 = "a boot.";
+	static constexpr char* radioTowerExplanationMessageLine1 = "Your local radio tower";
+	static constexpr char* radioTowerExplanationMessageLine2 = "lost connection";
+	static constexpr char* radioTowerExplanationMessageLine3 = "with its";
+	static constexpr char* radioTowerExplanationMessageLine4 = "master transmitter relay.";
+	static constexpr char* goalExplanationMessageLine1 = "Can you";
+	static constexpr char* goalExplanationMessageLine2 = "guide this person";
+	static constexpr char* goalExplanationMessageLine3 = "to turn it on?";
 	//save file names and values
 	#ifdef DEBUG
-		static const char* replayFileName;
+		static constexpr char* replayFileName = "kyo_replay.log";
 	#endif
 public:
-	static const char* savedGameFileName;
+	static constexpr char* savedGameFileName = "kyo.sav";
 private:
 	static const string sawIntroAnimationFilePrefix;
 

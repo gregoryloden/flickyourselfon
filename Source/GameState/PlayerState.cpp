@@ -25,19 +25,6 @@
 #define newRailSwitchKickAction(type, railSwitchId, railSegmentIndex) \
 	newKickAction(type, -1, -1, MapState::invalidHeight, railSwitchId, railSegmentIndex)
 
-const float PlayerState::playerWidth = 11.0f;
-const float PlayerState::playerHeight = 5.0f;
-const float PlayerState::boundingBoxLeftOffset = PlayerState::playerWidth * -0.5f;
-const float PlayerState::boundingBoxRightOffset = PlayerState::playerWidth * 0.5f;
-const float PlayerState::boundingBoxTopOffset = 4.5f;
-const float PlayerState::boundingBoxBottomOffset = PlayerState::boundingBoxTopOffset + PlayerState::playerHeight;
-const float PlayerState::boundingBoxCenterYOffset =
-	(PlayerState::boundingBoxTopOffset + PlayerState::boundingBoxBottomOffset) * 0.5f;
-const float PlayerState::introAnimationPlayerCenterX = 50.5f + (float)(MapState::firstLevelTileOffsetX * MapState::tileSize);
-const float PlayerState::introAnimationPlayerCenterY = 106.5f + (float)(MapState::firstLevelTileOffsetY * MapState::tileSize);
-const float PlayerState::speedPerSecond = 40.0f;
-const float PlayerState::diagonalSpeedPerSecond = speedPerSecond * sqrt(0.5f);
-const float PlayerState::kickingDistanceLimit = 1.5f;
 const string PlayerState::playerXFilePrefix = "playerX ";
 const string PlayerState::playerYFilePrefix = "playerY ";
 PlayerState::PlayerState(objCounterParameters())
@@ -261,15 +248,15 @@ void PlayerState::collideWithEnvironmentWithPreviousPlayerState(PlayerState* pre
 			renderInterpolatedX = false;
 			setXAndUpdateCollisionRect(
 				x.get()->copyWithConstantValue(prev->xDirection < 0
-					? collidedRect->right + MapState::smallDistance - boundingBoxLeftOffset
-					: collidedRect->left - MapState::smallDistance - boundingBoxRightOffset));
+					? collidedRect->right + smallDistance - boundingBoxLeftOffset
+					: collidedRect->left - smallDistance - boundingBoxRightOffset));
 		//we hit this rect from the top or bottom
 		} else {
 			renderInterpolatedY = false;
 			setYAndUpdateCollisionRect(
 				y.get()->copyWithConstantValue(prev->yDirection < 0
-					? collidedRect->bottom + MapState::smallDistance - boundingBoxTopOffset
-					: collidedRect->top - MapState::smallDistance - boundingBoxBottomOffset));
+					? collidedRect->bottom + smallDistance - boundingBoxTopOffset
+					: collidedRect->top - smallDistance - boundingBoxBottomOffset));
 		}
 		collidedRects.erase(collidedRects.begin() + mostCollidedRectIndex);
 	}
@@ -383,7 +370,7 @@ bool PlayerState::setRailKickAction(float xPosition, float yPosition) {
 	int railMapY = (int)railCheckYPosition / MapState::tileSize;
 	//the player isn't in front of a rail, but if the player is within a half tile of a rail, don't let them fall
 	if (!MapState::tileHasRail(railMapX, railMapY)) {
-		const float halfTileSize = (float)MapState::tileSize * 0.5f;
+		constexpr float halfTileSize = (float)MapState::tileSize * 0.5f;
 		if (spriteDirection == SpriteDirection::Up || spriteDirection == SpriteDirection::Down)
 			return MapState::tileHasRail((int)(railCheckXPosition - halfTileSize) / MapState::tileSize, railMapY)
 				|| MapState::tileHasRail((int)(railCheckXPosition + halfTileSize) / MapState::tileSize, railMapY);
@@ -512,22 +499,22 @@ bool PlayerState::setClimbKickAction(float xPosition, float yPosition) {
 			//set a distance such that the bottom of the player is slightly past the edge of the ledge
 			//bottomMapY adds 1 to account for rounding, but then subtracts 1 because of the wall space that we skip
 			int bottomMapY = (int)(yPosition + boundingBoxTopOffset - kickingDistanceLimit) / MapState::tileSize;
-			targetYPosition = (float)(bottomMapY * MapState::tileSize) - boundingBoxBottomOffset - MapState::smallDistance;
+			targetYPosition = (float)(bottomMapY * MapState::tileSize) - boundingBoxBottomOffset - smallDistance;
 		} else {
 			//set a distance such that the top of the player is slightly past the edge of the ledge
 			int topMapY = (int)(yPosition + boundingBoxBottomOffset + kickingDistanceLimit) / MapState::tileSize;
-			targetYPosition = (float)(topMapY * MapState::tileSize) - boundingBoxTopOffset + MapState::smallDistance;
+			targetYPosition = (float)(topMapY * MapState::tileSize) - boundingBoxTopOffset + smallDistance;
 		}
 	} else {
 		targetYPosition = yPosition - (float)MapState::tileSize;
 		if (spriteDirection == SpriteDirection::Left) {
 			//set a distance such that the right of the player is slightly past the edge of the ledge
 			int rightMapX = (int)(xPosition + boundingBoxLeftOffset - kickingDistanceLimit) / MapState::tileSize + 1;
-			targetXPosition = (float)(rightMapX * MapState::tileSize) - boundingBoxRightOffset - MapState::smallDistance;
+			targetXPosition = (float)(rightMapX * MapState::tileSize) - boundingBoxRightOffset - smallDistance;
 		} else {
 			//set a distance such that the left of the player is slightly past the edge of the ledge
 			int leftMapX = (int)(xPosition + boundingBoxRightOffset + kickingDistanceLimit) / MapState::tileSize;
-			targetXPosition = (float)(leftMapX * MapState::tileSize) - boundingBoxLeftOffset + MapState::smallDistance;
+			targetXPosition = (float)(leftMapX * MapState::tileSize) - boundingBoxLeftOffset + smallDistance;
 		}
 	}
 
@@ -550,7 +537,7 @@ bool PlayerState::setFallKickAction(float xPosition, float yPosition) {
 
 		//move a distance such that the bottom of the player is slightly above the top of the cliff
 		targetXPosition = xPosition;
-		targetYPosition = (float)((oneTileUpMapY + 1) * MapState::tileSize) - boundingBoxBottomOffset - MapState::smallDistance;
+		targetYPosition = (float)((oneTileUpMapY + 1) * MapState::tileSize) - boundingBoxBottomOffset - smallDistance;
 	} else if (spriteDirection == SpriteDirection::Down) {
 		int centerMapX = (int)xPosition / MapState::tileSize;
 		int oneTileDownMapY = (int)(yPosition + boundingBoxBottomOffset + kickingDistanceLimit) / MapState::tileSize;
@@ -569,7 +556,7 @@ bool PlayerState::setFallKickAction(float xPosition, float yPosition) {
 			//	the cliff
 			targetXPosition = xPosition;
 			targetYPosition =
-				(float)((oneTileDownMapY + tileOffset) * MapState::tileSize) - boundingBoxTopOffset + MapState::smallDistance;
+				(float)((oneTileDownMapY + tileOffset) * MapState::tileSize) - boundingBoxTopOffset + smallDistance;
 			break;
 		}
 	} else {
@@ -578,10 +565,10 @@ bool PlayerState::setFallKickAction(float xPosition, float yPosition) {
 		if (spriteDirection == SpriteDirection::Left) {
 			sideTilesEdgeMapX = (int)(xPosition + boundingBoxLeftOffset - kickingDistanceLimit) / MapState::tileSize;
 			targetXPosition =
-				(float)((sideTilesEdgeMapX + 1) * MapState::tileSize) - boundingBoxRightOffset - MapState::smallDistance;
+				(float)((sideTilesEdgeMapX + 1) * MapState::tileSize) - boundingBoxRightOffset - smallDistance;
 		} else {
 			sideTilesEdgeMapX = (int)(xPosition + boundingBoxRightOffset + kickingDistanceLimit) / MapState::tileSize;
-			targetXPosition = (float)(sideTilesEdgeMapX * MapState::tileSize) - boundingBoxLeftOffset + MapState::smallDistance;
+			targetXPosition = (float)(sideTilesEdgeMapX * MapState::tileSize) - boundingBoxLeftOffset + smallDistance;
 		}
 		//start one tile down and look for an eligible floor below our current height
 		for (char tileOffset = 1; true; tileOffset++) {
@@ -647,15 +634,15 @@ bool PlayerState::checkCanMoveToPosition(
 			do {
 				lowMapX++;
 			} while (MapState::verticalTilesHeight(lowMapX, lowMapY, highMapY) != targetHeight);
-			highMapX = lowMapX + (int)(playerWidth + MapState::smallDistance) / MapState::tileSize;
-			*outActualXPosition = lowMapX * MapState::tileSize - boundingBoxLeftOffset + MapState::smallDistance;
+			highMapX = lowMapX + (int)(playerWidth + smallDistance) / MapState::tileSize;
+			*outActualXPosition = lowMapX * MapState::tileSize - boundingBoxLeftOffset + smallDistance;
 		//the left edge is valid which means the right edge isn't valid, move it left
 		} else {
 			do {
 				highMapX--;
 			} while (MapState::verticalTilesHeight(highMapX, lowMapY, highMapY) != targetHeight);
-			lowMapX = highMapX - (int)(playerWidth + MapState::smallDistance) / MapState::tileSize;
-			*outActualXPosition = (highMapX + 1) * MapState::tileSize - boundingBoxRightOffset - MapState::smallDistance;
+			lowMapX = highMapX - (int)(playerWidth + smallDistance) / MapState::tileSize;
+			*outActualXPosition = (highMapX + 1) * MapState::tileSize - boundingBoxRightOffset - smallDistance;
 		}
 	} else {
 		*outActualXPosition = targetXPosition;
@@ -669,15 +656,15 @@ bool PlayerState::checkCanMoveToPosition(
 			do {
 				lowMapY++;
 			} while (MapState::horizontalTilesHeight(lowMapX, highMapX, lowMapY) != targetHeight);
-			highMapY = lowMapY + (int)(playerHeight + MapState::smallDistance) / MapState::tileSize;
-			*outActualYPosition = lowMapY * MapState::tileSize - boundingBoxTopOffset + MapState::smallDistance;
+			highMapY = lowMapY + (int)(playerHeight + smallDistance) / MapState::tileSize;
+			*outActualYPosition = lowMapY * MapState::tileSize - boundingBoxTopOffset + smallDistance;
 		//the top edge is valid which means the bottom edge isn't valid, move it up
 		} else {
 			do {
 				highMapY--;
 			} while (MapState::horizontalTilesHeight(lowMapX, highMapX, highMapY) != targetHeight);
-			lowMapY = highMapY - (int)(playerHeight + MapState::smallDistance) / MapState::tileSize;
-			*outActualYPosition = (highMapY + 1) * MapState::tileSize - boundingBoxBottomOffset - MapState::smallDistance;
+			lowMapY = highMapY - (int)(playerHeight + smallDistance) / MapState::tileSize;
+			*outActualYPosition = (highMapY + 1) * MapState::tileSize - boundingBoxBottomOffset - smallDistance;
 		}
 	}
 
@@ -883,13 +870,13 @@ void PlayerState::kickFall(float xMoveDistance, float yMoveDistance, char fallHe
 		//	-i^3+3ci^2 = j(2-3c-3i+6ci) = 2j-3jc-3ji+6jci
 		//	2j-3ji+i^3 = 3ci^2+3jc-6jci = c(3i^2+3j-6ji)
 		//	c = (2j-3ji+i^3)/(3i^2+3j-6ji)
-		const float midpointX = 2.0f / 3.0f;
-		const float midpointY = 2.0f;
-		const float troughX =
+		constexpr float midpointX = 2.0f / 3.0f;
+		constexpr float midpointY = 2.0f;
+		constexpr float troughX =
 			(2.0f * midpointY - 3.0f * midpointY * midpointX + midpointX * midpointX * midpointX)
 				/ (3.0f * midpointX * midpointX + 3.0f * midpointY - 6.0f * midpointY * midpointX);
-		float yMultiplier =
-			6.0f / (2.0f - 3.0f * troughX - 3.0f * midpointX + 6.0f * troughX * midpointX) * yMoveDistance;
+		constexpr float unitYMultiplier = 6.0f / (2.0f - 3.0f * troughX - 3.0f * midpointX + 6.0f * troughX * midpointX);
+		float yMultiplier = unitYMultiplier * yMoveDistance;
 
 		float yLinearValuePerDuration = yMultiplier * troughX * midpointX;
 		float yQuadraticValuePerDuration = -yMultiplier * (troughX + midpointX) / 2.0f;
@@ -964,9 +951,9 @@ void PlayerState::addRailRideComponents(
 		segmentIndexIncrement = -1;
 	}
 
-	const float bootLiftDuration = (float)SpriteRegistry::playerKickingAnimationTicksPerFrame;
-	const float floatRailToRailTicksDuration = (float)railToRailTicksDuration;
-	const float railToRailTicksDurationSquared = floatRailToRailTicksDuration * floatRailToRailTicksDuration;
+	constexpr float bootLiftDuration = (float)SpriteRegistry::playerKickingAnimationTicksPerFrame;
+	constexpr float floatRailToRailTicksDuration = (float)railToRailTicksDuration;
+	constexpr float railToRailTicksDurationSquared = floatRailToRailTicksDuration * floatRailToRailTicksDuration;
 
 	components->push_back(newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerBootLiftAnimation));
 
@@ -1072,10 +1059,10 @@ void PlayerState::addRailRideComponents(
 	float finalXPosition = nextSegment->tileCenterX();
 	float finalYPosition = nextSegment->tileCenterY() - boundingBoxBottomOffset;
 	if (finalXPosition == targetXPosition + halfTileSize) {
-		finalXPosition += -halfTileSize - boundingBoxLeftOffset + MapState::smallDistance;
+		finalXPosition += -halfTileSize - boundingBoxLeftOffset + smallDistance;
 		finalYPosition += 2.0f;
 	} else if (finalXPosition == targetXPosition - halfTileSize) {
-		finalXPosition += halfTileSize - boundingBoxRightOffset - MapState::smallDistance;
+		finalXPosition += halfTileSize - boundingBoxRightOffset - smallDistance;
 		finalYPosition += 2.0f;
 	} else if (finalYPosition == targetYPosition + halfTileSize) {
 		finalXPosition += 0.5f;

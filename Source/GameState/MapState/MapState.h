@@ -1,3 +1,5 @@
+#ifndef MAP_STATE_H
+#define MAP_STATE_H
 #include "GameState/EntityState.h"
 
 #define newMapState() produceWithoutArgs(MapState)
@@ -62,6 +64,8 @@ public:
 	static const int introAnimationBootTileY = 26 + firstLevelTileOffsetY;
 	static const int switchesFadeInDuration = 1000;
 	static const int switchFlipDuration = 600;
+	static constexpr float introAnimationCameraCenterX = (float)(tileSize * introAnimationBootTileX) + 4.5f;
+	static constexpr float introAnimationCameraCenterY = (float)(tileSize * introAnimationBootTileY) - 4.5f;
 	//tile sections
 	static const char tileFloorFirst = 0;
 	static const char tileFloorLast = 8;
@@ -89,6 +93,7 @@ public:
 	static const char sawColor = 2;
 	static const char sineColor = 3;
 	//rail/switch state serialization
+	static constexpr char* floorFileName = "floor.png";
 	static const short absentRailSwitchId = 0;
 	static const short railSwitchIdBitmask = 3 << 12;
 	static const short railIdValue = 1 << 12;
@@ -115,10 +120,9 @@ public:
 	static const int floorSwitchHeadValue = floorRailSwitchAndHeadValue | floorIsSwitchBitmask;
 	static const int floorResetSwitchHeadValue = floorSwitchHeadValue | floorIsResetSwitchBitmask;
 	//other
-	static const char* floorFileName;
-	static const float smallDistance;
-	static const float introAnimationCameraCenterX;
-	static const float introAnimationCameraCenterY;
+	static constexpr char* showConnectionsText = "show connections: ";
+	static constexpr float showConnectionsTextLeftX = 10.0f;
+	static constexpr float showConnectionsTextBaselineY = 20.0f;
 	static const string railOffsetFilePrefix;
 	static const string lastActivatedSwitchColorFilePrefix;
 	static const string finishedConnectionsTutorialFilePrefix;
@@ -284,3 +288,4 @@ public:
 	//check if we're saving a rail or switch to the floor file, and if so get the data we need at this tile
 	static char editorGetRailSwitchFloorSaveData(int x, int y);
 };
+#endif

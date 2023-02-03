@@ -14,33 +14,6 @@
 #include "Util/Logger.h"
 #include "Util/StringUtils.h"
 
-const float GameState::squareSwitchesAnimationCenterWorldX =
-	280.0f + (float)(MapState::firstLevelTileOffsetX * MapState::tileSize);
-const float GameState::squareSwitchesAnimationCenterWorldY =
-	80.0f + (float)(MapState::firstLevelTileOffsetY * MapState::tileSize);
-const float GameState::triangleSwitchesAnimationCenterWorldX = 100.0f; //todo: pick a position
-const float GameState::triangleSwitchesAnimationCenterWorldY = 100.0f; //todo: pick a position
-const float GameState::sawSwitchesAnimationCenterWorldX = 100.0f; //todo: pick a position
-const float GameState::sawSwitchesAnimationCenterWorldY = 100.0f; //todo: pick a position
-const float GameState::sineSwitchesAnimationCenterWorldX = 100.0f; //todo: pick a position
-const float GameState::sineSwitchesAnimationCenterWorldY = 100.0f; //todo: pick a position
-const char* GameState::titleGameName = "Kick Yourself On";
-const char* GameState::titleCreditsLine1 = "A game by";
-const char* GameState::titleCreditsLine2 = "Gregory Loden";
-const char* GameState::titlePostCreditsMessage = "Thanks for playing!";
-const char* GameState::bootExplanationMessage1 = "You are";
-const char* GameState::bootExplanationMessage2 = "a boot.";
-const char* GameState::radioTowerExplanationMessageLine1 = "Your local radio tower";
-const char* GameState::radioTowerExplanationMessageLine2 = "lost connection";
-const char* GameState::radioTowerExplanationMessageLine3 = "with its";
-const char* GameState::radioTowerExplanationMessageLine4 = "master transmitter relay.";
-const char* GameState::goalExplanationMessageLine1 = "Can you";
-const char* GameState::goalExplanationMessageLine2 = "guide this person";
-const char* GameState::goalExplanationMessageLine3 = "to turn it on?";
-#ifdef DEBUG
-	const char* GameState::replayFileName = "kyo_replay.log";
-#endif
-const char* GameState::savedGameFileName = "kyo.sav";
 const string GameState::sawIntroAnimationFilePrefix = "sawIntroAnimation ";
 GameState::GameState(objCounterParameters())
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)

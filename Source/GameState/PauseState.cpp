@@ -15,8 +15,6 @@
 #define newEndPauseOption(endPauseDecision) newWithArgs(PauseState::EndPauseOption, endPauseDecision)
 
 //////////////////////////////// PauseState::PauseMenu ////////////////////////////////
-const float PauseState::PauseMenu::titleFontScale = 2.0f;
-const float PauseState::PauseMenu::selectedOptionAngleBracketPadding = 4.0f;
 PauseState::PauseMenu::PauseMenu(objCounterParametersComma() string pTitle, vector<PauseOption*> pOptions)
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
 title(pTitle)
@@ -82,7 +80,6 @@ void PauseState::PauseMenu::render(int selectedOption, KeyBindingOption* selecti
 }
 
 //////////////////////////////// PauseState::PauseOption ////////////////////////////////
-const float PauseState::PauseOption::displayTextFontScale = 1.0f;
 PauseState::PauseOption::PauseOption(objCounterParametersComma() string pDisplayText)
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
 displayText(pDisplayText)

@@ -60,8 +60,8 @@ int Rail::extentSegmentSpriteHorizontalIndex(int prevX, int prevY, int x, int y)
 	return middleSegmentSpriteHorizontalIndex(prevX, prevY, x, y, x + (x - prevX), y + (y - prevY));
 }
 void Rail::setSegmentColor(float loweredScale, int railColor) {
-	const float nonColorIntensity = 9.0f / 16.0f;
-	const float sineColorIntensity = 14.0f / 16.0f;
+	constexpr float nonColorIntensity = 9.0f / 16.0f;
+	constexpr float sineColorIntensity = 14.0f / 16.0f;
 	float redColor = sineColorIntensity;
 	float greenColor = sineColorIntensity;
 	float blueColor = sineColorIntensity;
@@ -71,8 +71,8 @@ void Rail::setSegmentColor(float loweredScale, int railColor) {
 		blueColor = railColor == MapState::triangleColor ? 1.0f : nonColorIntensity;
 	}
 	float raisedScale = 1.0f - loweredScale;
-	const float loweredColorIntensity = 0.625f;
-	const float loweredAlphaIntensity = 0.5f;
+	constexpr float loweredColorIntensity = 0.625f;
+	constexpr float loweredAlphaIntensity = 0.5f;
 	glColor4f(
 		redColor * raisedScale + loweredColorIntensity * loweredScale,
 		greenColor * raisedScale + loweredColorIntensity * loweredScale,
@@ -325,7 +325,6 @@ char Rail::editorGetFloorSaveData(int x, int y) {
 }
 
 //////////////////////////////// RailState ////////////////////////////////
-const float RailState::tileOffsetPerTick = 3.0f / (float)Config::ticksPerSecond;
 RailState::RailState(objCounterParametersComma() Rail* pRail, int pRailIndex)
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
 rail(pRail)

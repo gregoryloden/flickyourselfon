@@ -1,13 +1,9 @@
-#include "GameState/EntityState.h"
+#include "MapState/MapState.h"
 
 #define newPlayerState(mapState) produceWithArgs(PlayerState, mapState)
 
 class CollisionRect;
-class EntityAnimation;
 class KickAction;
-class MapState;
-class PositionState;
-class Rail;
 class SpriteAnimation;
 namespace EntityAnimationTypes {
 	class Component;
@@ -15,24 +11,25 @@ namespace EntityAnimationTypes {
 
 class PlayerState: public EntityState {
 private:
+	static constexpr float smallDistance = 1.0f / 256.0f;
 	static const int railToRailTicksDuration = 80;
 	static const int autoKickTriggerDelay = 400;
-	static const float playerWidth;
-	static const float playerHeight;
-	static const float boundingBoxLeftOffset;
-	static const float boundingBoxRightOffset;
-	static const float boundingBoxTopOffset;
-	static const float boundingBoxBottomOffset;
-	static const float boundingBoxCenterYOffset;
+	static constexpr float playerWidth = 11.0f;
+	static constexpr float playerHeight = 5.0f;
+	static constexpr float boundingBoxLeftOffset = playerWidth * -0.5f;
+	static constexpr float boundingBoxRightOffset = playerWidth * 0.5f;
+	static constexpr float boundingBoxCenterYOffset = 7.0f;
+	static constexpr float boundingBoxTopOffset = boundingBoxCenterYOffset - playerHeight * 0.5f;
+	static constexpr float boundingBoxBottomOffset = boundingBoxCenterYOffset + playerHeight * 0.5f;
 public:
-	static const float introAnimationPlayerCenterX;
-	static const float introAnimationPlayerCenterY;
-	static const float speedPerSecond;
-	static const float diagonalSpeedPerSecond;
+	static constexpr float introAnimationPlayerCenterX = 50.5f + (float)(MapState::firstLevelTileOffsetX * MapState::tileSize);
+	static constexpr float introAnimationPlayerCenterY = 106.5f + (float)(MapState::firstLevelTileOffsetY * MapState::tileSize);
+	static constexpr float speedPerSecond = 40.0f;
+	static constexpr float diagonalSpeedPerSecond = speedPerSecond * MathUtils::sqrtConst(0.5f);
 private:
 	//only kick something if you're less than this distance from it
 	//visually, you have to be 1 pixel away or closer
-	static const float kickingDistanceLimit;
+	static constexpr float kickingDistanceLimit = 1.5f;
 	static const string playerXFilePrefix;
 	static const string playerYFilePrefix;
 

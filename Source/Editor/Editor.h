@@ -78,7 +78,7 @@ private:
 	private:
 		static const int buttonMaxLeftRightPadding = 4;
 		static const int buttonTopBottomPadding = 2;
-		static const float buttonFontScale;
+		static constexpr float buttonFontScale = 1.0f;
 
 		string text;
 		Text::Metrics textMetrics;

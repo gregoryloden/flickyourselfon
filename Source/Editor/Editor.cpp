@@ -83,7 +83,6 @@ void Editor::Button::renderHighlightOutline() {
 }
 
 //////////////////////////////// Editor::TextButton ////////////////////////////////
-const float Editor::TextButton::buttonFontScale = 1.0f;
 Editor::TextButton::TextButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY, string pText)
 : Button(objCounterArgumentsComma() zone, zoneLeftX, zoneTopY)
 , text(pText)

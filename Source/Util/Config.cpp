@@ -41,16 +41,7 @@ Config::KickIndicators::KickIndicators()
 Config::KickIndicators::~KickIndicators() {}
 
 //////////////////////////////// Config ////////////////////////////////
-const float Config::defaultPixelWidth = 4.0f;
-const float Config::defaultPixelHeight = 4.0f;
-const float Config::editorDefaultPixelWidth = 3.0f;
-const float Config::editorDefaultPixelHeight = 3.0f;
-//TODO: settle on final background color
-const float Config::backgroundColorRed = 3.0f / 16.0f;
-const float Config::backgroundColorGreen = 0.0f;
-const float Config::backgroundColorBlue = 3.0f / 16.0f;
 const Config::KeyBindings Config::defaultKeyBindings;
-const char* Config::optionsFileName = "kyo.options";
 const string Config::upKeyBindingFilePrefix = "upKey ";
 const string Config::rightKeyBindingFilePrefix = "rightKey ";
 const string Config::downKeyBindingFilePrefix = "downKey ";
