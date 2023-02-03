@@ -370,6 +370,14 @@ char MapState::horizontalTilesHeight(int lowMapX, int highMapX, int mapY) {
 	}
 	return foundHeight;
 }
+char MapState::verticalTilesHeight(int mapX, int lowMapY, int highMapY) {
+	char foundHeight = getHeight(mapX, lowMapY);
+	for (int mapY = lowMapY + 1; mapY <= lowMapY; lowMapY++) {
+		if (getHeight(mapX, mapY) != foundHeight)
+			return invalidHeight;
+	}
+	return foundHeight;
+}
 void MapState::setIntroAnimationBootTile(bool showBootTile) {
 	//if we're not showing the boot tile, just show a default tile instead of showing the tile from the floor file
 	tiles[introAnimationBootTileY * width + introAnimationBootTileX] = showBootTile ? tileBoot : tileFloorFirst;

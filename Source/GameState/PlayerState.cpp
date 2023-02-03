@@ -510,6 +510,7 @@ bool PlayerState::setClimbKickAction(float xPosition, float yPosition) {
 		targetXPosition = xPosition;
 		if (spriteDirection == SpriteDirection::Up) {
 			//set a distance such that the bottom of the player is slightly past the edge of the ledge
+			//bottomMapY adds 1 to account for rounding, but then subtracts 1 because of the wall space that we skip
 			int bottomMapY = (int)(yPosition + boundingBoxTopOffset - kickingDistanceLimit) / MapState::tileSize;
 			targetYPosition = (float)(bottomMapY * MapState::tileSize) - boundingBoxBottomOffset - MapState::smallDistance;
 		} else {
@@ -530,18 +531,11 @@ bool PlayerState::setClimbKickAction(float xPosition, float yPosition) {
 		}
 	}
 
-	//ensure every tile in our target area is the climbing height
-	int lowMapX = (int)(targetXPosition + boundingBoxLeftOffset) / MapState::tileSize;
-	int highMapX = (int)(targetXPosition + boundingBoxRightOffset) / MapState::tileSize;
-	int lowMapY = (int)(targetYPosition + boundingBoxTopOffset) / MapState::tileSize;
-	int highMapY = (int)(targetYPosition + boundingBoxBottomOffset) / MapState::tileSize;
-	for (int mapY = lowMapY; mapY <= highMapY; mapY++) {
-		if (MapState::horizontalTilesHeight(lowMapX, highMapX, mapY) != z + 2)
-			return false;
+	if (checkCanMoveToPosition(targetXPosition, targetYPosition, z + 2, spriteDirection, &targetXPosition, &targetYPosition)) {
+		availableKickAction.set(newClimbFallKickAction(KickActionType::Climb, targetXPosition, targetYPosition, 0));
+		return true;
 	}
-
-	availableKickAction.set(newClimbFallKickAction(KickActionType::Climb, targetXPosition, targetYPosition, 0));
-	return true;
+	return false;
 }
 bool PlayerState::setFallKickAction(float xPosition, float yPosition) {
 	int lowMapX = (int)(xPosition + boundingBoxLeftOffset) / MapState::tileSize;
@@ -633,6 +627,88 @@ bool PlayerState::setFallKickAction(float xPosition, float yPosition) {
 	}
 
 	availableKickAction.set(newClimbFallKickAction(KickActionType::Fall, targetXPosition, targetYPosition, fallHeight));
+	return true;
+}
+bool PlayerState::checkCanMoveToPosition(
+	float targetXPosition,
+	float targetYPosition,
+	char targetHeight,
+	SpriteDirection moveDirection,
+	float* outActualXPosition,
+	float* outActualYPosition)
+{
+	//check if every tile in our target area is the target height
+	int lowMapX = (int)(targetXPosition + boundingBoxLeftOffset) / MapState::tileSize;
+	int lowMapY = (int)(targetYPosition + boundingBoxTopOffset) / MapState::tileSize;
+	int highMapX = (int)(targetXPosition + boundingBoxRightOffset) / MapState::tileSize;
+	int highMapY = (int)(targetYPosition + boundingBoxBottomOffset) / MapState::tileSize;
+	bool canMoveDirect = true;
+	for (int mapY = lowMapY; mapY <= highMapY; mapY++) {
+		if (MapState::horizontalTilesHeight(lowMapX, highMapX, mapY) != targetHeight) {
+			canMoveDirect = false;
+			break;
+		}
+	}
+	//we can move without needing to shift the position at all
+	if (canMoveDirect) {
+		*outActualXPosition = targetXPosition;
+		*outActualYPosition = targetYPosition;
+		return true;
+	}
+
+	//for better usability, we'll also accept a shifted position as long as the target center is valid and there's room nearby
+	//to validate a climbing target, check tiles by using a 1D line matching the horizontal/vertical direction of the move
+	if (moveDirection == SpriteDirection::Up || moveDirection == SpriteDirection::Down) {
+		*outActualYPosition = targetYPosition;
+		//moving verically - check that the vertical line in the center of the target area is valid
+		int centerMapX = (int)targetXPosition / MapState::tileSize;
+		if (MapState::verticalTilesHeight(centerMapX, lowMapY, highMapY) != targetHeight)
+			return false;
+
+		//the left edge isn't valid, move it right
+		if (MapState::verticalTilesHeight(lowMapX, lowMapY, highMapY) != targetHeight) {
+			do {
+				lowMapX++;
+			} while (MapState::verticalTilesHeight(lowMapX, lowMapY, highMapY) != targetHeight);
+			highMapX = lowMapX + (int)(playerWidth + MapState::smallDistance) / MapState::tileSize;
+			*outActualXPosition = lowMapX * MapState::tileSize - boundingBoxLeftOffset + MapState::smallDistance;
+		//the left edge is valid which means the right edge isn't valid, move it left
+		} else {
+			do {
+				highMapX--;
+			} while (MapState::verticalTilesHeight(highMapX, lowMapY, highMapY) != targetHeight);
+			lowMapX = highMapX - (int)(playerWidth + MapState::smallDistance) / MapState::tileSize;
+			*outActualXPosition = (highMapX + 1) * MapState::tileSize - boundingBoxRightOffset - MapState::smallDistance;
+		}
+	} else {
+		*outActualXPosition = targetXPosition;
+		//moving horizontally - check that the horizontal line in the center of the target area is valid
+		int centerMapY = (int)(targetYPosition + boundingBoxCenterYOffset) / MapState::tileSize;
+		if (MapState::horizontalTilesHeight(lowMapX, highMapX, centerMapY) != targetHeight)
+			return false;
+
+		//the top edge isn't valid, move it down
+		if (MapState::horizontalTilesHeight(lowMapX, highMapX, lowMapY) != targetHeight) {
+			do {
+				lowMapY++;
+			} while (MapState::horizontalTilesHeight(lowMapX, highMapX, lowMapY) != targetHeight);
+			highMapY = lowMapY + (int)(playerHeight + MapState::smallDistance) / MapState::tileSize;
+			*outActualYPosition = lowMapY * MapState::tileSize - boundingBoxTopOffset + MapState::smallDistance;
+		//the top edge is valid which means the bottom edge isn't valid, move it up
+		} else {
+			do {
+				highMapY--;
+			} while (MapState::horizontalTilesHeight(lowMapX, highMapX, highMapY) != targetHeight);
+			lowMapY = highMapY - (int)(playerHeight + MapState::smallDistance) / MapState::tileSize;
+			*outActualYPosition = (highMapY + 1) * MapState::tileSize - boundingBoxBottomOffset - MapState::smallDistance;
+		}
+	}
+
+	//now check that the shifted position is valid
+	for (int mapY = lowMapY; mapY <= highMapY; mapY++) {
+		if (MapState::horizontalTilesHeight(lowMapX, highMapX, mapY) != targetHeight)
+			return false;
+	}
 	return true;
 }
 void PlayerState::tryAutoKick(PlayerState* prev, int ticksTime) {

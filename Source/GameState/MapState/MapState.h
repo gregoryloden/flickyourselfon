@@ -220,6 +220,9 @@ public:
 	//check the height of all the tiles in the row (indices inclusive), and return it if they're all the same or invalidHeight
 	//	if any differ
 	static char horizontalTilesHeight(int lowMapX, int highMapX, int mapY);
+	//check the height of all the tiles in the column (indices inclusive), and return it if they're all the same or
+	//	invalidHeight if any differ
+	static char verticalTilesHeight(int mapX, int lowMapY, int highMapY);
 	//change one of the tiles to be the boot tile
 	static void setIntroAnimationBootTile(bool showBootTile);
 	//update the rails and switches of the MapState by reading from the previous state

@@ -126,6 +126,17 @@ private:
 	//set a fall kick action if we can fall
 	//returns whether it was set
 	bool setFallKickAction(float xPosition, float yPosition);
+	//check if the player is able to move to the target position at the target height, or near it
+	//if the center is valid but the edges are not, we can move the target position perpendicular to the given movement
+	//	direction
+	//returns whether we can move to outActualXPosition and outActualYPosition
+	static bool checkCanMoveToPosition(
+		float targetXPosition,
+		float targetYPosition,
+		char targetHeight,
+		SpriteDirection moveDirection,
+		float* outActualXPosition,
+		float* outActualYPosition);
 	//auto-climb, auto-fall, or auto-ride-rail if we can
 	void tryAutoKick(PlayerState* prev, int ticksTime);
 public:
