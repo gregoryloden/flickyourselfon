@@ -186,8 +186,6 @@ public:
 	void setInitialZ();
 	//reset any state on the player that shouldn't exist for the intro animation
 	void reset();
-	#ifdef DEBUG
-		//move the player as high as possible so that all rails render under
-		void setHighestZ();
-	#endif
+	//move the player as high as possible so that all rails render under
+	void setHighestZ();
 };

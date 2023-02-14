@@ -1196,8 +1196,6 @@ void PlayerState::reset() {
 	autoKickStartTicksTime = -1;
 	canImmediatelyAutoKick = false;
 }
-#ifdef DEBUG
-	void PlayerState::setHighestZ() {
-		z = MapState::highestFloorHeight;
-	}
-#endif
+void PlayerState::setHighestZ() {
+	z = MapState::highestFloorHeight;
+}
