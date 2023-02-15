@@ -51,7 +51,9 @@ public:
 	//render the reset switch body and its segments
 	void render(int screenLeftWorldX, int screenTopWorldY, bool isOn, bool showGroups);
 	//remove a segment from this reset switch if it matches the end segment of one of the branches
-	bool editorRemoveSegment(int x, int y, char color, char group);
+	bool editorRemoveEndSegment(int x, int y, char color, char group);
+	//remove any segment matching the given color and group after the corresponding switch was deleted
+	void editorRemoveSwitchSegment(char color, char group);
 	//add a segment to this reset switch if it's new and the space is valid
 	bool editorAddSegment(int x, int y, char color, char group);
 	//we're saving this switch to the floor file, get the data we need at this tile

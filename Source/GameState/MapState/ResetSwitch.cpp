@@ -110,7 +110,7 @@ void ResetSwitch::render(int screenLeftWorldX, int screenTopWorldY, bool isOn, b
 		segment.render(screenLeftWorldX, screenTopWorldY, showGroups);
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 }
-bool ResetSwitch::editorRemoveSegment(int x, int y, char color, char group) {
+bool ResetSwitch::editorRemoveEndSegment(int x, int y, char color, char group) {
 	vector<Segment>* allSegments[3] { &leftSegments, &bottomSegments, &rightSegments };
 	for (vector<Segment>* segments : allSegments) {
 		if (segments->empty())
@@ -122,6 +122,35 @@ bool ResetSwitch::editorRemoveSegment(int x, int y, char color, char group) {
 		}
 	}
 	return false;
+}
+void ResetSwitch::editorRemoveSwitchSegment(char color, char group) {
+	if (group == 0)
+		return;
+	vector<Segment>* allSegments[3]{ &leftSegments, &bottomSegments, &rightSegments };
+	for (vector<Segment>* segments : allSegments) {
+		if (segments->empty())
+			continue;
+		for (int i = 1; i < (int)segments->size(); i++) {
+			Segment& segment = (*segments)[i];
+			if (segment.color != color || segment.group != group)
+				continue;
+			//we found a matching color + group, mark it for removal
+			int removeCount = 1;
+			i++;
+			//if this is the only segment of the color, mark group 0 for removal too
+			if ((*segments)[i - 2].group == 0 && (i == segments->size() || (*segments)[i].color != color))
+				removeCount++;
+			//shift the colors and groups back to preserve the positions + sprite indices
+			for (; i < (int)segments->size(); i++) {
+				Segment& deleteSegment = (*segments)[i - removeCount];
+				Segment& remainingSegment = (*segments)[i];
+				deleteSegment.color = remainingSegment.color;
+				deleteSegment.group = remainingSegment.group;
+			}
+			segments->erase(segments->end() - removeCount, segments->end());
+			return;
+		}
+	}
 }
 bool ResetSwitch::editorAddSegment(int x, int y, char color, char group) {
 	//make sure this color/group combination doesn't already exist, except for group 0

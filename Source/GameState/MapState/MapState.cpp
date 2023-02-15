@@ -810,11 +810,14 @@ void MapState::editorSetSwitch(int leftX, int topY, char color, char group) {
 			}
 		}
 		matchedSwitch->editorMoveTo(leftX, topY);
-	//we're deleting a switch, remove this group from any matching rails
+	//we're deleting a switch, remove this group from any matching rails and reset switches
 	} else if (newSwitchId == 0) {
 		for (Rail* rail : rails) {
 			if (rail->getColor() == color)
 				rail->editorRemoveGroup(group);
+		}
+		for (ResetSwitch* resetSwitch : resetSwitches) {
+			resetSwitch->editorRemoveSwitchSegment(color, group);
 		}
 	//we're setting a new switch
 	} else {
@@ -845,10 +848,22 @@ void MapState::editorSetRail(int x, int y, char color, char group) {
 		return;
 	//delete a segment from a reset switch
 	} else if (tileHasResetSwitch(x, y)) {
-		if (resetSwitches[getRailSwitchId(x, y) & railSwitchIndexBitmask]->editorRemoveSegment(x, y, color, group))
+		if (resetSwitches[getRailSwitchId(x, y) & railSwitchIndexBitmask]->editorRemoveEndSegment(x, y, color, group))
 			editorSetRailSwitchId(x, y, 0);
 		return;
 	}
+
+	//if there is no switch that matches this rail segment, don't do anything
+	//even group 0 needs a switch, but we expect that switch to already exist
+	bool foundMatchingSwitch = false;
+	for (Switch* switch0 : switches) {
+		if (switch0->getGroup() == group && switch0->getColor() == color && !switch0->editorIsDeleted) {
+			foundMatchingSwitch = true;
+			break;
+		}
+	}
+	if (!foundMatchingSwitch)
+		return;
 
 	//make sure that there is at most 1 rail/reset switch in range of this rail
 	short editingRailSwitchId = absentRailSwitchId;
@@ -882,18 +897,6 @@ void MapState::editorSetRail(int x, int y, char color, char group) {
 			editorSetRailSwitchId(x, y, editingRailSwitchId);
 	//add to a rail or create a new rail
 	} else {
-		//if there is no switch that matches this rail segment, don't do anything
-		//even group 0 needs a switch, but we expect that switch to already exist
-		bool foundMatchingSwitch = false;
-		for (Switch* switch0 : switches) {
-			if (switch0->getGroup() == group && switch0->getColor() == color && !switch0->editorIsDeleted) {
-				foundMatchingSwitch = true;
-				break;
-			}
-		}
-		if (!foundMatchingSwitch)
-			return;
-
 		//add to a rail
 		if (editingRail != nullptr) {
 			if (editingRail->editorAddSegment(x, y, color, group, getHeight(x, y)))
@@ -901,7 +904,9 @@ void MapState::editorSetRail(int x, int y, char color, char group) {
 		//create a new rail
 		} else {
 			editorSetRailSwitchId(x, y, (short)rails.size() | railIdValue);
-			rails.push_back(newRail(x, y, getHeight(x, y), color, 0, 1));
+			editingRail = newRail(x, y, getHeight(x, y), color, 0, 1);
+			editingRail->addGroup(group);
+			rails.push_back(editingRail);
 		}
 	}
 }
