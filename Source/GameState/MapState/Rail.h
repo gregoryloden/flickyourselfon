@@ -51,6 +51,7 @@ public:
 	vector<char>& getGroups() { return groups; }
 	char getInitialTileOffset() { return initialTileOffset; }
 	char getMaxTileOffset() { return maxTileOffset; }
+	char getMovementDirection() { return movementDirection; }
 	int getSegmentCount() { return (int)(segments->size()); }
 	Segment* getSegment(int i) { return &(*segments)[i]; }
 	//get the sprite index based on which direction the center of this end segment extends towards the rest of the rail
@@ -101,6 +102,7 @@ private:
 	int railIndex;
 	float tileOffset;
 	float targetTileOffset;
+	float currentMovementDirection;
 	int lastUpdateTicksTime;
 
 public:
@@ -116,12 +118,14 @@ public:
 	bool isAbovePlayerZ(char z) { return getEffectiveHeight() > (float)z + 1.5f; }
 	//check if we need to start/stop moving
 	void updateWithPreviousRailState(RailState* prev, int ticksTime);
-	//swap the tile offset between 0 and the max tile offset
-	void squareToggleOffset();
+	//the switch connected to this rail was kicked, move this rail accordingly
+	void triggerMovement();
 	//reset the tile offset to 0 so that the rail moves back to its default position
 	void moveToDefaultTileOffset();
-	//render the rail, possibly with groups
+	//render the rail
 	void render(int screenLeftWorldX, int screenTopWorld);
+	//render the movement direction over the ends of the rail
+	void renderMovementDirections(int screenLeftWorldX, int screenTopWorldY);
 	//set this rail to the initial tile offset, not moving
 	void loadState(float pTileOffset);
 	//reset the offset

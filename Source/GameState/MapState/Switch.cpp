@@ -94,13 +94,8 @@ void SwitchState::addConnectedRailState(RailState* railState) {
 	connectedRailStates.push_back(railState);
 }
 void SwitchState::flip(int flipOffTicksTime) {
-	char color = switch0->getColor();
-	//square wave switch: just toggle the target tile offset of the rails
-	if (color == MapState::squareColor) {
-		for (RailState* railState : connectedRailStates) {
-			railState->squareToggleOffset();
-		}
-	}
+	for (RailState* railState : connectedRailStates)
+		railState->triggerMovement();
 	flipOnTicksTime = flipOffTicksTime + MapState::switchFlipDuration;
 }
 void SwitchState::updateWithPreviousSwitchState(SwitchState* prev) {
