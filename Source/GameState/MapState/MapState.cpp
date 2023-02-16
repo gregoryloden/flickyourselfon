@@ -97,14 +97,18 @@ MapState::MapState(objCounterParameters())
 		resetSwitchStates.push_back(newResetSwitchState(resetSwitch));
 
 	//add all the rail states to their appropriate switch states
-	vector<SwitchState*> switchStatesByGroup;
+	vector<SwitchState*> switchStatesByGroupByColor[4];
 	for (SwitchState* switchState : switchStates) {
-		int group = (int)switchState->getSwitch()->getGroup();
+		Switch* switch0 = switchState->getSwitch();
+		vector<SwitchState*>& switchStatesByGroup = switchStatesByGroupByColor[switch0->getColor()];
+		int group = (int)switch0->getGroup();
 		while ((int)switchStatesByGroup.size() <= group)
 			switchStatesByGroup.push_back(nullptr);
 		switchStatesByGroup[group] = switchState;
 	}
 	for (RailState* railState : railStates) {
+		Rail* rail = railState->getRail();
+		vector<SwitchState*>& switchStatesByGroup = switchStatesByGroupByColor[rail->getColor()];
 		for (char group : railState->getRail()->getGroups())
 			switchStatesByGroup[group]->addConnectedRailState(railState);
 	}
