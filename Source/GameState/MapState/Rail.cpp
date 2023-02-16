@@ -175,10 +175,41 @@ void Rail::renderGroups(int screenLeftWorldX, int screenTopWorldY) {
 	if (Editor::isActive && editorIsDeleted)
 		return;
 
-	int lastSegmentIndex = (int)segments->size() - 1;
-	bool hasGroups = groups.size() > 0;
+	//render movement direction over the end rails for colors that use it
+	if (color >= 1) {
+		const GLfloat movementDirectionColor = 0.75f;
+		Segment& start = segments->front();
+		GLint startLeftX = (GLint)(start.x * MapState::tileSize - screenLeftWorldX);
+		GLint startTopY = (GLint)(start.y * MapState::tileSize - screenTopWorldY);
+		Segment& end = segments->back();
+		GLint endLeftX = (GLint)(end.x * MapState::tileSize - screenLeftWorldX);
+		GLint endTopY = (GLint)(end.y * MapState::tileSize - screenTopWorldY);
+		for (GLint i = 0; i < 3; i++) {
+			GLint yOffset = MapState::tileSize / 2 + (movementDirection < 0 ? -1 - i : i);
+			SpriteSheet::renderFilledRectangle(
+				movementDirectionColor,
+				movementDirectionColor,
+				movementDirectionColor,
+				1.0f,
+				startLeftX + i,
+				startTopY + yOffset,
+				startLeftX + MapState::tileSize - i,
+				startTopY + yOffset + 1);
+			SpriteSheet::renderFilledRectangle(
+				movementDirectionColor,
+				movementDirectionColor,
+				movementDirectionColor,
+				1.0f,
+				endLeftX + i,
+				endTopY + yOffset,
+				endLeftX + MapState::tileSize - i,
+				endTopY + yOffset + 1);
+		}
+	}
 
-	for (int i = 0; i <= lastSegmentIndex; i++) {
+	//render groups
+	bool hasGroups = groups.size() > 0;
+	for (int i = 0; i < (int)segments->size(); i++) {
 		Segment& segment = (*segments)[i];
 		GLint drawLeftX = (GLint)(segment.x * MapState::tileSize - screenLeftWorldX);
 		GLint drawTopY = (GLint)(segment.y * MapState::tileSize - screenTopWorldY);
@@ -300,6 +331,9 @@ bool Rail::editorAddSegment(int x, int y, char pColor, char group, char tileHeig
 	addSegment(x, y);
 	return true;
 }
+void Rail::editorToggleMovementDirection() {
+	movementDirection = -movementDirection;
+}
 void Rail::editorAdjustInitialTileOffset(int x, int y, char tileOffset) {
 	Segment& start = segments->front();
 	Segment& end = segments->back();
@@ -315,10 +349,10 @@ char Rail::editorGetFloorSaveData(int x, int y) {
 	Segment& second = (*segments)[1];
 	if (x == second.x && y == second.y)
 		return (((movementDirection + 1) / 2) << MapState::floorRailByte2DataShift) | MapState::floorIsRailSwitchBitmask;
-	for (int i = 0; i < (int)groups.size() && i + 2 < (int)segments->size(); i++) {
-		Segment& segment = (*segments)[i + 2];
+	for (int i = 2; i < (int)segments->size() && i - 2 < (int)groups.size(); i++) {
+		Segment& segment = (*segments)[i];
 		if (segment.x == x && segment.y == y)
-			return groups[i] << MapState::floorRailSwitchGroupDataShift | MapState::floorIsRailSwitchBitmask;
+			return groups[i - 2] << MapState::floorRailSwitchGroupDataShift | MapState::floorIsRailSwitchBitmask;
 	}
 	//no data but still part of this rail
 	return MapState::floorRailSwitchTailValue;

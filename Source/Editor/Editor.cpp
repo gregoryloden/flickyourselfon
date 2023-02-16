@@ -1,7 +1,5 @@
 #include "Editor.h"
-#include "GameState/EntityState.h"
 #include "GameState/GameState.h"
-#include "GameState/MapState/MapState.h"
 #include "Sprites/SpriteRegistry.h"
 #include "Sprites/SpriteSheet.h"
 #include "Util/Config.h"
@@ -24,6 +22,8 @@
 #define newRailButton(zone, leftX, topY, color) newWithArgs(Editor::RailButton, zone, leftX, topY, color)
 #define newRailTileOffsetButton(zone, leftX, topY, tileOffset) \
 	newWithArgs(Editor::RailTileOffsetButton, zone, leftX, topY, tileOffset)
+#define newRailToggleMovementDirectionButton(zone, leftX, topY) \
+	newWithArgs(Editor::RailToggleMovementDirectionButton, zone, leftX, topY)
 #define newResetSwitchButton(zone, leftX, topY) newWithArgs(Editor::ResetSwitchButton, zone, leftX, topY)
 #define newRailSwitchGroupButton(zone, leftX, topY, railSwitchGroup) \
 	newWithArgs(Editor::RailSwitchGroupButton, zone, leftX, topY, railSwitchGroup)
@@ -168,7 +168,6 @@ void Editor::SaveButton::onClick() {
 }
 
 //////////////////////////////// Editor::ExportMapButton ////////////////////////////////
-const char* Editor::ExportMapButton::mapFileName = "images/map.png";
 Editor::ExportMapButton::ExportMapButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY)
 : TextButton(objCounterArgumentsComma() zone, zoneLeftX, zoneTopY, "Export Map") {
 }
@@ -221,7 +220,6 @@ void Editor::ExportMapButton::onClick() {
 }
 
 //////////////////////////////// Editor::TileButton ////////////////////////////////
-const int Editor::TileButton::buttonSize = MapState::tileSize + 2;
 Editor::TileButton::TileButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY, char pTile)
 : Button(objCounterArgumentsComma() zone, zoneLeftX, zoneTopY)
 , tile(pTile) {
@@ -243,8 +241,6 @@ void Editor::TileButton::paintMap(int x, int y) {
 }
 
 //////////////////////////////// Editor::HeightButton ////////////////////////////////
-const int Editor::HeightButton::buttonWidth = MapState::tileSize + 2;
-const int Editor::HeightButton::buttonHeight = 10;
 Editor::HeightButton::HeightButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY, char pHeight)
 : Button(objCounterArgumentsComma() zone, zoneLeftX, zoneTopY)
 , height(pHeight) {
@@ -270,7 +266,6 @@ void Editor::HeightButton::paintMap(int x, int y) {
 }
 
 //////////////////////////////// Editor::PaintBoxRadiusButton ////////////////////////////////
-const int Editor::PaintBoxRadiusButton::buttonSize = paintBoxMaxRadius + 2;
 const Editor::RGB Editor::PaintBoxRadiusButton::boxRGB (9.0f / 16.0f, 3.0f / 8.0f, 5.0f / 8.0f);
 Editor::PaintBoxRadiusButton::PaintBoxRadiusButton(
 	objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY, char pRadius, bool pIsXRadius)
@@ -300,7 +295,6 @@ void Editor::PaintBoxRadiusButton::onClick() {
 }
 
 //////////////////////////////// Editor::EvenPaintBoxRadiusButton ////////////////////////////////
-const int Editor::EvenPaintBoxRadiusButton::buttonSize = paintBoxMaxRadius + 2;
 const Editor::RGB Editor::EvenPaintBoxRadiusButton::boxRGB (0.5f, 0.5f, 0.5f);
 const Editor::RGB Editor::EvenPaintBoxRadiusButton::lineRGB (0.75f, 0.75f, 0.75f);
 Editor::EvenPaintBoxRadiusButton::EvenPaintBoxRadiusButton(
@@ -342,8 +336,6 @@ void Editor::NoiseButton::paintMap(int x, int y) {
 }
 
 //////////////////////////////// Editor::NoiseTileButton ////////////////////////////////
-const int Editor::NoiseTileButton::buttonWidth = MapState::tileSize + 2;
-const int Editor::NoiseTileButton::buttonHeight = MapState::tileSize + 4;
 Editor::NoiseTileButton::NoiseTileButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY)
 : Button(objCounterArgumentsComma() zone, zoneLeftX, zoneTopY)
 , tile(-1)
@@ -372,8 +364,6 @@ void Editor::NoiseTileButton::onClick() {
 }
 
 //////////////////////////////// Editor::RaiseLowerTileButton ////////////////////////////////
-const int Editor::RaiseLowerTileButton::buttonWidth = 13;
-const int Editor::RaiseLowerTileButton::buttonHeight = 10;
 Editor::RaiseLowerTileButton::RaiseLowerTileButton(
 	objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY, bool pIsRaiseTileButton)
 : Button(objCounterArgumentsComma() zone, zoneLeftX, zoneTopY)
@@ -475,8 +465,6 @@ void Editor::RaiseLowerTileButton::setAppropriateDefaultFloorTile(int x, int y, 
 
 //////////////////////////////// Editor::ShuffleTileButton ////////////////////////////////
 const Editor::RGB Editor::ShuffleTileButton::arrowRGB (0.75f, 0.75f, 0.75f);
-const int Editor::ShuffleTileButton::buttonWidth = 14;
-const int Editor::ShuffleTileButton::buttonHeight = 11;
 Editor::ShuffleTileButton::ShuffleTileButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY)
 : Button(objCounterArgumentsComma() zone, zoneLeftX, zoneTopY) {
 	setWidthAndHeight(buttonWidth, buttonHeight);
@@ -533,7 +521,6 @@ bool Editor::ShuffleTileButton::shuffleTile(int x, int y) {
 }
 
 //////////////////////////////// Editor::SwitchButton ////////////////////////////////
-const int Editor::SwitchButton::buttonSize = MapState::switchSize + 2;
 Editor::SwitchButton::SwitchButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY, char pColor)
 : Button(objCounterArgumentsComma() zone, zoneLeftX, zoneTopY)
 , color(pColor) {
@@ -555,7 +542,6 @@ void Editor::SwitchButton::paintMap(int x, int y) {
 }
 
 //////////////////////////////// Editor::RailButton ////////////////////////////////
-const int Editor::RailButton::buttonSize = MapState::tileSize + 2;
 Editor::RailButton::RailButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY, char pColor)
 : Button(objCounterArgumentsComma() zone, zoneLeftX, zoneTopY)
 , color(pColor) {
@@ -584,9 +570,27 @@ void Editor::RailButton::paintMap(int x, int y) {
 		MapState::editorSetRail(x, y, color, selectedRailSwitchGroupButton->getRailSwitchGroup());
 }
 
+//////////////////////////////// Editor::RailToggleMovementDirectionButton ////////////////////////////////
+const Editor::RGB Editor::RailToggleMovementDirectionButton::arrowRGB (0.75f, 0.75f, 0.75f);
+Editor::RailToggleMovementDirectionButton::RailToggleMovementDirectionButton(
+	objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY)
+: Button(objCounterArgumentsComma() zone, zoneLeftX, zoneTopY) {
+	setWidthAndHeight(buttonSize, buttonSize);
+}
+Editor::RailToggleMovementDirectionButton::~RailToggleMovementDirectionButton() {}
+void Editor::RailToggleMovementDirectionButton::renderOverButton() {
+	renderRGBRect(blackRGB, 1.0f, leftX + 1, topY + 1, rightX - 1, bottomY - 1);
+	renderRGBRect(arrowRGB, 1.0f, leftX + 3, topY + 1, rightX - 3, topY + 2);
+	renderRGBRect(arrowRGB, 1.0f, leftX + 2, topY + 2, rightX - 2, topY + 3);
+	renderRGBRect(arrowRGB, 1.0f, leftX + 2, bottomY - 3, rightX - 2, bottomY - 2);
+	renderRGBRect(arrowRGB, 1.0f, leftX + 3, bottomY - 2, rightX - 3, bottomY - 1);
+}
+void Editor::RailToggleMovementDirectionButton::paintMap(int x, int y) {
+	MapState::editorToggleRailMovementDirection(x, y);
+}
+
 //////////////////////////////// Editor::RailTileOffsetButton ////////////////////////////////
 const Editor::RGB Editor::RailTileOffsetButton::arrowRGB (0.75f, 0.75f, 0.75f);
-const int Editor::RailTileOffsetButton::buttonSize = MapState::tileSize + 2;
 Editor::RailTileOffsetButton::RailTileOffsetButton(
 	objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY, char pTileOffset)
 : Button(objCounterArgumentsComma() zone, zoneLeftX, zoneTopY)
@@ -612,8 +616,6 @@ void Editor::RailTileOffsetButton::paintMap(int x, int y) {
 }
 
 //////////////////////////////// Editor::ResetSwitchButton ////////////////////////////////
-const int Editor::ResetSwitchButton::buttonWidth = MapState::tileSize + 2;
-const int Editor::ResetSwitchButton::buttonHeight = MapState::tileSize * 2 + 2;
 Editor::ResetSwitchButton::ResetSwitchButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY)
 : Button(objCounterArgumentsComma() zone, zoneLeftX, zoneTopY) {
 	setWidthAndHeight(buttonWidth, buttonHeight);
@@ -701,14 +703,14 @@ void Editor::loadButtons() {
 	for (char i = 0; i < (char)MapState::heightCount; i++)
 		buttons.push_back(
 			newHeightButton(Zone::Right, 5 + HeightButton::buttonWidth * i / 2, 58 + HeightButton::buttonHeight * (i % 2), i));
-	for (char i = 0; i < (char)paintBoxMaxRadius; i++) {
+	for (char i = 0; i < (char)PaintBoxRadiusButton::maxRadius; i++) {
 		PaintBoxRadiusButton* button =
 			newPaintBoxRadiusButton(Zone::Right, 5 + PaintBoxRadiusButton::buttonSize * i, 81, i, true);
 		if (i == 0)
 			selectedPaintBoxXRadiusButton = button;
 		buttons.push_back(button);
 	}
-	for (char i = 0; i < (char)paintBoxMaxRadius; i++) {
+	for (char i = 0; i < (char)PaintBoxRadiusButton::maxRadius; i++) {
 		PaintBoxRadiusButton* button =
 			newPaintBoxRadiusButton(Zone::Right, 5 + PaintBoxRadiusButton::buttonSize * i, 91, i, false);
 		if (i == 0)
@@ -736,6 +738,7 @@ void Editor::loadButtons() {
 		buttons.push_back(newSwitchButton(Zone::Right, 5 + SwitchButton::buttonSize * i, 108, i));
 	for (char i = 0; i < 4; i++)
 		buttons.push_back(newRailButton(Zone::Right, 64 + RailButton::buttonSize * i, 114, i));
+	buttons.push_back(newRailToggleMovementDirectionButton(Zone::Right, 107, 103));
 	for (char i = -1; i <= 1; i += 2)
 		buttons.push_back(newRailTileOffsetButton(Zone::Right, 103 + RailTileOffsetButton::buttonSize * i / 2, 114, i));
 	buttons.push_back(newResetSwitchButton(Zone::Right, 118, 108));

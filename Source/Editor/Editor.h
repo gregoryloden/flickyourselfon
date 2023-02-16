@@ -1,4 +1,4 @@
-#include "General/General.h"
+#include "GameState/MapState/MapState.h"
 #include <mutex>
 #include <random>
 #include "Sprites/Text.h"
@@ -106,7 +106,7 @@ private:
 	};
 	class ExportMapButton: public TextButton {
 	private:
-		static const char* mapFileName;
+		static constexpr char* mapFileName = "images/map.png";
 
 	public:
 		ExportMapButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY);
@@ -119,7 +119,7 @@ private:
 	};
 	class TileButton: public Button {
 	public:
-		static const int buttonSize;
+		static const int buttonSize = MapState::tileSize + 2;
 
 	private:
 		char tile;
@@ -138,8 +138,8 @@ private:
 	};
 	class HeightButton: public Button {
 	public:
-		static const int buttonWidth;
-		static const int buttonHeight;
+		static const int buttonWidth = MapState::tileSize + 2;
+		static const int buttonHeight = 10;
 
 	private:
 		char height;
@@ -158,7 +158,8 @@ private:
 	};
 	class PaintBoxRadiusButton: public Button {
 	public:
-		static const int buttonSize;
+		static const int maxRadius = 7;
+		static const int buttonSize = maxRadius + 2;
 	private:
 		static const RGB boxRGB;
 
@@ -177,7 +178,7 @@ private:
 	};
 	class EvenPaintBoxRadiusButton: public Button {
 	public:
-		static const int buttonSize;
+		static const int buttonSize = PaintBoxRadiusButton::maxRadius + 2;
 	private:
 		static const RGB boxRGB;
 		static const RGB lineRGB;
@@ -204,8 +205,8 @@ private:
 	};
 	class NoiseTileButton: public Button {
 	public:
-		static const int buttonWidth;
-		static const int buttonHeight;
+		static const int buttonWidth = MapState::tileSize + 2;
+		static const int buttonHeight = MapState::tileSize + 4;
 
 		char tile;
 		int count;
@@ -220,8 +221,8 @@ private:
 	};
 	class RaiseLowerTileButton: public Button {
 	public:
-		static const int buttonWidth;
-		static const int buttonHeight;
+		static const int buttonWidth = 13;
+		static const int buttonHeight = 10;
 
 	private:
 		bool isRaiseTileButton;
@@ -242,9 +243,9 @@ private:
 	};
 	class ShuffleTileButton: public Button {
 	public:
+		static const int buttonWidth = 14;
+		static const int buttonHeight = 11;
 		static const RGB arrowRGB;
-		static const int buttonWidth;
-		static const int buttonHeight;
 
 		ShuffleTileButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY);
 		virtual ~ShuffleTileButton();
@@ -259,7 +260,7 @@ private:
 	};
 	class SwitchButton: public Button {
 	public:
-		static const int buttonSize;
+		static const int buttonSize = MapState::switchSize + 2;
 
 	private:
 		char color;
@@ -277,7 +278,7 @@ private:
 	};
 	class RailButton: public Button {
 	public:
-		static const int buttonSize;
+		static const int buttonSize = MapState::tileSize + 2;
 
 	private:
 		char color;
@@ -293,10 +294,24 @@ private:
 		//set a rail at this position
 		virtual void paintMap(int x, int y);
 	};
+	class RailToggleMovementDirectionButton : public Button {
+	public:
+		static const int buttonSize = MapState::tileSize + 2;
+		static const RGB arrowRGB;
+
+	public:
+		RailToggleMovementDirectionButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY);
+		virtual ~RailToggleMovementDirectionButton();
+
+		//render the up and down arrows above the button
+		virtual void renderOverButton();
+		//toggle the movement direction of the rail at this position
+		virtual void paintMap(int x, int y);
+	};
 	class RailTileOffsetButton: public Button {
 	public:
+		static const int buttonSize = MapState::tileSize + 2;
 		static const RGB arrowRGB;
-		static const int buttonSize;
 
 	private:
 		char tileOffset;
@@ -314,8 +329,8 @@ private:
 	};
 	class ResetSwitchButton: public Button {
 	public:
-		static const int buttonWidth;
-		static const int buttonHeight;
+		static const int buttonWidth = MapState::tileSize + 2;
+		static const int buttonHeight = MapState::tileSize * 2 + 2;
 
 		ResetSwitchButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY);
 		virtual ~ResetSwitchButton();
@@ -347,7 +362,6 @@ private:
 		virtual void onClick();
 	};
 
-	static const int paintBoxMaxRadius = 7;
 	static const int noiseTileButtonMaxCount = 16;
 	static const int railSwitchGroupCount = 64;
 	static const RGB blackRGB;

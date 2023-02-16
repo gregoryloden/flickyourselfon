@@ -283,6 +283,8 @@ public:
 	static void editorSetRail(int x, int y, char color, char group);
 	//set a reset switch body, or delete one if we can
 	static void editorSetResetSwitch(int x, int bottomY);
+	//toggle the movement direction of the rail here, if there is one
+	static void editorToggleRailMovementDirection(int x, int y);
 	//adjust the tile offset of the rail here, if there is one
 	static void editorAdjustRailInitialTileOffset(int x, int y, char tileOffset);
 	//check if we're saving a rail or switch to the floor file, and if so get the data we need at this tile

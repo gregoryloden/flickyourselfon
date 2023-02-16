@@ -172,7 +172,7 @@ void MapState::buildMap() {
 		//	rail bits 5-7: initial tile offset
 		//rail secondary byte 2:
 		//	bit 1: 0 (indicates tail byte)
-		//	bit 2: direction (0 for down, 1 for up)
+		//	bit 2: direction (0 for up/-1, 1 for down/1)
 		//switch tail byte 2 / rail tail byte 3+:
 		//	bit 1: 0 (indicates tail byte)
 		//	bits 2-7: group number
@@ -948,6 +948,10 @@ void MapState::editorSetResetSwitch(int x, int bottomY) {
 	railSwitchIds[(bottomY - 1) * width + x] = newResetSwitchId;
 	if (newResetSwitchId != 0)
 		resetSwitches.push_back(newResetSwitch(x, bottomY));
+}
+void MapState::editorToggleRailMovementDirection(int x, int y) {
+	if (tileHasRail(x, y))
+		rails[getRailSwitchId(x, y) & railSwitchIndexBitmask]->editorToggleMovementDirection();
 }
 void MapState::editorAdjustRailInitialTileOffset(int x, int y, char tileOffset) {
 	if (tileHasRail(x, y))
