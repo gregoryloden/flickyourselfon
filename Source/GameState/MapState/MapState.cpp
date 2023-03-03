@@ -570,9 +570,13 @@ void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int 
 	for (int i = railsBelowPlayerZ; i < (int)railStatesByHeight.size(); i++)
 		railStatesByHeight[i]->render(screenLeftWorldX, screenTopWorldY);
 	if (showConnections) {
-		//show groups above the player for all rails
-		for (RailState* railState : railStates)
-			railState->getRail()->renderGroups(screenLeftWorldX, screenTopWorldY);
+		//show movement directions and groups above the player for all rails
+		for (RailState* railState : railStates) {
+			Rail* rail = railState->getRail();
+			if (rail->getColor() >= 1)
+				railState->renderMovementDirections(screenLeftWorldX, screenTopWorldY);
+			rail->renderGroups(screenLeftWorldX, screenTopWorldY);
+		}
 		if (!finishedConnectionsTutorial && SDL_GetKeyboardState(nullptr)[Config::keyBindings.showConnectionsKey] == 0) {
 			Text::Metrics showConnectionsMetrics = Text::getMetrics(showConnectionsText, 1.0f);
 			Text::render(showConnectionsText, showConnectionsTextLeftX, showConnectionsTextBaselineY, 1.0f);
