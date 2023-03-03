@@ -23,7 +23,14 @@ float Rail::Segment::tileCenterY() {
 
 //////////////////////////////// Rail ////////////////////////////////
 Rail::Rail(
-	objCounterParametersComma() int x, int y, char pBaseHeight, char pColor, char pInitialTileOffset, char pMovementDirection)
+	objCounterParametersComma()
+	int x,
+	int y,
+	char pBaseHeight,
+	char pColor,
+	char pInitialTileOffset,
+	char pMovementDirection,
+	char pMovementMagnitude)
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
 baseHeight(pBaseHeight)
 , color(pColor)

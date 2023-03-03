@@ -1,7 +1,7 @@
 #include "Util/Config.h"
 
-#define newRail(x, y, baseHeight, color, initialTileOffset, movementDirection) \
-	newWithArgs(Rail, x, y, baseHeight, color, initialTileOffset, movementDirection)
+#define newRail(x, y, baseHeight, color, initialTileOffset, movementDirection, movementMagnitude) \
+	newWithArgs(Rail, x, y, baseHeight, color, initialTileOffset, movementDirection, movementMagnitude)
 #define newRailState(rail, railIndex) newWithArgs(RailState, rail, railIndex)
 
 class Rail onlyInDebug(: public ObjCounter) {
@@ -33,6 +33,7 @@ private:
 	char initialTileOffset;
 	char maxTileOffset;
 	char movementDirection;
+	char movementMagnitude;
 public:
 	bool editorIsDeleted;
 
@@ -43,7 +44,8 @@ public:
 		char pBaseHeight,
 		char pColor,
 		char pInitialTileOffset,
-		char pMovementDirection);
+		char pMovementDirection,
+		char pMovementMagnitude);
 	virtual ~Rail();
 
 	char getBaseHeight() { return baseHeight; }
@@ -52,6 +54,7 @@ public:
 	char getInitialTileOffset() { return initialTileOffset; }
 	char getMaxTileOffset() { return maxTileOffset; }
 	char getMovementDirection() { return movementDirection; }
+	char getMovementMagnitude() { return movementMagnitude; }
 	int getSegmentCount() { return (int)(segments->size()); }
 	Segment* getSegment(int i) { return &(*segments)[i]; }
 	//get the sprite index based on which direction the center of this end segment extends towards the rest of the rail

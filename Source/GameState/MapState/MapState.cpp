@@ -177,6 +177,7 @@ void MapState::buildMap() {
 		//rail secondary byte 2:
 		//	bit 1: 0 (indicates tail byte)
 		//	bit 2: direction (0 for up/-1, 1 for down/1)
+		//	bits 3-5: movement magnitude
 		//switch tail byte 2 / rail tail byte 3+:
 		//	bit 1: 0 (indicates tail byte)
 		//	bits 2-7: group number
@@ -216,7 +217,8 @@ void MapState::buildMap() {
 				(railSwitchValue >> floorRailInitialTileOffsetDataShift) & floorRailInitialTileOffsetPostShiftBitmask;
 			char railByte2PostShift = (char)((pixels[railByte2Index] & redMask) >> (redShift + floorRailByte2DataShift));
 			char movementDirection = (railByte2PostShift & floorRailMovementDirectionPostShiftBitmask) * 2 - 1;
-			Rail* rail = newRail(headX, headY, heights[i], color, initialTileOffset, movementDirection);
+			char movementMagnitude = (railByte2PostShift >> 1) & floorRailMovementMagnitudePostShiftBitmask;
+			Rail* rail = newRail(headX, headY, heights[i], color, initialTileOffset, movementDirection, movementMagnitude);
 			rails.push_back(rail);
 			rail->addSegment(railByte2Index % width, railByte2Index / width);
 			//add all the groups
@@ -912,7 +914,7 @@ void MapState::editorSetRail(int x, int y, char color, char group) {
 		//create a new rail
 		} else {
 			editorSetRailSwitchId(x, y, (short)rails.size() | railIdValue);
-			editingRail = newRail(x, y, getHeight(x, y), color, 0, 1);
+			editingRail = newRail(x, y, getHeight(x, y), color, 0, 1, 0);
 			editingRail->addGroup(group);
 			rails.push_back(editingRail);
 		}

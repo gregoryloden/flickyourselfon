@@ -108,10 +108,11 @@ public:
 	static const int floorIsSwitchBitmask = 4;
 	static const int floorIsResetSwitchBitmask = 0x20;
 	static const int floorIsSwitchAndResetSwitchBitmask = floorIsSwitchBitmask | floorIsResetSwitchBitmask;
-	static const char floorRailSwitchColorPostShiftBitmask = 0x3;
+	static const char floorRailSwitchColorPostShiftBitmask = 3;
 	static const char floorRailSwitchGroupPostShiftBitmask = 0x3F;
-	static const char floorRailInitialTileOffsetPostShiftBitmask = 0x7;
+	static const char floorRailInitialTileOffsetPostShiftBitmask = 7;
 	static const char floorRailMovementDirectionPostShiftBitmask = 1;
+	static const char floorRailMovementMagnitudePostShiftBitmask = 7;
 	static const int floorRailSwitchColorDataShift = 3;
 	static const int floorRailSwitchGroupDataShift = 2;
 	static const int floorRailInitialTileOffsetDataShift = 5;
