@@ -90,6 +90,8 @@ public:
 	//add a segment on this tile to the rail
 	//returns whether we added a segment
 	bool editorAddSegment(int x, int y, char pColor, char group, char tileHeight);
+	//adjust the movement magnitude of this rail if we're clicking on one of its end segments
+	void editorAdjustMovementMagnitude(int x, int y, char magnitudeAdd);
 	//toggle the movement direction for this rail
 	void editorToggleMovementDirection();
 	//adjust the initial tile offset of this rail if we're clicking on one of its end segments

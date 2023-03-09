@@ -40,6 +40,7 @@ baseHeight(pBaseHeight)
 //give a default tile offset extending to the lowest height, we'll correct it as we add segments
 , maxTileOffset(pBaseHeight / 2)
 , movementDirection(pMovementDirection)
+, movementMagnitude(pMovementMagnitude)
 , editorIsDeleted(false) {
 	segments->push_back(Segment(x, y, 0));
 }
@@ -304,6 +305,12 @@ bool Rail::editorAddSegment(int x, int y, char pColor, char group, char tileHeig
 	addSegment(x, y);
 	return true;
 }
+void Rail::editorAdjustMovementMagnitude(int x, int y, char magnitudeAdd) {
+	Segment& start = segments->front();
+	Segment& end = segments->back();
+	if ((x == start.x && y == start.y) || (x == end.x && y == end.y))
+		movementMagnitude = MathUtils::max(1, MathUtils::min(maxTileOffset, movementMagnitude + magnitudeAdd));
+}
 void Rail::editorToggleMovementDirection() {
 	movementDirection = -movementDirection;
 }
@@ -320,8 +327,10 @@ char Rail::editorGetFloorSaveData(int x, int y) {
 			| (initialTileOffset << MapState::floorRailInitialTileOffsetDataShift)
 			| MapState::floorRailHeadValue;
 	Segment& second = (*segments)[1];
-	if (x == second.x && y == second.y)
-		return (((movementDirection + 1) / 2) << MapState::floorRailByte2DataShift) | MapState::floorIsRailSwitchBitmask;
+	if (x == second.x && y == second.y) {
+		char unshiftedData = ((movementDirection + 1) / 2) | movementMagnitude << 1;
+		return unshiftedData << MapState::floorRailByte2DataShift | MapState::floorIsRailSwitchBitmask;
+	}
 	for (int i = 2; i < (int)segments->size() && i - 2 < (int)groups.size(); i++) {
 		Segment& segment = (*segments)[i];
 		if (segment.x == x && segment.y == y)
@@ -346,7 +355,10 @@ RailState::~RailState() {
 }
 void RailState::updateWithPreviousRailState(RailState* prev, int ticksTime) {
 	targetTileOffset = prev->targetTileOffset;
-	currentMovementDirection = prev->currentMovementDirection;
+	if (Editor::isActive)
+		currentMovementDirection = rail->getMovementDirection();
+	else
+		currentMovementDirection = prev->currentMovementDirection;
 	if (prev->tileOffset != prev->targetTileOffset) {
 		float tileOffsetDiff = tileOffsetPerTick * (float)(ticksTime - prev->lastUpdateTicksTime);
 		tileOffset = prev->tileOffset > prev->targetTileOffset
@@ -365,7 +377,7 @@ void RailState::triggerMovement() {
 		targetTileOffset = targetTileOffset == 0.0f ? rail->getMaxTileOffset() : 0.0f;
 	//triangle wave switch: move the rail 2 tiles in its current movement direction
 	else if (rail->getColor() == 1) {
-		targetTileOffset += 2 * currentMovementDirection;
+		targetTileOffset += rail->getMovementMagnitude() * currentMovementDirection;
 		if (targetTileOffset > rail->getMaxTileOffset()) {
 			targetTileOffset = rail->getMaxTileOffset() * 2 - targetTileOffset;
 			currentMovementDirection = -currentMovementDirection;
@@ -383,32 +395,29 @@ void RailState::render(int screenLeftWorldX, int screenTopWorldY) {
 }
 void RailState::renderMovementDirections(int screenLeftWorldX, int screenTopWorldY) {
 	constexpr GLfloat movementDirectionColor = 0.75f;
-	Rail::Segment* start = rail->getSegment(0);
-	GLint startLeftX = (GLint)(start->x * MapState::tileSize - screenLeftWorldX);
-	GLint startTopY = (GLint)(start->y * MapState::tileSize - screenTopWorldY);
-	Rail::Segment* end = rail->getSegment(rail->getSegmentCount() - 1);
-	GLint endLeftX = (GLint)(end->x * MapState::tileSize - screenLeftWorldX);
-	GLint endTopY = (GLint)(end->y * MapState::tileSize - screenTopWorldY);
-	for (GLint i = 0; i < 3; i++) {
-		GLint yOffset = MapState::tileSize / 2 + (currentMovementDirection < 0 ? -1 - i : i);
-		SpriteSheet::renderFilledRectangle(
-			movementDirectionColor,
-			movementDirectionColor,
-			movementDirectionColor,
-			1.0f,
-			startLeftX + i,
-			startTopY + yOffset,
-			startLeftX + MapState::tileSize - i,
-			startTopY + yOffset + 1);
-		SpriteSheet::renderFilledRectangle(
-			movementDirectionColor,
-			movementDirectionColor,
-			movementDirectionColor,
-			1.0f,
-			endLeftX + i,
-			endTopY + yOffset,
-			endLeftX + MapState::tileSize - i,
-			endTopY + yOffset + 1);
+	Rail::Segment* endSegments[2] = { rail->getSegment(0), rail->getSegment(rail->getSegmentCount() - 1) };
+	for (Rail::Segment* segment : endSegments) {
+		char movementMagnitude = rail->getMovementMagnitude();
+		int movementMagnitudeSize = movementMagnitude * MapState::tileSize;
+		GLint leftX = (GLint)(segment->x * MapState::tileSize - screenLeftWorldX);
+		GLint topY =
+			(GLint)(segment->y * MapState::tileSize - screenTopWorldY - (movementMagnitudeSize - MapState::tileSize) / 2);
+		glEnable(GL_BLEND);
+		for (char i = 0; i < movementMagnitude; i++)
+			SpriteRegistry::rails->renderSpriteAtScreenPosition(0, 0, leftX, topY + i * MapState::tileSize);
+		glDisable(GL_BLEND);
+		for (int i = 1; i <= 3; i++) {
+			GLint arrowTopY = currentMovementDirection < 0 ? topY + i - 1 : topY + movementMagnitudeSize - i;
+			SpriteSheet::renderFilledRectangle(
+				movementDirectionColor,
+				movementDirectionColor,
+				movementDirectionColor,
+				1.0f,
+				leftX + MapState::tileSize / 2 - i,
+				arrowTopY,
+				leftX + MapState::tileSize / 2 + i,
+				arrowTopY + 1);
+		}
 	}
 }
 void RailState::loadState(float pTileOffset) {

@@ -126,7 +126,7 @@ bool ResetSwitch::editorRemoveEndSegment(int x, int y, char color, char group) {
 void ResetSwitch::editorRemoveSwitchSegment(char color, char group) {
 	if (group == 0)
 		return;
-	vector<Segment>* allSegments[3]{ &leftSegments, &bottomSegments, &rightSegments };
+	vector<Segment>* allSegments[3] { &leftSegments, &bottomSegments, &rightSegments };
 	for (vector<Segment>* segments : allSegments) {
 		if (segments->empty())
 			continue;

@@ -177,9 +177,8 @@ private:
 		virtual void onClick();
 	};
 	class EvenPaintBoxRadiusButton: public Button {
-	public:
-		static const int buttonSize = PaintBoxRadiusButton::maxRadius + 2;
 	private:
+		static const int buttonSize = PaintBoxRadiusButton::maxRadius + 2;
 		static const RGB boxRGB;
 		static const RGB lineRGB;
 
@@ -220,11 +219,10 @@ private:
 		virtual void onClick();
 	};
 	class RaiseLowerTileButton: public Button {
-	public:
+	private:
 		static const int buttonWidth = 13;
 		static const int buttonHeight = 10;
 
-	private:
 		bool isRaiseTileButton;
 
 	public:
@@ -242,11 +240,12 @@ private:
 		static void setAppropriateDefaultFloorTile(int x, int y, char expectedFloorHeight);
 	};
 	class ShuffleTileButton: public Button {
-	public:
+	private:
 		static const int buttonWidth = 14;
 		static const int buttonHeight = 11;
 		static const RGB arrowRGB;
 
+	public:
 		ShuffleTileButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY);
 		virtual ~ShuffleTileButton();
 
@@ -294,9 +293,29 @@ private:
 		//set a rail at this position
 		virtual void paintMap(int x, int y);
 	};
+	class RailMovementMagnitudeButton : public Button {
+	public:
+		static const int buttonSize = MapState::tileSize + 2;
+	private:
+		static const RGB arrowRGB;
+
+		char magnitudeAdd;
+
+	public:
+		RailMovementMagnitudeButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY, char pMagnitudeAdd);
+		virtual ~RailMovementMagnitudeButton();
+
+		//render the rail and arrow tip above the button
+		virtual void renderOverButton();
+		//select this rail movement magnitude as the painting action
+		virtual void onClick();
+		//adjust the movement magnitude of the rail at this position
+		virtual void paintMap(int x, int y);
+	};
 	class RailToggleMovementDirectionButton : public Button {
 	public:
 		static const int buttonSize = MapState::tileSize + 2;
+	private:
 		static const RGB arrowRGB;
 
 	public:
@@ -311,16 +330,16 @@ private:
 	class RailTileOffsetButton: public Button {
 	public:
 		static const int buttonSize = MapState::tileSize + 2;
+	private:
 		static const RGB arrowRGB;
 
-	private:
 		char tileOffset;
 
 	public:
 		RailTileOffsetButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY, char pTileOffset);
 		virtual ~RailTileOffsetButton();
 
-		//render the rail above the button
+		//render the rail and arrow tip above the button
 		virtual void renderOverButton();
 		//select this rail tile offset as the painting action
 		virtual void onClick();
@@ -328,10 +347,11 @@ private:
 		virtual void paintMap(int x, int y);
 	};
 	class ResetSwitchButton: public Button {
-	public:
+	private:
 		static const int buttonWidth = MapState::tileSize + 2;
 		static const int buttonHeight = MapState::tileSize * 2 + 2;
 
+	public:
 		ResetSwitchButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY);
 		virtual ~ResetSwitchButton();
 
@@ -345,7 +365,6 @@ private:
 	class RailSwitchGroupButton: public Button {
 	public:
 		static const int groupSquareSize = 6;
-		static const int groupSquareHalfSize = groupSquareSize / 2;
 		static const int buttonSize = groupSquareSize + 2;
 
 	private:
@@ -386,6 +405,7 @@ private:
 	static HeightButton* lastSelectedHeightButton;
 	static SwitchButton* lastSelectedSwitchButton;
 	static RailButton* lastSelectedRailButton;
+	static RailMovementMagnitudeButton* lastSelectedRailMovementMagnitudeButton;
 	static RailTileOffsetButton* lastSelectedRailTileOffsetButton;
 	static ResetSwitchButton* lastSelectedResetSwitchButton;
 	static MouseDragAction lastMouseDragAction;

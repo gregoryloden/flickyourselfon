@@ -284,6 +284,8 @@ public:
 	static void editorSetRail(int x, int y, char color, char group);
 	//set a reset switch body, or delete one if we can
 	static void editorSetResetSwitch(int x, int bottomY);
+	//adjust the movement magnitude of the rail here, if there is one
+	static void editorAdjustRailMovementMagnitude(int x, int y, char magnitudeAdd);
 	//toggle the movement direction of the rail here, if there is one
 	static void editorToggleRailMovementDirection(int x, int y);
 	//adjust the tile offset of the rail here, if there is one

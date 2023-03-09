@@ -914,7 +914,7 @@ void MapState::editorSetRail(int x, int y, char color, char group) {
 		//create a new rail
 		} else {
 			editorSetRailSwitchId(x, y, (short)rails.size() | railIdValue);
-			editingRail = newRail(x, y, getHeight(x, y), color, 0, 1, 0);
+			editingRail = newRail(x, y, getHeight(x, y), color, 0, 1, 1);
 			editingRail->addGroup(group);
 			rails.push_back(editingRail);
 		}
@@ -958,6 +958,10 @@ void MapState::editorSetResetSwitch(int x, int bottomY) {
 	railSwitchIds[(bottomY - 1) * width + x] = newResetSwitchId;
 	if (newResetSwitchId != 0)
 		resetSwitches.push_back(newResetSwitch(x, bottomY));
+}
+void MapState::editorAdjustRailMovementMagnitude(int x, int y, char magnitudeAdd) {
+	if (tileHasRail(x, y))
+		rails[getRailSwitchId(x, y) & railSwitchIndexBitmask]->editorAdjustMovementMagnitude(x, y, magnitudeAdd);
 }
 void MapState::editorToggleRailMovementDirection(int x, int y) {
 	if (tileHasRail(x, y))

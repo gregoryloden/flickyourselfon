@@ -20,10 +20,12 @@
 #define newShuffleTileButton(zone, leftX, topY) newWithArgs(Editor::ShuffleTileButton, zone, leftX, topY)
 #define newSwitchButton(zone, leftX, topY, color) newWithArgs(Editor::SwitchButton, zone, leftX, topY, color)
 #define newRailButton(zone, leftX, topY, color) newWithArgs(Editor::RailButton, zone, leftX, topY, color)
-#define newRailTileOffsetButton(zone, leftX, topY, tileOffset) \
-	newWithArgs(Editor::RailTileOffsetButton, zone, leftX, topY, tileOffset)
+#define newRailMovementMagnitudeButton(zone, leftX, topY, magnitudeAdd) \
+	newWithArgs(Editor::RailMovementMagnitudeButton, zone, leftX, topY, magnitudeAdd)
 #define newRailToggleMovementDirectionButton(zone, leftX, topY) \
 	newWithArgs(Editor::RailToggleMovementDirectionButton, zone, leftX, topY)
+#define newRailTileOffsetButton(zone, leftX, topY, tileOffset) \
+	newWithArgs(Editor::RailTileOffsetButton, zone, leftX, topY, tileOffset)
 #define newResetSwitchButton(zone, leftX, topY) newWithArgs(Editor::ResetSwitchButton, zone, leftX, topY)
 #define newRailSwitchGroupButton(zone, leftX, topY, railSwitchGroup) \
 	newWithArgs(Editor::RailSwitchGroupButton, zone, leftX, topY, railSwitchGroup)
@@ -570,6 +572,33 @@ void Editor::RailButton::paintMap(int x, int y) {
 		MapState::editorSetRail(x, y, color, selectedRailSwitchGroupButton->getRailSwitchGroup());
 }
 
+//////////////////////////////// Editor::RailMovementMagnitudeButton ////////////////////////////////
+const Editor::RGB Editor::RailMovementMagnitudeButton::arrowRGB (0.75f, 0.75f, 0.75f);
+Editor::RailMovementMagnitudeButton::RailMovementMagnitudeButton(
+	objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY, char pMagnitudeAdd)
+: Button(objCounterArgumentsComma() zone, zoneLeftX, zoneTopY)
+, magnitudeAdd(pMagnitudeAdd) {
+	setWidthAndHeight(buttonSize, buttonSize);
+}
+Editor::RailMovementMagnitudeButton::~RailMovementMagnitudeButton() {}
+void Editor::RailMovementMagnitudeButton::renderOverButton() {
+	renderRGBRect(blackRGB, 1.0f, leftX + 1, topY + 1, rightX - 1, bottomY - 1);
+	glEnable(GL_BLEND);
+	SpriteRegistry::rails->renderSpriteAtScreenPosition(0, 0, (GLint)leftX + 1, (GLint)topY + 1);
+	for (int i = 1; i <= 2; i++) {
+		int arrowAntiWidth = magnitudeAdd < 0 ? i + 1 : 4 - i;
+		renderRGBRect(arrowRGB, 1.0f, leftX + arrowAntiWidth, topY + i, rightX - arrowAntiWidth, topY + i + 1);
+		renderRGBRect(arrowRGB, 1.0f, leftX + arrowAntiWidth, bottomY - i - 1, rightX - arrowAntiWidth, bottomY - i);
+	}
+}
+void Editor::RailMovementMagnitudeButton::onClick() {
+	Button::onClick();
+	lastSelectedRailMovementMagnitudeButton = this;
+}
+void Editor::RailMovementMagnitudeButton::paintMap(int x, int y) {
+	MapState::editorAdjustRailMovementMagnitude(x, y, magnitudeAdd);
+}
+
 //////////////////////////////// Editor::RailToggleMovementDirectionButton ////////////////////////////////
 const Editor::RGB Editor::RailToggleMovementDirectionButton::arrowRGB (0.75f, 0.75f, 0.75f);
 Editor::RailToggleMovementDirectionButton::RailToggleMovementDirectionButton(
@@ -601,7 +630,7 @@ Editor::RailTileOffsetButton::~RailTileOffsetButton() {}
 void Editor::RailTileOffsetButton::renderOverButton() {
 	renderRGBRect(blackRGB, 1.0f, leftX + 1, topY + 1, rightX - 1, bottomY - 1);
 	glEnable(GL_BLEND);
-	SpriteRegistry::rails->renderSpriteAtScreenPosition(0, 0, (GLint)leftX + 1, (GLint)topY + 1);
+	SpriteRegistry::rails->renderSpriteAtScreenPosition(1, 0, (GLint)leftX + 1, (GLint)topY + 1);
 	int arrowTopY1 = tileOffset < 0 ? topY + 1 : bottomY - 2;
 	int arrowTopY2 = tileOffset < 0 ? topY + 2 : bottomY - 3;
 	renderRGBRect(arrowRGB, 1.0f, leftX + 3, arrowTopY1, rightX - 3, arrowTopY1 + 1);
@@ -672,6 +701,7 @@ Editor::RailSwitchGroupButton* Editor::selectedRailSwitchGroupButton = nullptr;
 Editor::HeightButton* Editor::lastSelectedHeightButton = nullptr;
 Editor::SwitchButton* Editor::lastSelectedSwitchButton = nullptr;
 Editor::RailButton* Editor::lastSelectedRailButton = nullptr;
+Editor::RailMovementMagnitudeButton* Editor::lastSelectedRailMovementMagnitudeButton = nullptr;
 Editor::RailTileOffsetButton* Editor::lastSelectedRailTileOffsetButton = nullptr;
 Editor::ResetSwitchButton* Editor::lastSelectedResetSwitchButton = nullptr;
 Editor::MouseDragAction Editor::lastMouseDragAction = Editor::MouseDragAction::None;
@@ -738,13 +768,19 @@ void Editor::loadButtons() {
 		buttons.push_back(newSwitchButton(Zone::Right, 5 + SwitchButton::buttonSize * i, 108, i));
 	for (char i = 0; i < 4; i++)
 		buttons.push_back(newRailButton(Zone::Right, 64 + RailButton::buttonSize * i, 114, i));
-	buttons.push_back(newRailToggleMovementDirectionButton(Zone::Right, 107, 103));
+	for (char i = -1; i <= 1; i += 2)
+		buttons.push_back(
+			newRailMovementMagnitudeButton(Zone::Right, 103 + RailMovementMagnitudeButton::buttonSize * i / 2, 103, -i));
+	buttons.push_back(newRailToggleMovementDirectionButton(Zone::Right, 118, 97));
 	for (char i = -1; i <= 1; i += 2)
 		buttons.push_back(newRailTileOffsetButton(Zone::Right, 103 + RailTileOffsetButton::buttonSize * i / 2, 114, i));
 	buttons.push_back(newResetSwitchButton(Zone::Right, 118, 108));
 	for (char i = 0; i < (char)railSwitchGroupCount; i++) {
 		RailSwitchGroupButton* button = newRailSwitchGroupButton(
-			Zone::Right, 5 + TileButton::buttonSize * (i % 16), 125 + TileButton::buttonSize * (i / 16), i);
+			Zone::Right,
+			5 + RailSwitchGroupButton::buttonSize * (i % 16),
+			125 + RailSwitchGroupButton::buttonSize * (i / 16),
+			i);
 		if (i == 0)
 			selectedRailSwitchGroupButton = button;
 		buttons.push_back(button);
@@ -805,6 +841,7 @@ void Editor::handleClick(SDL_MouseButtonEvent& clickEvent, bool isDrag, EntitySt
 
 		if (selectedButton != lastSelectedSwitchButton
 			&& selectedButton != lastSelectedRailButton
+			&& selectedButton != lastSelectedRailMovementMagnitudeButton
 			&& selectedButton != lastSelectedRailTileOffsetButton)
 		{
 			int xRadius = selectedPaintBoxXRadiusButton->getRadius();
@@ -866,7 +903,9 @@ void Editor::render(EntityState* camera, int ticksTime) {
 		if (selectedButton == lastSelectedSwitchButton) {
 			boxMapWidth = 2;
 			boxMapHeight = 2;
-		} else if (selectedButton == lastSelectedRailButton || selectedButton == lastSelectedRailTileOffsetButton) {
+		} else if (selectedButton == lastSelectedRailButton
+				|| selectedButton == lastSelectedRailMovementMagnitudeButton
+				|| selectedButton == lastSelectedRailTileOffsetButton) {
 			boxMapWidth = 1;
 			boxMapHeight = 1;
 		} else if (selectedButton == lastSelectedResetSwitchButton) {
