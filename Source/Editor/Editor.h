@@ -67,6 +67,12 @@ private:
 		//check if the click is within this button's bounds, and if it is, do the action for this button
 		//returns whether the click was handled by this button
 		bool tryHandleClick(int x, int y);
+		//optionally expand the paint map area from a given 1x1 tile centered on the mouse, based on whether or not we are going
+		//	to actively paint every tile in this area or just render it
+		//by default, expand the paint area to account for the paint box radius whether rendering or painting
+		//subclasses can override to provide a different size or to use the initial values that are already assigned
+		virtual void expandPaintMapArea(
+			int* boxLeftMapX, int* boxTopMapY, int* boxRightMapX, int* boxBottomMapY, bool activePaint);
 		//render the button background
 		void render();
 		//render a rectangle the color of the background to fade this button
@@ -270,10 +276,12 @@ private:
 
 		//render the switch above the button
 		virtual void renderOverButton();
-		//select this switch as the painting action
-		virtual void onClick();
 		//set a switch at this position
 		virtual void paintMap(int x, int y);
+		//if painting/placing a switch: leave the 1x1 area
+		//if rendering: expand the area to 2x2 with the top-left at the mouse position
+		virtual void expandPaintMapArea(
+			int* boxLeftMapX, int* boxTopMapY, int* boxRightMapX, int* boxBottomMapY, bool activePaint);
 	};
 	class RailButton: public Button {
 	public:
@@ -286,10 +294,11 @@ private:
 		RailButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY, char pColor);
 		virtual ~RailButton();
 
+		//whether painting or rendering, leave the 1x1 area
+		virtual void expandPaintMapArea(
+			int* boxLeftMapX, int* boxTopMapY, int* boxRightMapX, int* boxBottomMapY, bool activePaint) {}
 		//render the rail above the button
 		virtual void renderOverButton();
-		//select this rail as the painting action
-		virtual void onClick();
 		//set a rail at this position
 		virtual void paintMap(int x, int y);
 	};
@@ -305,10 +314,11 @@ private:
 		RailMovementMagnitudeButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY, char pMagnitudeAdd);
 		virtual ~RailMovementMagnitudeButton();
 
+		//whether painting or rendering, leave the 1x1 area
+		virtual void expandPaintMapArea(
+			int* boxLeftMapX, int* boxTopMapY, int* boxRightMapX, int* boxBottomMapY, bool activePaint) {}
 		//render the rail and arrow tip above the button
 		virtual void renderOverButton();
-		//select this rail movement magnitude as the painting action
-		virtual void onClick();
 		//adjust the movement magnitude of the rail at this position
 		virtual void paintMap(int x, int y);
 	};
@@ -322,6 +332,9 @@ private:
 		RailToggleMovementDirectionButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY);
 		virtual ~RailToggleMovementDirectionButton();
 
+		//whether painting or rendering, leave the 1x1 area
+		virtual void expandPaintMapArea(
+			int* boxLeftMapX, int* boxTopMapY, int* boxRightMapX, int* boxBottomMapY, bool activePaint) {}
 		//render the up and down arrows above the button
 		virtual void renderOverButton();
 		//toggle the movement direction of the rail at this position
@@ -339,10 +352,11 @@ private:
 		RailTileOffsetButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY, char pTileOffset);
 		virtual ~RailTileOffsetButton();
 
+		//whether painting or rendering, leave the 1x1 area
+		virtual void expandPaintMapArea(
+			int* boxLeftMapX, int* boxTopMapY, int* boxRightMapX, int* boxBottomMapY, bool activePaint) {}
 		//render the rail and arrow tip above the button
 		virtual void renderOverButton();
-		//select this rail tile offset as the painting action
-		virtual void onClick();
 		//adjust the tile offset of the rail at this position
 		virtual void paintMap(int x, int y);
 	};
@@ -357,10 +371,12 @@ private:
 
 		//render the reset switch above the button
 		virtual void renderOverButton();
-		//select the reset switch as the painting action
-		virtual void onClick();
 		//set a reset switch at this position
 		virtual void paintMap(int x, int y);
+		//if painting/placing a reset switch: leave the 1x1 area
+		//if rendering: expand the area to 1x2 with the bottom at the mouse position
+		virtual void expandPaintMapArea(
+			int* boxLeftMapX, int* boxTopMapY, int* boxRightMapX, int* boxBottomMapY, bool activePaint);
 	};
 	class RailSwitchGroupButton: public Button {
 	public:
@@ -403,11 +419,6 @@ private:
 	static PaintBoxRadiusButton* selectedPaintBoxYRadiusButton;
 	static RailSwitchGroupButton* selectedRailSwitchGroupButton;
 	static HeightButton* lastSelectedHeightButton;
-	static SwitchButton* lastSelectedSwitchButton;
-	static RailButton* lastSelectedRailButton;
-	static RailMovementMagnitudeButton* lastSelectedRailMovementMagnitudeButton;
-	static RailTileOffsetButton* lastSelectedRailTileOffsetButton;
-	static ResetSwitchButton* lastSelectedResetSwitchButton;
 	static MouseDragAction lastMouseDragAction;
 	static int lastMouseDragMapX;
 	static int lastMouseDragMapY;

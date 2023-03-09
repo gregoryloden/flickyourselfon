@@ -72,6 +72,16 @@ bool Editor::Button::tryHandleClick(int x, int y) {
 	onClick();
 	return true;
 }
+void Editor::Button::expandPaintMapArea(
+	int* boxLeftMapX, int* boxTopMapY, int* boxRightMapX, int* boxBottomMapY, bool activePaint)
+{
+	int xRadius = selectedPaintBoxXRadiusButton->getRadius();
+	int yRadius = selectedPaintBoxYRadiusButton->getRadius();
+	*boxLeftMapX -= xRadius;
+	*boxTopMapY -= yRadius;
+	*boxRightMapX += xRadius + (evenPaintBoxXRadiusButton->isSelected ? 1 : 0);
+	*boxBottomMapY += yRadius + (evenPaintBoxYRadiusButton->isSelected ? 1 : 0);
+}
 void Editor::Button::render() {
 	renderRGBRect(buttonGrayRGB, 1.0f, leftX, topY, rightX, bottomY);
 	renderOverButton();
@@ -534,13 +544,17 @@ void Editor::SwitchButton::renderOverButton() {
 	glEnable(GL_BLEND);
 	SpriteRegistry::switches->renderSpriteAtScreenPosition((int)(color * 2 + 1), 0, (GLint)leftX + 1, (GLint)topY + 1);
 }
-void Editor::SwitchButton::onClick() {
-	Button::onClick();
-	lastSelectedSwitchButton = this;
-}
 void Editor::SwitchButton::paintMap(int x, int y) {
 	if (clickedNewTile(x, y, MouseDragAction::AddRemoveSwitch))
 		MapState::editorSetSwitch(x, y, color, selectedRailSwitchGroupButton->getRailSwitchGroup());
+}
+void Editor::SwitchButton::expandPaintMapArea(
+	int* boxLeftMapX, int* boxTopMapY, int* boxRightMapX, int* boxBottomMapY, bool activePaint)
+{
+	if (!activePaint) {
+		*boxRightMapX += 1;
+		*boxBottomMapY += 1;
+	}
 }
 
 //////////////////////////////// Editor::RailButton ////////////////////////////////
@@ -562,10 +576,6 @@ void Editor::RailButton::renderOverButton() {
 		(GLint)bottomY - 1);
 	glEnable(GL_BLEND);
 	SpriteRegistry::rails->renderSpriteAtScreenPosition(0, 0, (GLint)leftX + 1, (GLint)topY + 1);
-}
-void Editor::RailButton::onClick() {
-	Button::onClick();
-	lastSelectedRailButton = this;
 }
 void Editor::RailButton::paintMap(int x, int y) {
 	if (clickedNewTile(x, y, MouseDragAction::AddRemoveRail))
@@ -590,10 +600,6 @@ void Editor::RailMovementMagnitudeButton::renderOverButton() {
 		renderRGBRect(arrowRGB, 1.0f, leftX + arrowAntiWidth, topY + i, rightX - arrowAntiWidth, topY + i + 1);
 		renderRGBRect(arrowRGB, 1.0f, leftX + arrowAntiWidth, bottomY - i - 1, rightX - arrowAntiWidth, bottomY - i);
 	}
-}
-void Editor::RailMovementMagnitudeButton::onClick() {
-	Button::onClick();
-	lastSelectedRailMovementMagnitudeButton = this;
 }
 void Editor::RailMovementMagnitudeButton::paintMap(int x, int y) {
 	MapState::editorAdjustRailMovementMagnitude(x, y, magnitudeAdd);
@@ -636,10 +642,6 @@ void Editor::RailTileOffsetButton::renderOverButton() {
 	renderRGBRect(arrowRGB, 1.0f, leftX + 3, arrowTopY1, rightX - 3, arrowTopY1 + 1);
 	renderRGBRect(arrowRGB, 1.0f, leftX + 2, arrowTopY2, rightX - 2, arrowTopY2 + 1);
 }
-void Editor::RailTileOffsetButton::onClick() {
-	Button::onClick();
-	lastSelectedRailTileOffsetButton = this;
-}
 void Editor::RailTileOffsetButton::paintMap(int x, int y) {
 	MapState::editorAdjustRailInitialTileOffset(x, y, tileOffset);
 }
@@ -655,15 +657,17 @@ void Editor::ResetSwitchButton::renderOverButton() {
 	glEnable(GL_BLEND);
 	SpriteRegistry::resetSwitch->renderSpriteAtScreenPosition(0, 0, (GLint)leftX + 1, (GLint)topY + 1);
 }
-void Editor::ResetSwitchButton::onClick() {
-	Button::onClick();
-	lastSelectedResetSwitchButton = this;
-}
 void Editor::ResetSwitchButton::paintMap(int x, int y) {
 	if (lastMouseDragAction == MouseDragAction::None) {
 		lastMouseDragAction = MouseDragAction::AddRemoveResetSwitch;
 		MapState::editorSetResetSwitch(x, y);
 	}
+}
+void Editor::ResetSwitchButton::expandPaintMapArea(
+	int* boxLeftMapX, int* boxTopMapY, int* boxRightMapX, int* boxBottomMapY, bool activePaint)
+{
+	if (!activePaint)
+		*boxTopMapY -= 1;
 }
 
 //////////////////////////////// Editor::RailSwitchGroupButton ////////////////////////////////
@@ -699,11 +703,6 @@ Editor::PaintBoxRadiusButton* Editor::selectedPaintBoxXRadiusButton = nullptr;
 Editor::PaintBoxRadiusButton* Editor::selectedPaintBoxYRadiusButton = nullptr;
 Editor::RailSwitchGroupButton* Editor::selectedRailSwitchGroupButton = nullptr;
 Editor::HeightButton* Editor::lastSelectedHeightButton = nullptr;
-Editor::SwitchButton* Editor::lastSelectedSwitchButton = nullptr;
-Editor::RailButton* Editor::lastSelectedRailButton = nullptr;
-Editor::RailMovementMagnitudeButton* Editor::lastSelectedRailMovementMagnitudeButton = nullptr;
-Editor::RailTileOffsetButton* Editor::lastSelectedRailTileOffsetButton = nullptr;
-Editor::ResetSwitchButton* Editor::lastSelectedResetSwitchButton = nullptr;
 Editor::MouseDragAction Editor::lastMouseDragAction = Editor::MouseDragAction::None;
 int Editor::lastMouseDragMapX = -1;
 int Editor::lastMouseDragMapY = -1;
@@ -831,28 +830,16 @@ void Editor::handleClick(SDL_MouseButtonEvent& clickEvent, bool isDrag, EntitySt
 	{
 		int screenLeftWorldX = MapState::getScreenLeftWorldX(camera, ticksTime);
 		int screenTopWorldY = MapState::getScreenTopWorldY(camera, ticksTime);
-		int mouseMapX;
-		int mouseMapY;
-		getMouseMapXY(screenLeftWorldX, screenTopWorldY, &mouseMapX, &mouseMapY);
-		int lowMapX = mouseMapX;
-		int lowMapY = mouseMapY;
-		int highMapX = mouseMapX;
-		int highMapY = mouseMapY;
-
-		if (selectedButton != lastSelectedSwitchButton
-			&& selectedButton != lastSelectedRailButton
-			&& selectedButton != lastSelectedRailMovementMagnitudeButton
-			&& selectedButton != lastSelectedRailTileOffsetButton)
-		{
-			int xRadius = selectedPaintBoxXRadiusButton->getRadius();
-			int yRadius = selectedPaintBoxYRadiusButton->getRadius();
-			lowMapX = MathUtils::max(mouseMapX - xRadius, 0);
-			lowMapY = MathUtils::max(mouseMapY - yRadius, 0);
-			highMapX = MathUtils::min(
-				mouseMapX + xRadius + (evenPaintBoxXRadiusButton->isSelected ? 1 : 0), MapState::mapWidth() - 1);
-			highMapY = MathUtils::min(
-				mouseMapY + yRadius + (evenPaintBoxYRadiusButton->isSelected ? 1 : 0), MapState::mapHeight() - 1);
-		}
+		int lowMapX;
+		int lowMapY;
+		getMouseMapXY(screenLeftWorldX, screenTopWorldY, &lowMapX, &lowMapY);
+		int highMapX = lowMapX;
+		int highMapY = lowMapY;
+		selectedButton->expandPaintMapArea(&lowMapX, &lowMapY, &highMapX, &highMapY, true);
+		lowMapX = MathUtils::max(lowMapX, 0);
+		lowMapY = MathUtils::max(lowMapY, 0);
+		highMapX = MathUtils::min(highMapX, MapState::mapWidth() - 1);
+		highMapY = MathUtils::min(highMapY, MapState::mapHeight() - 1);
 
 		if (selectedButton == noiseButton) {
 			vector<double> tilesDistribution;
@@ -891,37 +878,18 @@ void Editor::render(EntityState* camera, int ticksTime) {
 		//get the map coordinate of the mouse
 		int screenLeftWorldX = MapState::getScreenLeftWorldX(camera, ticksTime);
 		int screenTopWorldY = MapState::getScreenTopWorldY(camera, ticksTime);
-		int mouseMapX;
-		int mouseMapY;
-		getMouseMapXY(screenLeftWorldX, screenTopWorldY, &mouseMapX, &mouseMapY);
+		int boxLeftMapX;
+		int boxTopMapY;
+		getMouseMapXY(screenLeftWorldX, screenTopWorldY, &boxLeftMapX, &boxTopMapY);
+		int boxRightMapX = boxLeftMapX + 1;
+		int boxBottomMapY = boxTopMapY + 1;
+		selectedButton->expandPaintMapArea(&boxLeftMapX, &boxTopMapY, &boxRightMapX, &boxBottomMapY, false);
 
 		//draw a mouse selection box
-		int boxLeftMapOffset = 0;
-		int boxTopMapOffset = 0;
-		int boxMapWidth;
-		int boxMapHeight;
-		if (selectedButton == lastSelectedSwitchButton) {
-			boxMapWidth = 2;
-			boxMapHeight = 2;
-		} else if (selectedButton == lastSelectedRailButton
-				|| selectedButton == lastSelectedRailMovementMagnitudeButton
-				|| selectedButton == lastSelectedRailTileOffsetButton) {
-			boxMapWidth = 1;
-			boxMapHeight = 1;
-		} else if (selectedButton == lastSelectedResetSwitchButton) {
-			boxMapWidth = 1;
-			boxMapHeight = 2;
-			boxTopMapOffset = 1;
-		} else {
-			boxLeftMapOffset = (int)selectedPaintBoxXRadiusButton->getRadius();
-			boxTopMapOffset = (int)selectedPaintBoxYRadiusButton->getRadius();
-			boxMapWidth = (boxLeftMapOffset * 2 + (evenPaintBoxXRadiusButton->isSelected ? 2 : 1));
-			boxMapHeight = (boxTopMapOffset * 2 + (evenPaintBoxYRadiusButton->isSelected ? 2 : 1));
-		}
-		GLint boxLeftX = (GLint)((mouseMapX - boxLeftMapOffset) * MapState::tileSize - screenLeftWorldX);
-		GLint boxTopY = (GLint)((mouseMapY - boxTopMapOffset) * MapState::tileSize - screenTopWorldY);
-		GLint boxRightX = boxLeftX + (GLint)(boxMapWidth * MapState::tileSize);
-		GLint boxBottomY = boxTopY + (GLint)(boxMapHeight * MapState::tileSize);
+		GLint boxLeftX = (GLint)(boxLeftMapX * MapState::tileSize - screenLeftWorldX);
+		GLint boxTopY = (GLint)(boxTopMapY * MapState::tileSize - screenTopWorldY);
+		GLint boxRightX = (GLint)(boxRightMapX * MapState::tileSize - screenLeftWorldX);
+		GLint boxBottomY = (GLint)(boxBottomMapY * MapState::tileSize - screenTopWorldY);
 		SpriteSheet::renderRectangleOutline(1.0f, 1.0f, 1.0f, 1.0f, boxLeftX, boxTopY, boxRightX, boxBottomY);
 	}
 
