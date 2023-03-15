@@ -2,13 +2,18 @@
 
 #define newRail(x, y, baseHeight, color, initialTileOffset, movementDirection, movementMagnitude) \
 	newWithArgs(Rail, x, y, baseHeight, color, initialTileOffset, movementDirection, movementMagnitude)
-#define newRailState(rail, railIndex) newWithArgs(RailState, rail, railIndex)
+#define newRailState(rail) newWithArgs(RailState, rail)
 
 class Rail onlyInDebug(: public ObjCounter) {
 public:
 	//Should only be allocated within an object, on the stack, or as a static object
 	class Segment {
 	public:
+		static const int spriteHorizontalIndexEndHorizontalFirst = 6;
+		static const int spriteHorizontalIndexEndVerticalFirst = 8;
+		static const int spriteHorizontalIndexEndFirst = spriteHorizontalIndexEndHorizontalFirst;
+		static const int spriteHorizontalIndexShadowFirst = 10;
+		static const int spriteHorizontalIndexBorderFirst = 16;
 		static const char absentTileOffset = -1;
 
 		int x;
@@ -23,6 +28,8 @@ public:
 		float tileCenterX();
 		//get the center y of the tile that this segment is on (when raised)
 		float tileCenterY();
+		//render the rail segment at its position, clipping it if part of the map is higher than it
+		void render(int screenLeftWorldX, int screenTopWorldY, float tileOffset, char baseHeight);
 	};
 
 private:
@@ -72,16 +79,10 @@ public:
 	void addGroup(char group);
 	//add a segment on this tile to the rail
 	void addSegment(int x, int y);
-	//render this rail at its position by rendering each segment
-	void render(int screenLeftWorldX, int screenTopWorldY, float tileOffset);
 	//render the shadow below the rail
 	void renderShadow(int screenLeftWorldX, int screenTopWorldY);
 	//render groups where the rail would be at 0 offset
 	void renderGroups(int screenLeftWorldX, int screenTopWorldY);
-private:
-	//render the rail segment at its position, clipping it if part of the map is higher than it
-	void renderSegment(int screenLeftWorldX, int screenTopWorldY, float tileOffset, int segmentIndex);
-public:
 	//remove this group from the rail if it contains it
 	void editorRemoveGroup(char group);
 	//remove the segment on this tile from the rail
@@ -104,31 +105,29 @@ private:
 	static constexpr float tileOffsetPerTick = 3.0f / (float)Config::ticksPerSecond;
 
 	Rail* rail;
-	int railIndex;
 	float tileOffset;
 	float targetTileOffset;
 	float currentMovementDirection;
+	vector<Rail::Segment*> segmentsAbovePlayer;
 	int lastUpdateTicksTime;
 
 public:
-	RailState(objCounterParametersComma() Rail* pRail, int pRailIndex);
+	RailState(objCounterParametersComma() Rail* pRail);
 	virtual ~RailState();
 
 	Rail* getRail() { return rail; }
-	int getRailIndex() { return railIndex; }
 	float getTargetTileOffset() { return targetTileOffset; }
 	bool canRide() { return tileOffset == 0.0f; }
-	float getEffectiveHeight() { return rail->getBaseHeight() - tileOffset * 2; }
-	//say 1.5 tiles is where the rail goes from below to above the player
-	bool isAbovePlayerZ(char z) { return getEffectiveHeight() > (float)z + 1.5f; }
 	//check if we need to start/stop moving
 	void updateWithPreviousRailState(RailState* prev, int ticksTime);
 	//the switch connected to this rail was kicked, move this rail accordingly
 	void triggerMovement();
 	//reset the tile offset to 0 so that the rail moves back to its default position
 	void moveToDefaultTileOffset();
-	//render the rail
-	void render(int screenLeftWorldX, int screenTopWorld);
+	//render the rail behind the player by rendering each segment, and save which segments are above the player
+	void renderBelowPlayer(int screenLeftWorldX, int screenTopWorld, float playerWorldGroundY);
+	//render the rail in front of the player using the list of saved segments
+	void renderAbovePlayer(int screenLeftWorldX, int screenTopWorld);
 	//render the movement direction over the ends of the rail
 	void renderMovementDirections(int screenLeftWorldX, int screenTopWorldY);
 	//set this rail to the initial tile offset, not moving

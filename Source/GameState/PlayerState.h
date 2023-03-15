@@ -52,12 +52,12 @@ private:
 	bool canImmediatelyAutoKick;
 	float lastControlledX;
 	float lastControlledY;
+	ReferenceCounterHolder<DynamicValue> worldGroundY;
 
 public:
 	PlayerState(objCounterParameters());
 	virtual ~PlayerState();
 
-	char getZ() { return z; }
 	void obtainBoot() { hasBoot = true; }
 	//initialize and return a PlayerState
 	static PlayerState* produce(objCounterParametersComma() MapState* mapState);
@@ -65,6 +65,8 @@ public:
 	void copyPlayerState(PlayerState* other);
 	//release a reference to this PlayerState and return it to the pool if applicable
 	virtual void release();
+	//get the world Y after translating to what the world-terrain-space-Y would be at height 0
+	float getWorldGroundY(int ticksTime);
 	//set the sprite direction, and also set x and y directions to match
 	virtual void setDirection(SpriteDirection pSpriteDirection);
 	//tell the game state to use the player as the next camera anchor, we will handle actually switching to a different camera

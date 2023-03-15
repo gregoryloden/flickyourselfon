@@ -247,8 +247,8 @@ void GameState::render(int ticksTime) {
 	bool showConnections =
 		SDL_GetKeyboardState(nullptr)[Config::keyBindings.showConnectionsKey] != 0
 			|| (!mapState.get()->getFinishedConnectionsTutorial() && playerState.get()->showTutorialConnectionsForKickAction());
-	int playerZ = playerState.get()->getZ();
-	mapState.get()->render(camera, playerZ, showConnections, gameTicksTime);
+	float playerWorldGroundY = playerState.get()->getWorldGroundY(gameTicksTime);
+	mapState.get()->render(camera, playerWorldGroundY, showConnections, gameTicksTime);
 	playerState.get()->render(camera, gameTicksTime);
 	mapState.get()->renderAbovePlayer(camera, showConnections, gameTicksTime);
 
@@ -266,7 +266,7 @@ void GameState::render(int ticksTime) {
 	//TODO: real win condition
 	float px = playerState.get()->getRenderCenterWorldX(gameTicksTime);
 	float py = playerState.get()->getRenderCenterWorldY(gameTicksTime);
-	if (playerState.get()->getZ() == 6 && px >= 260 && px <= 270 && py >= 240 && py <= 255) {
+	if (px >= 260 && px <= 270 && py >= 240 && py <= 255) {
 		const char* win = "Win!";
 		Text::Metrics winMetrics = Text::getMetrics(win, 2.0f);
 		Text::render(win, 10.0f, 10.0f + winMetrics.aboveBaseline, 2.0f);
@@ -419,7 +419,6 @@ void GameState::loadInitialState(int ticksTime) {
 		sawIntroAnimation = true;
 	} else
 		playerState.get()->setInitialZ();
-	mapState.get()->sortInitialRails();
 
 	if (sawIntroAnimation) {
 		playerState.get()->obtainBoot();
@@ -599,7 +598,6 @@ void GameState::loadInitialState(int ticksTime) {
 		playerState.get()->obtainBoot();
 		camera = playerState.get();
 		sawIntroAnimation = true;
-		mapState.get()->sortInitialRails();
 		return true;
 	}
 	void GameState::addMoveWithGhost(

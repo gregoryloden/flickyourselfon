@@ -142,8 +142,6 @@ private:
 	static int editorNonTilesHidingState;
 
 	vector<RailState*> railStates;
-	vector<RailState*> railStatesByHeight;
-	int railsBelowPlayerZ;
 	vector<SwitchState*> switchStates;
 	vector<ResetSwitchState*> resetSwitchStates;
 	char lastActivatedSwitchColor;
@@ -232,10 +230,6 @@ public:
 	static void setIntroAnimationBootTile(bool showBootTile);
 	//update the rails and switches of the MapState by reading from the previous state
 	void updateWithPreviousMapState(MapState* prev, int ticksTime);
-private:
-	//via insertion sort, add a rail state to the list of above- or below-player rail states
-	void insertRailByHeight(RailState* railState);
-public:
 	//flip a switch
 	void flipSwitch(short switchId, bool allowRadioTowerAnimation, int ticksTime);
 	//flip a reset switch
@@ -245,7 +239,7 @@ public:
 	//activate the next switch color and set the start of the animation
 	void startSwitchesFadeInAnimation(int ticksTime);
 	//draw the map
-	void render(EntityState* camera, char playerZ, bool showConnections, int ticksTime);
+	void render(EntityState* camera, float playerWorldGroundY, bool showConnections, int ticksTime);
 	//draw anything (rails, groups) that render above the player
 	//assumes render() has already been called to set the rails above the player
 	void renderAbovePlayer(EntityState* camera, bool showConnections, int ticksTime);
@@ -268,8 +262,6 @@ public:
 	void saveState(ofstream& file);
 	//try to load state from the line of the file, return whether state was loaded
 	bool loadState(string& line);
-	//we don't have previous rails to update from so sort the rails from our base list
-	void sortInitialRails();
 	//reset the rails and switches
 	void resetMap();
 	//examine the neighboring tiles and pick an appropriate default tile, but only if we match the expected floor height

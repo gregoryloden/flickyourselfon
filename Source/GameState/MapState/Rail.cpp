@@ -20,6 +20,58 @@ float Rail::Segment::tileCenterX() {
 float Rail::Segment::tileCenterY() {
 	return ((float)y + 0.5f) * (float)MapState::tileSize;
 }
+void Rail::Segment::render(int screenLeftWorldX, int screenTopWorldY, float tileOffset, char baseHeight) {
+	int yPixelOffset = (int)(tileOffset * (float)MapState::tileSize + 0.5f);
+	int topWorldY = y * MapState::tileSize + yPixelOffset;
+	int bottomTileY = (topWorldY + MapState::tileSize - 1) / MapState::tileSize;
+	GLint drawLeftX = (GLint)(x * MapState::tileSize - screenLeftWorldX);
+	GLint drawTopY = (GLint)(topWorldY - screenTopWorldY);
+	char topTileHeight = MapState::getHeight(x, topWorldY / MapState::tileSize);
+	char bottomTileHeight = MapState::getHeight(x, bottomTileY);
+	bool topBorder = false;
+	bool bottomBorder = false;
+
+	//this segment is completely visible
+	if (bottomTileHeight == MapState::emptySpaceHeight
+		|| bottomTileHeight <= baseHeight - (char)((yPixelOffset + MapState::tileSize - 1) / MapState::tileSize) * 2)
+	{
+		SpriteRegistry::rails->renderSpriteAtScreenPosition(spriteHorizontalIndex, 0, drawLeftX, drawTopY);
+		topBorder = topTileHeight % 2 == 1 && topTileHeight != MapState::emptySpaceHeight;
+		bottomBorder = bottomTileHeight % 2 == 1 && bottomTileHeight != MapState::emptySpaceHeight;
+	//the top part of this segment is visible
+	} else if (topTileHeight == MapState::emptySpaceHeight
+		|| topTileHeight <= baseHeight - (char)(yPixelOffset / MapState::tileSize) * 2)
+	{
+		int spriteX = spriteHorizontalIndex * MapState::tileSize;
+		int spriteHeight = bottomTileY * MapState::tileSize - topWorldY;
+		SpriteRegistry::rails->renderSpriteSheetRegionAtScreenRegion(
+			spriteX,
+			0,
+			spriteX + MapState::tileSize,
+			spriteHeight,
+			drawLeftX,
+			drawTopY,
+			drawLeftX + (GLint)MapState::tileSize,
+			drawTopY + (GLint)spriteHeight);
+		topBorder = topTileHeight % 2 == 1 && topTileHeight != MapState::emptySpaceHeight;
+	}
+
+	if ((topBorder || bottomBorder) && spriteHorizontalIndex < spriteHorizontalIndexEndFirst) {
+		int topSpriteHeight = bottomTileY * MapState::tileSize - topWorldY;
+		int spriteX = (spriteHorizontalIndex + spriteHorizontalIndexBorderFirst) * MapState::tileSize;
+		int spriteTop = topBorder ? 0 : topSpriteHeight;
+		int spriteBottom = bottomBorder ? MapState::tileSize : topSpriteHeight;
+		SpriteRegistry::rails->renderSpriteSheetRegionAtScreenRegion(
+			spriteX,
+			spriteTop,
+			spriteX + MapState::tileSize,
+			spriteBottom,
+			drawLeftX,
+			drawTopY + (GLint)spriteTop,
+			drawLeftX + (GLint)MapState::tileSize,
+			drawTopY + (GLint)spriteBottom);
+	}
+}
 
 //////////////////////////////// Rail ////////////////////////////////
 Rail::Rail(
@@ -48,7 +100,9 @@ Rail::~Rail() {
 	delete segments;
 }
 int Rail::endSegmentSpriteHorizontalIndex(int xExtents, int yExtents) {
-	return yExtents != 0 ? 8 + (1 - yExtents) / 2 : 6 + (1 - xExtents) / 2;
+	return yExtents != 0
+		? Segment::spriteHorizontalIndexEndVerticalFirst + (1 - yExtents) / 2
+		: Segment::spriteHorizontalIndexEndHorizontalFirst + (1 - xExtents) / 2;
 }
 int Rail::middleSegmentSpriteHorizontalIndex(int prevX, int prevY, int x, int y, int nextX, int nextY) {
 	//vertical rail if they have the same x
@@ -149,19 +203,6 @@ void Rail::addSegment(int x, int y) {
 	} else
 		lastEnd->spriteHorizontalIndex = endSegmentSpriteHorizontalIndex(end->x - lastEnd->x, end->y - lastEnd->y);
 }
-void Rail::render(int screenLeftWorldX, int screenTopWorldY, float tileOffset) {
-	if (Editor::isActive && editorIsDeleted)
-		return;
-
-	setSegmentColor(MathUtils::fmin(1.0f, tileOffset / 3.0f), color);
-	int lastSegmentIndex = (int)segments->size() - 1;
-	for (int i = 1; i < lastSegmentIndex; i++)
-		renderSegment(screenLeftWorldX, screenTopWorldY, tileOffset, i);
-	setSegmentColor(0.0f, color);
-	renderSegment(screenLeftWorldX, screenTopWorldY, 0.0f, 0);
-	renderSegment(screenLeftWorldX, screenTopWorldY, 0.0f, lastSegmentIndex);
-	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-}
 void Rail::renderShadow(int screenLeftWorldX, int screenTopWorldY) {
 	if (Editor::isActive && editorIsDeleted)
 		return;
@@ -173,7 +214,7 @@ void Rail::renderShadow(int screenLeftWorldX, int screenTopWorldY) {
 		//don't render a shadow if this segment hides behind a platform
 		if (segment.maxTileOffset > 0)
 			SpriteRegistry::rails->renderSpriteAtScreenPosition(
-				segment.spriteHorizontalIndex + 10,
+				segment.spriteHorizontalIndex + Segment::spriteHorizontalIndexShadowFirst,
 				0,
 				(GLint)(segment.x * MapState::tileSize - screenLeftWorldX),
 				(GLint)((segment.y + (int)segment.maxTileOffset) * MapState::tileSize - screenTopWorldY));
@@ -189,59 +230,6 @@ void Rail::renderGroups(int screenLeftWorldX, int screenTopWorldY) {
 		GLint drawTopY = (GLint)(segment.y * MapState::tileSize - screenTopWorldY);
 		MapState::renderGroupRect(
 			hasGroups ? groups[i % groups.size()] : 0, drawLeftX + 2, drawTopY + 2, drawLeftX + 4, drawTopY + 4);
-	}
-}
-void Rail::renderSegment(int screenLeftWorldX, int screenTopWorldY, float tileOffset, int segmentIndex) {
-	Segment& segment = (*segments)[segmentIndex];
-	int yPixelOffset = (int)(tileOffset * (float)MapState::tileSize + 0.5f);
-	int topWorldY = segment.y * MapState::tileSize + yPixelOffset;
-	int bottomTileY = (topWorldY + MapState::tileSize - 1) / MapState::tileSize;
-	GLint drawLeftX = (GLint)(segment.x * MapState::tileSize - screenLeftWorldX);
-	GLint drawTopY = (GLint)(topWorldY - screenTopWorldY);
-	char topTileHeight = MapState::getHeight(segment.x, topWorldY / MapState::tileSize);
-	char bottomTileHeight = MapState::getHeight(segment.x, bottomTileY);
-	bool topShadow = false;
-	bool bottomShadow = false;
-
-	//this segment is completely visible
-	if (bottomTileHeight == MapState::emptySpaceHeight
-		|| bottomTileHeight <= baseHeight - (char)((yPixelOffset + MapState::tileSize - 1) / MapState::tileSize) * 2)
-	{
-		SpriteRegistry::rails->renderSpriteAtScreenPosition(segment.spriteHorizontalIndex, 0, drawLeftX, drawTopY);
-		topShadow = topTileHeight % 2 == 1 && topTileHeight != MapState::emptySpaceHeight;
-		bottomShadow = bottomTileHeight % 2 == 1 && bottomTileHeight != MapState::emptySpaceHeight;
-	//the top part of this segment is visible
-	} else if (topTileHeight == MapState::emptySpaceHeight
-		|| topTileHeight <= baseHeight - (char)(yPixelOffset / MapState::tileSize) * 2)
-	{
-		int spriteX = segment.spriteHorizontalIndex * MapState::tileSize;
-		int spriteHeight = bottomTileY * MapState::tileSize - topWorldY;
-		SpriteRegistry::rails->renderSpriteSheetRegionAtScreenRegion(
-			spriteX,
-			0,
-			spriteX + MapState::tileSize,
-			spriteHeight,
-			drawLeftX,
-			drawTopY,
-			drawLeftX + (GLint)MapState::tileSize,
-			drawTopY + (GLint)spriteHeight);
-		topShadow = topTileHeight % 2 == 1 && topTileHeight != MapState::emptySpaceHeight;
-	}
-
-	if ((topShadow || bottomShadow) && segment.spriteHorizontalIndex < 6) {
-		int topSpriteHeight = bottomTileY * MapState::tileSize - topWorldY;
-		int spriteX = (segment.spriteHorizontalIndex + 16) * MapState::tileSize;
-		int spriteTop = topShadow ? 0 : topSpriteHeight;
-		int spriteBottom = bottomShadow ? MapState::tileSize : topSpriteHeight;
-		SpriteRegistry::rails->renderSpriteSheetRegionAtScreenRegion(
-			spriteX,
-			spriteTop,
-			spriteX + MapState::tileSize,
-			spriteBottom,
-			drawLeftX,
-			drawTopY + (GLint)spriteTop,
-			drawLeftX + (GLint)MapState::tileSize,
-			drawTopY + (GLint)spriteBottom);
 	}
 }
 void Rail::editorRemoveGroup(char group) {
@@ -341,13 +329,13 @@ char Rail::editorGetFloorSaveData(int x, int y) {
 }
 
 //////////////////////////////// RailState ////////////////////////////////
-RailState::RailState(objCounterParametersComma() Rail* pRail, int pRailIndex)
+RailState::RailState(objCounterParametersComma() Rail* pRail)
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
 rail(pRail)
-, railIndex(pRailIndex)
 , tileOffset((float)pRail->getInitialTileOffset())
 , targetTileOffset((float)pRail->getInitialTileOffset())
 , currentMovementDirection((float)pRail->getMovementDirection())
+, segmentsAbovePlayer()
 , lastUpdateTicksTime(0) {
 }
 RailState::~RailState() {
@@ -390,8 +378,37 @@ void RailState::triggerMovement() {
 void RailState::moveToDefaultTileOffset() {
 	targetTileOffset = (float)rail->getInitialTileOffset();
 }
-void RailState::render(int screenLeftWorldX, int screenTopWorldY) {
-	rail->render(screenLeftWorldX, screenTopWorldY, tileOffset);
+void RailState::renderBelowPlayer(int screenLeftWorldX, int screenTopWorldY, float playerWorldGroundY) {
+	if (Editor::isActive && rail->editorIsDeleted)
+		return;
+
+	Rail::setSegmentColor(MathUtils::fmin(1.0f, tileOffset / rail->getMaxTileOffset()), rail->getColor());
+	int lastSegmentIndex = rail->getSegmentCount() - 1;
+	char baseHeight = rail->getBaseHeight();
+	float groundYOffset = baseHeight / 2 + 0.5f;
+	for (int i = 1; i < lastSegmentIndex; i++) {
+		Rail::Segment* segment = rail->getSegment(i);
+		float segmentWorldGroundY = (segment->y + groundYOffset) * MapState::tileSize;
+		if (segmentWorldGroundY <= playerWorldGroundY)
+			segment->render(screenLeftWorldX, screenTopWorldY, tileOffset, baseHeight);
+		else
+			segmentsAbovePlayer.push_back(segment);
+	}
+	Rail::setSegmentColor(0.0f, rail->getColor());
+	rail->getSegment(0)->render(screenLeftWorldX, screenTopWorldY, 0.0f, baseHeight);
+	rail->getSegment(lastSegmentIndex)->render(screenLeftWorldX, screenTopWorldY, 0.0f, baseHeight);
+	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+}
+void RailState::renderAbovePlayer(int screenLeftWorldX, int screenTopWorldY) {
+	if (Editor::isActive && rail->editorIsDeleted)
+		return;
+
+	Rail::setSegmentColor(MathUtils::fmin(1.0f, tileOffset / rail->getMaxTileOffset()), rail->getColor());
+	char baseHeight = rail->getBaseHeight();
+	for (Rail::Segment* segment : segmentsAbovePlayer)
+		segment->render(screenLeftWorldX, screenTopWorldY, tileOffset, baseHeight);
+	segmentsAbovePlayer.clear();
+	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 }
 void RailState::renderMovementDirections(int screenLeftWorldX, int screenTopWorldY) {
 	constexpr GLfloat movementDirectionColor = 0.75f;

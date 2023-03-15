@@ -80,8 +80,6 @@ int MapState::editorNonTilesHidingState = 1;
 MapState::MapState(objCounterParameters())
 : PooledReferenceCounter(objCounterArguments())
 , railStates()
-, railStatesByHeight()
-, railsBelowPlayerZ(0)
 , switchStates()
 , resetSwitchStates()
 , lastActivatedSwitchColor(-1)
@@ -90,7 +88,7 @@ MapState::MapState(objCounterParameters())
 , shouldPlayRadioTowerAnimation(false)
 , radioWavesState(nullptr) {
 	for (int i = 0; i < (int)rails.size(); i++)
-		railStates.push_back(newRailState(rails[i], i));
+		railStates.push_back(newRailState(rails[i]));
 	for (Switch* switch0 : switches)
 		switchStates.push_back(newSwitchState(switch0));
 	for (ResetSwitch* resetSwitch : resetSwitches)
@@ -396,7 +394,7 @@ void MapState::updateWithPreviousMapState(MapState* prev, int ticksTime) {
 		//since the editor can add switches and rails, make sure we update our list to track them
 		//we won't connect rail states to switch states since we can't kick switches in the editor
 		while (railStates.size() < rails.size())
-			railStates.push_back(newRailState(rails[railStates.size()], railStates.size()));
+			railStates.push_back(newRailState(rails[railStates.size()]));
 		while (switchStates.size() < switches.size())
 			switchStates.push_back(newSwitchState(switches[switchStates.size()]));
 		while (resetSwitchStates.size() < resetSwitches.size())
@@ -406,39 +404,10 @@ void MapState::updateWithPreviousMapState(MapState* prev, int ticksTime) {
 		switchStates[i]->updateWithPreviousSwitchState(prev->switchStates[i]);
 	for (int i = 0; i < (int)prev->resetSwitchStates.size(); i++)
 		resetSwitchStates[i]->updateWithPreviousResetSwitchState(prev->resetSwitchStates[i]);
-	railStatesByHeight.clear();
-	for (RailState* otherRailState : prev->railStatesByHeight) {
-		RailState* railState = railStates[otherRailState->getRailIndex()];
-		railState->updateWithPreviousRailState(otherRailState, ticksTime);
-		insertRailByHeight(railState);
-	}
-	if (Editor::isActive) {
-		//if we added rail states this update, add them to the height list too
-		//we know they're the last set of rails in the list
-		//if we added them in a previous state, they'll already be sorted
-		while (railStatesByHeight.size() < railStates.size())
-			railStatesByHeight.push_back(railStates[railStatesByHeight.size()]);
-	}
+	for (int i = 0; i < (int)railStates.size(); i++)
+		railStates[i]->updateWithPreviousRailState(prev->railStates[i], ticksTime);
 
 	radioWavesState.get()->updateWithPreviousRadioWavesState(prev->radioWavesState.get(), ticksTime);
-}
-void MapState::insertRailByHeight(RailState* railState) {
-	float effectiveHeight = railState->getEffectiveHeight();
-	//no insertion needed if there are no higher rails
-	if (railStatesByHeight.size() == 0 || railStatesByHeight.back()->getEffectiveHeight() <= effectiveHeight) {
-		railStatesByHeight.push_back(railState);
-		return;
-	}
-	int insertionIndex = (int)railStatesByHeight.size() - 1;
-	railStatesByHeight.push_back(railStatesByHeight.back());
-	//compare starting at the end since we expect the rails to mostly be already sorted
-	for (; insertionIndex > 0; insertionIndex--) {
-		RailState* other = railStatesByHeight[insertionIndex - 1];
-		if (other->getEffectiveHeight() <= effectiveHeight)
-			break;
-		railStatesByHeight[insertionIndex] = other;
-	}
-	railStatesByHeight[insertionIndex] = railState;
 }
 void MapState::flipSwitch(short switchId, bool allowRadioTowerAnimation, int ticksTime) {
 	SwitchState* switchState = switchStates[switchId & railSwitchIndexBitmask];
@@ -474,7 +443,7 @@ void MapState::startSwitchesFadeInAnimation(int ticksTime) {
 	shouldPlayRadioTowerAnimation = false;
 	switchesAnimationFadeInStartTicksTime = ticksTime;
 }
-void MapState::render(EntityState* camera, char playerZ, bool showConnections, int ticksTime) {
+void MapState::render(EntityState* camera, float playerWorldGroundY, bool showConnections, int ticksTime) {
 	glDisable(GL_BLEND);
 	//render the map
 	//these values are just right so that every tile rendered is at least partially in the window and no tiles are left out
@@ -519,13 +488,8 @@ void MapState::render(EntityState* camera, char playerZ, bool showConnections, i
 	//draw rail shadows, rails (that are below the player), and switches
 	for (RailState* railState : railStates)
 		railState->getRail()->renderShadow(screenLeftWorldX, screenTopWorldY);
-	railsBelowPlayerZ = 0;
-	for (RailState* railState : railStatesByHeight) {
-		if (railState->isAbovePlayerZ(playerZ))
-			break;
-		railsBelowPlayerZ++;
-		railState->render(screenLeftWorldX, screenTopWorldY);
-	}
+	for (RailState* railState : railStates)
+		railState->renderBelowPlayer(screenLeftWorldX, screenTopWorldY, playerWorldGroundY);
 	for (SwitchState* switchState : switchStates)
 		switchState->render(
 			screenLeftWorldX,
@@ -569,8 +533,8 @@ void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int 
 
 	int screenLeftWorldX = getScreenLeftWorldX(camera, ticksTime);
 	int screenTopWorldY = getScreenTopWorldY(camera, ticksTime);
-	for (int i = railsBelowPlayerZ; i < (int)railStatesByHeight.size(); i++)
-		railStatesByHeight[i]->render(screenLeftWorldX, screenTopWorldY);
+	for (RailState* railState : railStates)
+		railState->renderAbovePlayer(screenLeftWorldX, screenTopWorldY);
 	if (showConnections) {
 		//show movement directions and groups above the player for all rails
 		for (RailState* railState : railStates) {
@@ -700,10 +664,6 @@ bool MapState::loadState(string& line) {
 	} else
 		return false;
 	return true;
-}
-void MapState::sortInitialRails() {
-	for (RailState* railState : railStates)
-		insertRailByHeight(railState);
 }
 void MapState::resetMap() {
 	lastActivatedSwitchColor = -1;

@@ -47,9 +47,8 @@ PlayerState::PlayerState(objCounterParameters())
 , autoKickStartTicksTime(-1)
 , canImmediatelyAutoKick(false)
 , lastControlledX(0.0f)
-, lastControlledY(0.0f) {
-	lastControlledX = x.get()->getValue(0);
-	lastControlledY = y.get()->getValue(0);
+, lastControlledY(0.0f)
+, worldGroundY(nullptr) {
 }
 PlayerState::~PlayerState() {
 	delete collisionRect;
@@ -83,8 +82,15 @@ void PlayerState::copyPlayerState(PlayerState* other) {
 	canImmediatelyAutoKick = other->canImmediatelyAutoKick;
 	lastControlledX = other->lastControlledX;
 	lastControlledY = other->lastControlledY;
+	worldGroundY.set(other->worldGroundY.get());
 }
 pooledReferenceCounterDefineRelease(PlayerState)
+float PlayerState::getWorldGroundY(int ticksTime) {
+	int ticksSinceLastUpdate = ticksTime - lastUpdateTicksTime;
+	return worldGroundY.get() != nullptr
+		? worldGroundY.get()->getValue(ticksSinceLastUpdate)
+		: y.get()->getValue(ticksSinceLastUpdate) + z / 2 * MapState::tileSize + boundingBoxCenterYOffset;
+}
 void PlayerState::setDirection(SpriteDirection pSpriteDirection) {
 	spriteDirection = pSpriteDirection;
 	xDirection = pSpriteDirection == SpriteDirection::Left ? -1 : pSpriteDirection == SpriteDirection::Right ? 1 : 0;
@@ -144,6 +150,7 @@ void PlayerState::updateWithPreviousPlayerState(PlayerState* prev, int ticksTime
 	//if the previous play state had an animation, we copied it already so clear it
 	//if not, we might have a leftover entity animation from a previous state
 	entityAnimation.set(nullptr);
+	worldGroundY.set(nullptr);
 
 	//if we can control the player then that must mean the player has the boot
 	hasBoot = true;
@@ -780,14 +787,15 @@ void PlayerState::kickAir(int ticksTime) {
 	beginEntityAnimation(&kickAnimationComponents, ticksTime);
 }
 void PlayerState::kickClimb(float xMoveDistance, float yMoveDistance, int ticksTime) {
+	float currentX = x.get()->getValue(0);
+	float currentY = y.get()->getValue(0);
 	stringstream message;
-	message << "  climb " << (int)(x.get()->getValue(0)) << " " << (int)(y.get()->getValue(0))
-		<< "  " << (int)(x.get()->getValue(0) + xMoveDistance) << " " << (int)(y.get()->getValue(0) + yMoveDistance);
+	message << "  climb " << (int)currentX << " " << (int)currentY
+		<< "  " << (int)(currentX + xMoveDistance) << " " << (int)(currentY + yMoveDistance);
 	Logger::gameplayLogger.logString(message.str());
 
-	int moveDuration =
-		SpriteRegistry::playerFastKickingAnimation->getTotalTicksDuration()
-			- SpriteRegistry::playerFastKickingAnimationTicksPerFrame;
+	int climbAnimationDuration = SpriteRegistry::playerFastKickingAnimation->getTotalTicksDuration();
+	int moveDuration = climbAnimationDuration - SpriteRegistry::playerFastKickingAnimationTicksPerFrame;
 	float floatMoveDuration = (float)moveDuration;
 	float moveDurationSquared = floatMoveDuration * floatMoveDuration;
 	float moveDurationCubed = moveDurationSquared * floatMoveDuration;
@@ -800,19 +808,17 @@ void PlayerState::kickClimb(float xMoveDistance, float yMoveDistance, int ticksT
 	});
 
 	//set the climb velocity
-	if (xMoveDistance == 0)
-		kickingAnimationComponents.push_back(
-			newEntityAnimationSetVelocity(
+	kickingAnimationComponents.push_back(
+		xMoveDistance == 0
+			? newEntityAnimationSetVelocity(
 				newConstantValue(0.0f),
 				newCompositeQuarticValue(
 					0.0f,
 					0.0f,
 					0.0f,
 					yMoveDistance / (moveDurationCubed * 2.0f),
-					yMoveDistance / (moveDurationCubed * floatMoveDuration * 2.0f))));
-	else
-		kickingAnimationComponents.push_back(
-			newEntityAnimationSetVelocity(
+					yMoveDistance / (moveDurationCubed * floatMoveDuration * 2.0f)))
+			: newEntityAnimationSetVelocity(
 				newCompositeQuarticValue(0.0f, 0.0f, xMoveDistance / moveDurationSquared, 0.0f, 0.0f),
 				newCompositeQuarticValue(
 					0.0f, 2.0f * yMoveDistance / floatMoveDuration, -yMoveDistance / moveDurationSquared, 0.0f, 0.0f)));
@@ -827,12 +833,19 @@ void PlayerState::kickClimb(float xMoveDistance, float yMoveDistance, int ticksT
 
 
 	beginEntityAnimation(&kickingAnimationComponents, ticksTime);
+	float currentWorldGroundY = getWorldGroundY(lastUpdateTicksTime);
+	//regardless of the movement direction, ground Y changes based on Y move distance
+	const float worldGroundYChange = (yMoveDistance + 1) * MapState::tileSize;
+	worldGroundY.set(
+		newCompositeQuarticValue(currentWorldGroundY, worldGroundYChange / climbAnimationDuration, 0.0f, 0.0f, 0.0f));
 	z += 2;
 }
 void PlayerState::kickFall(float xMoveDistance, float yMoveDistance, char fallHeight, int ticksTime) {
+	float currentX = x.get()->getValue(0);
+	float currentY = y.get()->getValue(0);
 	stringstream message;
-	message << "  fall " << (int)(x.get()->getValue(0)) << " " << (int)(y.get()->getValue(0))
-		<< "  " << (int)(x.get()->getValue(0) + xMoveDistance) << " " << (int)(y.get()->getValue(0) + yMoveDistance);
+	message << "  fall " << (int)currentX << " " << (int)currentY
+		<< "  " << (int)(currentX + xMoveDistance) << " " << (int)(currentY + yMoveDistance);
 	Logger::gameplayLogger.logString(message.str());
 
 	bool useFastKickingAnimation = fallHeight == z - 2;
@@ -849,7 +862,8 @@ void PlayerState::kickFall(float xMoveDistance, float yMoveDistance, char fallHe
 		newEntityAnimationDelay(fallAnimationFirstFrameTicks)
 	});
 
-	int moveDuration = fallAnimation->getTotalTicksDuration() - fallAnimationFirstFrameTicks;
+	int climbAnimationDuration = fallAnimation->getTotalTicksDuration();
+	int moveDuration = climbAnimationDuration - fallAnimationFirstFrameTicks;
 	float floatMoveDuration = (float)moveDuration;
 	float moveDurationSquared = floatMoveDuration * floatMoveDuration;
 
@@ -913,6 +927,11 @@ void PlayerState::kickFall(float xMoveDistance, float yMoveDistance, char fallHe
 		});
 
 	beginEntityAnimation(&kickingAnimationComponents, ticksTime);
+	float currentWorldGroundY = getWorldGroundY(lastUpdateTicksTime);
+	//regardless of the movement direction, ground Y changes based on Y move distance
+	const float worldGroundYChange = (yMoveDistance + (fallHeight - z) / 2) * MapState::tileSize;
+	worldGroundY.set(
+		newCompositeQuarticValue(currentWorldGroundY, worldGroundYChange / climbAnimationDuration, 0.0f, 0.0f, 0.0f));
 	z = fallHeight;
 }
 void PlayerState::kickRail(short railId, float xPosition, float yPosition, int ticksTime) {
