@@ -41,9 +41,7 @@ public:
 	virtual void setShouldSwitchToPlayerCamera() {}
 	//set a dynamic color that should be used to render an overlay over the screen
 	virtual void setScreenOverlayColor(
-		DynamicValue* r, DynamicValue* g, DynamicValue* b, DynamicValue* a, int pLastUpdateTicksTime)
-	{
-	}
+		DynamicValue* r, DynamicValue* g, DynamicValue* b, DynamicValue* a, int pLastUpdateTicksTime) {}
 	//tell the map to kick a switch at the given time
 	virtual void mapKickSwitch(short switchId, bool allowRadioTowerAnimation, int ticksTime) {}
 	//tell the map to kick a reset switch at the given time
@@ -61,7 +59,7 @@ public:
 	//return the entity's screen y coordinate at the given time
 	float getRenderCenterScreenY(EntityState* camera, int ticksTime);
 	//return the screen y coordinate at the given time from the given world y coordinate and camera
-	static float getRenderCenterScreenYFromWorldY(float worldX, EntityState* camera, int ticksTime);
+	static float getRenderCenterScreenYFromWorldY(float worldY, EntityState* camera, int ticksTime);
 	//get the duration of our entity animation, if we have one
 	int getAnimationTicksDuration();
 	//get a sprite direction based on movement velocity

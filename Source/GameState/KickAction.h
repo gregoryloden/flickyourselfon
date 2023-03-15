@@ -10,9 +10,13 @@ enum class KickActionType: int {
 	Rail = 2,
 	NoRail = 3,
 	Switch = 4,
+	//radio tower square switch
 	Square = 5,
+	//radio tower triangle switch
 	Triangle = 6,
+	//radio tower saw switch
 	Saw = 7,
+	//radio tower sine switch
 	Sine = 8,
 	ResetSwitch
 };

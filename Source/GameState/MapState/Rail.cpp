@@ -430,9 +430,9 @@ void RailState::renderMovementDirections(int screenLeftWorldX, int screenTopWorl
 				movementDirectionColor,
 				movementDirectionColor,
 				1.0f,
-				leftX + MapState::tileSize / 2 - i,
+				leftX + MapState::halfTileSize - i,
 				arrowTopY,
-				leftX + MapState::tileSize / 2 + i,
+				leftX + MapState::halfTileSize + i,
 				arrowTopY + 1);
 		}
 	}

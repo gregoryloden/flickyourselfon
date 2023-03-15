@@ -377,13 +377,12 @@ bool PlayerState::setRailKickAction(float xPosition, float yPosition) {
 	int railMapY = (int)railCheckYPosition / MapState::tileSize;
 	//the player isn't in front of a rail, but if the player is within a half tile of a rail, don't let them fall
 	if (!MapState::tileHasRail(railMapX, railMapY)) {
-		constexpr float halfTileSize = (float)MapState::tileSize * 0.5f;
 		if (spriteDirection == SpriteDirection::Up || spriteDirection == SpriteDirection::Down)
-			return MapState::tileHasRail((int)(railCheckXPosition - halfTileSize) / MapState::tileSize, railMapY)
-				|| MapState::tileHasRail((int)(railCheckXPosition + halfTileSize) / MapState::tileSize, railMapY);
+			return MapState::tileHasRail((int)(railCheckXPosition - MapState::halfTileSize) / MapState::tileSize, railMapY)
+				|| MapState::tileHasRail((int)(railCheckXPosition + MapState::halfTileSize) / MapState::tileSize, railMapY);
 		else
-			return MapState::tileHasRail(railMapX, (int)(railCheckYPosition - halfTileSize) / MapState::tileSize)
-				|| MapState::tileHasRail(railMapX, (int)(railCheckYPosition + halfTileSize) / MapState::tileSize);
+			return MapState::tileHasRail(railMapX, (int)(railCheckYPosition - MapState::halfTileSize) / MapState::tileSize)
+				|| MapState::tileHasRail(railMapX, (int)(railCheckYPosition + MapState::halfTileSize) / MapState::tileSize);
 	}
 
 	RailState* railState = mapState.get()->getRailState(railMapX, railMapY);
@@ -976,7 +975,6 @@ void PlayerState::addRailRideComponents(
 
 	components->push_back(newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerBootLiftAnimation));
 
-	const float halfTileSize = (float)MapState::tileSize * 0.5f;
 	Rail::Segment* nextSegment = rail->getSegment(firstSegmentIndex);
 	int nextSegmentIndex = firstSegmentIndex;
 	bool firstMove = true;
@@ -995,20 +993,20 @@ void PlayerState::addRailRideComponents(
 		bool toSide = false;
 		SpriteDirection nextSpriteDirection;
 		if (nextSegment->x < currentSegment->x) {
-			targetXPosition -= halfTileSize;
+			targetXPosition -= MapState::halfTileSize;
 			toSide = true;
 			nextSpriteDirection = SpriteDirection::Left;
 		} else if (nextSegment->x > currentSegment->x) {
-			targetXPosition += halfTileSize;
+			targetXPosition += MapState::halfTileSize;
 			toSide = true;
 			nextSpriteDirection = SpriteDirection::Right;
 		} else if (nextSegment->y < currentSegment->y) {
-			targetYPosition -= halfTileSize;
+			targetYPosition -= MapState::halfTileSize;
 			//the boot is on the right foot, move left so the boot is centered over the rail when we go up
 			targetXPosition -= 0.5f;
 			nextSpriteDirection = SpriteDirection::Up;
 		} else {
-			targetYPosition += halfTileSize;
+			targetYPosition += MapState::halfTileSize;
 			//the boot is on the right foot, move right so the boot is centered over the rail when we go down
 			targetXPosition += 0.5f;
 			nextSpriteDirection = SpriteDirection::Down;
@@ -1077,13 +1075,13 @@ void PlayerState::addRailRideComponents(
 	//move to the last tile
 	float finalXPosition = nextSegment->tileCenterX();
 	float finalYPosition = nextSegment->tileCenterY() - boundingBoxBottomOffset;
-	if (finalXPosition == targetXPosition + halfTileSize) {
-		finalXPosition += -halfTileSize - boundingBoxLeftOffset + smallDistance;
+	if (finalXPosition == targetXPosition + MapState::halfTileSize) {
+		finalXPosition += -MapState::halfTileSize - boundingBoxLeftOffset + smallDistance;
 		finalYPosition += 2.0f;
-	} else if (finalXPosition == targetXPosition - halfTileSize) {
-		finalXPosition += halfTileSize - boundingBoxRightOffset - smallDistance;
+	} else if (finalXPosition == targetXPosition - MapState::halfTileSize) {
+		finalXPosition += MapState::halfTileSize - boundingBoxRightOffset - smallDistance;
 		finalYPosition += 2.0f;
-	} else if (finalYPosition == targetYPosition + halfTileSize) {
+	} else if (finalYPosition == targetYPosition + MapState::halfTileSize) {
 		finalXPosition += 0.5f;
 		finalYPosition += 2.0f;
 	} else

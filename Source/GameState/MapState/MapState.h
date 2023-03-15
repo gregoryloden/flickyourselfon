@@ -50,6 +50,7 @@ public:
 	static const int emptySpaceHeight = heightCount - 1;
 	static const int highestFloorHeight = heightCount - 2;
 	static const int tileSize = 6;
+	static const int halfTileSize = tileSize / 2;
 	static const int switchSize = 12;
 	static const int switchSideInset = 2;
 	static const int switchTopInset = 1;
