@@ -539,6 +539,8 @@ void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int 
 		//show movement directions and groups above the player for all rails
 		for (RailState* railState : railStates) {
 			Rail* rail = railState->getRail();
+			if (rail->getGroups().size() == 0)
+				continue;
 			if (rail->getColor() >= 1)
 				railState->renderMovementDirections(screenLeftWorldX, screenTopWorldY);
 			rail->renderGroups(screenLeftWorldX, screenTopWorldY);

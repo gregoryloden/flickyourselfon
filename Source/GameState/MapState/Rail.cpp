@@ -223,13 +223,11 @@ void Rail::renderShadow(int screenLeftWorldX, int screenTopWorldY) {
 void Rail::renderGroups(int screenLeftWorldX, int screenTopWorldY) {
 	if (Editor::isActive && editorIsDeleted)
 		return;
-	bool hasGroups = groups.size() > 0;
 	for (int i = 0; i < (int)segments->size(); i++) {
 		Segment& segment = (*segments)[i];
 		GLint drawLeftX = (GLint)(segment.x * MapState::tileSize - screenLeftWorldX);
 		GLint drawTopY = (GLint)(segment.y * MapState::tileSize - screenTopWorldY);
-		MapState::renderGroupRect(
-			hasGroups ? groups[i % groups.size()] : 0, drawLeftX + 2, drawTopY + 2, drawLeftX + 4, drawTopY + 4);
+		MapState::renderGroupRect(groups[i % groups.size()], drawLeftX + 2, drawTopY + 2, drawLeftX + 4, drawTopY + 4);
 	}
 }
 void Rail::editorRemoveGroup(char group) {
