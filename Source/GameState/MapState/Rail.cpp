@@ -333,6 +333,8 @@ rail(pRail)
 , tileOffset((float)pRail->getInitialTileOffset())
 , targetTileOffset((float)pRail->getInitialTileOffset())
 , currentMovementDirection((float)pRail->getMovementDirection())
+, bouncesRemaining(0)
+, nextMovementDirection((float)pRail->getMovementDirection())
 , distancePerMovement(rail->getColor() == MapState::squareColor ? rail->getMaxTileOffset() : rail->getMovementMagnitude())
 , segmentsAbovePlayer()
 , lastUpdateTicksTime(0) {
@@ -342,36 +344,48 @@ RailState::~RailState() {
 }
 void RailState::updateWithPreviousRailState(RailState* prev, int ticksTime) {
 	targetTileOffset = prev->targetTileOffset;
-	if (Editor::isActive)
-		currentMovementDirection = rail->getMovementDirection();
-	else
-		currentMovementDirection = prev->currentMovementDirection;
-	if (prev->tileOffset != prev->targetTileOffset) {
-		float tileOffsetDiff = distancePerMovement * (ticksTime - prev->lastUpdateTicksTime) / fullMovementDurationTicks;
-		tileOffset = prev->tileOffset > prev->targetTileOffset
-			? MathUtils::fmax(prev->targetTileOffset, prev->tileOffset - tileOffsetDiff)
-			: MathUtils::fmin(prev->targetTileOffset, prev->tileOffset + tileOffsetDiff);
-	} else
-		tileOffset = targetTileOffset;
 	lastUpdateTicksTime = ticksTime;
-
-	if (Editor::isActive)
+	if (Editor::isActive) {
 		tileOffset = (float)rail->getInitialTileOffset();
+		nextMovementDirection = rail->getMovementDirection();
+	}
+
+	currentMovementDirection = prev->currentMovementDirection;
+	bouncesRemaining = prev->bouncesRemaining;
+	nextMovementDirection = prev->nextMovementDirection;
+	float tileOffsetDiff = distancePerMovement * (ticksTime - prev->lastUpdateTicksTime) / fullMovementDurationTicks;
+	if (bouncesRemaining > 0) {
+		tileOffset = prev->tileOffset + tileOffsetDiff * currentMovementDirection;
+		if (tileOffset < 0)
+			tileOffset = MathUtils::fmin(-tileOffset, targetTileOffset);
+		else if (tileOffset > rail->getMaxTileOffset())
+			tileOffset = MathUtils::fmax(rail->getMaxTileOffset() * 2 - tileOffset, targetTileOffset);
+		else
+			return;
+		currentMovementDirection = -currentMovementDirection;
+		bouncesRemaining -= 1;
+	} else if (prev->tileOffset != targetTileOffset)
+		tileOffset = prev->tileOffset > targetTileOffset
+			? MathUtils::fmax(targetTileOffset, prev->tileOffset - tileOffsetDiff)
+			: MathUtils::fmin(targetTileOffset, prev->tileOffset + tileOffsetDiff);
+	else
+		tileOffset = targetTileOffset;
 }
 void RailState::triggerMovement() {
 	//square wave rail: swap the tile offset between 0 and the max tile offset
 	if (rail->getColor() == MapState::squareColor)
 		targetTileOffset = targetTileOffset == 0.0f ? rail->getMaxTileOffset() : 0.0f;
-	//triangle wave switch: move the rail 2 tiles in its current movement direction
+	//triangle wave switch: move the rail movementMagnitude tiles in its current movement direction
 	else if (rail->getColor() == MapState::triangleColor) {
-		targetTileOffset += rail->getMovementMagnitude() * currentMovementDirection;
-		if (targetTileOffset > rail->getMaxTileOffset()) {
-			targetTileOffset = rail->getMaxTileOffset() * 2 - targetTileOffset;
-			currentMovementDirection = -currentMovementDirection;
-		} else if (targetTileOffset < 0) {
+		targetTileOffset += rail->getMovementMagnitude() * nextMovementDirection;
+		if (targetTileOffset < 0)
 			targetTileOffset = -targetTileOffset;
-			currentMovementDirection = -currentMovementDirection;
-		}
+		else if (targetTileOffset > rail->getMaxTileOffset())
+			targetTileOffset = rail->getMaxTileOffset() * 2 - targetTileOffset;
+		else
+			return;
+		nextMovementDirection = -nextMovementDirection;
+		bouncesRemaining += 1;
 	}
 }
 void RailState::moveToDefaultTileOffset() {
@@ -423,7 +437,7 @@ void RailState::renderMovementDirections(int screenLeftWorldX, int screenTopWorl
 			SpriteRegistry::rails->renderSpriteAtScreenPosition(0, 0, leftX, topY + i * MapState::tileSize);
 		glDisable(GL_BLEND);
 		for (int i = 1; i <= 3; i++) {
-			GLint arrowTopY = currentMovementDirection < 0 ? topY + i - 1 : topY + movementMagnitudeSize - i;
+			GLint arrowTopY = nextMovementDirection < 0 ? topY + i - 1 : topY + movementMagnitudeSize - i;
 			SpriteSheet::renderFilledRectangle(
 				movementDirectionColor,
 				movementDirectionColor,

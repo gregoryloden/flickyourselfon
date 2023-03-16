@@ -108,6 +108,8 @@ private:
 	float tileOffset;
 	float targetTileOffset;
 	float currentMovementDirection;
+	int bouncesRemaining;
+	float nextMovementDirection;
 	float distancePerMovement;
 	vector<Rail::Segment*> segmentsAbovePlayer;
 	int lastUpdateTicksTime;
