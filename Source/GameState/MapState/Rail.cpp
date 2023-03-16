@@ -123,10 +123,10 @@ int Rail::extentSegmentSpriteHorizontalIndex(int prevX, int prevY, int x, int y)
 }
 void Rail::setSegmentColor(float loweredScale, int railColor) {
 	constexpr float nonColorIntensity = 9.0f / 16.0f;
-	constexpr float sineColorIntensity = 14.0f / 16.0f;
-	float redColor = sineColorIntensity;
-	float greenColor = sineColorIntensity;
-	float blueColor = sineColorIntensity;
+	constexpr float fullColorIntensity = 14.0f / 16.0f;
+	float redColor = fullColorIntensity;
+	float greenColor = fullColorIntensity;
+	float blueColor = fullColorIntensity;
 	if (railColor != MapState::sineColor) {
 		redColor = railColor == MapState::squareColor ? 1.0f : nonColorIntensity;
 		greenColor = railColor == MapState::sawColor ? 1.0f : nonColorIntensity;
@@ -333,7 +333,7 @@ rail(pRail)
 , tileOffset((float)pRail->getInitialTileOffset())
 , targetTileOffset((float)pRail->getInitialTileOffset())
 , currentMovementDirection((float)pRail->getMovementDirection())
-, distancePerMovement(rail->getColor() == 0 ? rail->getMaxTileOffset() : rail->getMovementMagnitude())
+, distancePerMovement(rail->getColor() == MapState::squareColor ? rail->getMaxTileOffset() : rail->getMovementMagnitude())
 , segmentsAbovePlayer()
 , lastUpdateTicksTime(0) {
 }
@@ -360,10 +360,10 @@ void RailState::updateWithPreviousRailState(RailState* prev, int ticksTime) {
 }
 void RailState::triggerMovement() {
 	//square wave rail: swap the tile offset between 0 and the max tile offset
-	if (rail->getColor() == 0)
+	if (rail->getColor() == MapState::squareColor)
 		targetTileOffset = targetTileOffset == 0.0f ? rail->getMaxTileOffset() : 0.0f;
 	//triangle wave switch: move the rail 2 tiles in its current movement direction
-	else if (rail->getColor() == 1) {
+	else if (rail->getColor() == MapState::triangleColor) {
 		targetTileOffset += rail->getMovementMagnitude() * currentMovementDirection;
 		if (targetTileOffset > rail->getMaxTileOffset()) {
 			targetTileOffset = rail->getMaxTileOffset() * 2 - targetTileOffset;

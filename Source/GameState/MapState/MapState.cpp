@@ -511,9 +511,9 @@ void MapState::render(EntityState* camera, float playerWorldGroundY, bool showCo
 		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 
 	glColor4f(
-		(lastActivatedSwitchColor == MapState::squareColor || lastActivatedSwitchColor == MapState::sineColor) ? 1.0f : 0.0f,
-		(lastActivatedSwitchColor == MapState::sawColor || lastActivatedSwitchColor == MapState::sineColor) ? 1.0f : 0.0f,
-		(lastActivatedSwitchColor == MapState::triangleColor || lastActivatedSwitchColor == MapState::sineColor) ? 1.0f : 0.0f,
+		(lastActivatedSwitchColor == squareColor || lastActivatedSwitchColor == sineColor) ? 1.0f : 0.0f,
+		(lastActivatedSwitchColor == sawColor || lastActivatedSwitchColor == sineColor) ? 1.0f : 0.0f,
+		(lastActivatedSwitchColor == triangleColor || lastActivatedSwitchColor == sineColor) ? 1.0f : 0.0f,
 		1.0f);
 	radioWavesState.get()->render(camera, ticksTime);
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
@@ -541,7 +541,7 @@ void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int 
 			Rail* rail = railState->getRail();
 			if (rail->getGroups().size() == 0)
 				continue;
-			if (rail->getColor() >= 1)
+			if (rail->getColor() >= triangleColor)
 				railState->renderMovementDirections(screenLeftWorldX, screenTopWorldY);
 			rail->renderGroups(screenLeftWorldX, screenTopWorldY);
 		}
