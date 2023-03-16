@@ -335,6 +335,7 @@ rail(pRail)
 , tileOffset((float)pRail->getInitialTileOffset())
 , targetTileOffset((float)pRail->getInitialTileOffset())
 , currentMovementDirection((float)pRail->getMovementDirection())
+, distancePerMovement(rail->getColor() == 0 ? rail->getMaxTileOffset() : rail->getMovementMagnitude())
 , segmentsAbovePlayer()
 , lastUpdateTicksTime(0) {
 }
@@ -348,7 +349,7 @@ void RailState::updateWithPreviousRailState(RailState* prev, int ticksTime) {
 	else
 		currentMovementDirection = prev->currentMovementDirection;
 	if (prev->tileOffset != prev->targetTileOffset) {
-		float tileOffsetDiff = tileOffsetPerTick * (float)(ticksTime - prev->lastUpdateTicksTime);
+		float tileOffsetDiff = distancePerMovement * (ticksTime - prev->lastUpdateTicksTime) / fullMovementDurationTicks;
 		tileOffset = prev->tileOffset > prev->targetTileOffset
 			? MathUtils::fmax(prev->targetTileOffset, prev->tileOffset - tileOffsetDiff)
 			: MathUtils::fmin(prev->targetTileOffset, prev->tileOffset + tileOffsetDiff);

@@ -102,12 +102,13 @@ public:
 };
 class RailState onlyInDebug(: public ObjCounter) {
 private:
-	static constexpr float tileOffsetPerTick = 3.0f / (float)Config::ticksPerSecond;
+	static constexpr float fullMovementDurationTicks = 0.75f * Config::ticksPerSecond;
 
 	Rail* rail;
 	float tileOffset;
 	float targetTileOffset;
 	float currentMovementDirection;
+	float distancePerMovement;
 	vector<Rail::Segment*> segmentsAbovePlayer;
 	int lastUpdateTicksTime;
 
