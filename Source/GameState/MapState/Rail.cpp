@@ -348,6 +348,7 @@ void RailState::updateWithPreviousRailState(RailState* prev, int ticksTime) {
 	if (Editor::isActive) {
 		tileOffset = (float)rail->getInitialTileOffset();
 		nextMovementDirection = rail->getMovementDirection();
+		return;
 	}
 
 	currentMovementDirection = prev->currentMovementDirection;
