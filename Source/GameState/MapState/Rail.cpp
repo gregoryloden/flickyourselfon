@@ -211,7 +211,7 @@ void Rail::renderShadow(int screenLeftWorldX, int screenTopWorldY) {
 	int lastSegmentIndex = (int)segments->size() - 1;
 	for (int i = 1; i < lastSegmentIndex; i++) {
 		Segment& segment = (*segments)[i];
-		//don't render a shadow if this segment hides behind a platform
+		//don't render a shadow if this segment hides behind a platform or can't be lowered
 		if (segment.maxTileOffset > 0)
 			SpriteRegistry::rails->renderSpriteAtScreenPosition(
 				segment.spriteHorizontalIndex + Segment::spriteHorizontalIndexShadowFirst,
@@ -396,7 +396,8 @@ void RailState::renderBelowPlayer(int screenLeftWorldX, int screenTopWorldY, flo
 	if (Editor::isActive && rail->editorIsDeleted)
 		return;
 
-	Rail::setSegmentColor(MathUtils::fmin(1.0f, tileOffset / rail->getMaxTileOffset()), rail->getColor());
+	float loweredScale = rail->getMaxTileOffset() > 0 ? tileOffset / rail->getMaxTileOffset() : 0.0f;
+	Rail::setSegmentColor(MathUtils::fmin(1.0f, loweredScale), rail->getColor());
 	int lastSegmentIndex = rail->getSegmentCount() - 1;
 	char baseHeight = rail->getBaseHeight();
 	float groundYOffset = baseHeight / 2 + 0.5f;
