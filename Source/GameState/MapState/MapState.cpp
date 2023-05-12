@@ -76,13 +76,14 @@ vector<Switch*> MapState::switches;
 vector<ResetSwitch*> MapState::resetSwitches;
 int MapState::width = 1;
 int MapState::height = 1;
-int MapState::editorNonTilesHidingState = 1;
+bool MapState::editorHideNonTiles = false;
 MapState::MapState(objCounterParameters())
 : PooledReferenceCounter(objCounterArguments())
 , railStates()
 , switchStates()
 , resetSwitchStates()
 , lastActivatedSwitchColor(-1)
+, showConnectionsEnabled(false)
 , finishedConnectionsTutorial(false)
 , switchesAnimationFadeInStartTicksTime(0)
 , shouldPlayRadioTowerAnimation(false)
@@ -383,10 +384,9 @@ void MapState::setIntroAnimationBootTile(bool showBootTile) {
 	tiles[introAnimationBootTileY * width + introAnimationBootTileX] = showBootTile ? tileBoot : tileFloorFirst;
 }
 void MapState::updateWithPreviousMapState(MapState* prev, int ticksTime) {
-	const Uint8* keyboardState = SDL_GetKeyboardState(nullptr);
 	lastActivatedSwitchColor = prev->lastActivatedSwitchColor;
-	finishedConnectionsTutorial =
-		prev->finishedConnectionsTutorial || (keyboardState[Config::keyBindings.showConnectionsKey] != 0);
+	showConnectionsEnabled = prev->showConnectionsEnabled;
+	finishedConnectionsTutorial = prev->finishedConnectionsTutorial;
 	shouldPlayRadioTowerAnimation = false;
 	switchesAnimationFadeInStartTicksTime = prev->switchesAnimationFadeInStartTicksTime;
 
@@ -443,6 +443,23 @@ void MapState::startSwitchesFadeInAnimation(int ticksTime) {
 	shouldPlayRadioTowerAnimation = false;
 	switchesAnimationFadeInStartTicksTime = ticksTime;
 }
+void MapState::toggleShowConnections() {
+	if (Editor::isActive) {
+		//if only tiles were visible, restore everything and turn connections on
+		if (editorHideNonTiles) {
+			showConnectionsEnabled = true;
+			editorHideNonTiles = false;
+		//if connections were on, turn them off
+		} else if (showConnectionsEnabled)
+			showConnectionsEnabled = false;
+		//if connections were off, also hide everything other than the tiles
+		else
+			editorHideNonTiles = true;
+	} else {
+		showConnectionsEnabled = !showConnectionsEnabled;
+		finishedConnectionsTutorial = true;
+	}
+}
 void MapState::render(EntityState* camera, float playerWorldGroundY, bool showConnections, int ticksTime) {
 	glDisable(GL_BLEND);
 	//render the map
@@ -471,19 +488,8 @@ void MapState::render(EntityState* camera, float playerWorldGroundY, bool showCo
 		}
 	}
 
-	if (Editor::isActive) {
-		if (showConnections == (editorNonTilesHidingState % 2 == 1))
-			editorNonTilesHidingState = (editorNonTilesHidingState + 1) % 6;
-		//by default, show the connections
-		if (editorNonTilesHidingState / 2 == 0)
-			showConnections = true;
-		//on the first press of the show-connections button, hide the connections
-		else if (editorNonTilesHidingState / 2 == 1)
-			showConnections = false;
-		//on the 2nd press of the show-connections button, hide everything other than the tiles
-		else
-			return;
-	}
+	if (Editor::isActive && editorHideNonTiles)
+		return;
 
 	//draw rail shadows, rails (that are below the player), and switches
 	for (RailState* railState : railStates)
@@ -519,17 +525,8 @@ void MapState::render(EntityState* camera, float playerWorldGroundY, bool showCo
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 }
 void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int ticksTime) {
-	if (Editor::isActive) {
-		//by default, show the connections
-		if (editorNonTilesHidingState / 2 == 0)
-			showConnections = true;
-		//on the first press of the show-connections button, hide the connections
-		else if (editorNonTilesHidingState / 2 == 1)
-			showConnections = false;
-		//on the 2nd press of the show-connections button, hide everything other than the tiles
-		else
-			return;
-	}
+	if (Editor::isActive && editorHideNonTiles)
+		return;
 
 	int screenLeftWorldX = getScreenLeftWorldX(camera, ticksTime);
 	int screenTopWorldY = getScreenTopWorldY(camera, ticksTime);
@@ -545,7 +542,7 @@ void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int 
 				railState->renderMovementDirections(screenLeftWorldX, screenTopWorldY);
 			rail->renderGroups(screenLeftWorldX, screenTopWorldY);
 		}
-		if (!finishedConnectionsTutorial && SDL_GetKeyboardState(nullptr)[Config::keyBindings.showConnectionsKey] == 0) {
+		if (!finishedConnectionsTutorial) {
 			Text::Metrics showConnectionsMetrics = Text::getMetrics(showConnectionsText, 1.0f);
 			Text::render(showConnectionsText, showConnectionsTextLeftX, showConnectionsTextBaselineY, 1.0f);
 			Text::renderWithKeyBackground(

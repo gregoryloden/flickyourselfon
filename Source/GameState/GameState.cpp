@@ -106,14 +106,14 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 				shouldQuitGame = true;
 				break;
 			case SDL_KEYDOWN:
-				if (gameEvent.key.keysym.scancode == Config::keyBindings.kickKey && !Editor::isActive) {
-					playerState.get()->beginKicking(gameTicksTime);
-					break;
-				}
-				if (gameEvent.key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
+				if (gameEvent.key.keysym.scancode == Config::keyBindings.kickKey) {
+					if (!Editor::isActive)
+						playerState.get()->beginKicking(gameTicksTime);
+				} else if (gameEvent.key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
 					pauseState.set(newBasePauseState());
 					pauseStartTicksTime = ticksTime;
-				}
+				} else if (gameEvent.key.keysym.scancode == Config::keyBindings.showConnectionsKey)
+					mapState.get()->toggleShowConnections();
 				break;
 			case SDL_MOUSEBUTTONDOWN:
 				if (Editor::isActive)
@@ -244,9 +244,7 @@ void GameState::startRadioTowerAnimation(int ticksTime) {
 void GameState::render(int ticksTime) {
 	Editor::EditingMutexLocker editingMutexLocker;
 	int gameTicksTime = (pauseState.get() != nullptr ? pauseStartTicksTime : ticksTime) - gameTimeOffsetTicksDuration;
-	bool showConnections =
-		SDL_GetKeyboardState(nullptr)[Config::keyBindings.showConnectionsKey] != 0
-			|| (!mapState.get()->getFinishedConnectionsTutorial() && playerState.get()->showTutorialConnectionsForKickAction());
+	bool showConnections = mapState.get()->getShowConnections(playerState.get()->showTutorialConnectionsForKickAction());
 	float playerWorldGroundY = playerState.get()->getWorldGroundY(gameTicksTime);
 	mapState.get()->render(camera, playerWorldGroundY, showConnections, gameTicksTime);
 	playerState.get()->render(camera, gameTicksTime);
@@ -417,6 +415,9 @@ void GameState::loadInitialState(int ticksTime) {
 		playerState.get()->setHighestZ();
 		//always skip the intro animation for the editor, jump straight into walking
 		sawIntroAnimation = true;
+		//enable show connections, toggle twice to skip the hide-non-tiles setting
+		mapState.get()->toggleShowConnections();
+		mapState.get()->toggleShowConnections();
 	} else
 		playerState.get()->setInitialZ();
 

@@ -140,12 +140,13 @@ private:
 	static vector<ResetSwitch*> resetSwitches;
 	static int width;
 	static int height;
-	static int editorNonTilesHidingState;
+	static bool editorHideNonTiles;
 
 	vector<RailState*> railStates;
 	vector<SwitchState*> switchStates;
 	vector<ResetSwitchState*> resetSwitchStates;
 	char lastActivatedSwitchColor;
+	bool showConnectionsEnabled;
 	bool finishedConnectionsTutorial;
 	int switchesAnimationFadeInStartTicksTime;
 	bool shouldPlayRadioTowerAnimation;
@@ -173,9 +174,11 @@ public:
 	ResetSwitchState* getResetSwitchState(int x, int y) {
 		return resetSwitchStates[getRailSwitchId(x, y) & railSwitchIndexBitmask];
 	}
-	bool getShouldPlayRadioTowerAnimation() { return shouldPlayRadioTowerAnimation; }
 	char getLastActivatedSwitchColor() { return lastActivatedSwitchColor; }
-	bool getFinishedConnectionsTutorial() { return finishedConnectionsTutorial; }
+	bool getShowConnections(bool showTutorialConnections) {
+		return showConnectionsEnabled || (showTutorialConnections && !finishedConnectionsTutorial);
+	}
+	bool getShouldPlayRadioTowerAnimation() { return shouldPlayRadioTowerAnimation; }
 	int getRadioWavesAnimationTicksDuration() { return radioWavesState.get()->getAnimationTicksDuration(); }
 	static void editorSetTile(int x, int y, char tile) { tiles[y * width + x] = tile; }
 	static void editorSetHeight(int x, int y, char height) { heights[y * width + x] = height; }
@@ -239,6 +242,8 @@ public:
 	void startRadioWavesAnimation(int initialTicksDelay, int ticksTime);
 	//activate the next switch color and set the start of the animation
 	void startSwitchesFadeInAnimation(int ticksTime);
+	//toggle the state of showing connections, and any other relevant state
+	void toggleShowConnections();
 	//draw the map
 	void render(EntityState* camera, float playerWorldGroundY, bool showConnections, int ticksTime);
 	//draw anything (rails, groups) that render above the player
