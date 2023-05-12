@@ -390,12 +390,6 @@ void MapState::updateWithPreviousMapState(MapState* prev, int ticksTime) {
 	shouldPlayRadioTowerAnimation = false;
 	switchesAnimationFadeInStartTicksTime = prev->switchesAnimationFadeInStartTicksTime;
 
-	for (int i = 0; i < (int)prev->switchStates.size(); i++)
-		switchStates[i]->updateWithPreviousSwitchState(prev->switchStates[i]);
-	for (int i = 0; i < (int)prev->resetSwitchStates.size(); i++)
-		resetSwitchStates[i]->updateWithPreviousResetSwitchState(prev->resetSwitchStates[i]);
-	for (int i = 0; i < (int)railStates.size(); i++)
-		railStates[i]->updateWithPreviousRailState(prev->railStates[i], ticksTime);
 	if (Editor::isActive) {
 		//since the editor can add switches and rails, make sure we update our list to track them
 		//we won't connect rail states to switch states since we can't kick switches in the editor
@@ -406,6 +400,12 @@ void MapState::updateWithPreviousMapState(MapState* prev, int ticksTime) {
 		while (resetSwitchStates.size() < resetSwitches.size())
 			resetSwitchStates.push_back(newResetSwitchState(resetSwitches[resetSwitchStates.size()]));
 	}
+	for (int i = 0; i < (int)prev->switchStates.size(); i++)
+		switchStates[i]->updateWithPreviousSwitchState(prev->switchStates[i]);
+	for (int i = 0; i < (int)prev->resetSwitchStates.size(); i++)
+		resetSwitchStates[i]->updateWithPreviousResetSwitchState(prev->resetSwitchStates[i]);
+	for (int i = 0; i < (int)prev->railStates.size(); i++)
+		railStates[i]->updateWithPreviousRailState(prev->railStates[i], ticksTime);
 
 	radioWavesState.get()->updateWithPreviousRadioWavesState(prev->radioWavesState.get(), ticksTime);
 }
