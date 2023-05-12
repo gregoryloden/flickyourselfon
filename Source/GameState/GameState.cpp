@@ -92,7 +92,7 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 
 	//forget the previous camera if we're starting our radio tower animation
 	if (mapState.get()->getShouldPlayRadioTowerAnimation()) {
-		startRadioTowerAnimation(ticksTime);
+		startRadioTowerAnimation(gameTicksTime);
 		setDynamicCamera();
 	//otherwise set our next camera anchor
 	} else
