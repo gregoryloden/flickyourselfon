@@ -727,14 +727,16 @@ void GameState::beginIntroAnimation(int ticksTime) {
 		newEntityAnimationDelay(800),
 		//put on the boot, moving the arbitrary distance needed to get to the right position
 		newEntityAnimationSetVelocity(
-			newCompositeQuarticValue(0.0f, -17.0f / (float)Config::ticksPerSecond, 0.0f, 0.0f, 0.0f),
-			newCompositeQuarticValue(0.0f, 4.0f / (float)Config::ticksPerSecond, 0.0f, 0.0f, 0.0f)),
+			newCompositeQuarticValue(0.0f, -52.0f / 3.0f / (float)Config::ticksPerSecond, 0.0f, 0.0f, 0.0f),
+			newCompositeQuarticValue(0.0f, 10.0f / 3.0f / (float)Config::ticksPerSecond, 0.0f, 0.0f, 0.0f)),
 		newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerLegLiftAnimation),
 		newEntityAnimationDelay(SpriteRegistry::playerLegLiftAnimation->getTotalTicksDuration()),
 		stopMoving,
 		clearSpriteAnimation
 	});
 	playerState.get()->beginEntityAnimation(&playerAnimationComponents, ticksTime);
+	//fix the initial z because the player teleported to the start of the intro animation
+	playerState.get()->setInitialZ();
 
 	int blackScreenFadeOutEndTime = introAnimationStartTicksTime + 1000;
 	int animationEndTicksTime = EntityAnimation::getComponentTotalTicksDuration(playerAnimationComponents);
