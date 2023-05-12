@@ -142,8 +142,8 @@ void Editor::SaveButton::onClick() {
 		SDL_CreateRGBSurface(0, exportedMapWidth, exportedMapHeight, 32, 0xFF0000, 0xFF00, 0xFF, 0xFF000000);
 	SDL_Renderer* floorRenderer = SDL_CreateSoftwareRenderer(floorSurface);
 
-	for (int exportedMapY = 0; exportedMapY < exportedMapWidth; exportedMapY++) {
-		for (int exportedMapX = 0; exportedMapX < exportedMapHeight; exportedMapX++) {
+	for (int exportedMapY = 0; exportedMapY < exportedMapHeight; exportedMapY++) {
+		for (int exportedMapX = 0; exportedMapX < exportedMapWidth; exportedMapX++) {
 			int mapX = exportedMapX - mapExtensionLeftX;
 			int mapY = exportedMapY - mapExtensionTopY;
 			if (mapX < 0 || mapX >= mapWidth || mapY < 0 || mapY >= mapHeight)
