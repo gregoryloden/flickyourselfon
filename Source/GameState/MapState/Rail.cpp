@@ -396,8 +396,7 @@ void RailState::renderBelowPlayer(int screenLeftWorldX, int screenTopWorldY, flo
 	if (Editor::isActive && rail->editorIsDeleted)
 		return;
 
-	float loweredScale = rail->getMaxTileOffset() > 0 ? tileOffset / rail->getMaxTileOffset() : 0.0f;
-	Rail::setSegmentColor(MathUtils::fmin(1.0f, loweredScale), rail->getColor());
+	setSegmentColor();
 	int lastSegmentIndex = rail->getSegmentCount() - 1;
 	char baseHeight = rail->getBaseHeight();
 	float groundYOffset = baseHeight / 2 + 0.5f;
@@ -418,12 +417,16 @@ void RailState::renderAbovePlayer(int screenLeftWorldX, int screenTopWorldY) {
 	if (Editor::isActive && rail->editorIsDeleted)
 		return;
 
-	Rail::setSegmentColor(MathUtils::fmin(1.0f, tileOffset / rail->getMaxTileOffset()), rail->getColor());
+	setSegmentColor();
 	char baseHeight = rail->getBaseHeight();
 	for (Rail::Segment* segment : segmentsAbovePlayer)
 		segment->render(screenLeftWorldX, screenTopWorldY, tileOffset, baseHeight);
 	segmentsAbovePlayer.clear();
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+}
+void RailState::setSegmentColor() {
+	float loweredScale = rail->getMaxTileOffset() > 0 ? tileOffset / rail->getMaxTileOffset() : 0.0f;
+	Rail::setSegmentColor(MathUtils::fmin(1.0f, loweredScale), rail->getColor());
 }
 void RailState::renderMovementDirections(int screenLeftWorldX, int screenTopWorldY) {
 	constexpr GLfloat movementDirectionColor = 0.75f;

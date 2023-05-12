@@ -131,6 +131,8 @@ public:
 	void renderBelowPlayer(int screenLeftWorldX, int screenTopWorld, float playerWorldGroundY);
 	//render the rail in front of the player using the list of saved segments
 	void renderAbovePlayer(int screenLeftWorldX, int screenTopWorld);
+	//set the segment color for this rail based on the raised/lowered state
+	void setSegmentColor();
 	//render the movement direction over the ends of the rail
 	void renderMovementDirections(int screenLeftWorldX, int screenTopWorldY);
 	//set this rail to the initial tile offset, not moving
