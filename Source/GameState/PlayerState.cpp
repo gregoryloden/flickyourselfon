@@ -27,6 +27,7 @@
 
 const string PlayerState::playerXFilePrefix = "playerX ";
 const string PlayerState::playerYFilePrefix = "playerY ";
+const string PlayerState::playerDirectionFilePrefix = "playerDirection ";
 PlayerState::PlayerState(objCounterParameters())
 : EntityState(objCounterArguments())
 , z(0)
@@ -1186,6 +1187,7 @@ void PlayerState::renderKickAction(EntityState* camera, bool hasRailsToReset, in
 void PlayerState::saveState(ofstream& file) {
 	file << playerXFilePrefix << lastControlledX << "\n";
 	file << playerYFilePrefix << lastControlledY << "\n";
+	file << playerDirectionFilePrefix << (int)spriteDirection << "\n";
 }
 bool PlayerState::loadState(string& line) {
 	if (StringUtils::startsWith(line, playerXFilePrefix)) {
@@ -1194,6 +1196,10 @@ bool PlayerState::loadState(string& line) {
 	} else if (StringUtils::startsWith(line, playerYFilePrefix)) {
 		lastControlledY = (float)atof(line.c_str() + playerYFilePrefix.size());
 		y.set(newCompositeQuarticValue(lastControlledY, 0.0f, 0.0f, 0.0f, 0.0f));
+	} else if (StringUtils::startsWith(line, playerDirectionFilePrefix)) {
+		int direction = atoi(line.c_str() + playerDirectionFilePrefix.size());
+		if (direction >= 0 && direction < 4)
+			spriteDirection = (SpriteDirection)direction;
 	} else
 		return false;
 	return true;

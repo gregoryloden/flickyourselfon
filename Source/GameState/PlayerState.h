@@ -32,6 +32,7 @@ private:
 	static constexpr float kickingDistanceLimit = 1.5f;
 	static const string playerXFilePrefix;
 	static const string playerYFilePrefix;
+	static const string playerDirectionFilePrefix;
 
 	char z;
 	char xDirection;
