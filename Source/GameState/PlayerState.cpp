@@ -863,8 +863,11 @@ void PlayerState::kickFall(float xMoveDistance, float yMoveDistance, char fallHe
 	int moveDuration = climbAnimationDuration - fallAnimationFirstFrameTicks;
 	float floatMoveDuration = (float)moveDuration;
 	float moveDurationSquared = floatMoveDuration * floatMoveDuration;
+	//regardless of the fall direction or movement distance, x is linear
+	DynamicValue* xVelocity = newCompositeQuarticValue(0.0f, xMoveDistance / floatMoveDuration, 0.0f, 0.0f, 0.0f);
+	DynamicValue* yVelocity;
 
-	//up has a jump trajectory that visually goes up far, then down
+	//up has a y jump trajectory that visually goes up far, then down
 	if (spriteDirection == SpriteDirection::Up) {
 		//we want a cubic curve that goes through (0,0) and (1,1) and a chosen midpoint (i,j) where 0 < i < 1
 		//it also goes through (c,#) such that dy/dt has roots at c (trough) and i (crest) (and arbitrary multiplier d)
@@ -893,27 +896,18 @@ void PlayerState::kickFall(float xMoveDistance, float yMoveDistance, char fallHe
 		float yQuadraticValuePerDuration = -yMultiplier * (troughX + midpointX) / 2.0f;
 		float yCubicValuePerDuration = yMultiplier / 3.0f;
 
-		kickingAnimationComponents.push_back(
-			newEntityAnimationSetVelocity(
-				newConstantValue(0.0f),
-				newCompositeQuarticValue(
-					0.0f,
-					yLinearValuePerDuration / floatMoveDuration,
-					yQuadraticValuePerDuration / moveDurationSquared,
-					yCubicValuePerDuration / (moveDurationSquared * floatMoveDuration),
-					0.0f)));
-	//left, right, and down all have the same quadratic jump trajectory (for y, and x is linear or 0)
-	} else {
-		kickingAnimationComponents.push_back(
-			newEntityAnimationSetVelocity(
-				newCompositeQuarticValue(0.0f, xMoveDistance / floatMoveDuration, 0.0f, 0.0f, 0.0f),
-				newCompositeQuarticValue(
-					0.0f,
-					-yMoveDistance / floatMoveDuration,
-					2.0f * yMoveDistance / moveDurationSquared,
-					0.0f,
-					0.0f)));
-	}
+		yVelocity = newCompositeQuarticValue(
+			0.0f,
+			yLinearValuePerDuration / floatMoveDuration,
+			yQuadraticValuePerDuration / moveDurationSquared,
+			yCubicValuePerDuration / (moveDurationSquared * floatMoveDuration),
+			0.0f);
+	//left, right, and down all have the same quadratic y jump trajectory
+	} else
+		yVelocity = newCompositeQuarticValue(
+			0.0f, -yMoveDistance / floatMoveDuration, 2.0f * yMoveDistance / moveDurationSquared, 0.0f, 0.0f);
+	kickingAnimationComponents.push_back(newEntityAnimationSetVelocity(xVelocity, yVelocity));
+
 
 	//delay for the rest of the animation and then stop the player
 	kickingAnimationComponents.insert(
