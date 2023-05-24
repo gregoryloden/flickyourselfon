@@ -68,6 +68,7 @@ void MapState::RadioWavesState::render(EntityState* camera, int ticksTime) {
 const string MapState::railOffsetFilePrefix = "rail ";
 const string MapState::lastActivatedSwitchColorFilePrefix = "lastActivatedSwitchColor ";
 const string MapState::finishedConnectionsTutorialFilePrefix = "finishedConnectionsTutorial ";
+const string MapState::showConnectionsFilePrefix = "showConnections ";
 char* MapState::tiles = nullptr;
 char* MapState::heights = nullptr;
 short* MapState::railSwitchIds = nullptr;
@@ -636,6 +637,8 @@ void MapState::saveState(ofstream& file) {
 		file << lastActivatedSwitchColorFilePrefix << (int)lastActivatedSwitchColor << "\n";
 	if (finishedConnectionsTutorial)
 		file << finishedConnectionsTutorialFilePrefix << "true\n";
+	if (showConnectionsEnabled)
+		file << showConnectionsFilePrefix << "true\n";
 
 	//don't save the rail states if we're saving the floor file
 	//also write that we unlocked all the switches
@@ -655,6 +658,8 @@ bool MapState::loadState(string& line) {
 		lastActivatedSwitchColor = (char)atoi(line.c_str() + lastActivatedSwitchColorFilePrefix.size());
 	else if (StringUtils::startsWith(line, finishedConnectionsTutorialFilePrefix))
 		finishedConnectionsTutorial = strcmp(line.c_str() + finishedConnectionsTutorialFilePrefix.size(), "true") == 0;
+	else if (StringUtils::startsWith(line, showConnectionsFilePrefix))
+		showConnectionsEnabled = strcmp(line.c_str() + showConnectionsFilePrefix.size(), "true") == 0;
 	else if (StringUtils::startsWith(line, railOffsetFilePrefix)) {
 		const char* railIndexString = line.c_str() + railOffsetFilePrefix.size();
 		const char* offsetString = strchr(railIndexString, ' ') + 1;

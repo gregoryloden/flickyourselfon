@@ -128,6 +128,7 @@ public:
 	static const string railOffsetFilePrefix;
 	static const string lastActivatedSwitchColorFilePrefix;
 	static const string finishedConnectionsTutorialFilePrefix;
+	static const string showConnectionsFilePrefix;
 
 private:
 	static char* tiles;

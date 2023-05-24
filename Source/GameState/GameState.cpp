@@ -415,9 +415,12 @@ void GameState::loadInitialState(int ticksTime) {
 		playerState.get()->setHighestZ();
 		//always skip the intro animation for the editor, jump straight into walking
 		sawIntroAnimation = true;
-		//enable show connections, toggle twice to skip the hide-non-tiles setting
-		mapState.get()->toggleShowConnections();
-		mapState.get()->toggleShowConnections();
+		//enable show connections if necessary
+		if (!mapState.get()->getShowConnections(false)) {
+			//toggle twice to skip the hide-non-tiles setting
+			mapState.get()->toggleShowConnections();
+			mapState.get()->toggleShowConnections();
+		}
 	} else
 		playerState.get()->setInitialZ();
 
