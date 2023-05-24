@@ -53,6 +53,7 @@ private:
 	float lastControlledX;
 	float lastControlledY;
 	ReferenceCounterHolder<DynamicValue> worldGroundY;
+	float worldGroundYOffset;
 
 public:
 	PlayerState(objCounterParameters());

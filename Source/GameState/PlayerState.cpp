@@ -48,7 +48,8 @@ PlayerState::PlayerState(objCounterParameters())
 , canImmediatelyAutoKick(false)
 , lastControlledX(0.0f)
 , lastControlledY(0.0f)
-, worldGroundY(nullptr) {
+, worldGroundY(nullptr)
+, worldGroundYOffset(0.0f) {
 }
 PlayerState::~PlayerState() {
 	delete collisionRect;
@@ -83,13 +84,14 @@ void PlayerState::copyPlayerState(PlayerState* other) {
 	lastControlledX = other->lastControlledX;
 	lastControlledY = other->lastControlledY;
 	worldGroundY.set(other->worldGroundY.get());
+	worldGroundYOffset = other->worldGroundYOffset;
 }
 pooledReferenceCounterDefineRelease(PlayerState)
 float PlayerState::getWorldGroundY(int ticksTime) {
 	int ticksSinceLastUpdate = ticksTime - lastUpdateTicksTime;
 	return worldGroundY.get() != nullptr
 		? worldGroundY.get()->getValue(ticksSinceLastUpdate)
-		: y.get()->getValue(ticksSinceLastUpdate) + z / 2 * MapState::tileSize + boundingBoxCenterYOffset;
+		: y.get()->getValue(ticksSinceLastUpdate) + z / 2 * MapState::tileSize + boundingBoxCenterYOffset + worldGroundYOffset;
 }
 void PlayerState::setDirection(SpriteDirection pSpriteDirection) {
 	spriteDirection = pSpriteDirection;
@@ -151,6 +153,7 @@ void PlayerState::updateWithPreviousPlayerState(PlayerState* prev, int ticksTime
 	//if not, we might have a leftover entity animation from a previous state
 	entityAnimation.set(nullptr);
 	worldGroundY.set(nullptr);
+	worldGroundYOffset = 0.0f;
 
 	//if we can control the player then that must mean the player has the boot
 	hasBoot = true;
@@ -930,6 +933,8 @@ void PlayerState::kickRail(short railId, float xPosition, float yPosition, int t
 	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> ridingRailAnimationComponents;
 	addRailRideComponents(railId, &ridingRailAnimationComponents, xPosition, yPosition, nullptr, nullptr);
 	beginEntityAnimation(&ridingRailAnimationComponents, ticksTime);
+	//the player is visually moved up to simulate a half-height raise on the rail, but the world ground y needs to stay the same
+	worldGroundYOffset = MapState::halfTileSize + playerHeight / 2;
 }
 void PlayerState::addRailRideComponents(
 	short railId,
