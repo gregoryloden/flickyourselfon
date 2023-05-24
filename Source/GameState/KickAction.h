@@ -7,18 +7,19 @@ enum class KickActionType: int {
 	None = -1,
 	Climb = 0,
 	Fall = 1,
-	Rail = 2,
-	NoRail = 3,
-	Switch = 4,
+	FallBig = 2,
+	Rail = 3,
+	NoRail = 4,
+	Switch = 5,
 	//radio tower square switch
-	Square = 5,
+	Square = 6,
 	//radio tower triangle switch
-	Triangle = 6,
+	Triangle = 7,
 	//radio tower saw switch
-	Saw = 7,
+	Saw = 8,
 	//radio tower sine switch
-	Sine = 8,
-	ResetSwitch
+	Sine = 9,
+	ResetSwitch = 10,
 };
 class KickAction: public PooledReferenceCounter {
 private:

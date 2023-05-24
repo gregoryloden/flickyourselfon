@@ -39,6 +39,7 @@ void KickAction::render(float centerX, float bottomY, bool hasRailsToReset) {
 			showKickIndicator = Config::kickIndicators.climb;
 			break;
 		case KickActionType::Fall:
+		case KickActionType::FallBig:
 			showKickIndicator = Config::kickIndicators.fall;
 			break;
 		case KickActionType::Rail:

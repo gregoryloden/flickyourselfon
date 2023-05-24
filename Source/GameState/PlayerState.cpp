@@ -596,7 +596,8 @@ bool PlayerState::setFallKickAction(float xPosition, float yPosition) {
 	if (!checkCanMoveToPosition(
 			targetXPosition, targetYPosition, fallHeight, spriteDirection, &targetXPosition, &targetYPosition))
 		return false;
-	availableKickAction.set(newClimbFallKickAction(KickActionType::Fall, targetXPosition, targetYPosition, fallHeight));
+	KickActionType kickActionType = fallHeight < z - 2 ? KickActionType::FallBig : KickActionType::Fall;
+	availableKickAction.set(newClimbFallKickAction(kickActionType, targetXPosition, targetYPosition, fallHeight));
 	return true;
 }
 bool PlayerState::checkCanMoveToPosition(
@@ -690,13 +691,9 @@ void PlayerState::tryAutoKick(PlayerState* prev, int ticksTime) {
 	//ensure we have an auto-compatible kick action and check any secondary requirements
 	switch (availableKickAction.get()->getType()) {
 		case KickActionType::Climb:
-			//no auto-climb if the player isn't moving straight
-			if ((xDirection != 0) == (yDirection != 0))
-				return;
-			break;
 		case KickActionType::Fall:
-			//no auto-fall if the player isn't moving straight towards a floor they can climb back up from
-			if (((xDirection != 0) == (yDirection != 0)) || availableKickAction.get()->getFallHeight() != z - 2)
+			//no auto-climb or auto-fall-small if the player isn't moving straight
+			if ((xDirection != 0) == (yDirection != 0))
 				return;
 			break;
 		case KickActionType::Rail: {
@@ -749,6 +746,7 @@ void PlayerState::beginKicking(int ticksTime) {
 			kickClimb(kickAction->getTargetPlayerX() - xPosition, kickAction->getTargetPlayerY() - yPosition, ticksTime);
 			break;
 		case KickActionType::Fall:
+		case KickActionType::FallBig:
 			kickFall(
 				kickAction->getTargetPlayerX() - xPosition,
 				kickAction->getTargetPlayerY() - yPosition,

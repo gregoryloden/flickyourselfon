@@ -36,7 +36,7 @@ void SpriteRegistry::loadAll() {
 	switches = newSpriteSheetWithImagePath(switchesFileName, 9, 1, true);
 	radioWaves = newSpriteSheetWithImagePath(radioWavesFileName, 5, 1, false);
 	resetSwitch = newSpriteSheetWithImagePath(resetSwitchFileName, 2, 1, true);
-	kickIndicator = newSpriteSheetWithImagePath(kickIndicatorFileName, 9, 1, true);
+	kickIndicator = newSpriteSheetWithImagePath(kickIndicatorFileName, 10, 1, true);
 	playerWalkingAnimation = newSpriteAnimation(
 		player,
 		{
