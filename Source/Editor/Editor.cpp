@@ -873,11 +873,18 @@ void Editor::handleClick(SDL_MouseButtonEvent& clickEvent, bool isDrag, EntitySt
 	}
 }
 void Editor::render(EntityState* camera, int ticksTime) {
+	//draw a box around the world
+	int screenLeftWorldX = MapState::getScreenLeftWorldX(camera, ticksTime);
+	int screenTopWorldY = MapState::getScreenTopWorldY(camera, ticksTime);
+	GLint boxLeftX = (GLint)(-screenLeftWorldX);
+	GLint boxTopY = (GLint)(-screenTopWorldY);
+	GLint boxRightX = (GLint)(MapState::mapWidth() * MapState::tileSize - screenLeftWorldX);
+	GLint boxBottomY = (GLint)(MapState::mapHeight() * MapState::tileSize - screenTopWorldY);
+	SpriteSheet::renderRectangleOutline(1.0f, 1.0f, 1.0f, 1.0f, boxLeftX, boxTopY, boxRightX, boxBottomY);
+
 	//if we've selected something to paint, draw a box around the area we'll paint
 	if (selectedButton != nullptr) {
 		//get the map coordinate of the mouse
-		int screenLeftWorldX = MapState::getScreenLeftWorldX(camera, ticksTime);
-		int screenTopWorldY = MapState::getScreenTopWorldY(camera, ticksTime);
 		int boxLeftMapX;
 		int boxTopMapY;
 		getMouseMapXY(screenLeftWorldX, screenTopWorldY, &boxLeftMapX, &boxTopMapY);
@@ -886,10 +893,10 @@ void Editor::render(EntityState* camera, int ticksTime) {
 		selectedButton->expandPaintMapArea(&boxLeftMapX, &boxTopMapY, &boxRightMapX, &boxBottomMapY, false);
 
 		//draw a mouse selection box
-		GLint boxLeftX = (GLint)(boxLeftMapX * MapState::tileSize - screenLeftWorldX);
-		GLint boxTopY = (GLint)(boxTopMapY * MapState::tileSize - screenTopWorldY);
-		GLint boxRightX = (GLint)(boxRightMapX * MapState::tileSize - screenLeftWorldX);
-		GLint boxBottomY = (GLint)(boxBottomMapY * MapState::tileSize - screenTopWorldY);
+		boxLeftX = (GLint)(boxLeftMapX * MapState::tileSize - screenLeftWorldX);
+		boxTopY = (GLint)(boxTopMapY * MapState::tileSize - screenTopWorldY);
+		boxRightX = (GLint)(boxRightMapX * MapState::tileSize - screenLeftWorldX);
+		boxBottomY = (GLint)(boxBottomMapY * MapState::tileSize - screenTopWorldY);
 		SpriteSheet::renderRectangleOutline(1.0f, 1.0f, 1.0f, 1.0f, boxLeftX, boxTopY, boxRightX, boxBottomY);
 	}
 
