@@ -382,11 +382,11 @@ bool PlayerState::setRailKickAction(float xPosition, float yPosition) {
 	//the player isn't in front of a rail, but if the player is within a half tile of a rail, don't let them fall
 	if (!MapState::tileHasRail(railMapX, railMapY)) {
 		if (spriteDirection == SpriteDirection::Up || spriteDirection == SpriteDirection::Down)
-			return MapState::tileHasRail((int)(railCheckXPosition - MapState::halfTileSize) / MapState::tileSize, railMapY)
-				|| MapState::tileHasRail((int)(railCheckXPosition + MapState::halfTileSize) / MapState::tileSize, railMapY);
+			return MapState::tileHasRailEnd((int)(railCheckXPosition - MapState::halfTileSize) / MapState::tileSize, railMapY)
+				|| MapState::tileHasRailEnd((int)(railCheckXPosition + MapState::halfTileSize) / MapState::tileSize, railMapY);
 		else
-			return MapState::tileHasRail(railMapX, (int)(railCheckYPosition - MapState::halfTileSize) / MapState::tileSize)
-				|| MapState::tileHasRail(railMapX, (int)(railCheckYPosition + MapState::halfTileSize) / MapState::tileSize);
+			return MapState::tileHasRailEnd(railMapX, (int)(railCheckYPosition - MapState::halfTileSize) / MapState::tileSize)
+				|| MapState::tileHasRailEnd(railMapX, (int)(railCheckYPosition + MapState::halfTileSize) / MapState::tileSize);
 	}
 
 	RailState* railState = mapState.get()->getRailState(railMapX, railMapY);

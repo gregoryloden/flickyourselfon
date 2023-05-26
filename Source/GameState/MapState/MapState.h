@@ -223,6 +223,8 @@ public:
 	static float antennaCenterWorldY();
 	//check that the tile has the main section of the reset switch, not just one of the rail segments
 	static bool tileHasResetSwitchBody(int x, int y);
+	//check that the tile has the end segment of a rail
+	static bool tileHasRailEnd(int x, int y);
 	//a switch can only be kicked if it's group 0 or if its color is activated
 	KickActionType getSwitchKickActionType(short switchId);
 	//check the height of all the tiles in the row (indices inclusive), and return it if they're all the same or invalidHeight

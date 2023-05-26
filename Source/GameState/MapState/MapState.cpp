@@ -347,6 +347,16 @@ bool MapState::tileHasResetSwitchBody(int x, int y) {
 	ResetSwitch* resetSwitch = resetSwitches[getRailSwitchId(x, y) & railSwitchIndexBitmask];
 	return (x == resetSwitch->getCenterX() && (y == resetSwitch->getBottomY() || y == resetSwitch->getBottomY() - 1));
 }
+bool MapState::tileHasRailEnd(int x, int y) {
+	if (!tileHasRail(x, y))
+		return false;
+	Rail* rail = getRailFromId(getRailSwitchId(x, y));
+	Rail::Segment* startSegment = rail->getSegment(0);
+	if (startSegment->x == x && startSegment->y == y)
+		return true;
+	Rail::Segment* endSegment = rail->getSegment(rail->getSegmentCount() - 1);
+	return endSegment->x == x && endSegment->y == y;
+}
 KickActionType MapState::getSwitchKickActionType(short switchId) {
 	Switch* switch0 = switches[switchId & railSwitchIndexBitmask];
 	bool group0 = switch0->getGroup() == 0;
