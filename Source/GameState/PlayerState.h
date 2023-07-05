@@ -5,6 +5,7 @@
 class CollisionRect;
 class KickAction;
 class SpriteAnimation;
+enum class KickActionType : int;
 namespace EntityAnimationTypes {
 	class Component;
 }
@@ -84,8 +85,8 @@ public:
 	virtual void mapKickResetSwitch(short resetSwitchId, int ticksTime);
 	//return whether we have a kick action where we can show connections
 	bool showTutorialConnectionsForKickAction();
-	//if we have a reset switch kick action, return its id
-	short getKickActionResetSwitchId();
+	//if we have a kick action matching the given type, write its railSwitchId out and return true, otherwise return false
+	bool hasRailSwitchKickAction(KickActionType kickActionType, short* outRailSwitchId);
 	//update this PlayerState by reading from the previous state
 	void updateWithPreviousPlayerState(PlayerState* prev, int ticksTime);
 private:

@@ -27,6 +27,8 @@ public:
 		int lastActivatedSwitchColorFadeInTicksOffset,
 		bool isOn,
 		bool showGroup);
+	//render the group without rendering the switch
+	void renderGroup(int screenLeftWorldX, int screenTopWorldY);
 	//update the position of this switch
 	void editorMoveTo(int newLeftX, int newTopY);
 	//we're saving this switch to the floor file, get the data we need at this tile

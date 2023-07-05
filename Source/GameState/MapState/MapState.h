@@ -255,6 +255,8 @@ public:
 	//render the groups for rails that are not in their default position that have a group that this reset switch also has
 	//return whether any groups were drawn
 	bool renderGroupsForRailsToReset(EntityState* camera, short resetSwitchId, int ticksTime);
+	//render the groups for rails that have the group of this switch
+	void renderGroupsForRailsFromSwitch(EntityState* camera, short switchId, int ticksTime);
 	//draw a graphic to represent this rail/switch group
 	static void renderGroupRect(char group, GLint leftX, GLint topY, GLint rightX, GLint bottomY);
 private:

@@ -587,6 +587,26 @@ bool MapState::renderGroupsForRailsToReset(EntityState* camera, short resetSwitc
 		resetSwitchStates[resetSwitchId & railSwitchIndexBitmask]->render(screenLeftWorldX, screenTopWorldY, true, ticksTime);
 	return hasRailsToReset;
 }
+void MapState::renderGroupsForRailsFromSwitch(EntityState* camera, short switchId, int ticksTime) {
+	Switch* switch0 = switches[switchId & railSwitchIndexBitmask];
+	char group = switch0->getGroup();
+	char color = switch0->getColor();
+	if (group == 0 || lastActivatedSwitchColor < color)
+		return;
+	int screenLeftWorldX = getScreenLeftWorldX(camera, ticksTime);
+	int screenTopWorldY = getScreenTopWorldY(camera, ticksTime);
+	for (Rail* rail : rails) {
+		if (rail->getColor() != color)
+			continue;
+		for (char railGroup : rail->getGroups()) {
+			if (railGroup == group) {
+				rail->renderGroups(screenLeftWorldX, screenTopWorldY);
+				break;
+			}
+		}
+	}
+	switch0->renderGroup(screenLeftWorldX, screenTopWorldY);
+}
 void MapState::renderGroupRect(char group, GLint leftX, GLint topY, GLint rightX, GLint bottomY) {
 	GLint midX = (leftX + rightX) / 2;
 	//bits 0-2

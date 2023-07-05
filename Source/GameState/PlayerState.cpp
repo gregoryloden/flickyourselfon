@@ -136,10 +136,12 @@ bool PlayerState::showTutorialConnectionsForKickAction() {
 			return false;
 	}
 }
-short PlayerState::getKickActionResetSwitchId() {
-	return availableKickAction.get() != nullptr && availableKickAction.get()->getType() == KickActionType::ResetSwitch
-		? availableKickAction.get()->getRailSwitchId()
-		: MapState::absentRailSwitchId;
+bool PlayerState::hasRailSwitchKickAction(KickActionType kickActionType, short* outRailSwitchId) {
+	if (availableKickAction.get() != nullptr && availableKickAction.get()->getType() == kickActionType) {
+		*outRailSwitchId = availableKickAction.get()->getRailSwitchId();
+		return true;
+	}
+	return false;
 }
 void PlayerState::updateWithPreviousPlayerState(PlayerState* prev, int ticksTime) {
 	bool previousStateHadEntityAnimation = prev->entityAnimation.get() != nullptr;

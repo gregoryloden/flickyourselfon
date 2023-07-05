@@ -2,6 +2,7 @@
 #include "Editor/Editor.h"
 #include "GameState/DynamicValue.h"
 #include "GameState/EntityAnimation.h"
+#include "GameState/KickAction.h"
 #include "GameState/PauseState.h"
 #include "GameState/PlayerState.h"
 #include "GameState/MapState/MapState.h"
@@ -250,10 +251,12 @@ void GameState::render(int ticksTime) {
 	playerState.get()->render(camera, gameTicksTime);
 	mapState.get()->renderAbovePlayer(camera, showConnections, gameTicksTime);
 
-	short kickActionResetSwitchId = playerState.get()->getKickActionResetSwitchId();
+	short contextualGroupsRailSwitchId;
 	bool hasRailsToReset = false;
-	if (kickActionResetSwitchId != MapState::absentRailSwitchId)
-		hasRailsToReset = mapState.get()->renderGroupsForRailsToReset(camera, kickActionResetSwitchId, gameTicksTime);
+	if (playerState.get()->hasRailSwitchKickAction(KickActionType::ResetSwitch, &contextualGroupsRailSwitchId))
+		hasRailsToReset = mapState.get()->renderGroupsForRailsToReset(camera, contextualGroupsRailSwitchId, gameTicksTime);
+	else if (playerState.get()->hasRailSwitchKickAction(KickActionType::Switch, &contextualGroupsRailSwitchId))
+		mapState.get()->renderGroupsForRailsFromSwitch(camera, contextualGroupsRailSwitchId, gameTicksTime);
 	playerState.get()->renderKickAction(camera, hasRailsToReset, gameTicksTime);
 
 	if (camera == dynamicCameraAnchor.get())
