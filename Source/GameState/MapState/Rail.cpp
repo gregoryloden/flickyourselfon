@@ -429,6 +429,9 @@ void RailState::setSegmentColor() {
 	Rail::setSegmentColor(MathUtils::fmin(1.0f, loweredScale), rail->getColor());
 }
 void RailState::renderMovementDirections(int screenLeftWorldX, int screenTopWorldY) {
+	if (Editor::isActive && rail->editorIsDeleted)
+		return;
+
 	constexpr GLfloat movementDirectionColor = 0.75f;
 	Rail::Segment* endSegments[2] = { rail->getSegment(0), rail->getSegment(rail->getSegmentCount() - 1) };
 	for (Rail::Segment* segment : endSegments) {
