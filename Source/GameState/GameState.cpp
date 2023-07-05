@@ -262,9 +262,11 @@ void GameState::render(int ticksTime) {
 		renderTextDisplay(gameTicksTime);
 
 	//TODO: real win condition
+	int winTileX = 110;
+	int winTileY = 32;
 	float px = playerState.get()->getRenderCenterWorldX(gameTicksTime);
 	float py = playerState.get()->getRenderCenterWorldY(gameTicksTime);
-	if (px >= 260 && px <= 270 && py >= 240 && py <= 255) {
+	if (abs(px / MapState::tileSize - winTileX - 0.5) <= 1.0f && abs((py + 7) / MapState::tileSize - winTileY - 0.5) <= 1.0f) {
 		const char* win = "Win!";
 		Text::Metrics winMetrics = Text::getMetrics(win, 2.0f);
 		Text::render(win, 10.0f, 10.0f + winMetrics.aboveBaseline, 2.0f);
