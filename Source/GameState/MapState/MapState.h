@@ -29,7 +29,7 @@ public:
 		//don't do anything based on a camera change
 		virtual void setNextCamera(GameState* nextGameState, int ticksTime) {}
 		//initialize and return a RadioWavesState
-		static RadioWavesState* produce(objCounterParameters());
+		static RadioWavesState* produce(objCounterParametersComma() float pX, float pY);
 		//copy the state of the other RadioWavesState
 		void copyRadioWavesState(RadioWavesState* other);
 		//release a reference to this RadioWavesState and return it to the pool if applicable

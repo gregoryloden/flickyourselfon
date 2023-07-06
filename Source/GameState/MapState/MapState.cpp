@@ -16,7 +16,7 @@
 #include "Util/Logger.h"
 #include "Util/StringUtils.h"
 
-#define newRadioWavesState() produceWithoutArgs(MapState::RadioWavesState)
+#define newRadioWavesState(x, y) produceWithArgs(MapState::RadioWavesState, x, y)
 #define entityAnimationSpriteAnimationAfterDelay(animation, delay) \
 	newEntityAnimationDelay(delay), \
 	newEntityAnimationSetSpriteAnimation(animation)
@@ -25,16 +25,15 @@
 MapState::RadioWavesState::RadioWavesState(objCounterParameters())
 : EntityState(objCounterArguments())
 , spriteAnimation(nullptr)
-, spriteAnimationStartTicksTime(0)
-{
-	x.set(newConstantValue(antennaCenterWorldX()));
-	y.set(newConstantValue(antennaCenterWorldY()));
+, spriteAnimationStartTicksTime(0) {
 }
 MapState::RadioWavesState::~RadioWavesState() {
 	//don't delete the sprite animation, SpriteRegistry owns it
 }
-MapState::RadioWavesState* MapState::RadioWavesState::produce(objCounterParameters()) {
+MapState::RadioWavesState* MapState::RadioWavesState::produce(objCounterParametersComma() float pX, float pY) {
 	initializeWithNewFromPool(r, MapState::RadioWavesState)
+	r->x.set(newConstantValue(pX));
+	r->y.set(newConstantValue(pY));
 	return r;
 }
 void MapState::RadioWavesState::copyRadioWavesState(RadioWavesState* other) {
@@ -123,7 +122,7 @@ MapState::~MapState() {
 }
 MapState* MapState::produce(objCounterParameters()) {
 	initializeWithNewFromPool(m, MapState)
-	m->radioWavesState.set(newRadioWavesState());
+	m->radioWavesState.set(newRadioWavesState(antennaCenterWorldX(), antennaCenterWorldY()));
 	return m;
 }
 pooledReferenceCounterDefineRelease(MapState)
