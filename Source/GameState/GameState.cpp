@@ -15,6 +15,19 @@
 #include "Util/Logger.h"
 #include "Util/StringUtils.h"
 
+#define entityAnimationVelocityAndAnimationForDelay(velocity, animation, delay) \
+	velocity, \
+	animation, \
+	newEntityAnimationDelay(delay)
+#define entityAnimationVelocityAndAnimationAndDirectionForDelay(velocity, animation, direction, delay) \
+	velocity, \
+	animation, \
+	newEntityAnimationSetDirection(direction), \
+	newEntityAnimationDelay(delay)
+#define entityAnimationDirectionForDelay(direction, delay) \
+	newEntityAnimationSetDirection(direction), \
+	newEntityAnimationDelay(delay)
+
 const string GameState::sawIntroAnimationFilePrefix = "sawIntroAnimation ";
 GameState::GameState(objCounterParameters())
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
@@ -627,8 +640,7 @@ void GameState::loadInitialState(int ticksTime) {
 				newEntityAnimationSetVelocity(
 					newCompositeQuarticValue(0.0f, moveX, 0.0f, 0.0f, 0.0f),
 					newCompositeQuarticValue(0.0f, moveY, 0.0f, 0.0f, 0.0f)),
-				newEntityAnimationSetDirection(spriteDirection),
-				newEntityAnimationDelay(ticksDuration)
+				entityAnimationDirectionForDelay(spriteDirection, ticksDuration)
 			});
 	}
 #endif
@@ -661,79 +673,42 @@ void GameState::beginIntroAnimation(int ticksTime) {
 		newEntityAnimationDelay(introAnimationStartTicksTime),
 		newEntityAnimationDelay(2500),
 		//walk to the wall
-		walkRight,
-		setWalkingAnimation,
-		newEntityAnimationSetDirection(SpriteDirection::Right),
-		newEntityAnimationDelay(2200),
+		entityAnimationVelocityAndAnimationAndDirectionForDelay(walkRight, setWalkingAnimation, SpriteDirection::Right, 2200),
 		//walk down, stop at the boot
 		walkDown,
-		newEntityAnimationSetDirection(SpriteDirection::Down),
-		newEntityAnimationDelay(1000),
-		stopMoving,
-		clearSpriteAnimation,
-		newEntityAnimationDelay(3000),
+		entityAnimationDirectionForDelay(SpriteDirection::Down, 1000),
+		entityAnimationVelocityAndAnimationForDelay(stopMoving, clearSpriteAnimation, 3000),
 		//look at the boot
-		newEntityAnimationSetDirection(SpriteDirection::Right),
-		newEntityAnimationDelay(800),
-		newEntityAnimationSetDirection(SpriteDirection::Down),
-		newEntityAnimationDelay(1000),
+		entityAnimationDirectionForDelay(SpriteDirection::Right, 800),
+		entityAnimationDirectionForDelay(SpriteDirection::Down, 1000),
 		//walk around the boot
-		walkDown,
-		setWalkingAnimation,
-		newEntityAnimationDelay(900),
-		stopMoving,
-		clearSpriteAnimation,
-		newEntityAnimationDelay(700),
-		walkRight,
-		setWalkingAnimation,
-		newEntityAnimationSetDirection(SpriteDirection::Right),
-		newEntityAnimationDelay(1800),
+		entityAnimationVelocityAndAnimationForDelay(walkDown, setWalkingAnimation, 900),
+		entityAnimationVelocityAndAnimationForDelay(stopMoving, clearSpriteAnimation, 700),
+		entityAnimationVelocityAndAnimationAndDirectionForDelay(walkRight, setWalkingAnimation, SpriteDirection::Right, 1800),
 		//stop and look around
-		stopMoving,
-		clearSpriteAnimation,
-		newEntityAnimationDelay(700),
-		newEntityAnimationSetDirection(SpriteDirection::Up),
-		newEntityAnimationDelay(700),
-		newEntityAnimationSetDirection(SpriteDirection::Down),
-		newEntityAnimationDelay(500),
-		newEntityAnimationSetDirection(SpriteDirection::Left),
-		newEntityAnimationDelay(350),
-		newEntityAnimationSetDirection(SpriteDirection::Right),
-		newEntityAnimationDelay(1000),
+		entityAnimationVelocityAndAnimationForDelay(stopMoving, clearSpriteAnimation, 700),
+		entityAnimationDirectionForDelay(SpriteDirection::Up, 700),
+		entityAnimationDirectionForDelay(SpriteDirection::Down, 500),
+		entityAnimationDirectionForDelay(SpriteDirection::Left, 350),
+		entityAnimationDirectionForDelay(SpriteDirection::Right, 1000),
 		//walk up
-		newEntityAnimationSetDirection(SpriteDirection::Up),
-		walkUp,
-		setWalkingAnimation,
-		newEntityAnimationDelay(1700),
+		entityAnimationVelocityAndAnimationAndDirectionForDelay(walkUp, setWalkingAnimation, SpriteDirection::Up, 1700),
 		//stop and look around
-		stopMoving,
-		clearSpriteAnimation,
-		newEntityAnimationDelay(1000),
-		newEntityAnimationSetDirection(SpriteDirection::Right),
-		newEntityAnimationDelay(600),
-		newEntityAnimationSetDirection(SpriteDirection::Left),
-		newEntityAnimationDelay(400),
-		newEntityAnimationSetDirection(SpriteDirection::Up),
-		newEntityAnimationDelay(1200),
+		entityAnimationVelocityAndAnimationForDelay(stopMoving, clearSpriteAnimation, 1000),
+		entityAnimationDirectionForDelay(SpriteDirection::Right, 600),
+		entityAnimationDirectionForDelay(SpriteDirection::Left, 400),
+		entityAnimationDirectionForDelay(SpriteDirection::Up, 1200),
 		//walk back down to the boot
-		walkDown,
-		setWalkingAnimation,
-		newEntityAnimationSetDirection(SpriteDirection::Down),
-		newEntityAnimationDelay(900),
+		entityAnimationVelocityAndAnimationAndDirectionForDelay(walkDown, setWalkingAnimation, SpriteDirection::Down, 900),
 		walkLeft,
-		newEntityAnimationSetDirection(SpriteDirection::Left),
-		newEntityAnimationDelay(400),
-		stopMoving,
-		clearSpriteAnimation,
-		newEntityAnimationDelay(500),
+		entityAnimationDirectionForDelay(SpriteDirection::Left, 400),
+		entityAnimationVelocityAndAnimationForDelay(stopMoving, clearSpriteAnimation, 500),
 		//approach more slowly
 		newEntityAnimationSetVelocity(
 			newCompositeQuarticValue(0.0f, -speedPerTick * 0.5f, 0.0f, 0.0f, 0.0f), newConstantValue(0.0f)),
 		setWalkingAnimation,
 		newEntityAnimationDelay(540),
-		stopMoving,
-		clearSpriteAnimation,
-		newEntityAnimationDelay(800),
+		entityAnimationVelocityAndAnimationForDelay(stopMoving, clearSpriteAnimation, 800),
 		//put on the boot, moving the arbitrary distance needed to get to the right position
 		newEntityAnimationSetVelocity(
 			newCompositeQuarticValue(0.0f, -52.0f / 3.0f / (float)Config::ticksPerSecond, 0.0f, 0.0f, 0.0f),
