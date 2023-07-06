@@ -57,9 +57,9 @@ void SpriteAnimation::renderUsingCenter(
 	Frame* frame = findFrame(animationTicksElapsed);
 	int spriteHoritontalIndex = frame->getSpriteHorizontalIndex();
 	int spriteVerticalIndex = frame->getSpriteVerticalIndex();
-	if (spriteHoritontalIndex == -1)
+	if (spriteHoritontalIndex == absentSpriteIndex)
 		spriteHoritontalIndex = fallbackSpriteHorizontalIndex;
-	if (spriteVerticalIndex == -1)
+	if (spriteVerticalIndex == absentSpriteIndex)
 		spriteVerticalIndex = fallbackSpriteVerticalIndex;
 	sprite->renderSpriteCenteredAtScreenPosition(spriteHoritontalIndex, spriteVerticalIndex, centerX, centerY);
 }
