@@ -201,11 +201,8 @@ void GameState::startRadioTowerAnimation(int ticksTime) {
 	});
 
 	//add the radio waves animation
-	int ticksUntilStartOfRadioWavesAnimation =
-		EntityAnimation::getComponentTotalTicksDuration(dynamicCameraAnchorAnimationComponents);
-	mapState.get()->startRadioWavesAnimation(ticksUntilStartOfRadioWavesAnimation, ticksTime);
-	int radioWavesAnimationTicksDuration =
-		mapState.get()->getRadioWavesAnimationTicksDuration() - ticksUntilStartOfRadioWavesAnimation;
+	int radioWavesAnimationTicksDuration = mapState.get()->startRadioWavesAnimation(
+		EntityAnimation::getComponentTotalTicksDuration(dynamicCameraAnchorAnimationComponents), ticksTime);
 
 	//build the animation from after the radio waves animation until right before the switches animation
 	dynamicCameraAnchorAnimationComponents.insert(
@@ -230,8 +227,7 @@ void GameState::startRadioTowerAnimation(int ticksTime) {
 	dynamicCameraAnchorAnimationComponents.insert(
 		dynamicCameraAnchorAnimationComponents.end(),
 		{
-			newEntityAnimationDelay(MapState::switchesFadeInDuration),
-			newEntityAnimationDelay(postSwitchesFadeInAnimationTicks),
+			newEntityAnimationDelay(MapState::switchesFadeInDuration + postSwitchesFadeInAnimationTicks),
 			EntityAnimation::SetVelocity::cubicInterpolation(
 				playerX - switchesAnimationCenterWorldX,
 				playerY - switchesAnimationCenterWorldY,
@@ -670,8 +666,7 @@ void GameState::beginIntroAnimation(int ticksTime) {
 		stopMoving,
 		newEntityAnimationSetPosition(
 			PlayerState::introAnimationPlayerCenterX, PlayerState::introAnimationPlayerCenterY),
-		newEntityAnimationDelay(introAnimationStartTicksTime),
-		newEntityAnimationDelay(2500),
+		newEntityAnimationDelay(introAnimationStartTicksTime + 2500),
 		//walk to the wall
 		entityAnimationVelocityAndAnimationAndDirectionForDelay(walkRight, setWalkingAnimation, SpriteDirection::Right, 2200),
 		//walk down, stop at the boot

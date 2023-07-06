@@ -439,7 +439,7 @@ void MapState::flipResetSwitch(short resetSwitchId, int ticksTime) {
 	resetSwitch->resetMatchingRails(&railStates);
 	resetSwitchState->flip(ticksTime);
 }
-void MapState::startRadioWavesAnimation(int initialTicksDelay, int ticksTime) {
+int MapState::startRadioWavesAnimation(int initialTicksDelay, int ticksTime) {
 	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> radioWavesAnimationComponents ({
 		entityAnimationSpriteAnimationAfterDelay(SpriteRegistry::radioWavesAnimation, initialTicksDelay),
 		entityAnimationSpriteAnimationAfterDelay(nullptr, SpriteRegistry::radioWavesAnimation->getTotalTicksDuration()),
@@ -448,6 +448,7 @@ void MapState::startRadioWavesAnimation(int initialTicksDelay, int ticksTime) {
 		entityAnimationSpriteAnimationAfterDelay(nullptr, SpriteRegistry::radioWavesAnimation->getTotalTicksDuration())
 	});
 	radioWavesState.get()->beginEntityAnimation(&radioWavesAnimationComponents, ticksTime);
+	return radioWavesState.get()->getAnimationTicksDuration() - initialTicksDelay;
 }
 void MapState::startSwitchesFadeInAnimation(int ticksTime) {
 	shouldPlayRadioTowerAnimation = false;

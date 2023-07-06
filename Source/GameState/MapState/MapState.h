@@ -180,7 +180,6 @@ public:
 		return showConnectionsEnabled || (showTutorialConnections && !finishedConnectionsTutorial);
 	}
 	bool getShouldPlayRadioTowerAnimation() { return shouldPlayRadioTowerAnimation; }
-	int getRadioWavesAnimationTicksDuration() { return radioWavesState.get()->getAnimationTicksDuration(); }
 	static void editorSetTile(int x, int y, char tile) { tiles[y * width + x] = tile; }
 	static void editorSetHeight(int x, int y, char height) { heights[y * width + x] = height; }
 	static void editorSetRailSwitchId(int x, int y, short railSwitchId) { railSwitchIds[y * width + x] = railSwitchId; }
@@ -242,7 +241,8 @@ public:
 	//flip a reset switch
 	void flipResetSwitch(short resetSwitchId, int ticksTime);
 	//begin a radio waves animation
-	void startRadioWavesAnimation(int initialTicksDelay, int ticksTime);
+	//returns the duration of the animation that takes place after the initial delay
+	int startRadioWavesAnimation(int initialTicksDelay, int ticksTime);
 	//activate the next switch color and set the start of the animation
 	void startSwitchesFadeInAnimation(int ticksTime);
 	//toggle the state of showing connections, and any other relevant state
