@@ -45,14 +45,15 @@ void MapState::RadioWavesState::setSpriteAnimation(SpriteAnimation* pSpriteAnima
 	spriteAnimation = pSpriteAnimation;
 	spriteAnimationStartTicksTime = pSpriteAnimationStartTicksTime;
 }
-void MapState::RadioWavesState::updateWithPreviousRadioWavesState(RadioWavesState* prev, int ticksTime) {
+bool MapState::RadioWavesState::updateWithPreviousRadioWavesState(RadioWavesState* prev, int ticksTime) {
 	copyRadioWavesState(prev);
 	//if we have an entity animation, update with that instead
 	if (prev->entityAnimation.get() != nullptr) {
 		if (entityAnimation.get()->update(this, ticksTime))
-			return;
+			return true;
 		entityAnimation.set(nullptr);
 	}
+	return false;
 }
 void MapState::RadioWavesState::render(EntityState* camera, int ticksTime) {
 	if (spriteAnimation == nullptr)
@@ -87,7 +88,8 @@ MapState::MapState(objCounterParameters())
 , finishedConnectionsTutorial(false)
 , switchesAnimationFadeInStartTicksTime(0)
 , shouldPlayRadioTowerAnimation(false)
-, radioWavesState(nullptr) {
+, radioWavesStates()
+, radioWavesColor(-1) {
 	for (int i = 0; i < (int)rails.size(); i++)
 		railStates.push_back(newRailState(rails[i]));
 	for (Switch* switch0 : switches)
@@ -122,12 +124,11 @@ MapState::~MapState() {
 }
 MapState* MapState::produce(objCounterParameters()) {
 	initializeWithNewFromPool(m, MapState)
-	m->radioWavesState.set(newRadioWavesState(antennaCenterWorldX(), antennaCenterWorldY()));
 	return m;
 }
 pooledReferenceCounterDefineRelease(MapState)
 void MapState::prepareReturnToPool() {
-	radioWavesState.set(nullptr);
+	radioWavesStates.clear();
 }
 void MapState::buildMap() {
 	SDL_Surface* floor = FileUtils::loadImage(floorFileName);
@@ -399,6 +400,7 @@ void MapState::updateWithPreviousMapState(MapState* prev, int ticksTime) {
 	finishedConnectionsTutorial = prev->finishedConnectionsTutorial;
 	shouldPlayRadioTowerAnimation = false;
 	switchesAnimationFadeInStartTicksTime = prev->switchesAnimationFadeInStartTicksTime;
+	radioWavesColor = prev->radioWavesColor;
 
 	if (Editor::isActive) {
 		//since the editor can add switches and rails, make sure we update our list to track them
@@ -410,14 +412,23 @@ void MapState::updateWithPreviousMapState(MapState* prev, int ticksTime) {
 		while (resetSwitchStates.size() < resetSwitches.size())
 			resetSwitchStates.push_back(newResetSwitchState(resetSwitches[resetSwitchStates.size()]));
 	}
-	for (int i = 0; i < (int)prev->switchStates.size(); i++)
+	for (int i = 0; i < (int)switchStates.size(); i++)
 		switchStates[i]->updateWithPreviousSwitchState(prev->switchStates[i]);
-	for (int i = 0; i < (int)prev->resetSwitchStates.size(); i++)
+	for (int i = 0; i < (int)resetSwitchStates.size(); i++)
 		resetSwitchStates[i]->updateWithPreviousResetSwitchState(prev->resetSwitchStates[i]);
-	for (int i = 0; i < (int)prev->railStates.size(); i++)
+	for (int i = 0; i < (int)railStates.size(); i++)
 		railStates[i]->updateWithPreviousRailState(prev->railStates[i], ticksTime);
 
-	radioWavesState.get()->updateWithPreviousRadioWavesState(prev->radioWavesState.get(), ticksTime);
+	while (radioWavesStates.size() < prev->radioWavesStates.size())
+		radioWavesStates.push_back(newRadioWavesState(0, 0));
+	while (radioWavesStates.size() > prev->radioWavesStates.size())
+		radioWavesStates.pop_back();
+	for (int i = 0; i < (int)radioWavesStates.size(); i++) {
+		if (!radioWavesStates[i].get()->updateWithPreviousRadioWavesState(prev->radioWavesStates[i].get(), ticksTime)) {
+			radioWavesStates.erase(radioWavesStates.begin() + i);
+			i--;
+		}
+	}
 }
 void MapState::flipSwitch(short switchId, bool allowRadioTowerAnimation, int ticksTime) {
 	SwitchState* switchState = switchStates[switchId & railSwitchIndexBitmask];
@@ -440,6 +451,7 @@ void MapState::flipResetSwitch(short resetSwitchId, int ticksTime) {
 	resetSwitchState->flip(ticksTime);
 }
 int MapState::startRadioWavesAnimation(int initialTicksDelay, int ticksTime) {
+	radioWavesColor = lastActivatedSwitchColor;
 	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> radioWavesAnimationComponents ({
 		entityAnimationSpriteAnimationAfterDelay(SpriteRegistry::radioWavesAnimation, initialTicksDelay),
 		entityAnimationSpriteAnimationAfterDelay(nullptr, SpriteRegistry::radioWavesAnimation->getTotalTicksDuration()),
@@ -447,8 +459,10 @@ int MapState::startRadioWavesAnimation(int initialTicksDelay, int ticksTime) {
 			SpriteRegistry::radioWavesAnimation, RadioWavesState::interRadioWavesAnimationTicks),
 		entityAnimationSpriteAnimationAfterDelay(nullptr, SpriteRegistry::radioWavesAnimation->getTotalTicksDuration())
 	});
-	radioWavesState.get()->beginEntityAnimation(&radioWavesAnimationComponents, ticksTime);
-	return radioWavesState.get()->getAnimationTicksDuration() - initialTicksDelay;
+	RadioWavesState* radioWavesState = newRadioWavesState(antennaCenterWorldX(), antennaCenterWorldY());
+	radioWavesStates.push_back(radioWavesState);
+	radioWavesState->beginEntityAnimation(&radioWavesAnimationComponents, ticksTime);
+	return radioWavesState->getAnimationTicksDuration() - initialTicksDelay;
 }
 void MapState::startSwitchesFadeInAnimation(int ticksTime) {
 	shouldPlayRadioTowerAnimation = false;
@@ -528,11 +542,12 @@ void MapState::render(EntityState* camera, float playerWorldGroundY, bool showCo
 		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 
 	glColor4f(
-		(lastActivatedSwitchColor == squareColor || lastActivatedSwitchColor == sineColor) ? 1.0f : 0.0f,
-		(lastActivatedSwitchColor == sawColor || lastActivatedSwitchColor == sineColor) ? 1.0f : 0.0f,
-		(lastActivatedSwitchColor == triangleColor || lastActivatedSwitchColor == sineColor) ? 1.0f : 0.0f,
+		(radioWavesColor == squareColor || radioWavesColor == sineColor) ? 1.0f : 0.0f,
+		(radioWavesColor == sawColor || radioWavesColor == sineColor) ? 1.0f : 0.0f,
+		(radioWavesColor == triangleColor || radioWavesColor == sineColor) ? 1.0f : 0.0f,
 		1.0f);
-	radioWavesState.get()->render(camera, ticksTime);
+	for (ReferenceCounterHolder<RadioWavesState>& radioWavesState : radioWavesStates)
+		radioWavesState.get()->render(camera, ticksTime);
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 }
 void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int ticksTime) {

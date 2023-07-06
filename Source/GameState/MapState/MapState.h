@@ -37,7 +37,8 @@ public:
 		//set the animation to the given animation at the given time
 		virtual void setSpriteAnimation(SpriteAnimation* pSpriteAnimation, int pSpriteAnimationStartTicksTime);
 		//update this RadioWavesState by reading from the previous state
-		void updateWithPreviousRadioWavesState(RadioWavesState* prev, int ticksTime);
+		//returns whether the animation is still running
+		bool updateWithPreviousRadioWavesState(RadioWavesState* prev, int ticksTime);
 		//render the radio waves if we've got an animation
 		void render(EntityState* camera, int ticksTime);
 	};
@@ -151,7 +152,8 @@ private:
 	bool finishedConnectionsTutorial;
 	int switchesAnimationFadeInStartTicksTime;
 	bool shouldPlayRadioTowerAnimation;
-	ReferenceCounterHolder<RadioWavesState> radioWavesState;
+	vector<ReferenceCounterHolder<RadioWavesState>> radioWavesStates;
+	char radioWavesColor;
 
 public:
 	MapState(objCounterParameters());
@@ -188,7 +190,7 @@ public:
 	//release a reference to this MapState and return it to the pool if applicable
 	virtual void release();
 protected:
-	//release the radio waves state before this is returned to the pool
+	//release the radio waves states before this is returned to the pool
 	virtual void prepareReturnToPool();
 public:
 	//load the map and extract all the map data from it
