@@ -21,10 +21,11 @@ public:
 	virtual ~PooledReferenceCounter();
 
 protected:
+	//release any held objects back to the pool so that they can also be reused
 	virtual void prepareReturnToPool() {}
 public:
 	//increment the reference count of this object
-	void retain();
+	void retain() { referenceCount++; }
 	//release a reference to this PooledReferenceCounter and return it to the pool if applicable
 	virtual void release() = 0;
 };

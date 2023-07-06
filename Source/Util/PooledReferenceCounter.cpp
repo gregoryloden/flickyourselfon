@@ -17,9 +17,6 @@ PooledReferenceCounter::PooledReferenceCounter(objCounterParameters())
 referenceCount(0) {
 }
 PooledReferenceCounter::~PooledReferenceCounter() {}
-void PooledReferenceCounter::retain() {
-	referenceCount++;
-}
 
 //////////////////////////////// ReferenceCounterHolder ////////////////////////////////
 template <class ReferenceCountedObject> ReferenceCounterHolder<ReferenceCountedObject>::ReferenceCounterHolder(
@@ -82,9 +79,8 @@ template <class PooledObject> void ObjectPool<PooledObject>::returnToPool(Pooled
 	pool.push_back(p);
 }
 template <class PooledObject> void ObjectPool<PooledObject>::clearPool() {
-	for (PooledObject* p : pool) {
+	for (PooledObject* p : pool)
 		delete p;
-	}
 	pool.clear();
 }
 
