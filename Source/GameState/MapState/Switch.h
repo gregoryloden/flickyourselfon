@@ -19,6 +19,8 @@ public:
 
 	char getColor() { return color; }
 	char getGroup() { return group; }
+	//get the map center point that radio waves should originate from
+	void getSwitchWavesCenter(float* outX, float* outY);
 	//render the switch
 	void render(
 		int screenLeftWorldX,
@@ -45,6 +47,7 @@ public:
 	virtual ~SwitchState();
 
 	Switch* getSwitch() { return switch0; }
+	vector<RailState*>* getConnectedRailStates() { return &connectedRailStates; }
 	//add a rail state to be affected by this switch state
 	void addConnectedRailState(RailState* railState);
 	//activate rails of the same group and color because this switch was kicked

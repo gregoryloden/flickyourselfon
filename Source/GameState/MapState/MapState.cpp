@@ -423,11 +423,9 @@ void MapState::updateWithPreviousMapState(MapState* prev, int ticksTime) {
 		radioWavesStates.push_back(newRadioWavesState(0, 0));
 	while (radioWavesStates.size() > prev->radioWavesStates.size())
 		radioWavesStates.pop_back();
-	for (int i = 0; i < (int)radioWavesStates.size(); i++) {
-		if (!radioWavesStates[i].get()->updateWithPreviousRadioWavesState(prev->radioWavesStates[i].get(), ticksTime)) {
+	for (int i = (int)radioWavesStates.size() - 1; i >= 0; i--) {
+		if (!radioWavesStates[i].get()->updateWithPreviousRadioWavesState(prev->radioWavesStates[i].get(), ticksTime))
 			radioWavesStates.erase(radioWavesStates.begin() + i);
-			i--;
-		}
 	}
 }
 void MapState::flipSwitch(short switchId, bool allowRadioTowerAnimation, int ticksTime) {
@@ -441,8 +439,34 @@ void MapState::flipSwitch(short switchId, bool allowRadioTowerAnimation, int tic
 				shouldPlayRadioTowerAnimation = true;
 		}
 	//this is just a regular switch and we've turned on the parent switch, flip it
-	} else if (lastActivatedSwitchColor >= switch0->getColor())
+	} else if (lastActivatedSwitchColor >= switch0->getColor()) {
 		switchState->flip(ticksTime);
+
+		radioWavesColor = switch0->getColor();
+		float switchWavesX, switchWavesY;
+		switch0->getSwitchWavesCenter(&switchWavesX, &switchWavesY);
+		vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> switchWavesAnimationComponents ({
+			newEntityAnimationSetSpriteAnimation(SpriteRegistry::switchWavesAnimation),
+			newEntityAnimationDelay(SpriteRegistry::switchWavesAnimation->getTotalTicksDuration())
+		});
+		RadioWavesState* switchWavesState = newRadioWavesState(switchWavesX, switchWavesY);
+		switchWavesState->beginEntityAnimation(&switchWavesAnimationComponents, ticksTime);
+		radioWavesStates.push_back(switchWavesState);
+
+		for (RailState* railState : *switchState->getConnectedRailStates()) {
+			Rail* rail = railState->getRail();
+			Rail::Segment* segments[2] = { rail->getSegment(0), rail->getSegment(rail->getSegmentCount() - 1) };
+			for (Rail::Segment* segment : segments) {
+				vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> railWavesAnimationComponents ({
+					newEntityAnimationSetSpriteAnimation(SpriteRegistry::railWavesAnimation),
+					newEntityAnimationDelay(SpriteRegistry::railWavesAnimation->getTotalTicksDuration())
+				});
+				RadioWavesState* railWavesState = newRadioWavesState(segment->tileCenterX(), segment->tileCenterY());
+				railWavesState->beginEntityAnimation(&railWavesAnimationComponents, ticksTime);
+				radioWavesStates.push_back(railWavesState);
+			}
+		}
+	}
 }
 void MapState::flipResetSwitch(short resetSwitchId, int ticksTime) {
 	ResetSwitchState* resetSwitchState = resetSwitchStates[resetSwitchId & railSwitchIndexBitmask];
@@ -460,8 +484,8 @@ int MapState::startRadioWavesAnimation(int initialTicksDelay, int ticksTime) {
 		entityAnimationSpriteAnimationAfterDelay(nullptr, SpriteRegistry::radioWavesAnimation->getTotalTicksDuration())
 	});
 	RadioWavesState* radioWavesState = newRadioWavesState(antennaCenterWorldX(), antennaCenterWorldY());
-	radioWavesStates.push_back(radioWavesState);
 	radioWavesState->beginEntityAnimation(&radioWavesAnimationComponents, ticksTime);
+	radioWavesStates.push_back(radioWavesState);
 	return radioWavesState->getAnimationTicksDuration() - initialTicksDelay;
 }
 void MapState::startSwitchesFadeInAnimation(int ticksTime) {
@@ -540,15 +564,6 @@ void MapState::render(EntityState* camera, float playerWorldGroundY, bool showCo
 		0, 0, (GLint)(radioTowerLeftXOffset - screenLeftWorldX), (GLint)(radioTowerTopYOffset - screenTopWorldY));
 	if (Editor::isActive)
 		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-
-	glColor4f(
-		(radioWavesColor == squareColor || radioWavesColor == sineColor) ? 1.0f : 0.0f,
-		(radioWavesColor == sawColor || radioWavesColor == sineColor) ? 1.0f : 0.0f,
-		(radioWavesColor == triangleColor || radioWavesColor == sineColor) ? 1.0f : 0.0f,
-		1.0f);
-	for (ReferenceCounterHolder<RadioWavesState>& radioWavesState : radioWavesStates)
-		radioWavesState.get()->render(camera, ticksTime);
-	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 }
 void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int ticksTime) {
 	if (Editor::isActive && editorHideNonTiles)
@@ -558,6 +573,16 @@ void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int 
 	int screenTopWorldY = getScreenTopWorldY(camera, ticksTime);
 	for (RailState* railState : railStates)
 		railState->renderAbovePlayer(screenLeftWorldX, screenTopWorldY);
+
+	glColor4f(
+		(radioWavesColor == squareColor || radioWavesColor == sineColor) ? 1.0f : 0.0f,
+		(radioWavesColor == sawColor || radioWavesColor == sineColor) ? 1.0f : 0.0f,
+		(radioWavesColor == triangleColor || radioWavesColor == sineColor) ? 1.0f : 0.0f,
+		1.0f);
+	for (ReferenceCounterHolder<RadioWavesState>& radioWavesState : radioWavesStates)
+		radioWavesState.get()->render(camera, ticksTime);
+	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+
 	if (showConnections) {
 		//show movement directions and groups above the player for all rails
 		for (RailState* railState : railStates) {

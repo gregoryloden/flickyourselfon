@@ -10,6 +10,8 @@ const char* SpriteRegistry::radioTowerFileName = "radiotower.png";
 const char* SpriteRegistry::railsFileName = "rails.png";
 const char* SpriteRegistry::switchesFileName = "switches.png";
 const char* SpriteRegistry::radioWavesFileName = "radiowaves.png";
+const char* SpriteRegistry::railWavesFileName = "railwaves.png";
+const char* SpriteRegistry::switchWavesFileName = "switchwaves.png";
 const char* SpriteRegistry::resetSwitchFileName = "resetswitch.png";
 const char* SpriteRegistry::kickIndicatorFileName = "kickindicator.png";
 SpriteSheet* SpriteRegistry::player = nullptr;
@@ -18,6 +20,8 @@ SpriteSheet* SpriteRegistry::radioTower = nullptr;
 SpriteSheet* SpriteRegistry::rails = nullptr;
 SpriteSheet* SpriteRegistry::switches = nullptr;
 SpriteSheet* SpriteRegistry::radioWaves = nullptr;
+SpriteSheet* SpriteRegistry::railWaves = nullptr;
+SpriteSheet* SpriteRegistry::switchWaves = nullptr;
 SpriteSheet* SpriteRegistry::resetSwitch = nullptr;
 SpriteSheet* SpriteRegistry::kickIndicator = nullptr;
 SpriteAnimation* SpriteRegistry::playerWalkingAnimation = nullptr;
@@ -28,6 +32,8 @@ SpriteAnimation* SpriteRegistry::playerFastKickingAnimation = nullptr;
 SpriteAnimation* SpriteRegistry::playerBootLiftAnimation = nullptr;
 SpriteAnimation* SpriteRegistry::playerRidingRailAnimation = nullptr;
 SpriteAnimation* SpriteRegistry::radioWavesAnimation = nullptr;
+SpriteAnimation* SpriteRegistry::railWavesAnimation = nullptr;
+SpriteAnimation* SpriteRegistry::switchWavesAnimation = nullptr;
 void SpriteRegistry::loadAll() {
 	player = newSpriteSheetWithImagePath(playerFileName, 10, 4, false);
 	tiles = newSpriteSheetWithImagePath(tilesFileName, MapState::tileCount, 1, true);
@@ -35,6 +41,8 @@ void SpriteRegistry::loadAll() {
 	rails = newSpriteSheetWithImagePath(railsFileName, 22, 1, true);
 	switches = newSpriteSheetWithImagePath(switchesFileName, 9, 1, true);
 	radioWaves = newSpriteSheetWithImagePath(radioWavesFileName, 5, 1, false);
+	railWaves = newSpriteSheetWithImagePath(railWavesFileName, 5, 1, true);
+	switchWaves = newSpriteSheetWithImagePath(switchWavesFileName, 4, 1, true);
 	resetSwitch = newSpriteSheetWithImagePath(resetSwitchFileName, 2, 1, true);
 	kickIndicator = newSpriteSheetWithImagePath(kickIndicatorFileName, 10, 1, true);
 	playerWalkingAnimation = newSpriteAnimation(
@@ -87,6 +95,27 @@ void SpriteRegistry::loadAll() {
 			newSpriteAnimationFrame(3, 0, radioWaveAnimationTicksPerFrame)
 		});
 	radioWavesAnimation->disableLooping();
+	railWavesAnimation = newSpriteAnimation(
+		railWaves,
+		{
+			newSpriteAnimationFrame(0, 0, radioWaveAnimationTicksPerFrame) COMMA
+			newSpriteAnimationFrame(1, 0, radioWaveAnimationTicksPerFrame) COMMA
+			newSpriteAnimationFrame(2, 0, radioWaveAnimationTicksPerFrame) COMMA
+			newSpriteAnimationFrame(4, 0, radioWaveAnimationTicksPerFrame) COMMA
+			newSpriteAnimationFrame(2, 0, radioWaveAnimationTicksPerFrame) COMMA
+			newSpriteAnimationFrame(3, 0, radioWaveAnimationTicksPerFrame)
+		});
+	railWavesAnimation->disableLooping();
+	switchWavesAnimation = newSpriteAnimation(
+		switchWaves,
+		{
+			newSpriteAnimationFrame(0, 0, radioWaveAnimationTicksPerFrame) COMMA
+			newSpriteAnimationFrame(1, 0, radioWaveAnimationTicksPerFrame) COMMA
+			newSpriteAnimationFrame(3, 0, radioWaveAnimationTicksPerFrame) COMMA
+			newSpriteAnimationFrame(1, 0, radioWaveAnimationTicksPerFrame) COMMA
+			newSpriteAnimationFrame(2, 0, radioWaveAnimationTicksPerFrame)
+		});
+	switchWavesAnimation->disableLooping();
 }
 void SpriteRegistry::unloadAll() {
 	delete player;
@@ -95,6 +124,8 @@ void SpriteRegistry::unloadAll() {
 	delete rails;
 	delete switches;
 	delete radioWaves;
+	delete railWaves;
+	delete switchWaves;
 	delete resetSwitch;
 	delete kickIndicator;
 	delete playerWalkingAnimation;
@@ -105,4 +136,6 @@ void SpriteRegistry::unloadAll() {
 	delete playerBootLiftAnimation;
 	delete playerRidingRailAnimation;
 	delete radioWavesAnimation;
+	delete railWavesAnimation;
+	delete switchWavesAnimation;
 }

@@ -15,6 +15,8 @@ public:
 	static const char* railsFileName;
 	static const char* switchesFileName;
 	static const char* radioWavesFileName;
+	static const char* railWavesFileName;
+	static const char* switchWavesFileName;
 	static const char* resetSwitchFileName;
 	static const char* kickIndicatorFileName;
 
@@ -24,6 +26,8 @@ public:
 	static SpriteSheet* rails;
 	static SpriteSheet* switches;
 	static SpriteSheet* radioWaves;
+	static SpriteSheet* railWaves;
+	static SpriteSheet* switchWaves;
 	static SpriteSheet* resetSwitch;
 	static SpriteSheet* kickIndicator;
 	static SpriteAnimation* playerWalkingAnimation;
@@ -34,6 +38,8 @@ public:
 	static SpriteAnimation* playerBootLiftAnimation;
 	static SpriteAnimation* playerRidingRailAnimation;
 	static SpriteAnimation* radioWavesAnimation;
+	static SpriteAnimation* railWavesAnimation;
+	static SpriteAnimation* switchWavesAnimation;
 
 	//load all the sprite sheets
 	//this should only be called after the gl context has been created
