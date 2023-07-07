@@ -54,13 +54,14 @@ Logger::Logger(const char* pFileName, ios_base::openmode pFileFlags)
 , fileFlags(pFileFlags)
 , preQueueMessages()
 , messagesToWrite()
-, hasMessagesToWrite(false) {
+, hasMessagesToWrite(false)
+, editorEnabled(false) {
 }
 Logger::~Logger() {
 	//don't delete the file, assume it was already closed
 }
 void Logger::beginLogging() {
-	if (Editor::isActive && this != &debugLogger)
+	if (Editor::isActive && !editorEnabled)
 		return;
 	file = new ofstream();
 	FileUtils::openFileForWrite(file, fileName, fileFlags);
@@ -98,7 +99,7 @@ void Logger::endMultiThreadedLogging() {
 	logQueueStack = nullptr;
 }
 void Logger::endLogging() {
-	if (Editor::isActive && this != &debugLogger)
+	if (Editor::isActive && !editorEnabled)
 		return;
 	for (int i = 0; i < (int)loggers.size(); i++) {
 		if (loggers[i] == this) {
@@ -156,7 +157,7 @@ void Logger::log(const char* message) {
 	logString(string(message));
 }
 void Logger::logString(const string& message) {
-	if (Editor::isActive && this != &debugLogger)
+	if (Editor::isActive && !editorEnabled)
 		return;
 	int timestamp = (int)SDL_GetTicks();
 	stringstream messageWithTimestamp;

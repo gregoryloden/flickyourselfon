@@ -50,11 +50,13 @@ private:
 	stringstream preQueueMessages;
 	stringstream messagesToWrite;
 	bool hasMessagesToWrite;
+	bool editorEnabled;
 
 	Logger(const char* pFileName, ios_base::openmode pFileFlags);
 	virtual ~Logger();
 
 public:
+	void enableInEditor() { editorEnabled = true; }
 	//open the file for writing on a single thread and add this to the list of loggers
 	void beginLogging();
 	//start the logging thread
