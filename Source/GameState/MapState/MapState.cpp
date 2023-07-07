@@ -428,6 +428,14 @@ void MapState::updateWithPreviousMapState(MapState* prev, int ticksTime) {
 			radioWavesStates.erase(radioWavesStates.begin() + i);
 	}
 }
+MapState::RadioWavesState* MapState::queueRadioWavesAnimation(
+	float centerX, float centerY, vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> components, int ticksTime)
+{
+	RadioWavesState* radioWavesState = newRadioWavesState(centerX, centerY);
+	radioWavesState->beginEntityAnimation(&components, ticksTime);
+	radioWavesStates.push_back(radioWavesState);
+	return radioWavesState;
+}
 void MapState::flipSwitch(short switchId, bool allowRadioTowerAnimation, int ticksTime) {
 	SwitchState* switchState = switchStates[switchId & railSwitchIndexBitmask];
 	Switch* switch0 = switchState->getSwitch();
@@ -443,27 +451,26 @@ void MapState::flipSwitch(short switchId, bool allowRadioTowerAnimation, int tic
 		switchState->flip(ticksTime);
 
 		radioWavesColor = switch0->getColor();
-		float switchWavesX, switchWavesY;
-		switch0->getSwitchWavesCenter(&switchWavesX, &switchWavesY);
-		vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> switchWavesAnimationComponents ({
-			entityAnimationSpriteAnimationWithDelay(SpriteRegistry::switchWavesAnimation),
-		});
-		RadioWavesState* switchWavesState = newRadioWavesState(switchWavesX, switchWavesY);
-		switchWavesState->beginEntityAnimation(&switchWavesAnimationComponents, ticksTime);
-		radioWavesStates.push_back(switchWavesState);
+		queueRadioWavesAnimation(
+			switch0->getSwitchWavesCenterX(),
+			switch0->getSwitchWavesCenterY(),
+			{
+				entityAnimationSpriteAnimationWithDelay(SpriteRegistry::switchWavesAnimation),
+			},
+			ticksTime);
 
 		for (RailState* railState : *switchState->getConnectedRailStates()) {
 			Rail* rail = railState->getRail();
 			Rail::Segment* segments[2] = { rail->getSegment(0), rail->getSegment(rail->getSegmentCount() - 1) };
-			for (Rail::Segment* segment : segments) {
-				vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> railWavesAnimationComponents ({
-					newEntityAnimationDelay(SpriteRegistry::radioWaveAnimationTicksPerFrame),
-					entityAnimationSpriteAnimationWithDelay(SpriteRegistry::railWavesAnimation),
-				});
-				RadioWavesState* railWavesState = newRadioWavesState(segment->tileCenterX(), segment->tileCenterY());
-				railWavesState->beginEntityAnimation(&railWavesAnimationComponents, ticksTime);
-				radioWavesStates.push_back(railWavesState);
-			}
+			for (Rail::Segment* segment : segments)
+				queueRadioWavesAnimation(
+					segment->tileCenterX(),
+					segment->tileCenterY(),
+					{
+						newEntityAnimationDelay(SpriteRegistry::radioWaveAnimationTicksPerFrame),
+						entityAnimationSpriteAnimationWithDelay(SpriteRegistry::railWavesAnimation),
+					},
+					ticksTime);
 		}
 	}
 }
@@ -474,16 +481,17 @@ void MapState::flipResetSwitch(short resetSwitchId, int ticksTime) {
 }
 int MapState::startRadioWavesAnimation(int initialTicksDelay, int ticksTime) {
 	radioWavesColor = lastActivatedSwitchColor;
-	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> radioWavesAnimationComponents ({
-		newEntityAnimationDelay(initialTicksDelay),
-		entityAnimationSpriteAnimationWithDelay(SpriteRegistry::radioWavesAnimation),
-		newEntityAnimationSetSpriteAnimation(nullptr),
-		newEntityAnimationDelay(RadioWavesState::interRadioWavesAnimationTicks),
-		entityAnimationSpriteAnimationWithDelay(SpriteRegistry::radioWavesAnimation),
-	});
-	RadioWavesState* radioWavesState = newRadioWavesState(antennaCenterWorldX(), antennaCenterWorldY());
-	radioWavesState->beginEntityAnimation(&radioWavesAnimationComponents, ticksTime);
-	radioWavesStates.push_back(radioWavesState);
+	RadioWavesState* radioWavesState = queueRadioWavesAnimation(
+		antennaCenterWorldX(),
+		antennaCenterWorldY(),
+		{
+			newEntityAnimationDelay(initialTicksDelay),
+			entityAnimationSpriteAnimationWithDelay(SpriteRegistry::radioWavesAnimation),
+			newEntityAnimationSetSpriteAnimation(nullptr),
+			newEntityAnimationDelay(RadioWavesState::interRadioWavesAnimationTicks),
+			entityAnimationSpriteAnimationWithDelay(SpriteRegistry::radioWavesAnimation),
+		},
+		ticksTime);
 	return radioWavesState->getAnimationTicksDuration() - initialTicksDelay;
 }
 void MapState::startSwitchesFadeInAnimation(int initialTicksDelay, int ticksTime) {
@@ -492,15 +500,14 @@ void MapState::startSwitchesFadeInAnimation(int initialTicksDelay, int ticksTime
 	for (Switch* switch0 : switches) {
 		if (switch0->getColor() != lastActivatedSwitchColor || switch0->getGroup() == 0)
 			continue;
-		float switchWavesX, switchWavesY;
-		switch0->getSwitchWavesCenter(&switchWavesX, &switchWavesY);
-		vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> switchWavesAnimationComponents ({
-			newEntityAnimationDelay(initialTicksDelay),
-			entityAnimationSpriteAnimationWithDelay(SpriteRegistry::switchWavesShortAnimation),
-		});
-		RadioWavesState* switchWavesState = newRadioWavesState(switchWavesX, switchWavesY);
-		switchWavesState->beginEntityAnimation(&switchWavesAnimationComponents, ticksTime);
-		radioWavesStates.push_back(switchWavesState);
+		queueRadioWavesAnimation(
+			switch0->getSwitchWavesCenterX(),
+			switch0->getSwitchWavesCenterY(),
+			{
+				newEntityAnimationDelay(initialTicksDelay),
+				entityAnimationSpriteAnimationWithDelay(SpriteRegistry::switchWavesShortAnimation),
+			},
+			ticksTime);
 	}
 }
 void MapState::toggleShowConnections() {

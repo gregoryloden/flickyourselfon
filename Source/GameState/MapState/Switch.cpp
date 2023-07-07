@@ -15,9 +15,11 @@ leftX(pLeftX)
 , editorIsDeleted(false) {
 }
 Switch::~Switch() {}
-void Switch::getSwitchWavesCenter(float* outX, float* outY) {
-	*outX = (float)((leftX + 1) * MapState::tileSize);
-	*outY = (float)(topY * MapState::tileSize + 3);
+float Switch::getSwitchWavesCenterX() {
+	return (float)((leftX + 1) * MapState::tileSize);
+}
+float Switch::getSwitchWavesCenterY() {
+	return (float)(topY * MapState::tileSize + 3);
 }
 void Switch::render(
 	int screenLeftWorldX,

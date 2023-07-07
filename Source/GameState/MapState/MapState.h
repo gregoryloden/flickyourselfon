@@ -238,6 +238,13 @@ public:
 	static void setIntroAnimationBootTile(bool showBootTile);
 	//update the rails and switches of the MapState by reading from the previous state
 	void updateWithPreviousMapState(MapState* prev, int ticksTime);
+	//queue a radio waves animation
+	//returns the created RadioWavesState
+	RadioWavesState* queueRadioWavesAnimation(
+		float centerX,
+		float centerY,
+		vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> components,
+		int ticksTime);
 	//flip a switch
 	void flipSwitch(short switchId, bool allowRadioTowerAnimation, int ticksTime);
 	//flip a reset switch

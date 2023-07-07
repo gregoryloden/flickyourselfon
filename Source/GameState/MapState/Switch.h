@@ -19,8 +19,10 @@ public:
 
 	char getColor() { return color; }
 	char getGroup() { return group; }
-	//get the map center point that radio waves should originate from
-	void getSwitchWavesCenter(float* outX, float* outY);
+	//get the map center x that radio waves should originate from
+	float getSwitchWavesCenterX();
+	//get the map center y that radio waves should originate from
+	float getSwitchWavesCenterY();
 	//render the switch
 	void render(
 		int screenLeftWorldX,
