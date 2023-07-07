@@ -469,8 +469,7 @@ void MapState::flipSwitch(short switchId, bool allowRadioTowerAnimation, int tic
 }
 void MapState::flipResetSwitch(short resetSwitchId, int ticksTime) {
 	ResetSwitchState* resetSwitchState = resetSwitchStates[resetSwitchId & railSwitchIndexBitmask];
-	ResetSwitch* resetSwitch = resetSwitchState->getResetSwitch();
-	resetSwitch->resetMatchingRails(&railStates);
+	resetSwitchState->getResetSwitch()->resetMatchingRails(&railStates);
 	resetSwitchState->flip(ticksTime);
 }
 int MapState::startRadioWavesAnimation(int initialTicksDelay, int ticksTime) {
