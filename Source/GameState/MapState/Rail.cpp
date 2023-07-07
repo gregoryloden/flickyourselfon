@@ -389,8 +389,11 @@ void RailState::triggerMovement() {
 		bouncesRemaining += 1;
 	}
 }
-void RailState::moveToDefaultTileOffset() {
+void RailState::moveToDefaultState() {
 	targetTileOffset = (float)rail->getInitialTileOffset();
+	bouncesRemaining = 0;
+	currentMovementDirection = (float)rail->getMovementDirection();
+	nextMovementDirection = (float)rail->getMovementDirection();
 }
 void RailState::renderBelowPlayer(int screenLeftWorldX, int screenTopWorldY, float playerWorldGroundY) {
 	if (Editor::isActive && rail->editorIsDeleted)

@@ -125,8 +125,8 @@ public:
 	void updateWithPreviousRailState(RailState* prev, int ticksTime);
 	//the switch connected to this rail was kicked, move this rail accordingly
 	void triggerMovement();
-	//reset the tile offset to 0 so that the rail moves back to its default position
-	void moveToDefaultTileOffset();
+	//reset the tile offset to 0 and reset the movement direction so that the rail moves back to its default position
+	void moveToDefaultState();
 	//render the rail behind the player by rendering each segment, and save which segments are above the player
 	void renderBelowPlayer(int screenLeftWorldX, int screenTopWorld, float playerWorldGroundY);
 	//render the rail in front of the player using the list of saved segments

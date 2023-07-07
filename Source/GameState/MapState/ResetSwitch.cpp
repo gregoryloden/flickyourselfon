@@ -86,7 +86,7 @@ void ResetSwitch::resetMatchingRails(vector<RailState*>* railStates) {
 					continue;
 				for (char group : rail->getGroups()) {
 					if (group == segment.group) {
-						railState->moveToDefaultTileOffset();
+						railState->moveToDefaultState();
 						break;
 					}
 				}
