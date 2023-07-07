@@ -219,9 +219,8 @@ void GameState::startRadioTowerAnimation(int ticksTime) {
 	});
 
 	//add the switches animation
-	int ticksUntilStartOfSwitchesAnimation =
-		EntityAnimation::getComponentTotalTicksDuration(dynamicCameraAnchorAnimationComponents);
-	mapState.get()->startSwitchesFadeInAnimation(ticksTime + ticksUntilStartOfSwitchesAnimation);
+	mapState.get()->startSwitchesFadeInAnimation(
+		EntityAnimation::getComponentTotalTicksDuration(dynamicCameraAnchorAnimationComponents), ticksTime);
 
 	//finish the animation by returning to the player
 	dynamicCameraAnchorAnimationComponents.insert(

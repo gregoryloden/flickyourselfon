@@ -245,8 +245,8 @@ public:
 	//begin a radio waves animation
 	//returns the duration of the animation that takes place after the initial delay
 	int startRadioWavesAnimation(int initialTicksDelay, int ticksTime);
-	//activate the next switch color and set the start of the animation
-	void startSwitchesFadeInAnimation(int ticksTime);
+	//set the start of the fade-in animation for the next switch color and show radio waves for them
+	void startSwitchesFadeInAnimation(int initialTicksDelay, int ticksTime);
 	//toggle the state of showing connections, and any other relevant state
 	void toggleShowConnections();
 	//draw the map

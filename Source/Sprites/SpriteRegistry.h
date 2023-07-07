@@ -40,6 +40,7 @@ public:
 	static SpriteAnimation* radioWavesAnimation;
 	static SpriteAnimation* railWavesAnimation;
 	static SpriteAnimation* switchWavesAnimation;
+	static SpriteAnimation* switchWavesShortAnimation;
 
 	//load all the sprite sheets
 	//this should only be called after the gl context has been created

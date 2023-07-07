@@ -481,16 +481,29 @@ int MapState::startRadioWavesAnimation(int initialTicksDelay, int ticksTime) {
 		entityAnimationSpriteAnimationAfterDelay(nullptr, SpriteRegistry::radioWavesAnimation->getTotalTicksDuration()),
 		entityAnimationSpriteAnimationAfterDelay(
 			SpriteRegistry::radioWavesAnimation, RadioWavesState::interRadioWavesAnimationTicks),
-		entityAnimationSpriteAnimationAfterDelay(nullptr, SpriteRegistry::radioWavesAnimation->getTotalTicksDuration())
+		newEntityAnimationDelay(SpriteRegistry::radioWavesAnimation->getTotalTicksDuration())
 	});
 	RadioWavesState* radioWavesState = newRadioWavesState(antennaCenterWorldX(), antennaCenterWorldY());
 	radioWavesState->beginEntityAnimation(&radioWavesAnimationComponents, ticksTime);
 	radioWavesStates.push_back(radioWavesState);
 	return radioWavesState->getAnimationTicksDuration() - initialTicksDelay;
 }
-void MapState::startSwitchesFadeInAnimation(int ticksTime) {
+void MapState::startSwitchesFadeInAnimation(int initialTicksDelay, int ticksTime) {
 	shouldPlayRadioTowerAnimation = false;
-	switchesAnimationFadeInStartTicksTime = ticksTime;
+	switchesAnimationFadeInStartTicksTime = ticksTime + initialTicksDelay;
+	for (Switch* switch0 : switches) {
+		if (switch0->getColor() != lastActivatedSwitchColor || switch0->getGroup() == 0)
+			continue;
+		float switchWavesX, switchWavesY;
+		switch0->getSwitchWavesCenter(&switchWavesX, &switchWavesY);
+		vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> switchWavesAnimationComponents ({
+			entityAnimationSpriteAnimationAfterDelay(SpriteRegistry::switchWavesShortAnimation, initialTicksDelay),
+			newEntityAnimationDelay(SpriteRegistry::switchWavesShortAnimation->getTotalTicksDuration()),
+		});
+		RadioWavesState* switchWavesState = newRadioWavesState(switchWavesX, switchWavesY);
+		switchWavesState->beginEntityAnimation(&switchWavesAnimationComponents, ticksTime);
+		radioWavesStates.push_back(switchWavesState);
+	}
 }
 void MapState::toggleShowConnections() {
 	if (Editor::isActive) {

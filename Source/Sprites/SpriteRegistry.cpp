@@ -34,6 +34,7 @@ SpriteAnimation* SpriteRegistry::playerRidingRailAnimation = nullptr;
 SpriteAnimation* SpriteRegistry::radioWavesAnimation = nullptr;
 SpriteAnimation* SpriteRegistry::railWavesAnimation = nullptr;
 SpriteAnimation* SpriteRegistry::switchWavesAnimation = nullptr;
+SpriteAnimation* SpriteRegistry::switchWavesShortAnimation = nullptr;
 void SpriteRegistry::loadAll() {
 	player = newSpriteSheetWithImagePath(playerFileName, 10, 4, false);
 	tiles = newSpriteSheetWithImagePath(tilesFileName, MapState::tileCount, 1, true);
@@ -116,6 +117,14 @@ void SpriteRegistry::loadAll() {
 			newSpriteAnimationFrame(2, 0, radioWaveAnimationTicksPerFrame)
 		});
 	switchWavesAnimation->disableLooping();
+	switchWavesShortAnimation = newSpriteAnimation(
+		switchWaves,
+		{
+			newSpriteAnimationFrame(0, 0, radioWaveAnimationTicksPerFrame) COMMA
+			newSpriteAnimationFrame(1, 0, radioWaveAnimationTicksPerFrame) COMMA
+			newSpriteAnimationFrame(2, 0, radioWaveAnimationTicksPerFrame) COMMA
+		});
+	switchWavesShortAnimation->disableLooping();
 }
 void SpriteRegistry::unloadAll() {
 	delete player;
@@ -138,4 +147,5 @@ void SpriteRegistry::unloadAll() {
 	delete radioWavesAnimation;
 	delete railWavesAnimation;
 	delete switchWavesAnimation;
+	delete switchWavesShortAnimation;
 }
