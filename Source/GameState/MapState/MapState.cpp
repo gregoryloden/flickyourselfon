@@ -603,6 +603,8 @@ bool MapState::renderGroupsForRailsToReset(EntityState* camera, short resetSwitc
 	return hasRailsToReset;
 }
 void MapState::renderGroupsForRailsFromSwitch(EntityState* camera, short switchId, int ticksTime) {
+	if (!Config::kickIndicators.switch0)
+		return;
 	Switch* switch0 = switches[switchId & railSwitchIndexBitmask];
 	char group = switch0->getGroup();
 	char color = switch0->getColor();
