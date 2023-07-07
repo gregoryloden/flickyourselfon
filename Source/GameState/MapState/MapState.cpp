@@ -457,6 +457,7 @@ void MapState::flipSwitch(short switchId, bool allowRadioTowerAnimation, int tic
 			Rail::Segment* segments[2] = { rail->getSegment(0), rail->getSegment(rail->getSegmentCount() - 1) };
 			for (Rail::Segment* segment : segments) {
 				vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> railWavesAnimationComponents ({
+					newEntityAnimationDelay(SpriteRegistry::radioWaveAnimationTicksPerFrame),
 					entityAnimationSpriteAnimationWithDelay(SpriteRegistry::railWavesAnimation),
 				});
 				RadioWavesState* railWavesState = newRadioWavesState(segment->tileCenterX(), segment->tileCenterY());

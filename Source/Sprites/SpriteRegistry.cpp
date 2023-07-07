@@ -42,7 +42,7 @@ void SpriteRegistry::loadAll() {
 	rails = newSpriteSheetWithImagePath(railsFileName, 22, 1, true);
 	switches = newSpriteSheetWithImagePath(switchesFileName, 9, 1, true);
 	radioWaves = newSpriteSheetWithImagePath(radioWavesFileName, 5, 1, false);
-	railWaves = newSpriteSheetWithImagePath(railWavesFileName, 5, 1, true);
+	railWaves = newSpriteSheetWithImagePath(railWavesFileName, 4, 1, true);
 	switchWaves = newSpriteSheetWithImagePath(switchWavesFileName, 4, 1, true);
 	resetSwitch = newSpriteSheetWithImagePath(resetSwitchFileName, 2, 1, true);
 	kickIndicator = newSpriteSheetWithImagePath(kickIndicatorFileName, 10, 1, true);
@@ -101,10 +101,9 @@ void SpriteRegistry::loadAll() {
 		{
 			newSpriteAnimationFrame(0, 0, radioWaveAnimationTicksPerFrame) COMMA
 			newSpriteAnimationFrame(1, 0, radioWaveAnimationTicksPerFrame) COMMA
-			newSpriteAnimationFrame(2, 0, radioWaveAnimationTicksPerFrame) COMMA
-			newSpriteAnimationFrame(4, 0, radioWaveAnimationTicksPerFrame) COMMA
-			newSpriteAnimationFrame(2, 0, radioWaveAnimationTicksPerFrame) COMMA
-			newSpriteAnimationFrame(3, 0, radioWaveAnimationTicksPerFrame)
+			newSpriteAnimationFrame(3, 0, radioWaveAnimationTicksPerFrame) COMMA
+			newSpriteAnimationFrame(1, 0, radioWaveAnimationTicksPerFrame) COMMA
+			newSpriteAnimationFrame(2, 0, radioWaveAnimationTicksPerFrame)
 		});
 	railWavesAnimation->disableLooping();
 	switchWavesAnimation = newSpriteAnimation(
