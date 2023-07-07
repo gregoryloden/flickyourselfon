@@ -17,9 +17,9 @@
 #include "Util/StringUtils.h"
 
 #define newRadioWavesState(x, y) produceWithArgs(MapState::RadioWavesState, x, y)
-#define entityAnimationSpriteAnimationAfterDelay(animation, delay) \
-	newEntityAnimationDelay(delay), \
-	newEntityAnimationSetSpriteAnimation(animation)
+#define entityAnimationSpriteAnimationWithDelay(animation) \
+	newEntityAnimationSetSpriteAnimation(animation), \
+	newEntityAnimationDelay(animation->getTotalTicksDuration())
 
 //////////////////////////////// MapState::RadioWavesState ////////////////////////////////
 MapState::RadioWavesState::RadioWavesState(objCounterParameters())
@@ -446,8 +446,7 @@ void MapState::flipSwitch(short switchId, bool allowRadioTowerAnimation, int tic
 		float switchWavesX, switchWavesY;
 		switch0->getSwitchWavesCenter(&switchWavesX, &switchWavesY);
 		vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> switchWavesAnimationComponents ({
-			newEntityAnimationSetSpriteAnimation(SpriteRegistry::switchWavesAnimation),
-			newEntityAnimationDelay(SpriteRegistry::switchWavesAnimation->getTotalTicksDuration())
+			entityAnimationSpriteAnimationWithDelay(SpriteRegistry::switchWavesAnimation),
 		});
 		RadioWavesState* switchWavesState = newRadioWavesState(switchWavesX, switchWavesY);
 		switchWavesState->beginEntityAnimation(&switchWavesAnimationComponents, ticksTime);
@@ -458,8 +457,7 @@ void MapState::flipSwitch(short switchId, bool allowRadioTowerAnimation, int tic
 			Rail::Segment* segments[2] = { rail->getSegment(0), rail->getSegment(rail->getSegmentCount() - 1) };
 			for (Rail::Segment* segment : segments) {
 				vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> railWavesAnimationComponents ({
-					newEntityAnimationSetSpriteAnimation(SpriteRegistry::railWavesAnimation),
-					newEntityAnimationDelay(SpriteRegistry::railWavesAnimation->getTotalTicksDuration())
+					entityAnimationSpriteAnimationWithDelay(SpriteRegistry::railWavesAnimation),
 				});
 				RadioWavesState* railWavesState = newRadioWavesState(segment->tileCenterX(), segment->tileCenterY());
 				railWavesState->beginEntityAnimation(&railWavesAnimationComponents, ticksTime);
@@ -477,11 +475,11 @@ void MapState::flipResetSwitch(short resetSwitchId, int ticksTime) {
 int MapState::startRadioWavesAnimation(int initialTicksDelay, int ticksTime) {
 	radioWavesColor = lastActivatedSwitchColor;
 	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> radioWavesAnimationComponents ({
-		entityAnimationSpriteAnimationAfterDelay(SpriteRegistry::radioWavesAnimation, initialTicksDelay),
-		entityAnimationSpriteAnimationAfterDelay(nullptr, SpriteRegistry::radioWavesAnimation->getTotalTicksDuration()),
-		entityAnimationSpriteAnimationAfterDelay(
-			SpriteRegistry::radioWavesAnimation, RadioWavesState::interRadioWavesAnimationTicks),
-		newEntityAnimationDelay(SpriteRegistry::radioWavesAnimation->getTotalTicksDuration())
+		newEntityAnimationDelay(initialTicksDelay),
+		entityAnimationSpriteAnimationWithDelay(SpriteRegistry::radioWavesAnimation),
+		newEntityAnimationSetSpriteAnimation(nullptr),
+		newEntityAnimationDelay(RadioWavesState::interRadioWavesAnimationTicks),
+		entityAnimationSpriteAnimationWithDelay(SpriteRegistry::radioWavesAnimation),
 	});
 	RadioWavesState* radioWavesState = newRadioWavesState(antennaCenterWorldX(), antennaCenterWorldY());
 	radioWavesState->beginEntityAnimation(&radioWavesAnimationComponents, ticksTime);
@@ -497,8 +495,8 @@ void MapState::startSwitchesFadeInAnimation(int initialTicksDelay, int ticksTime
 		float switchWavesX, switchWavesY;
 		switch0->getSwitchWavesCenter(&switchWavesX, &switchWavesY);
 		vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> switchWavesAnimationComponents ({
-			entityAnimationSpriteAnimationAfterDelay(SpriteRegistry::switchWavesShortAnimation, initialTicksDelay),
-			newEntityAnimationDelay(SpriteRegistry::switchWavesShortAnimation->getTotalTicksDuration()),
+			newEntityAnimationDelay(initialTicksDelay),
+			entityAnimationSpriteAnimationWithDelay(SpriteRegistry::switchWavesShortAnimation),
 		});
 		RadioWavesState* switchWavesState = newRadioWavesState(switchWavesX, switchWavesY);
 		switchWavesState->beginEntityAnimation(&switchWavesAnimationComponents, ticksTime);
