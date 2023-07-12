@@ -1,4 +1,4 @@
-﻿#include "PauseState.h"
+#include "PauseState.h"
 #include "GameState/KickAction.h"
 #include "Sprites/SpriteSheet.h"
 #include "Util/Config.h"
