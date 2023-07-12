@@ -389,12 +389,6 @@ void RailState::triggerMovement() {
 		bouncesRemaining += 1;
 	}
 }
-void RailState::moveToDefaultState() {
-	targetTileOffset = (float)rail->getInitialTileOffset();
-	bouncesRemaining = 0;
-	currentMovementDirection = (float)rail->getMovementDirection();
-	nextMovementDirection = (float)rail->getMovementDirection();
-}
 void RailState::renderBelowPlayer(int screenLeftWorldX, int screenTopWorldY, float playerWorldGroundY) {
 	if (Editor::isActive && rail->editorIsDeleted)
 		return;
@@ -461,10 +455,14 @@ void RailState::renderMovementDirections(int screenLeftWorldX, int screenTopWorl
 		}
 	}
 }
-void RailState::loadState(float pTileOffset) {
-	tileOffset = pTileOffset;
+void RailState::loadState(float pTileOffset, float pNextMovementDirection, bool animateMovement) {
+	if (!animateMovement)
+		tileOffset = pTileOffset;
 	targetTileOffset = pTileOffset;
+	bouncesRemaining = 0;
+	currentMovementDirection = pNextMovementDirection;
+	nextMovementDirection = pNextMovementDirection;
 }
-void RailState::reset() {
-	loadState((float)rail->getInitialTileOffset());
+void RailState::reset(bool animateMovement) {
+	loadState((float)rail->getInitialTileOffset(), (float)rail->getMovementDirection(), animateMovement);
 }

@@ -629,7 +629,7 @@ bool MapState::renderGroupsForRailsToReset(EntityState* camera, short resetSwitc
 	bool hasRailsToReset = false;
 	for (RailState* railState : railStates) {
 		Rail* rail = railState->getRail();
-		if (railState->getTargetTileOffset() == (float)rail->getInitialTileOffset())
+		if (railState->isInDefaultState())
 			continue;
 		char railColor = rail->getColor();
 		for (char railGroup : rail->getGroups()) {
@@ -738,9 +738,9 @@ void MapState::saveState(ofstream& file) {
 	}
 	for (int i = 0; i < (int)railStates.size(); i++) {
 		RailState* railState = railStates[i];
-		char targetTileOffset = (char)railState->getTargetTileOffset();
-		if (targetTileOffset != railState->getRail()->getInitialTileOffset())
-			file << railOffsetFilePrefix << i << ' ' << (int)targetTileOffset << "\n";
+		if (!railState->isInDefaultState())
+			file << railOffsetFilePrefix << i << ' '
+				<< (int)railState->getTargetTileOffset() << ' ' << (int)railState->getNextMovementDirection() << "\n";
 	}
 }
 bool MapState::loadState(string& line) {
@@ -751,10 +751,12 @@ bool MapState::loadState(string& line) {
 	else if (StringUtils::startsWith(line, showConnectionsFilePrefix))
 		showConnectionsEnabled = strcmp(line.c_str() + showConnectionsFilePrefix.size(), "true") == 0;
 	else if (StringUtils::startsWith(line, railOffsetFilePrefix)) {
-		const char* railIndexString = line.c_str() + railOffsetFilePrefix.size();
-		const char* offsetString = strchr(railIndexString, ' ') + 1;
-		int railIndex = atoi(railIndexString);
-		railStates[railIndex]->loadState((float)atoi(offsetString));
+		const char* dataString = line.c_str() + railOffsetFilePrefix.size();
+		int railIndex, tileOffset, movementDirection;
+		dataString = StringUtils::parseNextInt(dataString, &railIndex);
+		dataString = StringUtils::parseNextInt(dataString, &tileOffset);
+		StringUtils::parseNextInt(dataString, &movementDirection);
+		railStates[railIndex]->loadState((float)tileOffset, (float)movementDirection, false);
 	} else
 		return false;
 	return true;
@@ -763,7 +765,7 @@ void MapState::resetMap() {
 	lastActivatedSwitchColor = -1;
 	finishedConnectionsTutorial = false;
 	for (RailState* railState : railStates)
-		railState->reset();
+		railState->reset(false);
 }
 void MapState::editorSetAppropriateDefaultFloorTile(int x, int y, char expectedFloorHeight) {
 	char height = getHeight(x, y);

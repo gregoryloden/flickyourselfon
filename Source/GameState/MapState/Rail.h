@@ -120,13 +120,15 @@ public:
 
 	Rail* getRail() { return rail; }
 	float getTargetTileOffset() { return targetTileOffset; }
+	char getNextMovementDirection() { return (char)nextMovementDirection; }
+	bool isInDefaultState() {
+		return targetTileOffset == rail->getInitialTileOffset() && nextMovementDirection == rail->getMovementDirection();
+	}
 	bool canRide() { return tileOffset == 0.0f; }
 	//check if we need to start/stop moving
 	void updateWithPreviousRailState(RailState* prev, int ticksTime);
 	//the switch connected to this rail was kicked, move this rail accordingly
 	void triggerMovement();
-	//reset the tile offset to 0 and reset the movement direction so that the rail moves back to its default position
-	void moveToDefaultState();
 	//render the rail behind the player by rendering each segment, and save which segments are above the player
 	void renderBelowPlayer(int screenLeftWorldX, int screenTopWorld, float playerWorldGroundY);
 	//render the rail in front of the player using the list of saved segments
@@ -135,8 +137,8 @@ public:
 	void setSegmentColor();
 	//render the movement direction over the ends of the rail
 	void renderMovementDirections(int screenLeftWorldX, int screenTopWorldY);
-	//set this rail to the initial tile offset, not moving
-	void loadState(float pTileOffset);
-	//reset the offset
-	void reset();
+	//set this rail to the initial tile offset and movement direction, with or without a moving animation
+	void loadState(float pTileOffset, float pNextMovementDirection, bool animateMovement);
+	//reset this rail to its default state, with or without a moving animation
+	void reset(bool animateMovement);
 };
