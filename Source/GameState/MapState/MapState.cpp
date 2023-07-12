@@ -592,15 +592,6 @@ void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int 
 	for (RailState* railState : railStates)
 		railState->renderAbovePlayer(screenLeftWorldX, screenTopWorldY);
 
-	glColor4f(
-		(radioWavesColor == squareColor || radioWavesColor == sineColor) ? 1.0f : 0.0f,
-		(radioWavesColor == sawColor || radioWavesColor == sineColor) ? 1.0f : 0.0f,
-		(radioWavesColor == triangleColor || radioWavesColor == sineColor) ? 1.0f : 0.0f,
-		1.0f);
-	for (ReferenceCounterHolder<RadioWavesState>& radioWavesState : radioWavesStates)
-		radioWavesState.get()->render(camera, ticksTime);
-	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-
 	if (showConnections) {
 		//show movement directions and groups above the player for all rails
 		for (RailState* railState : railStates) {
@@ -621,6 +612,16 @@ void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int 
 				1.0f);
 		}
 	}
+
+	glEnable(GL_BLEND);
+	glColor4f(
+		(radioWavesColor == squareColor || radioWavesColor == sineColor) ? 1.0f : 0.0f,
+		(radioWavesColor == sawColor || radioWavesColor == sineColor) ? 1.0f : 0.0f,
+		(radioWavesColor == triangleColor || radioWavesColor == sineColor) ? 1.0f : 0.0f,
+		1.0f);
+	for (ReferenceCounterHolder<RadioWavesState>& radioWavesState : radioWavesStates)
+		radioWavesState.get()->render(camera, ticksTime);
+	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 }
 bool MapState::renderGroupsForRailsToReset(EntityState* camera, short resetSwitchId, int ticksTime) {
 	int screenLeftWorldX = getScreenLeftWorldX(camera, ticksTime);
