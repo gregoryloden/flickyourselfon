@@ -54,7 +54,7 @@ private:
 		//render the PauseOption
 		virtual void render(float leftX, float baselineY);
 		//update the display text and its metrics
-		void updateDisplayText(string& newDisplayText);
+		void updateDisplayText(const string& newDisplayText);
 		//handle this option being selected, return the pause state to use as a result
 		virtual PauseState* handle(PauseState* currentState) = 0;
 	};

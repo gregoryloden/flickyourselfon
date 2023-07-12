@@ -89,7 +89,7 @@ PauseState::PauseOption::~PauseOption() {}
 void PauseState::PauseOption::render(float leftX, float baselineY) {
 	Text::render(displayText.c_str(), leftX, baselineY, displayTextFontScale);
 }
-void PauseState::PauseOption::updateDisplayText(string& newDisplayText) {
+void PauseState::PauseOption::updateDisplayText(const string& newDisplayText) {
 	displayText = newDisplayText;
 	displayTextMetrics = Text::getMetrics(newDisplayText.c_str(), displayTextFontScale);
 }
