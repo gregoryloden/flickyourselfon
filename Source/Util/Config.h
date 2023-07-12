@@ -49,7 +49,7 @@ public:
 	static constexpr float backgroundColorRed = 3.0f / 16.0f;
 	static constexpr float backgroundColorGreen = 0.0f;
 	static constexpr float backgroundColorBlue = 3.0f / 16.0f;
-	static constexpr char* Config::optionsFileName = "kyo.options";
+	static constexpr char* optionsFileName = "kyo.options";
 	static const KeyBindings defaultKeyBindings;
 	static const string upKeyBindingFilePrefix;
 	static const string rightKeyBindingFilePrefix;
