@@ -672,10 +672,10 @@ void MapState::renderGroupRect(char group, GLint leftX, GLint topY, GLint rightX
 	GLint midX = (leftX + rightX) / 2;
 	//bits 0-2
 	SpriteSheet::renderFilledRectangle(
-		(float)(group & 1), (float)((group & 2) >> 1), (float)((group & 4) >> 2), 1.0f, leftX, topY, midX, bottomY);
+		(float)(group & 1), (float)((group >> 1) & 1), (float)((group >> 2) & 1), 1.0f, leftX, topY, midX, bottomY);
 	//bits 3-5
 	SpriteSheet::renderFilledRectangle(
-		(float)((group & 8) >> 3), (float)((group & 16) >> 4), (float)((group & 32) >> 5), 1.0f, midX, topY, rightX, bottomY);
+		(float)((group >> 3) & 1), (float)((group >> 4) & 1), (float)((group >> 5) & 1), 1.0f, midX, topY, rightX, bottomY);
 }
 void MapState::logGroup(char group, stringstream* message) {
 	for (int i = 0; i < 2; i++) {
