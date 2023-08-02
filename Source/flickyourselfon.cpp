@@ -34,6 +34,7 @@ int gameMain(int argc, char* argv[]) {
 			Config::currentPixelHeight = Config::editorDefaultPixelHeight;
 			Config::windowScreenWidth += Config::editorMarginRight;
 			Config::windowScreenHeight += Config::editorMarginBottom;
+			Logger::debugLogger.enableInEditor();
 		}
 	}
 
