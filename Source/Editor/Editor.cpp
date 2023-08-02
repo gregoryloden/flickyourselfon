@@ -18,6 +18,7 @@
 #define newRaiseLowerTileButton(zone, leftX, topY, isRaiseTileButton) \
 	newWithArgs(Editor::RaiseLowerTileButton, zone, leftX, topY, isRaiseTileButton)
 #define newShuffleTileButton(zone, leftX, topY) newWithArgs(Editor::ShuffleTileButton, zone, leftX, topY)
+#define newExtendPlatformButton(zone, leftX, topY) newWithArgs(Editor::ExtendPlatformButton, zone, leftX, topY)
 #define newSwitchButton(zone, leftX, topY, color) newWithArgs(Editor::SwitchButton, zone, leftX, topY, color)
 #define newRailButton(zone, leftX, topY, color) newWithArgs(Editor::RailButton, zone, leftX, topY, color)
 #define newRailMovementMagnitudeButton(zone, leftX, topY, magnitudeAdd) \
@@ -532,6 +533,29 @@ bool Editor::ShuffleTileButton::shuffleTile(int x, int y) {
 	return true;
 }
 
+//////////////////////////////// Editor::ExtendPlatformButton ////////////////////////////////
+const Editor::RGB Editor::ExtendPlatformButton::arrowRGB(0.75f, 0.75f, 0.75f);
+Editor::ExtendPlatformButton::ExtendPlatformButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY)
+: Button(objCounterArgumentsComma() zone, zoneLeftX, zoneTopY) {
+	setWidthAndHeight(buttonWidth, buttonHeight);
+}
+Editor::ExtendPlatformButton::~ExtendPlatformButton() {}
+void Editor::ExtendPlatformButton::renderOverButton() {
+	renderRGBRect(blackRGB, 1.0f, leftX + 1, topY + 1, rightX - 1, bottomY - 1);
+	renderRGBRect(heightFloorRGB, 1.0f, leftX + 2, topY + 2, rightX - 2, topY + 9);
+	renderRGBRect(heightWallRGB, 1.0f, leftX + 2, topY + 9, rightX - 2, topY + 11);
+	renderRGBRect(arrowRGB, 1.0f, leftX + 3, topY + 5, leftX + 4, topY + 6);
+	renderRGBRect(arrowRGB, 1.0f, leftX + 4, topY + 4, leftX + 5, topY + 7);
+	renderRGBRect(arrowRGB, 1.0f, leftX + 7, topY + 3, leftX + 8, topY + 4);
+	renderRGBRect(arrowRGB, 1.0f, leftX + 6, topY + 4, leftX + 9, topY + 5);
+	renderRGBRect(arrowRGB, 1.0f, leftX + 6, topY + 6, leftX + 9, topY + 7);
+	renderRGBRect(arrowRGB, 1.0f, leftX + 7, topY + 7, leftX + 8, topY + 8);
+	renderRGBRect(arrowRGB, 1.0f, leftX + 10, topY + 4, leftX + 11, topY + 7);
+	renderRGBRect(arrowRGB, 1.0f, leftX + 11, topY + 5, leftX + 12, topY + 6);
+}
+void Editor::ExtendPlatformButton::paintMap(int x, int y) {
+}
+
 //////////////////////////////// Editor::SwitchButton ////////////////////////////////
 Editor::SwitchButton::SwitchButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY, char pColor)
 : Button(objCounterArgumentsComma() zone, zoneLeftX, zoneTopY)
@@ -763,17 +787,18 @@ void Editor::loadButtons() {
 	lowerTileButton = newRaiseLowerTileButton(Zone::Right, 92, 58, false);
 	buttons.push_back(lowerTileButton);
 	buttons.push_back(newShuffleTileButton(Zone::Right, 81, 95));
+	buttons.push_back(newExtendPlatformButton(Zone::Right, 98, 95));
 	for (char i = 0; i < 4; i++)
 		buttons.push_back(newSwitchButton(Zone::Right, 5 + SwitchButton::buttonSize * i, 108, i));
 	for (char i = 0; i < 4; i++)
 		buttons.push_back(newRailButton(Zone::Right, 64 + RailButton::buttonSize * i, 114, i));
 	for (char i = -1; i <= 1; i += 2)
 		buttons.push_back(
-			newRailMovementMagnitudeButton(Zone::Right, 103 + RailMovementMagnitudeButton::buttonSize * i / 2, 103, -i));
-	buttons.push_back(newRailToggleMovementDirectionButton(Zone::Right, 118, 97));
+			newRailMovementMagnitudeButton(Zone::Right, 122 + RailMovementMagnitudeButton::buttonSize * i / 2, 114, -i));
+	buttons.push_back(newRailToggleMovementDirectionButton(Zone::Right, 129, 103));
 	for (char i = -1; i <= 1; i += 2)
 		buttons.push_back(newRailTileOffsetButton(Zone::Right, 103 + RailTileOffsetButton::buttonSize * i / 2, 114, i));
-	buttons.push_back(newResetSwitchButton(Zone::Right, 118, 108));
+	buttons.push_back(newResetSwitchButton(Zone::Right, 118, 97));
 	for (char i = 0; i < (char)railSwitchGroupCount; i++) {
 		RailSwitchGroupButton* button = newRailSwitchGroupButton(
 			Zone::Right,

@@ -263,6 +263,21 @@ private:
 		//returns true if a new value was assigned, or was not eligible to be asssigned
 		static bool shuffleTile(int x, int y);
 	};
+	class ExtendPlatformButton: public Button {
+	private:
+		static const int buttonWidth = 15;
+		static const int buttonHeight = 13;
+		static const RGB arrowRGB;
+
+	public:
+		ExtendPlatformButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY);
+		virtual ~ExtendPlatformButton();
+
+		//render a platform with 4 arrows, one per direction
+		virtual void renderOverButton();
+		//extend the platform
+		virtual void paintMap(int x, int y);
+	};
 	class SwitchButton: public Button {
 	public:
 		static const int buttonSize = MapState::switchSize + 2;
