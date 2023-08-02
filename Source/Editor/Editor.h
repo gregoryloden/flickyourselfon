@@ -302,7 +302,7 @@ private:
 		//set a rail at this position
 		virtual void paintMap(int x, int y);
 	};
-	class RailMovementMagnitudeButton : public Button {
+	class RailMovementMagnitudeButton: public Button {
 	public:
 		static const int buttonSize = MapState::tileSize + 2;
 	private:
@@ -322,7 +322,7 @@ private:
 		//adjust the movement magnitude of the rail at this position
 		virtual void paintMap(int x, int y);
 	};
-	class RailToggleMovementDirectionButton : public Button {
+	class RailToggleMovementDirectionButton: public Button {
 	public:
 		static const int buttonSize = MapState::tileSize + 2;
 	private:

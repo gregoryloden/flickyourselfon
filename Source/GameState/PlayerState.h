@@ -5,7 +5,7 @@
 class CollisionRect;
 class KickAction;
 class SpriteAnimation;
-enum class KickActionType : int;
+enum class KickActionType: int;
 namespace EntityAnimationTypes {
 	class Component;
 }
