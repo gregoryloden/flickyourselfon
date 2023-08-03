@@ -756,6 +756,14 @@ void Editor::loadButtons() {
 	for (char i = 0; i < (char)MapState::heightCount; i++)
 		buttons.push_back(
 			newHeightButton(Zone::Right, 5 + HeightButton::buttonWidth * i / 2, 58 + HeightButton::buttonHeight * (i % 2), i));
+	buttons.push_back(newRaiseLowerTileButton(Zone::Right, 76, 58, true));
+	buttons.push_back(lowerTileButton = newRaiseLowerTileButton(Zone::Right, 92, 58, false));
+	buttons.push_back(noiseButton = newNoiseButton(Zone::Right, 108, 58));
+	noiseTileButtons = new NoiseTileButton*[noiseTileButtonMaxCount];
+	for (char i = 0; i < (char)noiseTileButtonMaxCount; i++)
+		buttons.push_back(
+			noiseTileButtons[i] = newNoiseTileButton(
+				Zone::Right, 81 + NoiseTileButton::buttonWidth * (i % 8), 72 + NoiseTileButton::buttonHeight * (i / 8)));
 	for (char i = 0; i < (char)PaintBoxRadiusButton::maxRadius; i++) {
 		PaintBoxRadiusButton* button =
 			newPaintBoxRadiusButton(Zone::Right, 5 + PaintBoxRadiusButton::buttonSize * i, 81, i, true);
@@ -770,24 +778,11 @@ void Editor::loadButtons() {
 			selectedPaintBoxYRadiusButton = button;
 		buttons.push_back(button);
 	}
-	evenPaintBoxXRadiusButton = newEvenPaintBoxRadiusButton(Zone::Right, 69, 81, true);
-	buttons.push_back(evenPaintBoxXRadiusButton);
-	evenPaintBoxYRadiusButton = newEvenPaintBoxRadiusButton(Zone::Right, 69, 91, false);
-	buttons.push_back(evenPaintBoxYRadiusButton);
-	noiseButton = newNoiseButton(Zone::Right, 108, 58);
-	buttons.push_back(noiseButton);
-	noiseTileButtons = new NoiseTileButton*[noiseTileButtonMaxCount];
-	for (char i = 0; i < (char)noiseTileButtonMaxCount; i++) {
-		NoiseTileButton* button = newNoiseTileButton(
-			Zone::Right, 81 + NoiseTileButton::buttonWidth * (i % 8), 72 + NoiseTileButton::buttonHeight * (i / 8));
-		noiseTileButtons[i] = button;
-		buttons.push_back(button);
-	}
-	buttons.push_back(newRaiseLowerTileButton(Zone::Right, 76, 58, true));
-	lowerTileButton = newRaiseLowerTileButton(Zone::Right, 92, 58, false);
-	buttons.push_back(lowerTileButton);
+	buttons.push_back(evenPaintBoxXRadiusButton = newEvenPaintBoxRadiusButton(Zone::Right, 69, 81, true));
+	buttons.push_back(evenPaintBoxYRadiusButton = newEvenPaintBoxRadiusButton(Zone::Right, 69, 91, false));
 	buttons.push_back(newShuffleTileButton(Zone::Right, 81, 95));
 	buttons.push_back(newExtendPlatformButton(Zone::Right, 98, 95));
+	buttons.push_back(newResetSwitchButton(Zone::Right, 118, 97));
 	for (char i = 0; i < 4; i++)
 		buttons.push_back(newSwitchButton(Zone::Right, 5 + SwitchButton::buttonSize * i, 108, i));
 	for (char i = 0; i < 4; i++)
@@ -795,10 +790,9 @@ void Editor::loadButtons() {
 	for (char i = -1; i <= 1; i += 2)
 		buttons.push_back(
 			newRailMovementMagnitudeButton(Zone::Right, 122 + RailMovementMagnitudeButton::buttonSize * i / 2, 114, -i));
-	buttons.push_back(newRailToggleMovementDirectionButton(Zone::Right, 129, 103));
 	for (char i = -1; i <= 1; i += 2)
 		buttons.push_back(newRailTileOffsetButton(Zone::Right, 103 + RailTileOffsetButton::buttonSize * i / 2, 114, i));
-	buttons.push_back(newResetSwitchButton(Zone::Right, 118, 97));
+	buttons.push_back(newRailToggleMovementDirectionButton(Zone::Right, 129, 103));
 	for (char i = 0; i < (char)railSwitchGroupCount; i++) {
 		RailSwitchGroupButton* button = newRailSwitchGroupButton(
 			Zone::Right,
