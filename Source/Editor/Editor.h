@@ -269,8 +269,10 @@ private:
 		static const int buttonHeight = 13;
 		static const RGB arrowRGB;
 
+		bool collapse;
+
 	public:
-		ExtendPlatformButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY);
+		ExtendPlatformButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY, bool pCollapse);
 		virtual ~ExtendPlatformButton();
 
 		//render a platform with 4 arrows, one per direction
