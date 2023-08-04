@@ -412,11 +412,11 @@ void MapState::updateWithPreviousMapState(MapState* prev, int ticksTime) {
 		while (resetSwitchStates.size() < resetSwitches.size())
 			resetSwitchStates.push_back(newResetSwitchState(resetSwitches[resetSwitchStates.size()]));
 	}
-	for (int i = 0; i < (int)switchStates.size(); i++)
+	for (int i = 0; i < (int)prev->switchStates.size(); i++)
 		switchStates[i]->updateWithPreviousSwitchState(prev->switchStates[i]);
-	for (int i = 0; i < (int)resetSwitchStates.size(); i++)
+	for (int i = 0; i < (int)prev->resetSwitchStates.size(); i++)
 		resetSwitchStates[i]->updateWithPreviousResetSwitchState(prev->resetSwitchStates[i]);
-	for (int i = 0; i < (int)railStates.size(); i++)
+	for (int i = 0; i < (int)prev->railStates.size(); i++)
 		railStates[i]->updateWithPreviousRailState(prev->railStates[i], ticksTime);
 
 	while (radioWavesStates.size() < prev->radioWavesStates.size())
