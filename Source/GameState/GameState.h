@@ -52,12 +52,10 @@ private:
 	static const int postSwitchesFadeInAnimationTicks = 1000;
 	static const int switchesToPlayerAnimationTicks = 2000;
 	//switches color activation positions
-	static constexpr float squareSwitchesAnimationCenterWorldX =
-		280.0f + (float)(MapState::firstLevelTileOffsetX * MapState::tileSize);
-	static constexpr float squareSwitchesAnimationCenterWorldY =
-		80.0f + (float)(MapState::firstLevelTileOffsetY * MapState::tileSize);
-	static constexpr float triangleSwitchesAnimationCenterWorldX = 420.0f;
-	static constexpr float triangleSwitchesAnimationCenterWorldY = 275.0f;
+	static constexpr float squareSwitchesAnimationCenterWorldX = MapState::firstLevelTileOffsetX * MapState::tileSize + 280;
+	static constexpr float squareSwitchesAnimationCenterWorldY = MapState::firstLevelTileOffsetY * MapState::tileSize + 80;
+	static constexpr float triangleSwitchesAnimationCenterWorldX = MapState::firstLevelTileOffsetX * MapState::tileSize + 180;
+	static constexpr float triangleSwitchesAnimationCenterWorldY = MapState::firstLevelTileOffsetY * MapState::tileSize - 103;
 	static constexpr float sawSwitchesAnimationCenterWorldX = 100.0f; //todo: pick a position
 	static constexpr float sawSwitchesAnimationCenterWorldY = 100.0f; //todo: pick a position
 	static constexpr float sineSwitchesAnimationCenterWorldX = 100.0f; //todo: pick a position
