@@ -172,13 +172,20 @@ void Rail::addSegment(int x, int y) {
 		else {
 			char railGroundHeight = baseHeight - (segmentMaxTileOffset * 2);
 			char tileHeight = MapState::getHeight(x, y + segmentMaxTileOffset);
-			//keep looking if we see an empty space tile or a non-empty space tile that's too low to be a ground tile at this y
-			if (tileHeight == MapState::emptySpaceHeight || tileHeight < railGroundHeight)
+			//keep looking if we see an empty space tile
+			if (tileHeight == MapState::emptySpaceHeight) {
+				//but only if we haven't yet reached the theoretical-height-0 tile
+				//in that case, this segment does not have an offset
+				if (railGroundHeight == 0)
+					segmentMaxTileOffset = Segment::absentTileOffset;
+				else
+					continue;
+			//keep looking if we see a non-empty-space tile that's too low to be a ground tile at this y
+			} else if (tileHeight < railGroundHeight)
 				continue;
-
 			//we ended up on a tile that is above what would be a ground tile for this rail, which means that that the rail
 			//	hides behind it- mark that this segment does not have an offset
-			if (tileHeight > railGroundHeight)
+			else if (tileHeight > railGroundHeight)
 				segmentMaxTileOffset = Segment::absentTileOffset;
 		}
 		segments->push_back(Segment(x, y, segmentMaxTileOffset));
