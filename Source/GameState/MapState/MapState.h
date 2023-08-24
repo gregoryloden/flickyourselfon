@@ -59,7 +59,7 @@ public:
 	static const char invalidHeight = -1;
 	//animations
 	static const int firstLevelTileOffsetX = 40;
-	static const int firstLevelTileOffsetY = 63;
+	static const int firstLevelTileOffsetY = 113;
 	static const int radioTowerLeftXOffset = 324 + firstLevelTileOffsetX * tileSize;
 	static const int radioTowerTopYOffset = -106 + firstLevelTileOffsetY * tileSize;
 	static const int introAnimationBootTileX = 29 + firstLevelTileOffsetX;
