@@ -246,9 +246,14 @@ void Rail::editorRemoveGroup(char group) {
 	}
 }
 bool Rail::editorRemoveSegment(int x, int y, char pColor, char group) {
-	//make sure the colors match
-	if (pColor != color)
+	//colors usually have to match, unless all the groups are 0
+	if (pColor != color) {
+		//if all groups are 0, change the color
+		if (groups.empty() && group == 0)
+			color = pColor;
+		//either way, don't modify the rail in any other way
 		return false;
+	}
 	//can only remove a segment from the start or end of the rail
 	Segment& start = segments->front();
 	Segment& end = segments->back();
