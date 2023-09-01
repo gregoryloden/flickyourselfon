@@ -614,6 +614,10 @@ void Editor::RailButton::paintMap(int x, int y) {
 	if (clickedNewTile(x, y, MouseDragAction::AddRemoveRail))
 		MapState::editorSetRail(x, y, color, selectedRailSwitchGroupButton->getRailSwitchGroup());
 }
+void Editor::RailButton::onClick() {
+	Button::onClick();
+	lastSelectedRailButton = this;
+}
 
 //////////////////////////////// Editor::RailMovementMagnitudeButton ////////////////////////////////
 const Editor::RGB Editor::RailMovementMagnitudeButton::arrowRGB (0.75f, 0.75f, 0.75f);
@@ -713,11 +717,19 @@ Editor::RailSwitchGroupButton::RailSwitchGroupButton(
 Editor::RailSwitchGroupButton::~RailSwitchGroupButton() {}
 void Editor::RailSwitchGroupButton::renderOverButton() {
 	MapState::renderGroupRect(railSwitchGroup, (GLint)leftX + 1, (GLint)topY + 1, (GLint)rightX - 1, (GLint)bottomY - 1);
-	//if the switch for this group is selected, gray it out
-	if (selectedButton != nullptr
-			&& selectedButton == lastSelectedSwitchButton
-			&& MapState::editorHasSwitch(lastSelectedSwitchButton->getColor(), railSwitchGroup))
-		renderRGBRect(buttonGrayRGB, 0.875f, leftX + 1, topY + 1, rightX - 1, bottomY - 1);
+
+	//gray out buttons based on which other button is selected, but only if one is selected
+	if (selectedButton == nullptr)
+		;
+	//if a switch button is selected and the map has a switch with that color and this group, gray this button out
+	else if (selectedButton == lastSelectedSwitchButton) {
+		if (MapState::editorHasSwitch(lastSelectedSwitchButton->getColor(), railSwitchGroup))
+			renderRGBRect(buttonGrayRGB, 0.875f, leftX + 1, topY + 1, rightX - 1, bottomY - 1);
+	//if a rail button is selected and the map does not have a switch with that color and this group, gray this button out
+	} else if (selectedButton == lastSelectedRailButton) {
+		if (!MapState::editorHasSwitch(lastSelectedRailButton->getColor(), railSwitchGroup))
+			renderRGBRect(buttonGrayRGB, 0.875f, leftX + 1, topY + 1, rightX - 1, bottomY - 1);
+	}
 }
 void Editor::RailSwitchGroupButton::onClick() {
 	selectedRailSwitchGroupButton = this;
@@ -742,6 +754,7 @@ Editor::PaintBoxRadiusButton* Editor::selectedPaintBoxYRadiusButton = nullptr;
 Editor::RailSwitchGroupButton* Editor::selectedRailSwitchGroupButton = nullptr;
 Editor::HeightButton* Editor::lastSelectedHeightButton = nullptr;
 Editor::SwitchButton* Editor::lastSelectedSwitchButton = nullptr;
+Editor::RailButton* Editor::lastSelectedRailButton = nullptr;
 Editor::MouseDragAction Editor::lastMouseDragAction = Editor::MouseDragAction::None;
 int Editor::lastMouseDragMapX = -1;
 int Editor::lastMouseDragMapY = -1;

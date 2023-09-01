@@ -314,6 +314,7 @@ private:
 		RailButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY, char pColor);
 		virtual ~RailButton();
 
+		char getColor() { return color; }
 		//whether painting or rendering, leave the 1x1 area
 		virtual void expandPaintMapArea(
 			int* boxLeftMapX, int* boxTopMapY, int* boxRightMapX, int* boxBottomMapY, bool activePaint) {}
@@ -321,6 +322,8 @@ private:
 		virtual void renderOverButton();
 		//set a rail at this position
 		virtual void paintMap(int x, int y);
+		//track this rail button for other buttons
+		virtual void onClick();
 	};
 	class RailMovementMagnitudeButton: public Button {
 	public:
@@ -440,6 +443,7 @@ private:
 	static RailSwitchGroupButton* selectedRailSwitchGroupButton;
 	static HeightButton* lastSelectedHeightButton;
 	static SwitchButton* lastSelectedSwitchButton;
+	static RailButton* lastSelectedRailButton;
 	static MouseDragAction lastMouseDragAction;
 	static int lastMouseDragMapX;
 	static int lastMouseDragMapY;
