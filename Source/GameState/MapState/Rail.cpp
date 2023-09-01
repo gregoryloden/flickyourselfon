@@ -237,13 +237,14 @@ void Rail::renderGroups(int screenLeftWorldX, int screenTopWorldY) {
 		MapState::renderGroupRect(groups[i % groups.size()], drawLeftX + 2, drawTopY + 2, drawLeftX + 4, drawTopY + 4);
 	}
 }
-void Rail::editorRemoveGroup(char group) {
+bool Rail::editorRemoveGroup(char group) {
 	for (int i = 0; i < (int)groups.size(); i++) {
 		if (groups[i] == group) {
 			groups.erase(groups.begin() + i);
-			return;
+			return true;
 		}
 	}
+	return false;
 }
 bool Rail::editorRemoveSegment(int x, int y, char pColor, char group) {
 	//colors usually have to match, unless all the groups are 0
@@ -261,8 +262,14 @@ bool Rail::editorRemoveSegment(int x, int y, char pColor, char group) {
 		segments->erase(segments->begin());
 	else if (y == end.y && x == end.x)
 		segments->pop_back();
-	else
+	//if we clicked a middle segment, we can add or remove a group
+	else {
+		//if the group isn't 0, try to remove it, and if it's not present, add it
+		if (group != 0 && !editorRemoveGroup(group))
+			groups.push_back(group);
+		//either way, don't modify the rail in any other way
 		return false;
+	}
 	editorRemoveGroup(group);
 	//reset the max tile offset, find the smallest offset among the non-end segments
 	maxTileOffset = baseHeight / 2;

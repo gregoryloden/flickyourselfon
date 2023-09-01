@@ -912,6 +912,18 @@ void MapState::editorSetRail(int x, int y, char color, char group) {
 	//a rail can't go along the edge of the map
 	if (x < 1 || y < 1 || x + 1 >= width || y + 1 >= height)
 		return;
+	//if there is no switch that matches the selected group, don't do anything
+	//even group 0 needs a switch, but we expect that switch to already exist
+	bool foundMatchingSwitch = false;
+	for (Switch* switch0 : switches) {
+		if (switch0->getGroup() == group && switch0->getColor() == color && !switch0->editorIsDeleted) {
+			foundMatchingSwitch = true;
+			break;
+		}
+	}
+	if (!foundMatchingSwitch)
+		return;
+
 	//delete a segment from a rail
 	if (tileHasRail(x, y)) {
 		if (rails[getRailSwitchId(x, y) & railSwitchIndexBitmask]->editorRemoveSegment(x, y, color, group))
@@ -923,18 +935,6 @@ void MapState::editorSetRail(int x, int y, char color, char group) {
 			editorSetRailSwitchId(x, y, 0);
 		return;
 	}
-
-	//if there is no switch that matches this rail segment, don't do anything
-	//even group 0 needs a switch, but we expect that switch to already exist
-	bool foundMatchingSwitch = false;
-	for (Switch* switch0 : switches) {
-		if (switch0->getGroup() == group && switch0->getColor() == color && !switch0->editorIsDeleted) {
-			foundMatchingSwitch = true;
-			break;
-		}
-	}
-	if (!foundMatchingSwitch)
-		return;
 
 	//make sure that there is at most 1 rail/reset switch in range of this rail
 	short editingRailSwitchId = absentRailSwitchId;

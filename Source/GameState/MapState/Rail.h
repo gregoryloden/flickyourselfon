@@ -84,7 +84,8 @@ public:
 	//render groups where the rail would be at 0 offset
 	void renderGroups(int screenLeftWorldX, int screenTopWorldY);
 	//remove this group from the rail if it contains it
-	void editorRemoveGroup(char group);
+	//returns whether we removed a group
+	bool editorRemoveGroup(char group);
 	//remove the segment on this tile from the rail
 	//returns whether we removed a segment
 	bool editorRemoveSegment(int x, int y, char pColor, char group);
