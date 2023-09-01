@@ -94,6 +94,7 @@ public:
 	static const char triangleColor = 1;
 	static const char sawColor = 2;
 	static const char sineColor = 3;
+	static const char colorCount = 4;
 	//rail/switch state serialization
 	static constexpr char* floorFileName = "floor.png";
 	static const short absentRailSwitchId = 0;

@@ -799,9 +799,9 @@ void Editor::loadButtons() {
 	buttons.push_back(newExtendPlatformButton(Zone::Right, 98, 95, false));
 	buttons.push_back(newExtendPlatformButton(Zone::Right, 116, 95, true));
 	buttons.push_back(newResetSwitchButton(Zone::Right, 134, 95));
-	for (char i = 0; i < 4; i++)
+	for (char i = 0; i < MapState::colorCount; i++)
 		buttons.push_back(newSwitchButton(Zone::Right, 5 + SwitchButton::buttonSize * i, 106, i));
-	for (char i = 0; i < 4; i++)
+	for (char i = 0; i < MapState::colorCount; i++)
 		buttons.push_back(newRailButton(Zone::Right, 64 + RailButton::buttonSize * i, 112, i));
 	for (char i = -1; i <= 1; i += 2)
 		buttons.push_back(
