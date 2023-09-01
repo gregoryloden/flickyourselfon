@@ -40,7 +40,7 @@ private:
 		virtual ~RGB();
 	};
 	class Button onlyInDebug(: public ObjCounter) {
-	private:
+	public:
 		static const RGB buttonGrayRGB;
 
 	protected:
@@ -291,10 +291,13 @@ private:
 		SwitchButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY, char pColor);
 		virtual ~SwitchButton();
 
+		char getColor() { return color; }
 		//render the switch above the button
 		virtual void renderOverButton();
 		//set a switch at this position
 		virtual void paintMap(int x, int y);
+		//track this switch button for other buttons
+		virtual void onClick();
 		//if painting/placing a switch: leave the 1x1 area
 		//if rendering: expand the area to 2x2 with the top-left at the mouse position
 		virtual void expandPaintMapArea(
@@ -436,6 +439,7 @@ private:
 	static PaintBoxRadiusButton* selectedPaintBoxYRadiusButton;
 	static RailSwitchGroupButton* selectedRailSwitchGroupButton;
 	static HeightButton* lastSelectedHeightButton;
+	static SwitchButton* lastSelectedSwitchButton;
 	static MouseDragAction lastMouseDragAction;
 	static int lastMouseDragMapX;
 	static int lastMouseDragMapY;

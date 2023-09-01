@@ -820,6 +820,13 @@ bool MapState::editorHasFloorTileCreatingShadowForHeight(int x, int y, char heig
 		return heightDiff == tileOffset * 2;
 	}
 }
+bool MapState::editorHasSwitch(char color, char group) {
+	for (Switch* switch0 : switches) {
+		if (switch0->getColor() == color && switch0->getGroup() == group && !switch0->editorIsDeleted)
+			return true;
+	}
+	return false;
+}
 void MapState::editorSetSwitch(int leftX, int topY, char color, char group) {
 	//a switch occupies a 2x2 square, and must be surrounded by a 1-tile ring of no-swich-or-rail tiles
 	if (leftX < 1 || topY < 1 || leftX + 2 >= width || topY + 2 >= height)
@@ -889,11 +896,8 @@ void MapState::editorSetSwitch(int leftX, int topY, char color, char group) {
 	//we're setting a new switch
 	} else {
 		//but don't set it if we already have a switch exactly like this one
-		for (int i = 0; i < (int)switches.size(); i++) {
-			Switch* switch0 = switches[i];
-			if (switch0->getColor() == color && switch0->getGroup() == group && !switch0->editorIsDeleted)
-				return;
-		}
+		if (editorHasSwitch(color, group))
+			return;
 		switches.push_back(newSwitch(leftX, topY, color, group));
 	}
 

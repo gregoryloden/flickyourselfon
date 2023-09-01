@@ -290,6 +290,8 @@ public:
 	//check to see if there is a floor tile at this x that is effectively "above" an adjacent tile at the given y
 	//go up the tiles, and if we find a floor tile with the right height, return true, or if it's too low, return false
 	static bool editorHasFloorTileCreatingShadowForHeight(int x, int y, char height);
+	//check if there is already a switch with the same color and group
+	static bool editorHasSwitch(char color, char group);
 	//set a switch if there's room, or delete one if we can
 	static void editorSetSwitch(int leftX, int topY, char color, char group);
 	//set a rail or reset switch segment, or delete one if we can

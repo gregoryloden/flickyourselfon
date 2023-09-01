@@ -577,6 +577,10 @@ void Editor::SwitchButton::paintMap(int x, int y) {
 	if (clickedNewTile(x, y, MouseDragAction::AddRemoveSwitch))
 		MapState::editorSetSwitch(x, y, color, selectedRailSwitchGroupButton->getRailSwitchGroup());
 }
+void Editor::SwitchButton::onClick() {
+	Button::onClick();
+	lastSelectedSwitchButton = this;
+}
 void Editor::SwitchButton::expandPaintMapArea(
 	int* boxLeftMapX, int* boxTopMapY, int* boxRightMapX, int* boxBottomMapY, bool activePaint)
 {
@@ -709,6 +713,11 @@ Editor::RailSwitchGroupButton::RailSwitchGroupButton(
 Editor::RailSwitchGroupButton::~RailSwitchGroupButton() {}
 void Editor::RailSwitchGroupButton::renderOverButton() {
 	MapState::renderGroupRect(railSwitchGroup, (GLint)leftX + 1, (GLint)topY + 1, (GLint)rightX - 1, (GLint)bottomY - 1);
+	//if the switch for this group is selected, gray it out
+	if (selectedButton != nullptr
+			&& selectedButton == lastSelectedSwitchButton
+			&& MapState::editorHasSwitch(lastSelectedSwitchButton->getColor(), railSwitchGroup))
+		renderRGBRect(buttonGrayRGB, 0.875f, leftX + 1, topY + 1, rightX - 1, bottomY - 1);
 }
 void Editor::RailSwitchGroupButton::onClick() {
 	selectedRailSwitchGroupButton = this;
@@ -732,6 +741,7 @@ Editor::PaintBoxRadiusButton* Editor::selectedPaintBoxXRadiusButton = nullptr;
 Editor::PaintBoxRadiusButton* Editor::selectedPaintBoxYRadiusButton = nullptr;
 Editor::RailSwitchGroupButton* Editor::selectedRailSwitchGroupButton = nullptr;
 Editor::HeightButton* Editor::lastSelectedHeightButton = nullptr;
+Editor::SwitchButton* Editor::lastSelectedSwitchButton = nullptr;
 Editor::MouseDragAction Editor::lastMouseDragAction = Editor::MouseDragAction::None;
 int Editor::lastMouseDragMapX = -1;
 int Editor::lastMouseDragMapY = -1;
