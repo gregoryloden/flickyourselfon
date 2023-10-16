@@ -14,9 +14,9 @@ private:
 
 public:
 	enum class EndPauseDecision: int {
-		Save = 0x1,
-		Reset = 0x2,
-		Exit = 0x4
+		Save = 1 << 0,
+		Reset = 1 << 1,
+		Exit = 1 << 2,
 	};
 private:
 	class PauseMenu onlyInDebug(: public ObjCounter) {
