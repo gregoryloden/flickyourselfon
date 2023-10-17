@@ -66,9 +66,10 @@ int gameMain(int argc, char* argv[]) {
 		Config::refreshRate = displayMode.refresh_rate;
 	Logger::debugLogger.log("Window set up /// Loading game state...");
 
-	//load the map and settings which don't depend on the render thread
+	//load the map, settings, and save file which don't depend on the render thread
 	Config::loadSettings();
 	MapState::buildMap();
+	GameState::cacheSaveFile();
 
 	//create our state queue
 	//the render thread has to handle updating our initial state because states store the SpriteSheets they use, which requires
@@ -134,7 +135,7 @@ int gameMain(int argc, char* argv[]) {
 	#ifdef DEBUG
 		if (Editor::isActive)
 			Editor::unloadButtons();
-		PauseState::unloadMenu();
+		PauseState::unloadMenus();
 		SpriteRegistry::unloadAll();
 		Text::unloadFont();
 		delete gameStateQueue;
@@ -190,7 +191,7 @@ void renderLoop(CircularStateQueue<GameState>* gameStateQueue) {
 	Logger::debugLogger.log("OpenGL set up /// Loading sprites and game state...");
 	Text::loadFont();
 	SpriteRegistry::loadAll();
-	PauseState::loadMenu();
+	PauseState::loadMenus();
 	if (Editor::isActive)
 		Editor::loadButtons();
 	//load the initial state after loading all sprites

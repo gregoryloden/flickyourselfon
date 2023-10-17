@@ -1,4 +1,5 @@
 #include "PauseState.h"
+#include "GameState/GameState.h"
 #include "GameState/KickAction.h"
 #include "Sprites/SpriteSheet.h"
 #include "Util/Config.h"
@@ -12,7 +13,7 @@
 #define newDefaultKeyBindingsOption() newWithoutArgs(PauseState::DefaultKeyBindingsOption)
 #define newAcceptKeyBindingsOption() newWithoutArgs(PauseState::AcceptKeyBindingsOption)
 #define newKickIndicatorOption(action) newWithArgs(PauseState::KickIndicatorOption, action)
-#define newEndPauseOption(endPauseDecision) newWithArgs(PauseState::EndPauseOption, endPauseDecision)
+#define newEndPauseOption(displayText, endPauseDecision) newWithArgs(PauseState::EndPauseOption, displayText, endPauseDecision)
 
 //////////////////////////////// PauseState::PauseMenu ////////////////////////////////
 PauseState::PauseMenu::PauseMenu(objCounterParametersComma() string pTitle, vector<PauseOption*> pOptions)
@@ -50,9 +51,15 @@ void PauseState::PauseMenu::render(int selectedOption, KeyBindingOption* selecti
 	Text::render(title.c_str(), screenCenterX - titleMetrics.charactersWidth * 0.5f, optionsBaseline, titleFontScale);
 	Text::Metrics* lastMetrics = &titleMetrics;
 
+	bool wasEnabled = true;
 	int optionsCount = (int)options.size();
 	for (int i = 0; i < optionsCount; i++) {
 		PauseOption* option = options[i];
+		if (option->enabled != wasEnabled) {
+			wasEnabled = option->enabled;
+			glColor4f(1.0f, 1.0f, 1.0f, wasEnabled ? 1.0f : 0.5f);
+		}
+
 		Text::Metrics& optionMetrics = optionsMetrics[i];
 		optionsBaseline += optionMetrics.getBaselineDistanceBelow(lastMetrics);
 		float leftX = screenCenterX - optionMetrics.charactersWidth * 0.5f;
@@ -83,7 +90,8 @@ void PauseState::PauseMenu::render(int selectedOption, KeyBindingOption* selecti
 PauseState::PauseOption::PauseOption(objCounterParametersComma() string pDisplayText)
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
 displayText(pDisplayText)
-, displayTextMetrics(Text::getMetrics(pDisplayText.c_str(), displayTextFontScale)) {
+, displayTextMetrics(Text::getMetrics(pDisplayText.c_str(), displayTextFontScale))
+, enabled(true) {
 }
 PauseState::PauseOption::~PauseOption() {}
 void PauseState::PauseOption::render(float leftX, float baselineY) {
@@ -286,15 +294,8 @@ string PauseState::KickIndicatorOption::getKickActionSettingText(KickActionType 
 }
 
 //////////////////////////////// PauseState::EndPauseOption ////////////////////////////////
-PauseState::EndPauseOption::EndPauseOption(objCounterParametersComma() int pEndPauseDecision)
-: PauseOption(
-	objCounterArgumentsComma()
-		pEndPauseDecision == (int)EndPauseDecision::Save ? string("save + resume") :
-		pEndPauseDecision == (int)EndPauseDecision::Exit ? string("exit") :
-		pEndPauseDecision == ((int)EndPauseDecision::Save | (int)EndPauseDecision::Exit) ? string("save + exit") :
-		pEndPauseDecision == (int)EndPauseDecision::Reset ? string("reset game") :
-		//this should never happen, pEndPauseDecision should always be one of the above values
-		string("-"))
+PauseState::EndPauseOption::EndPauseOption(objCounterParametersComma() string pDisplayText, int pEndPauseDecision)
+: PauseOption(objCounterArgumentsComma() pDisplayText)
 , endPauseDecision(pEndPauseDecision) {
 }
 PauseState::EndPauseOption::~EndPauseOption() {}
@@ -304,6 +305,7 @@ PauseState* PauseState::EndPauseOption::handle(PauseState* currentState) {
 
 //////////////////////////////// PauseState ////////////////////////////////
 PauseState::PauseMenu* PauseState::baseMenu = nullptr;
+PauseState::PauseMenu* PauseState::homeMenu = nullptr;
 PauseState::PauseState(objCounterParameters())
 : PooledReferenceCounter(objCounterArguments())
 , parentState(nullptr)
@@ -332,16 +334,19 @@ PauseState* PauseState::produce(
 PauseState* PauseState::produce(objCounterParameters()) {
 	return produce(objCounterArgumentsComma() nullptr, baseMenu, 0, nullptr, 0);
 }
+PauseState* PauseState::produceHomeScreen() {
+	return newPauseState(nullptr, homeMenu, 0, nullptr, 0);
+}
 pooledReferenceCounterDefineRelease(PauseState)
 void PauseState::prepareReturnToPool() {
 	parentState.set(nullptr);
 }
-void PauseState::loadMenu() {
+void PauseState::loadMenus() {
 	baseMenu = newPauseMenu(
 		"Pause",
 		{
 			newNavigationOption("resume", nullptr) COMMA
-			newEndPauseOption((int)EndPauseDecision::Save) COMMA
+			newEndPauseOption("save + resume", (int)EndPauseDecision::Save) COMMA
 			newControlsNavigationOption(
 				newPauseMenu(
 					"Controls",
@@ -368,13 +373,24 @@ void PauseState::loadMenu() {
 						newKickIndicatorOption(KickActionType::ResetSwitch) COMMA
 						newNavigationOption("back", nullptr)
 					})) COMMA
-			newEndPauseOption((int)EndPauseDecision::Reset) COMMA
-			newEndPauseOption((int)EndPauseDecision::Save | (int)EndPauseDecision::Exit) COMMA
-			newEndPauseOption((int)EndPauseDecision::Exit)
+			newEndPauseOption("reset game", (int)EndPauseDecision::Reset) COMMA
+			newEndPauseOption("save + exit", (int)EndPauseDecision::Save | (int)EndPauseDecision::Exit) COMMA
+			newEndPauseOption("exit", (int)EndPauseDecision::Exit)
+		});
+	homeMenu = newPauseMenu(
+		GameState::titleGameName,
+		{
+			newEndPauseOption("continue", (int)EndPauseDecision::Load) COMMA
+			newEndPauseOption("new game", (int)EndPauseDecision::Reset) COMMA
+			newEndPauseOption("exit", (int)EndPauseDecision::Exit)
 		});
 }
-void PauseState::unloadMenu() {
+void PauseState::unloadMenus() {
 	delete baseMenu;
+	delete homeMenu;
+}
+void PauseState::disableContinueOption() {
+	homeMenu->getOption(0)->enabled = false;
 }
 PauseState* PauseState::getNextPauseState() {
 	PauseState* nextPauseState = this;
@@ -415,8 +431,10 @@ PauseState* PauseState::handleKeyPress(SDL_Scancode keyScancode) {
 			return newPauseState(parentState.get(), pauseMenu, (pauseOption + optionsCount - 1) % optionsCount, nullptr, 0);
 		case SDL_SCANCODE_DOWN:
 			return newPauseState(parentState.get(), pauseMenu, (pauseOption + 1) % optionsCount, nullptr, 0);
-		case SDL_SCANCODE_RETURN:
-			return pauseMenu->getOption(pauseOption)->handle(this);
+		case SDL_SCANCODE_RETURN: {
+			PauseOption* pauseOptionVal = pauseMenu->getOption(pauseOption);
+			return pauseOptionVal->enabled ? pauseOptionVal->handle(this) : this;
+		}
 		default:
 			return this;
 	}

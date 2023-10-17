@@ -67,7 +67,6 @@ void MapState::RadioWavesState::render(EntityState* camera, int ticksTime) {
 //////////////////////////////// MapState ////////////////////////////////
 const string MapState::railOffsetFilePrefix = "rail ";
 const string MapState::lastActivatedSwitchColorFilePrefix = "lastActivatedSwitchColor ";
-const string MapState::finishedConnectionsTutorialFilePrefix = "finishedConnectionsTutorial ";
 const string MapState::showConnectionsFilePrefix = "showConnections ";
 char* MapState::tiles = nullptr;
 char* MapState::heights = nullptr;
@@ -340,6 +339,9 @@ float MapState::antennaCenterWorldX() {
 }
 float MapState::antennaCenterWorldY() {
 	return (float)(radioTowerTopYOffset + 2);
+}
+float MapState::radioTowerPlatformCenterWorldY() {
+	return (float)(radioTowerTopYOffset + 103);
 }
 bool MapState::tileHasResetSwitchBody(int x, int y) {
 	if (!tileHasResetSwitch(x, y))
@@ -727,7 +729,7 @@ void MapState::saveState(ofstream& file) {
 	if (lastActivatedSwitchColor >= 0)
 		file << lastActivatedSwitchColorFilePrefix << (int)lastActivatedSwitchColor << "\n";
 	if (finishedConnectionsTutorial)
-		file << finishedConnectionsTutorialFilePrefix << "true\n";
+		file << finishedConnectionsTutorialFileValue << "\n";
 	if (showConnectionsEnabled)
 		file << showConnectionsFilePrefix << "true\n";
 
@@ -747,8 +749,8 @@ void MapState::saveState(ofstream& file) {
 bool MapState::loadState(string& line) {
 	if (StringUtils::startsWith(line, lastActivatedSwitchColorFilePrefix))
 		lastActivatedSwitchColor = (char)atoi(line.c_str() + lastActivatedSwitchColorFilePrefix.size());
-	else if (StringUtils::startsWith(line, finishedConnectionsTutorialFilePrefix))
-		finishedConnectionsTutorial = strcmp(line.c_str() + finishedConnectionsTutorialFilePrefix.size(), "true") == 0;
+	else if (StringUtils::startsWith(line, finishedConnectionsTutorialFileValue))
+		finishedConnectionsTutorial = true;
 	else if (StringUtils::startsWith(line, showConnectionsFilePrefix))
 		showConnectionsEnabled = strcmp(line.c_str() + showConnectionsFilePrefix.size(), "true") == 0;
 	else if (StringUtils::startsWith(line, railOffsetFilePrefix)) {

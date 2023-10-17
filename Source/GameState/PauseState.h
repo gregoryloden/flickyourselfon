@@ -17,6 +17,7 @@ public:
 		Save = 1 << 0,
 		Reset = 1 << 1,
 		Exit = 1 << 2,
+		Load = 1 << 3,
 	};
 private:
 	class PauseMenu onlyInDebug(: public ObjCounter) {
@@ -42,6 +43,8 @@ private:
 		string displayText;
 		Text::Metrics displayTextMetrics;
 	public:
+		bool enabled;
+
 		static constexpr float displayTextFontScale = 1.0f;
 
 		PauseOption(objCounterParametersComma() string pDisplayText);
@@ -165,7 +168,7 @@ private:
 		int endPauseDecision;
 
 	public:
-		EndPauseOption(objCounterParametersComma() int pEndPauseDecision);
+		EndPauseOption(objCounterParametersComma() string pDisplayText, int pEndPauseDecision);
 		virtual ~EndPauseOption();
 
 		int getEndPauseDecision() { return endPauseDecision; }
@@ -174,6 +177,7 @@ private:
 	};
 
 	static PauseMenu* baseMenu;
+	static PauseMenu* homeMenu;
 
 	ReferenceCounterHolder<PauseState> parentState;
 	PauseMenu* pauseMenu;
@@ -199,16 +203,20 @@ private:
 public:
 	//return a new pause state at the base menu
 	static PauseState* produce(objCounterParameters());
+	//return a new pause state at the home screen menu
+	static PauseState* produceHomeScreen();
 	//release a reference to this PauseState and return it to the pool if applicable
 	virtual void release();
 protected:
 	//release the parent state before this is returned to the pool
 	virtual void prepareReturnToPool();
 public:
-	//build the base pause menu
-	static void loadMenu();
-	//delete the base menu
-	static void unloadMenu();
+	//build the base pause menus
+	static void loadMenus();
+	//delete the base menus
+	static void unloadMenus();
+	//disable the continue option if there is no save file to load
+	static void disableContinueOption();
 	//if any keys were pressed, return a new updated pause state, otherwise return this non-updated state
 	//if the game was closed, return whatever intermediate state we have specifying to quit the game
 	PauseState* getNextPauseState();

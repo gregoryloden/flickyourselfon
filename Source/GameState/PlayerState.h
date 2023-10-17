@@ -183,6 +183,8 @@ public:
 	void render(EntityState* camera, int ticksTime);
 	//render the kick action for this player state if one is available
 	void renderKickAction(EntityState* camera, bool hasRailsToReset, int ticksTime);
+	//set this player state with the initial state for the home screen
+	void setHomeScreenState();
 	//save this player state to the file
 	void saveState(ofstream& file);
 	//try to load state from the line of the file, return whether state was loaded

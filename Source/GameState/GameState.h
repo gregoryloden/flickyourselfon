@@ -80,10 +80,10 @@ private:
 	#ifdef DEBUG
 		static constexpr char* replayFileName = "kyo_replay.log";
 	#endif
-public:
 	static constexpr char* savedGameFileName = "kyo.sav";
-private:
-	static const string sawIntroAnimationFilePrefix;
+	static constexpr char* sawIntroAnimationFileValue = "sawIntroAnimation";
+
+	static vector<string> saveFile;
 
 	bool sawIntroAnimation;
 	TextDisplayType textDisplayType;
@@ -103,6 +103,8 @@ public:
 
 	//return whether updates and renders should stop
 	bool getShouldQuitGame() { return shouldQuitGame; }
+	//internally store the state of the save file
+	static void cacheSaveFile();
 	//update this GameState by reading from the previous state
 	void updateWithPreviousGameState(GameState* prev, int ticksTime);
 	//set our camera to our player
@@ -117,8 +119,10 @@ public:
 	void renderTextDisplay(int gameTicksTime);
 	//save the state to a file
 	void saveState();
-	//initialize our state and load the state from the save file if there is one
+	//initialize our state at the home screen (or load the save state in the editor)
 	void loadInitialState(int ticksTime);
+	//load the cached saved state from the save file
+	void loadCachedSavedState(int ticksTime);
 	#ifdef DEBUG
 		//load a replay and finish initialization if a replay is available, return whether it was
 		bool loadReplay();

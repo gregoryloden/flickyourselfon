@@ -28,7 +28,7 @@
 	newEntityAnimationSetDirection(direction), \
 	newEntityAnimationDelay(delay)
 
-const string GameState::sawIntroAnimationFilePrefix = "sawIntroAnimation ";
+vector<string> GameState::saveFile;
 GameState::GameState(objCounterParameters())
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
 sawIntroAnimation(false)
@@ -45,6 +45,14 @@ sawIntroAnimation(false)
 }
 GameState::~GameState() {
 	//don't delete the camera, it's one of our other states
+}
+void GameState::cacheSaveFile() {
+	ifstream file;
+	FileUtils::openFileForRead(&file, savedGameFileName);
+	string line;
+	while (getline(file, line))
+		saveFile.push_back(line);
+	file.close();
 }
 void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 	//first things first: dump all our previous state so that we can start fresh
@@ -76,6 +84,10 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 			if ((endPauseDecision & (int)PauseState::EndPauseDecision::Save) != 0) {
 				Logger::gameplayLogger.log("  save state");
 				saveState();
+			}
+			if ((endPauseDecision & (int)PauseState::EndPauseDecision::Load) != 0) {
+				Logger::gameplayLogger.log("  load state");
+				loadCachedSavedState(ticksTime - gameTimeOffsetTicksDuration);
 			}
 			//don't reset the game in editor mode
 			if ((endPauseDecision & (int)PauseState::EndPauseDecision::Reset) != 0 && !Editor::isActive) {
@@ -388,7 +400,7 @@ void GameState::saveState() {
 	ofstream file;
 	FileUtils::openFileForWrite(&file, savedGameFileName, ios::out | ios::trunc);
 	if (sawIntroAnimation)
-		file << sawIntroAnimationFilePrefix << "true\n";
+		file << sawIntroAnimationFileValue << "\n";
 	playerState.get()->saveState(file);
 	mapState.get()->saveState(file);
 	file.close();
@@ -400,46 +412,44 @@ void GameState::loadInitialState(int ticksTime) {
 	dynamicCameraAnchor.set(newDynamicCameraAnchor());
 
 	#ifdef DEBUG
-		//before loading the game, see if we have a replay, and stop if we do
+		//before continuing setup, see if we have a replay, and stop if we do
 		if (loadReplay())
 			return;
 	#endif
 
-	//we have no replay, load state if we can
-	ifstream file;
-	FileUtils::openFileForRead(&file, savedGameFileName);
-	string line;
-	bool loadedState = false;
-	while (getline(file, line)) {
-		if (StringUtils::startsWith(line, sawIntroAnimationFilePrefix))
-			sawIntroAnimation = strcmp(line.c_str() + sawIntroAnimationFilePrefix.size(), "true") == 0;
-		else if (playerState.get()->loadState(line) || mapState.get()->loadState(line))
-			;
-		else
-			continue;
-		loadedState = true;
-	}
-	file.close();
-	if (loadedState)
-		Logger::gameplayLogger.log("  load state");
-
-	//and finally, setup any remaining initial state
+	//we have no replay, continue setup
+	camera = playerState.get();
+	//if we're in the editor, force-load the game and setup any remaining initial state
 	if (Editor::isActive) {
-		playerState.get()->setHighestZ();
 		//always skip the intro animation for the editor, jump straight into walking
 		sawIntroAnimation = true;
+		loadCachedSavedState(ticksTime);
+		playerState.get()->setHighestZ();
 		//enable show connections if necessary
 		if (!mapState.get()->getShowConnections(false)) {
 			//toggle twice to skip the hide-non-tiles setting
 			mapState.get()->toggleShowConnections();
 			mapState.get()->toggleShowConnections();
 		}
-	} else
-		playerState.get()->setInitialZ();
-
+	//otherwise, start the game at the home screen
+	} else {
+		if (saveFile.empty())
+			PauseState::disableContinueOption();
+		pauseStartTicksTime = 0;
+		pauseState.set(PauseState::produceHomeScreen());
+		playerState.get()->setHomeScreenState();
+	}
+}
+void GameState::loadCachedSavedState(int ticksTime) {
+	for (string& line : saveFile) {
+		if (StringUtils::startsWith(line, sawIntroAnimationFileValue))
+			sawIntroAnimation = true;
+		else
+			playerState.get()->loadState(line) || mapState.get()->loadState(line);
+	}
 	if (sawIntroAnimation) {
 		playerState.get()->obtainBoot();
-		camera = playerState.get();
+		playerState.get()->setInitialZ();
 	} else
 		beginIntroAnimation(ticksTime);
 }
@@ -640,6 +650,7 @@ void GameState::loadInitialState(int ticksTime) {
 	}
 #endif
 void GameState::beginIntroAnimation(int ticksTime) {
+	playerState.get()->reset();
 	MapState::setIntroAnimationBootTile(true);
 	camera = dynamicCameraAnchor.get();
 

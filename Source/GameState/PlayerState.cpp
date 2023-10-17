@@ -1192,6 +1192,11 @@ void PlayerState::renderKickAction(EntityState* camera, bool hasRailsToReset, in
 	float renderTopY = getRenderCenterScreenY(camera,  ticksTime) - (float)SpriteRegistry::player->getSpriteHeight() / 2.0f;
 	availableKickAction.get()->render(renderCenterX, renderTopY, hasRailsToReset);
 }
+void PlayerState::setHomeScreenState() {
+	obtainBoot();
+	x.set(newConstantValue(MapState::antennaCenterWorldX()));
+	y.set(newConstantValue(MapState::radioTowerPlatformCenterWorldY() - boundingBoxCenterYOffset));
+}
 void PlayerState::saveState(ofstream& file) {
 	file << playerXFilePrefix << lastControlledX << "\n";
 	file << playerYFilePrefix << lastControlledY << "\n";

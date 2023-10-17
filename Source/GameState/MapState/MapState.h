@@ -127,9 +127,9 @@ public:
 	static constexpr char* showConnectionsText = "show connections: ";
 	static constexpr float showConnectionsTextLeftX = 10.0f;
 	static constexpr float showConnectionsTextBaselineY = 20.0f;
+	static constexpr char* finishedConnectionsTutorialFileValue = "finishedConnectionsTutorial";
 	static const string railOffsetFilePrefix;
 	static const string lastActivatedSwitchColorFilePrefix;
-	static const string finishedConnectionsTutorialFilePrefix;
 	static const string showConnectionsFilePrefix;
 
 private:
@@ -223,6 +223,8 @@ public:
 	static float antennaCenterWorldX();
 	//get the center y of the radio tower antenna
 	static float antennaCenterWorldY();
+	//get the center y of the radio tower platform
+	static float radioTowerPlatformCenterWorldY();
 	//check that the tile has the main section of the reset switch, not just one of the rail segments
 	static bool tileHasResetSwitchBody(int x, int y);
 	//check that the tile has the end segment of a rail
