@@ -658,7 +658,7 @@ void GameState::beginIntroAnimation(int ticksTime) {
 	titleAnimationStartTicksTime = ticksTime;
 
 	//player animation component helpers
-	float speedPerTick = PlayerState::speedPerSecond / (float)Config::ticksPerSecond;
+	constexpr float speedPerTick = PlayerState::speedPerSecond / (float)Config::ticksPerSecond;
 	EntityAnimation::SetVelocity* stopMoving = newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f));
 	EntityAnimation::SetVelocity* walkLeft =
 		newEntityAnimationSetVelocity(newCompositeQuarticValue(0.0f, -speedPerTick, 0.0f, 0.0f, 0.0f), newConstantValue(0.0f));
