@@ -9,7 +9,7 @@ Config::KeyBindings::KeyBindings()
 , downKey(SDL_SCANCODE_DOWN)
 , leftKey(SDL_SCANCODE_LEFT)
 , kickKey(SDL_SCANCODE_SPACE)
-, showConnectionsKey(SDL_SCANCODE_LSHIFT) {
+, showConnectionsKey(SDL_SCANCODE_C) {
 }
 Config::KeyBindings::~KeyBindings() {}
 void Config::KeyBindings::set(const KeyBindings* other) {
