@@ -9,10 +9,10 @@
 #define newPauseMenu(title, options) newWithArgs(PauseState::PauseMenu, title, options)
 #define newNavigationOption(displayText, subMenu) newWithArgs(PauseState::NavigationOption, displayText, subMenu)
 #define newControlsNavigationOption(subMenu) newWithArgs(PauseState::ControlsNavigationOption, subMenu)
-#define newKeyBindingOption(boundKey) newWithArgs(PauseState::KeyBindingOption, boundKey)
+#define newKeyBindingOption(setting, displayText) newWithArgs(PauseState::KeyBindingOption, setting, displayText)
 #define newDefaultKeyBindingsOption() newWithoutArgs(PauseState::DefaultKeyBindingsOption)
 #define newAcceptKeyBindingsOption() newWithoutArgs(PauseState::AcceptKeyBindingsOption)
-#define newKickIndicatorOption(action) newWithArgs(PauseState::KickIndicatorOption, action)
+#define newMultiStateOption(setting, displayText) newWithArgs(PauseState::MultiStateOption, setting, displayText)
 #define newEndPauseOption(displayText, endPauseDecision) newWithArgs(PauseState::EndPauseOption, displayText, endPauseDecision)
 
 //////////////////////////////// PauseState::PauseMenu ////////////////////////////////
@@ -120,7 +120,8 @@ PauseState::ControlsNavigationOption::ControlsNavigationOption(objCounterParamet
 }
 PauseState::ControlsNavigationOption::~ControlsNavigationOption() {}
 PauseState* PauseState::ControlsNavigationOption::handle(PauseState* currentState) {
-	Config::editingKeyBindings.set(&Config::keyBindings);
+	for (ConfigTypes::KeyBindingSetting* keyBindingSetting : Config::allKeyBindingSettings)
+		keyBindingSetting->editingValue = keyBindingSetting->value;
 	return NavigationOption::handle(currentState);
 }
 
@@ -128,9 +129,10 @@ PauseState* PauseState::ControlsNavigationOption::handle(PauseState* currentStat
 const char* PauseState::KeyBindingOption::keySelectingText = "[press any key]";
 float PauseState::KeyBindingOption::cachedKeySelectingTextWidth = 0.0f;
 float PauseState::KeyBindingOption::cachedKeySelectingTextFontScale = 0.0f;
-PauseState::KeyBindingOption::KeyBindingOption(objCounterParametersComma() BoundKey pBoundKey)
-: PauseOption(objCounterArgumentsComma() getBoundKeyActionText(pBoundKey))
-, boundKey(pBoundKey)
+PauseState::KeyBindingOption::KeyBindingOption(
+	objCounterParametersComma() ConfigTypes::KeyBindingSetting* pSetting, string displayPrefix)
+: PauseOption(objCounterArgumentsComma() displayPrefix + ":")
+, setting(pSetting)
 , cachedKeyScancode(SDL_SCANCODE_UNKNOWN)
 , cachedKeyName("")
 , cachedKeyTextMetrics()
@@ -175,10 +177,10 @@ void PauseState::KeyBindingOption::renderSelecting(float leftX, float baselineY,
 			cachedKeyName.c_str(), leftX, baselineY, &cachedKeyTextMetrics, &cachedKeyBackgroundMetrics);
 }
 void PauseState::KeyBindingOption::ensureCachedKeyMetrics() {
-	SDL_Scancode currentBoundKeyScancode = getBoundKeyScancode();
+	SDL_Scancode currentBoundKeyScancode = setting->editingValue;
 	if (currentBoundKeyScancode != cachedKeyScancode) {
 		cachedKeyScancode = currentBoundKeyScancode;
-		cachedKeyName = Config::KeyBindings::getKeyName(currentBoundKeyScancode);
+		cachedKeyName = ConfigTypes::KeyBindingSetting::getKeyName(currentBoundKeyScancode);
 		cachedKeyTextMetrics = Text::getMetrics(cachedKeyName.c_str(), PauseOption::getDisplayTextMetrics().fontScale);
 		cachedKeyBackgroundMetrics = Text::getKeyBackgroundMetrics(&cachedKeyTextMetrics);
 	}
@@ -187,38 +189,8 @@ void PauseState::KeyBindingOption::ensureCachedKeyMetrics() {
 		cachedKeySelectingTextWidth = Text::getMetrics(keySelectingText, cachedKeySelectingTextFontScale).charactersWidth;
 	}
 }
-string PauseState::KeyBindingOption::getBoundKeyActionText(BoundKey pBoundKey) {
-	switch (pBoundKey) {
-		case BoundKey::Up: return "up:";
-		case BoundKey::Right: return "right:";
-		case BoundKey::Down: return "down:";
-		case BoundKey::Left: return "left:";
-		case BoundKey::Kick: return "kick/climb/fall:";
-		case BoundKey::ShowConnections: return "show connections:";
-		default: return "";
-	}
-}
-SDL_Scancode PauseState::KeyBindingOption::getBoundKeyScancode() {
-	switch (boundKey) {
-		case BoundKey::Up: return Config::editingKeyBindings.upKey;
-		case BoundKey::Right: return Config::editingKeyBindings.rightKey;
-		case BoundKey::Down: return Config::editingKeyBindings.downKey;
-		case BoundKey::Left: return Config::editingKeyBindings.leftKey;
-		case BoundKey::Kick: return Config::editingKeyBindings.kickKey;
-		case BoundKey::ShowConnections: return Config::editingKeyBindings.showConnectionsKey;
-		default: return SDL_SCANCODE_UNKNOWN;
-	}
-}
-void PauseState::KeyBindingOption::setBoundKeyScancode(SDL_Scancode keyScancode) {
-	switch (boundKey) {
-		case BoundKey::Up: Config::editingKeyBindings.upKey = keyScancode; break;
-		case BoundKey::Right: Config::editingKeyBindings.rightKey = keyScancode; break;
-		case BoundKey::Down: Config::editingKeyBindings.downKey = keyScancode; break;
-		case BoundKey::Left: Config::editingKeyBindings.leftKey = keyScancode; break;
-		case BoundKey::Kick: Config::editingKeyBindings.kickKey = keyScancode; break;
-		case BoundKey::ShowConnections: Config::editingKeyBindings.showConnectionsKey = keyScancode; break;
-		default: break;
-	}
+void PauseState::KeyBindingOption::setKeyBindingSettingEditingScancode(SDL_Scancode keyScancode) {
+	setting->editingValue = keyScancode;
 }
 
 //////////////////////////////// PauseState::DefaultKeyBindingsOption ////////////////////////////////
@@ -227,7 +199,8 @@ PauseState::DefaultKeyBindingsOption::DefaultKeyBindingsOption(objCounterParamet
 }
 PauseState::DefaultKeyBindingsOption::~DefaultKeyBindingsOption() {}
 PauseState* PauseState::DefaultKeyBindingsOption::handle(PauseState* currentState) {
-	Config::editingKeyBindings.set(&Config::defaultKeyBindings);
+	for (ConfigTypes::KeyBindingSetting* keyBindingSetting : Config::allKeyBindingSettings)
+		keyBindingSetting->editingValue = keyBindingSetting->defaultValue;
 	return currentState;
 }
 
@@ -237,60 +210,25 @@ PauseState::AcceptKeyBindingsOption::AcceptKeyBindingsOption(objCounterParameter
 }
 PauseState::AcceptKeyBindingsOption::~AcceptKeyBindingsOption() {}
 PauseState* PauseState::AcceptKeyBindingsOption::handle(PauseState* currentState) {
-	Config::keyBindings.set(&Config::editingKeyBindings);
+	for (ConfigTypes::KeyBindingSetting* keyBindingSetting : Config::allKeyBindingSettings)
+		keyBindingSetting->value = keyBindingSetting->editingValue;
 	Config::saveSettings();
 	return currentState->navigateToMenu(nullptr);
 }
 
-//////////////////////////////// PauseState::KickIndicatorOption ////////////////////////////////
-PauseState::KickIndicatorOption::KickIndicatorOption(objCounterParametersComma() KickActionType pAction)
-: PauseOption(objCounterArgumentsComma() getKickActionSettingText(pAction))
-, action(pAction) {
+//////////////////////////////// PauseState::MultiStateOption ////////////////////////////////
+PauseState::MultiStateOption::MultiStateOption(
+	objCounterParametersComma() ConfigTypes::MultiStateSetting* pSetting, string pDisplayPrefix)
+: PauseOption(objCounterArgumentsComma() pDisplayPrefix + ": " + pSetting->getSelectedOption())
+, setting(pSetting)
+, displayPrefix(pDisplayPrefix) {
 }
-PauseState::KickIndicatorOption::~KickIndicatorOption() {}
-PauseState* PauseState::KickIndicatorOption::handle(PauseState* currentState) {
-	if (action == KickActionType::Climb)
-		Config::kickIndicators.climb = !Config::kickIndicators.climb;
-	else if (action == KickActionType::Fall)
-		Config::kickIndicators.fall = !Config::kickIndicators.fall;
-	else if (action == KickActionType::Rail)
-		Config::kickIndicators.rail = !Config::kickIndicators.rail;
-	else if (action == KickActionType::Switch)
-		Config::kickIndicators.switch0 = !Config::kickIndicators.switch0;
-	else if (action == KickActionType::ResetSwitch)
-		Config::kickIndicators.resetSwitch = !Config::kickIndicators.resetSwitch;
-	updateDisplayText(getKickActionSettingText(action));
+PauseState::MultiStateOption::~MultiStateOption() {}
+PauseState* PauseState::MultiStateOption::handle(PauseState* currentState) {
+	setting->cycleState();
+	updateDisplayText(displayPrefix + ": " + setting->getSelectedOption());
 	Config::saveSettings();
 	return currentState;
-}
-string PauseState::KickIndicatorOption::getKickActionSettingText(KickActionType pAction) {
-	string actionTitle;
-	bool isOn = false;
-	switch (pAction) {
-		case KickActionType::Climb:
-			actionTitle = "climb: ";
-			isOn = Config::kickIndicators.climb;
-			break;
-		case KickActionType::Fall:
-			actionTitle = "fall: ";
-			isOn = Config::kickIndicators.fall;
-			break;
-		case KickActionType::Rail:
-			actionTitle = "rail: ";
-			isOn = Config::kickIndicators.rail;
-			break;
-		case KickActionType::Switch:
-			actionTitle = "switch: ";
-			isOn = Config::kickIndicators.switch0;
-			break;
-		case KickActionType::ResetSwitch:
-			actionTitle = "reset switch: ";
-			isOn = Config::kickIndicators.resetSwitch;
-			break;
-		default:
-			return "";
-	}
-	return actionTitle + (isOn ? "on" : "off");
 }
 
 //////////////////////////////// PauseState::EndPauseOption ////////////////////////////////
@@ -351,12 +289,12 @@ void PauseState::loadMenus() {
 				newPauseMenu(
 					"Controls",
 					{
-						newKeyBindingOption(KeyBindingOption::BoundKey::Up) COMMA
-						newKeyBindingOption(KeyBindingOption::BoundKey::Right) COMMA
-						newKeyBindingOption(KeyBindingOption::BoundKey::Down) COMMA
-						newKeyBindingOption(KeyBindingOption::BoundKey::Left) COMMA
-						newKeyBindingOption(KeyBindingOption::BoundKey::Kick) COMMA
-						newKeyBindingOption(KeyBindingOption::BoundKey::ShowConnections) COMMA
+						newKeyBindingOption(&Config::upKeyBinding, "up") COMMA
+						newKeyBindingOption(&Config::rightKeyBinding, "right") COMMA
+						newKeyBindingOption(&Config::downKeyBinding, "down") COMMA
+						newKeyBindingOption(&Config::leftKeyBinding, "left") COMMA
+						newKeyBindingOption(&Config::kickKeyBinding, "kick/climb/fall") COMMA
+						newKeyBindingOption(&Config::showConnectionsKeyBinding, "show connections") COMMA
 						newDefaultKeyBindingsOption() COMMA
 						newAcceptKeyBindingsOption() COMMA
 						newNavigationOption("back", nullptr)
@@ -366,11 +304,11 @@ void PauseState::loadMenus() {
 				newPauseMenu(
 					"Kick Indicators",
 					{
-						newKickIndicatorOption(KickActionType::Climb) COMMA
-						newKickIndicatorOption(KickActionType::Fall) COMMA
-						newKickIndicatorOption(KickActionType::Rail) COMMA
-						newKickIndicatorOption(KickActionType::Switch) COMMA
-						newKickIndicatorOption(KickActionType::ResetSwitch) COMMA
+						newMultiStateOption(&Config::climbKickIndicator, "climb indicator") COMMA
+						newMultiStateOption(&Config::fallKickIndicator, "fall indicator") COMMA
+						newMultiStateOption(&Config::railKickIndicator, "rail indicator") COMMA
+						newMultiStateOption(&Config::switchKickIndicator, "switch indicator") COMMA
+						newMultiStateOption(&Config::resetSwitchKickIndicator, "reset switch indicator") COMMA
 						newNavigationOption("back", nullptr)
 					})) COMMA
 			newEndPauseOption("reset game", (int)EndPauseDecision::Reset) COMMA
@@ -417,7 +355,7 @@ PauseState* PauseState::getNextPauseState() {
 PauseState* PauseState::handleKeyPress(SDL_Scancode keyScancode) {
 	if (selectingKeyBindingOption != nullptr) {
 		if (keyScancode != SDL_SCANCODE_ESCAPE)
-			selectingKeyBindingOption->setBoundKeyScancode(keyScancode);
+			selectingKeyBindingOption->setKeyBindingSettingEditingScancode(keyScancode);
 		return newPauseState(parentState.get(), pauseMenu, pauseOption, nullptr, 0);
 	}
 

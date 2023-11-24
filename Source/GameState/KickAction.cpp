@@ -36,25 +36,25 @@ void KickAction::render(float centerX, float bottomY, bool hasRailsToReset) {
 	bool showKickIndicator = false;
 	switch (type) {
 		case KickActionType::Climb:
-			showKickIndicator = Config::kickIndicators.climb;
+			showKickIndicator = Config::climbKickIndicator.isOn();
 			break;
 		case KickActionType::Fall:
 		case KickActionType::FallBig:
-			showKickIndicator = Config::kickIndicators.fall;
+			showKickIndicator = Config::fallKickIndicator.isOn();
 			break;
 		case KickActionType::Rail:
 		case KickActionType::NoRail:
-			showKickIndicator = Config::kickIndicators.rail;
+			showKickIndicator = Config::railKickIndicator.isOn();
 			break;
 		case KickActionType::Switch:
 		case KickActionType::Square:
 		case KickActionType::Triangle:
 		case KickActionType::Saw:
 		case KickActionType::Sine:
-			showKickIndicator = Config::kickIndicators.switch0;
+			showKickIndicator = Config::switchKickIndicator.isOn();
 			break;
 		case KickActionType::ResetSwitch: {
-			if (!Config::kickIndicators.resetSwitch || !hasRailsToReset)
+			if (!Config::resetSwitchKickIndicator.isOn() || !hasRailsToReset)
 				return;
 			Text::Metrics metrics = Text::getMetrics("Reset", 1.0f);
 			Text::render("Reset", centerX - metrics.charactersWidth * 0.5f, bottomY - 2.0f, 1.0f);

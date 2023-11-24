@@ -2,25 +2,17 @@
 #include "Util/FileUtils.h"
 #include "Util/StringUtils.h"
 
-//////////////////////////////// Config::KeyBindings ////////////////////////////////
-Config::KeyBindings::KeyBindings()
-: upKey(SDL_SCANCODE_UP)
-, rightKey(SDL_SCANCODE_RIGHT)
-, downKey(SDL_SCANCODE_DOWN)
-, leftKey(SDL_SCANCODE_LEFT)
-, kickKey(SDL_SCANCODE_SPACE)
-, showConnectionsKey(SDL_SCANCODE_C) {
+//////////////////////////////// Config::KeyBindingSetting ////////////////////////////////
+ConfigTypes::KeyBindingSetting::KeyBindingSetting(
+	SDL_Scancode pDefaultValue, string pFilePrefix, vector<KeyBindingSetting*>& containingList)
+: defaultValue(pDefaultValue)
+, value(pDefaultValue)
+, editingValue(pDefaultValue)
+, filePrefix(pFilePrefix) {
+	containingList.push_back(this);
 }
-Config::KeyBindings::~KeyBindings() {}
-void Config::KeyBindings::set(const KeyBindings* other) {
-	upKey = other->upKey;
-	rightKey = other->rightKey;
-	downKey = other->downKey;
-	leftKey = other->leftKey;
-	kickKey = other->kickKey;
-	showConnectionsKey = other->showConnectionsKey;
-}
-const char* Config::KeyBindings::getKeyName(SDL_Scancode key) {
+ConfigTypes::KeyBindingSetting::~KeyBindingSetting() {}
+const char* ConfigTypes::KeyBindingSetting::getKeyName(SDL_Scancode key) {
 	switch (key) {
 		case SDL_SCANCODE_LEFT: return u8"←";
 		case SDL_SCANCODE_UP: return u8"↑";
@@ -29,92 +21,89 @@ const char* Config::KeyBindings::getKeyName(SDL_Scancode key) {
 		default: return SDL_GetKeyName(SDL_GetKeyFromScancode(key));
 	}
 }
+using ConfigTypes::KeyBindingSetting;
 
-//////////////////////////////// Config::KickIndicators ////////////////////////////////
-Config::KickIndicators::KickIndicators()
-: climb(true)
-, fall(true)
-, rail(true)
-, switch0(true)
-, resetSwitch(true) {
+//////////////////////////////// Config::MultiStateSetting ////////////////////////////////
+ConfigTypes::MultiStateSetting::MultiStateSetting(
+	vector<string> pOptions, string pFilePrefix, vector<MultiStateSetting*>& containingList)
+: options(pOptions)
+, state(0)
+, filePrefix(pFilePrefix) {
+	containingList.push_back(this);
 }
-Config::KickIndicators::~KickIndicators() {}
+ConfigTypes::MultiStateSetting::~MultiStateSetting() {}
+using ConfigTypes::MultiStateSetting;
+
+//////////////////////////////// Config::OnOffSetting ////////////////////////////////
+ConfigTypes::OnOffSetting::OnOffSetting(string pFilePrefix, vector<MultiStateSetting*>& containingList)
+: MultiStateSetting({ "on", "off" }, pFilePrefix, containingList) {
+}
+ConfigTypes::OnOffSetting::~OnOffSetting() {}
+using ConfigTypes::OnOffSetting;
+
+//////////////////////////////// Config::ToggleHoldSetting ////////////////////////////////
+ConfigTypes::ToggleHoldSetting::ToggleHoldSetting(string pFilePrefix, vector<MultiStateSetting*>& containingList)
+: MultiStateSetting({ "toggle", "hold" }, pFilePrefix, containingList) {
+}
+ConfigTypes::ToggleHoldSetting::~ToggleHoldSetting() {}
+using ConfigTypes::ToggleHoldSetting;
 
 //////////////////////////////// Config ////////////////////////////////
-const Config::KeyBindings Config::defaultKeyBindings;
-const string Config::upKeyBindingFilePrefix = "upKey ";
-const string Config::rightKeyBindingFilePrefix = "rightKey ";
-const string Config::downKeyBindingFilePrefix = "downKey ";
-const string Config::leftKeyBindingFilePrefix = "leftKey ";
-const string Config::kickKeyBindingFilePrefix = "kickKey ";
-const string Config::showConnectionsKeyBindingFilePrefix = "showConnectionsKey ";
-const string Config::climbKickIndicatorFilePrefix = "climb ";
-const string Config::fallKickIndicatorFilePrefix = "fall ";
-const string Config::railKickIndicatorFilePrefix = "rail ";
-const string Config::switchKickIndicatorFilePrefix = "switch ";
-const string Config::resetSwitchKickIndicatorFilePrefix = "resetSwitch ";
 float Config::currentPixelWidth = Config::defaultPixelWidth;
 float Config::currentPixelHeight = Config::defaultPixelHeight;
 int Config::windowScreenWidth = Config::gameScreenWidth;
 int Config::windowScreenHeight = Config::gameScreenHeight;
 int Config::refreshRate = 60;
-Config::KeyBindings Config::keyBindings;
-Config::KeyBindings Config::editingKeyBindings;
-Config::KickIndicators Config::kickIndicators;
+vector<KeyBindingSetting*> Config::allKeyBindingSettings;
+KeyBindingSetting Config::upKeyBinding (SDL_SCANCODE_UP, "upKey ", Config::allKeyBindingSettings);
+KeyBindingSetting Config::rightKeyBinding (SDL_SCANCODE_RIGHT, "rightKey ", Config::allKeyBindingSettings);
+KeyBindingSetting Config::downKeyBinding (SDL_SCANCODE_DOWN, "downKey ", Config::allKeyBindingSettings);
+KeyBindingSetting Config::leftKeyBinding (SDL_SCANCODE_LEFT, "leftKey ", Config::allKeyBindingSettings);
+KeyBindingSetting Config::kickKeyBinding (SDL_SCANCODE_SPACE, "kickKey ", Config::allKeyBindingSettings);
+KeyBindingSetting Config::showConnectionsKeyBinding (SDL_SCANCODE_C, "showConnectionsKey ", Config::allKeyBindingSettings);
+vector<MultiStateSetting*> Config::allMultiStateSettings;
+OnOffSetting Config::climbKickIndicator ("climb ", Config::allMultiStateSettings);
+OnOffSetting Config::fallKickIndicator ("fall ", Config::allMultiStateSettings);
+OnOffSetting Config::railKickIndicator ("rail ", Config::allMultiStateSettings);
+OnOffSetting Config::switchKickIndicator ("switch ", Config::allMultiStateSettings);
+OnOffSetting Config::resetSwitchKickIndicator ("resetSwitch ", Config::allMultiStateSettings);
+ToggleHoldSetting Config::showConnectionsMode ("showConnectionsMode ", Config::allMultiStateSettings);
 void Config::saveSettings() {
 	ofstream file;
 	FileUtils::openFileForWrite(&file, optionsFileName, ios::out | ios::trunc);
-	if (keyBindings.upKey != defaultKeyBindings.upKey)
-		file << upKeyBindingFilePrefix << (int)keyBindings.upKey << "\n";
-	if (keyBindings.rightKey != defaultKeyBindings.rightKey)
-		file << rightKeyBindingFilePrefix << (int)keyBindings.rightKey << "\n";
-	if (keyBindings.downKey != defaultKeyBindings.downKey)
-		file << downKeyBindingFilePrefix << (int)keyBindings.downKey << "\n";
-	if (keyBindings.leftKey != defaultKeyBindings.leftKey)
-		file << leftKeyBindingFilePrefix << (int)keyBindings.leftKey << "\n";
-	if (keyBindings.kickKey != defaultKeyBindings.kickKey)
-		file << kickKeyBindingFilePrefix << (int)keyBindings.kickKey << "\n";
-	if (keyBindings.showConnectionsKey != defaultKeyBindings.showConnectionsKey)
-		file << showConnectionsKeyBindingFilePrefix << (int)keyBindings.showConnectionsKey << "\n";
-	if (!kickIndicators.climb)
-		file << climbKickIndicatorFilePrefix << "off\n";
-	if (!kickIndicators.fall)
-		file << fallKickIndicatorFilePrefix << "off\n";
-	if (!kickIndicators.rail)
-		file << railKickIndicatorFilePrefix << "off\n";
-	if (!kickIndicators.switch0)
-		file << switchKickIndicatorFilePrefix << "off\n";
-	if (!kickIndicators.resetSwitch)
-		file << resetSwitchKickIndicatorFilePrefix << "off\n";
+	for (KeyBindingSetting* keyBindingSetting : allKeyBindingSettings) {
+		if (keyBindingSetting->value != keyBindingSetting->defaultValue)
+			file << keyBindingSetting->filePrefix << (int)keyBindingSetting->value << "\n";
+	}
+	for (MultiStateSetting* multiStateSetting : allMultiStateSettings) {
+		if (multiStateSetting->state != 0)
+			file << multiStateSetting->filePrefix << multiStateSetting->state << "\n";
+	}
 	file.close();
 }
 void Config::loadSettings() {
 	ifstream file;
 	FileUtils::openFileForRead(&file, optionsFileName);
 	string line;
-	while (getline(file, line)) {
-		if (StringUtils::startsWith(line, upKeyBindingFilePrefix))
-			keyBindings.upKey = (SDL_Scancode)atoi(line.c_str() + upKeyBindingFilePrefix.size());
-		else if (StringUtils::startsWith(line, rightKeyBindingFilePrefix))
-			keyBindings.rightKey = (SDL_Scancode)atoi(line.c_str() + rightKeyBindingFilePrefix.size());
-		else if (StringUtils::startsWith(line, downKeyBindingFilePrefix))
-			keyBindings.downKey = (SDL_Scancode)atoi(line.c_str() + downKeyBindingFilePrefix.size());
-		else if (StringUtils::startsWith(line, leftKeyBindingFilePrefix))
-			keyBindings.leftKey = (SDL_Scancode)atoi(line.c_str() + leftKeyBindingFilePrefix.size());
-		else if (StringUtils::startsWith(line, kickKeyBindingFilePrefix))
-			keyBindings.kickKey = (SDL_Scancode)atoi(line.c_str() + kickKeyBindingFilePrefix.size());
-		else if (StringUtils::startsWith(line, showConnectionsKeyBindingFilePrefix))
-			keyBindings.showConnectionsKey = (SDL_Scancode)atoi(line.c_str() + showConnectionsKeyBindingFilePrefix.size());
-		else if (StringUtils::startsWith(line, climbKickIndicatorFilePrefix))
-			kickIndicators.climb = strcmp(line.c_str() + climbKickIndicatorFilePrefix.size(), "off") != 0;
-		else if (StringUtils::startsWith(line, fallKickIndicatorFilePrefix))
-			kickIndicators.fall = strcmp(line.c_str() + fallKickIndicatorFilePrefix.size(), "off") != 0;
-		else if (StringUtils::startsWith(line, railKickIndicatorFilePrefix))
-			kickIndicators.rail = strcmp(line.c_str() + railKickIndicatorFilePrefix.size(), "off") != 0;
-		else if (StringUtils::startsWith(line, switchKickIndicatorFilePrefix))
-			kickIndicators.switch0 = strcmp(line.c_str() + switchKickIndicatorFilePrefix.size(), "off") != 0;
-		else if (StringUtils::startsWith(line, resetSwitchKickIndicatorFilePrefix))
-			kickIndicators.resetSwitch = strcmp(line.c_str() + resetSwitchKickIndicatorFilePrefix.size(), "off") != 0;
-	}
+	while (getline(file, line))
+		loadKeyBindingSetting(line) || loadMultiStateSetting(line);
 	file.close();
+}
+bool Config::loadKeyBindingSetting(string& line) {
+	for (KeyBindingSetting* keyBindingSetting : allKeyBindingSettings) {
+		if (StringUtils::startsWith(line, keyBindingSetting->filePrefix)) {
+			keyBindingSetting->value = (SDL_Scancode)atoi(line.c_str() + keyBindingSetting->filePrefix.size());
+			return true;
+		}
+	}
+	return false;
+}
+bool Config::loadMultiStateSetting(string& line) {
+	for (MultiStateSetting* multiStateSetting : allMultiStateSettings) {
+		if (StringUtils::startsWith(line, multiStateSetting->filePrefix)) {
+			multiStateSetting->state = atoi(line.c_str() + multiStateSetting->filePrefix.size());
+			return true;
+		}
+	}
+	return false;
 }

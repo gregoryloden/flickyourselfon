@@ -132,13 +132,13 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 				shouldQuitGame = true;
 				break;
 			case SDL_KEYDOWN:
-				if (gameEvent.key.keysym.scancode == Config::keyBindings.kickKey) {
+				if (gameEvent.key.keysym.scancode == Config::kickKeyBinding.value) {
 					if (!Editor::isActive)
 						playerState.get()->beginKicking(gameTicksTime);
 				} else if (gameEvent.key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
 					pauseState.set(newBasePauseState());
 					pauseStartTicksTime = ticksTime;
-				} else if (gameEvent.key.keysym.scancode == Config::keyBindings.showConnectionsKey)
+				} else if (gameEvent.key.keysym.scancode == Config::showConnectionsKeyBinding.value)
 					mapState.get()->toggleShowConnections();
 				break;
 			case SDL_MOUSEBUTTONDOWN:

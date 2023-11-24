@@ -608,7 +608,7 @@ void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int 
 			Text::Metrics showConnectionsMetrics = Text::getMetrics(showConnectionsText, 1.0f);
 			Text::render(showConnectionsText, showConnectionsTextLeftX, showConnectionsTextBaselineY, 1.0f);
 			Text::renderWithKeyBackground(
-				Config::KeyBindings::getKeyName(Config::keyBindings.showConnectionsKey),
+				ConfigTypes::KeyBindingSetting::getKeyName(Config::showConnectionsKeyBinding.value),
 				showConnectionsTextLeftX + showConnectionsMetrics.charactersWidth,
 				showConnectionsTextBaselineY,
 				1.0f);
@@ -649,7 +649,7 @@ bool MapState::renderGroupsForRailsToReset(EntityState* camera, short resetSwitc
 	return hasRailsToReset;
 }
 void MapState::renderGroupsForRailsFromSwitch(EntityState* camera, short switchId, int ticksTime) {
-	if (!Config::kickIndicators.switch0)
+	if (!Config::switchKickIndicator.isOn())
 		return;
 	Switch* switch0 = switches[switchId & railSwitchIndexBitmask];
 	char group = switch0->getGroup();

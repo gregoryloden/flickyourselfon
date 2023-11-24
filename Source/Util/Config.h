@@ -2,38 +2,53 @@
 #define CONFIG_H
 #include "General/General.h"
 
-class Config {
-public:
+namespace ConfigTypes {
 	//Should only be allocated within an object, on the stack, or as a static object
-	class KeyBindings {
+	class KeyBindingSetting {
 	public:
-		SDL_Scancode upKey;
-		SDL_Scancode rightKey;
-		SDL_Scancode downKey;
-		SDL_Scancode leftKey;
-		SDL_Scancode kickKey;
-		SDL_Scancode showConnectionsKey;
+		const SDL_Scancode defaultValue;
+		SDL_Scancode value;
+		SDL_Scancode editingValue;
+		const string filePrefix;
 
-		KeyBindings();
-		virtual ~KeyBindings();
+		KeyBindingSetting(SDL_Scancode pDefaultValue, string pFilePrefix, vector<KeyBindingSetting*>& containingList);
+		virtual ~KeyBindingSetting();
 
-		//copy the key bindings from the other KeyBindings
-		void set(const KeyBindings* other);
 		//get the name for this key code
 		static const char* getKeyName(SDL_Scancode key);
 	};
 	//Should only be allocated within an object, on the stack, or as a static object
-	class KickIndicators {
+	class MultiStateSetting {
 	public:
-		bool climb;
-		bool fall;
-		bool rail;
-		bool switch0;
-		bool resetSwitch;
+		const vector<string> options;
+		int state;
+		const string filePrefix;
 
-		KickIndicators();
-		virtual ~KickIndicators();
+		MultiStateSetting(vector<string> pOptions, string pFilePrefix, vector<MultiStateSetting*>& containingList);
+		virtual ~MultiStateSetting();
+
+		string getSelectedOption() { return options[state]; }
+		void cycleState() { state = (state + 1) % options.size(); }
 	};
+	//Should only be allocated within an object, on the stack, or as a static object
+	class OnOffSetting : public MultiStateSetting {
+	public:
+		OnOffSetting(string pFilePrefix, vector<MultiStateSetting*>& containingList);
+		virtual ~OnOffSetting();
+
+		bool isOn() { return state == 0; }
+	};
+	//Should only be allocated within an object, on the stack, or as a static object
+	class ToggleHoldSetting : public MultiStateSetting {
+	public:
+		ToggleHoldSetting(string pFilePrefix, vector<MultiStateSetting*>& containingList);
+		virtual ~ToggleHoldSetting();
+
+		bool isToggle() { return state == 0; }
+	};
+}
+class Config {
+public:
 
 	static const int gameScreenWidth = 221;
 	static const int gameScreenHeight = 165;
@@ -50,31 +65,35 @@ public:
 	static constexpr float backgroundColorGreen = 0.0f;
 	static constexpr float backgroundColorBlue = 3.0f / 16.0f;
 	static constexpr char* optionsFileName = "kyo.options";
-	static const KeyBindings defaultKeyBindings;
-	static const string upKeyBindingFilePrefix;
-	static const string rightKeyBindingFilePrefix;
-	static const string downKeyBindingFilePrefix;
-	static const string leftKeyBindingFilePrefix;
-	static const string kickKeyBindingFilePrefix;
-	static const string showConnectionsKeyBindingFilePrefix;
-	static const string climbKickIndicatorFilePrefix;
-	static const string fallKickIndicatorFilePrefix;
-	static const string railKickIndicatorFilePrefix;
-	static const string switchKickIndicatorFilePrefix;
-	static const string resetSwitchKickIndicatorFilePrefix;
 
 	static float currentPixelWidth;
 	static float currentPixelHeight;
 	static int windowScreenWidth;
 	static int windowScreenHeight;
 	static int refreshRate;
-	static KeyBindings keyBindings;
-	static KeyBindings editingKeyBindings;
-	static KickIndicators kickIndicators;
+	static vector<ConfigTypes::KeyBindingSetting*> allKeyBindingSettings;
+	static ConfigTypes::KeyBindingSetting upKeyBinding;
+	static ConfigTypes::KeyBindingSetting rightKeyBinding;
+	static ConfigTypes::KeyBindingSetting downKeyBinding;
+	static ConfigTypes::KeyBindingSetting leftKeyBinding;
+	static ConfigTypes::KeyBindingSetting kickKeyBinding;
+	static ConfigTypes::KeyBindingSetting showConnectionsKeyBinding;
+	static vector<ConfigTypes::MultiStateSetting*> allMultiStateSettings;
+	static ConfigTypes::OnOffSetting climbKickIndicator;
+	static ConfigTypes::OnOffSetting fallKickIndicator;
+	static ConfigTypes::OnOffSetting railKickIndicator;
+	static ConfigTypes::OnOffSetting switchKickIndicator;
+	static ConfigTypes::OnOffSetting resetSwitchKickIndicator;
+	static ConfigTypes::ToggleHoldSetting showConnectionsMode;
 
 	//save the key bindings to the save file
 	static void saveSettings();
 	//load the key bindings from the save file, if it exists
 	static void loadSettings();
+private:
+	//load a keybinding setting, if applicable
+	static bool loadKeyBindingSetting(string& line);
+	//load a multi-state setting, if applicable
+	static bool loadMultiStateSetting(string& line);
 };
 #endif

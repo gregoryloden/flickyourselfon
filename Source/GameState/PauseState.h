@@ -4,6 +4,10 @@
 #define newBasePauseState() produceWithoutArgs(PauseState)
 
 enum class KickActionType: int;
+namespace ConfigTypes {
+	class KeyBindingSetting;
+	class MultiStateSetting;
+}
 
 //a single instance of a PauseState is immutable and shared between states
 //PauseStates are added when entering a child and released when exiting, using the same parent instance
@@ -81,16 +85,6 @@ private:
 		virtual PauseState* handle(PauseState* currentState);
 	};
 	class KeyBindingOption: public PauseOption {
-	public:
-		enum class BoundKey: int {
-			Up,
-			Right,
-			Down,
-			Left,
-			Kick,
-			ShowConnections
-		};
-
 	private:
 		static const int interKeyActionAndKeyBackgroundSpacing = 4;
 		static const char* keySelectingText;
@@ -98,14 +92,14 @@ private:
 		static float cachedKeySelectingTextWidth;
 		static float cachedKeySelectingTextFontScale;
 
-		BoundKey boundKey;
+		ConfigTypes::KeyBindingSetting* setting;
 		SDL_Scancode cachedKeyScancode;
 		string cachedKeyName;
 		Text::Metrics cachedKeyTextMetrics;
 		Text::Metrics cachedKeyBackgroundMetrics;
 
 	public:
-		KeyBindingOption(objCounterParametersComma() BoundKey pBoundKey);
+		KeyBindingOption(objCounterParametersComma() ConfigTypes::KeyBindingSetting* pSetting, string displayPrefix);
 		virtual ~KeyBindingOption();
 
 		//return metrics that include the key name and background
@@ -121,16 +115,11 @@ private:
 	private:
 		//if we have a new bound key, cache its metrics
 		void ensureCachedKeyMetrics();
-		//get the name of the action we're binding a key to
-		//static so that we can use it in the option's constructor
-		static string getBoundKeyActionText(BoundKey pBoundKey);
-		//get the currently-editing scancode for our bound key
-		SDL_Scancode getBoundKeyScancode();
 	public:
-		//update the scancode for this option's bound key
+		//update the editing scancode for this option's setting
 		//this also changes the scancode for past states, but since this is atomic and scancodes are retrieved only once per
 		//	frame, this shouldn't be a problem
-		void setBoundKeyScancode(SDL_Scancode keyScancode);
+		void setKeyBindingSettingEditingScancode(SDL_Scancode keyScancode);
 	};
 	class DefaultKeyBindingsOption: public PauseOption {
 	public:
@@ -148,20 +137,17 @@ private:
 		//accept the new key bindings and save them to the options file
 		virtual PauseState* handle(PauseState* currentState);
 	};
-	class KickIndicatorOption: public PauseOption {
+	class MultiStateOption : public PauseOption {
 	private:
-		KickActionType action;
+		ConfigTypes::MultiStateSetting* setting;
+		string displayPrefix;
 
 	public:
-		KickIndicatorOption(objCounterParametersComma() KickActionType pAction);
-		virtual ~KickIndicatorOption();
+		MultiStateOption(objCounterParametersComma() ConfigTypes::MultiStateSetting* pSetting, string pDisplayPrefix);
+		virtual ~MultiStateOption();
 
-		//toggle the kick indicator for this action
+		//cycle the state for this option
 		virtual PauseState* handle(PauseState* currentState);
-	private:
-		//get the name of the action we're binding a key to, and its current config setting
-		//static so that we can use it in the option's constructor
-		static string getKickActionSettingText(KickActionType pAction);
 	};
 	class EndPauseOption: public PauseOption {
 	private:
