@@ -39,12 +39,12 @@ namespace ConfigTypes {
 		bool isOn() { return state == 0; }
 	};
 	//Should only be allocated within an object, on the stack, or as a static object
-	class ToggleHoldSetting : public MultiStateSetting {
+	class HoldToggleSetting : public MultiStateSetting {
 	public:
-		ToggleHoldSetting(string pFilePrefix, vector<MultiStateSetting*>& containingList);
-		virtual ~ToggleHoldSetting();
+		HoldToggleSetting(string pFilePrefix, vector<MultiStateSetting*>& containingList);
+		virtual ~HoldToggleSetting();
 
-		bool isToggle() { return state == 0; }
+		bool isHold() { return state == 0; }
 	};
 }
 class Config {
@@ -84,7 +84,7 @@ public:
 	static ConfigTypes::OnOffSetting railKickIndicator;
 	static ConfigTypes::OnOffSetting switchKickIndicator;
 	static ConfigTypes::OnOffSetting resetSwitchKickIndicator;
-	static ConfigTypes::ToggleHoldSetting showConnectionsMode;
+	static ConfigTypes::HoldToggleSetting showConnectionsMode;
 
 	//save the key bindings to the save file
 	static void saveSettings();

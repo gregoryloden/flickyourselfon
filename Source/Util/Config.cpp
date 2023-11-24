@@ -41,12 +41,12 @@ ConfigTypes::OnOffSetting::OnOffSetting(string pFilePrefix, vector<MultiStateSet
 ConfigTypes::OnOffSetting::~OnOffSetting() {}
 using ConfigTypes::OnOffSetting;
 
-//////////////////////////////// Config::ToggleHoldSetting ////////////////////////////////
-ConfigTypes::ToggleHoldSetting::ToggleHoldSetting(string pFilePrefix, vector<MultiStateSetting*>& containingList)
-: MultiStateSetting({ "toggle", "hold" }, pFilePrefix, containingList) {
+//////////////////////////////// Config::HoldToggleSetting ////////////////////////////////
+ConfigTypes::HoldToggleSetting::HoldToggleSetting(string pFilePrefix, vector<MultiStateSetting*>& containingList)
+: MultiStateSetting({ "hold", "toggle" }, pFilePrefix, containingList) {
 }
-ConfigTypes::ToggleHoldSetting::~ToggleHoldSetting() {}
-using ConfigTypes::ToggleHoldSetting;
+ConfigTypes::HoldToggleSetting::~HoldToggleSetting() {}
+using ConfigTypes::HoldToggleSetting;
 
 //////////////////////////////// Config ////////////////////////////////
 float Config::currentPixelWidth = Config::defaultPixelWidth;
@@ -67,7 +67,7 @@ OnOffSetting Config::fallKickIndicator ("fall ", Config::allMultiStateSettings);
 OnOffSetting Config::railKickIndicator ("rail ", Config::allMultiStateSettings);
 OnOffSetting Config::switchKickIndicator ("switch ", Config::allMultiStateSettings);
 OnOffSetting Config::resetSwitchKickIndicator ("resetSwitch ", Config::allMultiStateSettings);
-ToggleHoldSetting Config::showConnectionsMode ("showConnectionsMode ", Config::allMultiStateSettings);
+HoldToggleSetting Config::showConnectionsMode ("showConnectionsMode ", Config::allMultiStateSettings);
 void Config::saveSettings() {
 	ofstream file;
 	FileUtils::openFileForWrite(&file, optionsFileName, ios::out | ios::trunc);
