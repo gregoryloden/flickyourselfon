@@ -374,6 +374,9 @@ PauseState* PauseState::handleKeyPress(SDL_Scancode keyScancode) {
 			return pauseOptionVal->enabled ? pauseOptionVal->handle(this) : this;
 		}
 		default:
+			//allow the kick button to confirm menu options, as long as the button isn't already in use
+			if (keyScancode == Config::kickKeyBinding.value)
+				return handleKeyPress(SDL_SCANCODE_RETURN);
 			return this;
 	}
 }
