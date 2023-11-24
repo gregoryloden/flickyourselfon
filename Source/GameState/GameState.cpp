@@ -138,7 +138,13 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 				} else if (gameEvent.key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
 					pauseState.set(newBasePauseState());
 					pauseStartTicksTime = ticksTime;
-				} else if (gameEvent.key.keysym.scancode == Config::showConnectionsKeyBinding.value)
+				} else if (gameEvent.key.keysym.scancode == Config::showConnectionsKeyBinding.value
+						&& (Config::showConnectionsMode.isToggle() || !mapState.get()->getShowConnections(false)))
+					mapState.get()->toggleShowConnections();
+				break;
+			case SDL_KEYUP:
+				if (gameEvent.key.keysym.scancode == Config::showConnectionsKeyBinding.value
+						&& !Config::showConnectionsMode.isToggle())
 					mapState.get()->toggleShowConnections();
 				break;
 			case SDL_MOUSEBUTTONDOWN:

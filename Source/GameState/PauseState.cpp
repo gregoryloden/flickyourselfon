@@ -300,15 +300,16 @@ void PauseState::loadMenus() {
 						newNavigationOption("back", nullptr)
 					})) COMMA
 			newNavigationOption(
-				"kick indicators",
+				"game options",
 				newPauseMenu(
-					"Kick Indicators",
+					"Game Options",
 					{
 						newMultiStateOption(&Config::climbKickIndicator, "climb indicator") COMMA
 						newMultiStateOption(&Config::fallKickIndicator, "fall indicator") COMMA
 						newMultiStateOption(&Config::railKickIndicator, "rail indicator") COMMA
 						newMultiStateOption(&Config::switchKickIndicator, "switch indicator") COMMA
 						newMultiStateOption(&Config::resetSwitchKickIndicator, "reset switch indicator") COMMA
+						newMultiStateOption(&Config::showConnectionsMode, "show-connections mode") COMMA
 						newNavigationOption("back", nullptr)
 					})) COMMA
 			newEndPauseOption("reset game", (int)EndPauseDecision::Reset) COMMA
