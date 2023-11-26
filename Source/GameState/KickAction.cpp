@@ -54,10 +54,10 @@ void KickAction::render(float centerX, float bottomY, bool hasRailsToReset) {
 			showKickIndicator = Config::switchKickIndicator.isOn();
 			break;
 		case KickActionType::ResetSwitch: {
-			if (!Config::resetSwitchKickIndicator.isOn() || !hasRailsToReset)
+			if (!Config::resetSwitchKickIndicator.isOn())
 				return;
-			Text::Metrics metrics = Text::getMetrics("Reset", 1.0f);
-			Text::render("Reset", centerX - metrics.charactersWidth * 0.5f, bottomY - 2.0f, 1.0f);
+			const char* text = hasRailsToReset ? "Reset" : u8"❌";
+			Text::render(text, centerX - Text::getMetrics(text, 1.0f).charactersWidth * 0.5f, bottomY - 2.0f, 1.0f);
 			return;
 		}
 		default:
