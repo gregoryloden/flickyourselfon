@@ -26,23 +26,49 @@ PauseState::PauseMenu::~PauseMenu() {
 	for (PauseOption* option : options)
 		delete option;
 }
+void PauseState::PauseMenu::getTotalHeightAndMetrics(
+	KeyBindingOption* selectingKeyBindingOption, float* outTotalHeight, vector<Text::Metrics>* outOptionsMetrics)
+{
+	float totalHeight = titleMetrics.getTotalHeight();
+	for (PauseOption* option : options) {
+		Text::Metrics optionMetrics = option == selectingKeyBindingOption
+			? selectingKeyBindingOption->getSelectingDisplayTextMetrics(true)
+			: option->getDisplayTextMetrics();
+		totalHeight += optionMetrics.getTotalHeight();
+		outOptionsMetrics->push_back(optionMetrics);
+	}
+	*outTotalHeight = totalHeight - titleMetrics.topPadding - outOptionsMetrics->back().bottomPadding;
+}
+int PauseState::PauseMenu::findHighlightedOption(SDL_MouseButtonEvent& clickEvent) {
+	float screenX = clickEvent.x / Config::currentPixelWidth;
+	float screenY = clickEvent.y / Config::currentPixelHeight;
+	float totalHeight;
+	vector<Text::Metrics> optionsMetrics;
+	getTotalHeightAndMetrics(nullptr, &totalHeight, &optionsMetrics);
+	float optionMiddle = Config::gameScreenWidth * 0.5f;
+	float optionTop = (Config::gameScreenHeight - totalHeight) * 0.5f + titleMetrics.getTotalHeight() - titleMetrics.topPadding;
+	for (int i = 0; i < (int)optionsMetrics.size(); i++) {
+		Text::Metrics& metrics = optionsMetrics[i];
+		float optionBottom = optionTop + metrics.getTotalHeight();
+		float halfWidth = metrics.charactersWidth * 0.5f;
+		if (screenX >= optionMiddle - halfWidth
+				&& screenX <= optionMiddle + halfWidth
+				&& screenY >= optionTop
+				&& screenY <= optionBottom)
+			return i;
+		optionTop = optionBottom;
+	}
+	return -1;
+}
 void PauseState::PauseMenu::render(int selectedOption, KeyBindingOption* selectingKeyBindingOption) {
 	//render a translucent rectangle
 	SpriteSheet::renderFilledRectangle(
 		0.0f, 0.0f, 0.0f, 0.5f, 0, 0, (GLint)Config::gameScreenWidth, (GLint)Config::gameScreenHeight);
 
 	//first find the height of the pause options so that we can vertically center them
-	Text::Metrics titleMetrics = Text::getMetrics(title.c_str(), titleFontScale);
-	float totalHeight = titleMetrics.getTotalHeight();
+	float totalHeight;
 	vector<Text::Metrics> optionsMetrics;
-	for (PauseOption* option : options) {
-		Text::Metrics optionMetrics = option == selectingKeyBindingOption
-			? selectingKeyBindingOption->getSelectingDisplayTextMetrics(true)
-			: option->getDisplayTextMetrics();
-		totalHeight += optionMetrics.getTotalHeight();
-		optionsMetrics.push_back(optionMetrics);
-	}
-	totalHeight -= titleMetrics.topPadding + optionsMetrics.back().bottomPadding;
+	getTotalHeightAndMetrics(selectingKeyBindingOption, &totalHeight, &optionsMetrics);
 
 	//then render them all
 	float screenCenterX = (float)Config::gameScreenWidth * 0.5f;
@@ -342,6 +368,10 @@ PauseState* PauseState::getNextPauseState() {
 			nextPauseState = nextPauseState->produceEndPauseState((int)EndPauseDecision::Exit);
 		else if (gameEvent.type == SDL_KEYDOWN)
 			nextPauseState = nextPauseState->handleKeyPress(gameEvent.key.keysym.scancode);
+		else if (gameEvent.type == SDL_MOUSEMOTION)
+			nextPauseState = nextPauseState->handleMouseMotion(gameEvent.button);
+		else if (gameEvent.type == SDL_MOUSEBUTTONDOWN)
+			nextPauseState = nextPauseState->handleMouseClick(gameEvent.button);
 
 		//if we got a new pause state, make sure the old one is returned to the pool if this is its only reference
 		if (nextPauseState != lastPauseState) {
@@ -380,6 +410,27 @@ PauseState* PauseState::handleKeyPress(SDL_Scancode keyScancode) {
 				return handleKeyPress(SDL_SCANCODE_RETURN);
 			return this;
 	}
+}
+PauseState* PauseState::handleMouseMotion(SDL_MouseButtonEvent motionEvent) {
+	//can't change selection while selecting a key binding
+	if (selectingKeyBindingOption != nullptr)
+		return this;
+	int newPauseOption = pauseMenu->findHighlightedOption(motionEvent);
+	if (newPauseOption < 0)
+		return this;
+	return newPauseState(parentState.get(), pauseMenu, newPauseOption, nullptr, 0);
+}
+PauseState* PauseState::handleMouseClick(SDL_MouseButtonEvent motionEvent) {
+	//can't change selection while selecting a key binding
+	if (selectingKeyBindingOption != nullptr)
+		return this;
+	int clickPauseOption = pauseMenu->findHighlightedOption(motionEvent);
+	if (clickPauseOption < 0)
+		return this;
+	PauseOption* pauseOptionVal = pauseMenu->getOption(clickPauseOption);
+	if (!pauseOptionVal->enabled)
+		return this;
+	return pauseOptionVal->handle(this);
 }
 PauseState* PauseState::navigateToMenu(PauseMenu* menu) {
 	return menu != nullptr ? newPauseState(this, menu, 0, nullptr, 0) : parentState.get();

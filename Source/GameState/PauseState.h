@@ -39,6 +39,13 @@ private:
 
 		int getOptionsCount() { return (int)options.size(); }
 		PauseOption* getOption(int optionIndex) { return options[optionIndex]; }
+	private:
+		//calculate the total height for this pause menu
+		void getTotalHeightAndMetrics(
+			KeyBindingOption* selectingKeyBindingOption, float* outTotalHeight, vector<Text::Metrics>* optionsMetrics);
+	public:
+		//find the option that the mouse is hovering over
+		int findHighlightedOption(SDL_MouseButtonEvent& motionEvent);
 		//render this menu
 		void render(int selectedOption, KeyBindingOption* selectingKeyBindingOption);
 	};
@@ -209,6 +216,10 @@ public:
 private:
 	//handle the keypress and return the resulting new pause state
 	PauseState* handleKeyPress(SDL_Scancode keyScancode);
+	//handle the mouse motion and return the resulting new pause state
+	PauseState* handleMouseMotion(SDL_MouseButtonEvent motionEvent);
+	//handle the mouse click and return the resulting new pause state
+	PauseState* handleMouseClick(SDL_MouseButtonEvent clickEvent);
 public:
 	//if we were given a menu, return a pause state with that pause menu, otherwise go up a level
 	PauseState* navigateToMenu(PauseMenu* menu);
