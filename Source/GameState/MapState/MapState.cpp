@@ -34,6 +34,7 @@ MapState::RadioWavesState* MapState::RadioWavesState::produce(objCounterParamete
 	initializeWithNewFromPool(r, MapState::RadioWavesState)
 	r->x.set(newConstantValue(pX));
 	r->y.set(newConstantValue(pY));
+	r->spriteAnimation = nullptr;
 	return r;
 }
 void MapState::RadioWavesState::copyRadioWavesState(RadioWavesState* other) {
