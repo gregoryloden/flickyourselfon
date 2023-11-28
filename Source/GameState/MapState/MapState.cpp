@@ -365,7 +365,9 @@ KickActionType MapState::getSwitchKickActionType(short switchId) {
 	bool group0 = switch0->getGroup() == 0;
 	//we've already triggered this group 0 switch, or can't yet kick this puzzle switch
 	if (group0 == (lastActivatedSwitchColor >= switch0->getColor()))
-		return KickActionType::None;
+		//if we've already triggered this group 0 switch, there's nothing to show, otherwise this is a switch that the player
+		//	can't kick yet
+		return group0 ? KickActionType::None : KickActionType::NoSwitch;
 	if (group0) {
 		switch (switch0->getColor()) {
 			case squareColor: return KickActionType::Square;

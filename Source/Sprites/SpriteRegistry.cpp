@@ -45,7 +45,7 @@ void SpriteRegistry::loadAll() {
 	railWaves = newSpriteSheetWithImagePath(railWavesFileName, 4, 1, true);
 	switchWaves = newSpriteSheetWithImagePath(switchWavesFileName, 4, 1, true);
 	resetSwitch = newSpriteSheetWithImagePath(resetSwitchFileName, 2, 1, true);
-	kickIndicator = newSpriteSheetWithImagePath(kickIndicatorFileName, 10, 1, true);
+	kickIndicator = newSpriteSheetWithImagePath(kickIndicatorFileName, 11, 1, true);
 	playerWalkingAnimation = newSpriteAnimation(
 		player,
 		{

@@ -47,6 +47,7 @@ void KickAction::render(float centerX, float bottomY, bool hasRailsToReset) {
 			showKickIndicator = Config::railKickIndicator.isOn();
 			break;
 		case KickActionType::Switch:
+		case KickActionType::NoSwitch:
 		case KickActionType::Square:
 		case KickActionType::Triangle:
 		case KickActionType::Saw:
