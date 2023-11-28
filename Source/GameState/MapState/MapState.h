@@ -127,10 +127,10 @@ public:
 	static constexpr char* showConnectionsText = "show connections: ";
 	static constexpr float showConnectionsTextLeftX = 10.0f;
 	static constexpr float showConnectionsTextBaselineY = 20.0f;
+	static constexpr char* lastActivatedSwitchColorFilePrefix = "lastActivatedSwitchColor ";
 	static constexpr char* finishedConnectionsTutorialFileValue = "finishedConnectionsTutorial";
-	static const string railOffsetFilePrefix;
-	static const string lastActivatedSwitchColorFilePrefix;
-	static const string showConnectionsFilePrefix;
+	static constexpr char* showConnectionsFileValue = "showConnections";
+	static constexpr char* railOffsetFilePrefix = "rail ";
 
 private:
 	static char* tiles;

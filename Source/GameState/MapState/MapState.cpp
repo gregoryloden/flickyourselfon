@@ -66,9 +66,6 @@ void MapState::RadioWavesState::render(EntityState* camera, int ticksTime) {
 }
 
 //////////////////////////////// MapState ////////////////////////////////
-const string MapState::railOffsetFilePrefix = "rail ";
-const string MapState::lastActivatedSwitchColorFilePrefix = "lastActivatedSwitchColor ";
-const string MapState::showConnectionsFilePrefix = "showConnections ";
 char* MapState::tiles = nullptr;
 char* MapState::heights = nullptr;
 short* MapState::railSwitchIds = nullptr;
@@ -734,7 +731,7 @@ void MapState::saveState(ofstream& file) {
 	if (finishedConnectionsTutorial)
 		file << finishedConnectionsTutorialFileValue << "\n";
 	if (showConnectionsEnabled)
-		file << showConnectionsFilePrefix << "true\n";
+		file << showConnectionsFileValue << "\n";
 
 	//don't save the rail states if we're saving the floor file
 	//also write that we unlocked all the switches
@@ -751,13 +748,13 @@ void MapState::saveState(ofstream& file) {
 }
 bool MapState::loadState(string& line) {
 	if (StringUtils::startsWith(line, lastActivatedSwitchColorFilePrefix))
-		lastActivatedSwitchColor = (char)atoi(line.c_str() + lastActivatedSwitchColorFilePrefix.size());
+		lastActivatedSwitchColor = (char)atoi(line.c_str() + StringUtils::strlenConst(lastActivatedSwitchColorFilePrefix));
 	else if (StringUtils::startsWith(line, finishedConnectionsTutorialFileValue))
 		finishedConnectionsTutorial = true;
-	else if (StringUtils::startsWith(line, showConnectionsFilePrefix))
-		showConnectionsEnabled = strcmp(line.c_str() + showConnectionsFilePrefix.size(), "true") == 0;
+	else if (StringUtils::startsWith(line, showConnectionsFileValue))
+		showConnectionsEnabled = true;
 	else if (StringUtils::startsWith(line, railOffsetFilePrefix)) {
-		const char* dataString = line.c_str() + railOffsetFilePrefix.size();
+		const char* dataString = line.c_str() + StringUtils::strlenConst(railOffsetFilePrefix);
 		int railIndex, tileOffset, movementDirection;
 		dataString = StringUtils::parseNextInt(dataString, &railIndex);
 		dataString = StringUtils::parseNextInt(dataString, &tileOffset);

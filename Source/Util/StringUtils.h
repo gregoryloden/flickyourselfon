@@ -2,6 +2,12 @@
 
 class StringUtils {
 public:
+	static constexpr int strlenConst(const char* s) {
+		for (int i = 0; true; i++) {
+			if (s[i] == 0)
+				return i;
+		}
+	}
 	//returns whether the first string starts with the second string
 	static bool startsWith(const string& s, const string& prefix);
 	//skip any non-digit characters, and then get the integer value at that position (or 0 if we reached the end of the string)
