@@ -1,4 +1,4 @@
-#include "KickAction.h"
+﻿#include "KickAction.h"
 #include "Sprites/SpriteRegistry.h"
 #include "Sprites/SpriteSheet.h"
 #include "Sprites/Text.h"
