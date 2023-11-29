@@ -257,12 +257,6 @@ void Text::renderWithKeyBackground(const char* text, float leftX, float baseline
 void Text::renderWithKeyBackgroundWithMetrics(
 	const char* text, float leftX, float baselineY, Metrics* textMetrics, Metrics* keyBackgroundMetrics)
 {
-	renderKeyBackground(leftX, baselineY, keyBackgroundMetrics);
-	leftX += (keyBackgroundMetrics->charactersWidth - textMetrics->charactersWidth) * 0.5f;
-	//the key background has 1 pixel on the left border and 3 on the right, render text 1 font pixel to the left
-	Text::render(text, leftX - textMetrics->fontScale, baselineY, textMetrics->fontScale);
-}
-void Text::renderKeyBackground(float leftX, float baselineY, Metrics* keyBackgroundMetrics) {
 	int originalBackgroundWidth = (int)(keyBackgroundMetrics->charactersWidth / keyBackgroundMetrics->fontScale);
 	int leftHalfSpriteWidth = keyBackground->getSpriteWidth() / 2;
 	int rightHalfSpriteWidth = keyBackground->getSpriteWidth() - leftHalfSpriteWidth - 1;
@@ -298,12 +292,16 @@ void Text::renderKeyBackground(float leftX, float baselineY, Metrics* keyBackgro
 		topY,
 		(GLint)(leftX + keyBackgroundMetrics->charactersWidth),
 		bottomY);
+
+	//draw the text on top of the key background
+	leftX += (keyBackgroundMetrics->charactersWidth - textMetrics->charactersWidth) * 0.5f;
+	//the key background has 1 pixel on the left border and 3 on the right, render text 1 font pixel to the left
+	render(text, leftX - textMetrics->fontScale, baselineY, textMetrics->fontScale);
 }
-void Text::renderLines(vector<string>& lines, vector<Metrics> linesMetrics) {
+void Text::renderLines(vector<string>& lines, vector<Metrics>& linesMetrics) {
 	float totalHeight = -linesMetrics.front().topPadding - linesMetrics.back().bottomPadding;
-	for (Metrics& metrics : linesMetrics) {
+	for (Metrics& metrics : linesMetrics)
 		totalHeight += metrics.getTotalHeight();
-	}
 
 	float screenCenterX = (float)Config::gameScreenWidth * 0.5f;
 	Metrics* lastMetrics = &linesMetrics.front();

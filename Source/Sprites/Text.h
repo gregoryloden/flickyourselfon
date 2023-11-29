@@ -92,9 +92,7 @@ public:
 	//draw text with a key background behind it, with the key background placed at the left x, using the pre-computed metrics
 	static void renderWithKeyBackgroundWithMetrics(
 		const char* text, float leftX, float baselineY, Metrics* textMetrics, Metrics* keyBackgroundMetrics);
-	//draw a key background to be drawn behind text
-	static void renderKeyBackground(float leftX, float baselineY, Metrics* keyBackgroundMetrics);
 	//render lines of text vertically and horizontally centered
-	static void renderLines(vector<string>& lines, vector<Metrics> linesMetrics);
+	static void renderLines(vector<string>& lines, vector<Metrics>& linesMetrics);
 };
 #endif
