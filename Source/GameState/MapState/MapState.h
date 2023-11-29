@@ -180,7 +180,8 @@ public:
 	}
 	char getLastActivatedSwitchColor() { return lastActivatedSwitchColor; }
 	bool getShowConnections(bool showTutorialConnections) {
-		return showConnectionsEnabled || (showTutorialConnections && !finishedConnectionsTutorial);
+		return showConnectionsEnabled
+			|| (showTutorialConnections && !finishedConnectionsTutorial && lastActivatedSwitchColor >= 0);
 	}
 	bool getShouldPlayRadioTowerAnimation() { return shouldPlayRadioTowerAnimation; }
 	static void editorSetTile(int x, int y, char tile) { tiles[y * width + x] = tile; }
