@@ -460,8 +460,10 @@ void GameState::loadCachedSavedState(int ticksTime) {
 	if (sawIntroAnimation) {
 		playerState.get()->obtainBoot();
 		playerState.get()->setInitialZ();
-	} else
+	} else {
+		playerState.get()->reset();
 		beginIntroAnimation(ticksTime);
+	}
 }
 #ifdef DEBUG
 	bool GameState::loadReplay() {
@@ -660,7 +662,6 @@ void GameState::loadCachedSavedState(int ticksTime) {
 	}
 #endif
 void GameState::beginIntroAnimation(int ticksTime) {
-	playerState.get()->reset();
 	MapState::setIntroAnimationBootTile(true);
 	camera = dynamicCameraAnchor.get();
 
@@ -763,7 +764,9 @@ void GameState::resetGame(int ticksTime) {
 	sawIntroAnimation = false;
 	gameTimeOffsetTicksDuration = 0;
 	pauseState.set(nullptr);
+	mapState.set(newMapState());
 	mapState.get()->resetMap();
+	playerState.set(newPlayerState(mapState.get()));
 	playerState.get()->reset();
 	dynamicCameraAnchor.set(newDynamicCameraAnchor());
 
