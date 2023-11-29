@@ -146,7 +146,7 @@ int gameMain(int argc, char* argv[]) {
 		ObjectPool<MapState>::clearPool();
 		ObjectPool<PauseState>::clearPool();
 		ObjectPool<DynamicCameraAnchor>::clearPool();
-		ObjectPool<MapState::RadioWavesState>::clearPool();
+		ObjectPool<Particle>::clearPool();
 		ObjectPool<EntityAnimation>::clearPool();
 		ObjectPool<EntityAnimation::SetScreenOverlayColor>::clearPool();
 		ObjectPool<EntityAnimation::SetVelocity>::clearPool();

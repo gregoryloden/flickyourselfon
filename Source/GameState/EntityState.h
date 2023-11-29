@@ -3,6 +3,7 @@
 #include "Util/PooledReferenceCounter.h"
 
 #define newDynamicCameraAnchor() produceWithoutArgs(DynamicCameraAnchor)
+#define newParticle(x, y) produceWithArgs(Particle, x, y)
 
 class DynamicValue;
 class EntityAnimation;
@@ -101,5 +102,30 @@ public:
 	virtual void setNextCamera(GameState* nextGameState, int ticksTime);
 	//render an overlay over the screen if applicable
 	void render(int ticksTime);
+};
+class Particle: public EntityState {
+private:
+	SpriteAnimation* spriteAnimation;
+	int spriteAnimationStartTicksTime;
+
+public:
+	Particle(objCounterParameters());
+	virtual ~Particle();
+
+	//don't do anything based on a camera change
+	virtual void setNextCamera(GameState* nextGameState, int ticksTime) {}
+	//initialize and return a Particle
+	static Particle* produce(objCounterParametersComma() float pX, float pY);
+	//copy the state of the other Particle
+	void copyParticle(Particle* other);
+	//release a reference to this Particle and return it to the pool if applicable
+	virtual void release();
+	//set the animation to the given animation at the given time
+	virtual void setSpriteAnimation(SpriteAnimation* pSpriteAnimation, int pSpriteAnimationStartTicksTime);
+	//update this Particle by reading from the previous state
+	//returns whether the animation is still running
+	bool updateWithPreviousParticle(Particle* prev, int ticksTime);
+	//render the sprite animation if applicable
+	void render(EntityState* camera, int ticksTime);
 };
 #endif

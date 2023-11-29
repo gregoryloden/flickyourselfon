@@ -2,6 +2,7 @@
 #include "GameState/DynamicValue.h"
 #include "GameState/EntityAnimation.h"
 #include "GameState/GameState.h"
+#include "Sprites/SpriteAnimation.h"
 #include "Sprites/SpriteSheet.h"
 #include "Util/Config.h"
 
@@ -138,4 +139,48 @@ void DynamicCameraAnchor::render(int ticksTime) {
 	GLfloat a = (GLfloat)screenOverlayA.get()->getValue(timediff);
 	if (a > 0)
 		SpriteSheet::renderFilledRectangle(r, g, b, a, 0, 0, (GLint)Config::gameScreenWidth, (GLint)Config::gameScreenHeight);
+}
+
+//////////////////////////////// Particle ////////////////////////////////
+Particle::Particle(objCounterParameters())
+: EntityState(objCounterArguments())
+, spriteAnimation(nullptr)
+, spriteAnimationStartTicksTime(0) {
+}
+Particle::~Particle() {
+	//don't delete the sprite animation, SpriteRegistry owns it
+}
+Particle* Particle::produce(objCounterParametersComma() float pX, float pY) {
+	initializeWithNewFromPool(p, Particle)
+	p->x.set(newConstantValue(pX));
+	p->y.set(newConstantValue(pY));
+	p->spriteAnimation = nullptr;
+	return p;
+}
+void Particle::copyParticle(Particle* other) {
+	copyEntityState(other);
+	setSpriteAnimation(other->spriteAnimation, other->spriteAnimationStartTicksTime);
+}
+pooledReferenceCounterDefineRelease(Particle)
+void Particle::setSpriteAnimation(SpriteAnimation* pSpriteAnimation, int pSpriteAnimationStartTicksTime) {
+	spriteAnimation = pSpriteAnimation;
+	spriteAnimationStartTicksTime = pSpriteAnimationStartTicksTime;
+}
+bool Particle::updateWithPreviousParticle(Particle* prev, int ticksTime) {
+	copyParticle(prev);
+	//if we have an entity animation, update with that instead
+	if (prev->entityAnimation.get() != nullptr) {
+		if (entityAnimation.get()->update(this, ticksTime))
+			return true;
+		entityAnimation.set(nullptr);
+	}
+	return false;
+}
+void Particle::render(EntityState* camera, int ticksTime) {
+	if (spriteAnimation == nullptr)
+		return;
+
+	float renderCenterX = getRenderCenterScreenX(camera,  ticksTime);
+	float renderCenterY = getRenderCenterScreenY(camera,  ticksTime);
+	spriteAnimation->renderUsingCenter(renderCenterX, renderCenterY, ticksTime - spriteAnimationStartTicksTime, 0, 0);
 }

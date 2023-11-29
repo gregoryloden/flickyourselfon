@@ -16,54 +16,9 @@
 #include "Util/Logger.h"
 #include "Util/StringUtils.h"
 
-#define newRadioWavesState(x, y) produceWithArgs(MapState::RadioWavesState, x, y)
 #define entityAnimationSpriteAnimationWithDelay(animation) \
 	newEntityAnimationSetSpriteAnimation(animation), \
 	newEntityAnimationDelay(animation->getTotalTicksDuration())
-
-//////////////////////////////// MapState::RadioWavesState ////////////////////////////////
-MapState::RadioWavesState::RadioWavesState(objCounterParameters())
-: EntityState(objCounterArguments())
-, spriteAnimation(nullptr)
-, spriteAnimationStartTicksTime(0) {
-}
-MapState::RadioWavesState::~RadioWavesState() {
-	//don't delete the sprite animation, SpriteRegistry owns it
-}
-MapState::RadioWavesState* MapState::RadioWavesState::produce(objCounterParametersComma() float pX, float pY) {
-	initializeWithNewFromPool(r, MapState::RadioWavesState)
-	r->x.set(newConstantValue(pX));
-	r->y.set(newConstantValue(pY));
-	r->spriteAnimation = nullptr;
-	return r;
-}
-void MapState::RadioWavesState::copyRadioWavesState(RadioWavesState* other) {
-	copyEntityState(other);
-	setSpriteAnimation(other->spriteAnimation, other->spriteAnimationStartTicksTime);
-}
-pooledReferenceCounterDefineRelease(MapState::RadioWavesState)
-void MapState::RadioWavesState::setSpriteAnimation(SpriteAnimation* pSpriteAnimation, int pSpriteAnimationStartTicksTime) {
-	spriteAnimation = pSpriteAnimation;
-	spriteAnimationStartTicksTime = pSpriteAnimationStartTicksTime;
-}
-bool MapState::RadioWavesState::updateWithPreviousRadioWavesState(RadioWavesState* prev, int ticksTime) {
-	copyRadioWavesState(prev);
-	//if we have an entity animation, update with that instead
-	if (prev->entityAnimation.get() != nullptr) {
-		if (entityAnimation.get()->update(this, ticksTime))
-			return true;
-		entityAnimation.set(nullptr);
-	}
-	return false;
-}
-void MapState::RadioWavesState::render(EntityState* camera, int ticksTime) {
-	if (spriteAnimation == nullptr)
-		return;
-
-	float renderCenterX = getRenderCenterScreenX(camera,  ticksTime);
-	float renderCenterY = getRenderCenterScreenY(camera,  ticksTime);
-	spriteAnimation->renderUsingCenter(renderCenterX, renderCenterY, ticksTime - spriteAnimationStartTicksTime, 0, 0);
-}
 
 //////////////////////////////// MapState ////////////////////////////////
 char* MapState::tiles = nullptr;
@@ -422,18 +377,18 @@ void MapState::updateWithPreviousMapState(MapState* prev, int ticksTime) {
 		railStates[i]->updateWithPreviousRailState(prev->railStates[i], ticksTime);
 
 	while (radioWavesStates.size() < prev->radioWavesStates.size())
-		radioWavesStates.push_back(newRadioWavesState(0, 0));
+		radioWavesStates.push_back(newParticle(0, 0));
 	while (radioWavesStates.size() > prev->radioWavesStates.size())
 		radioWavesStates.pop_back();
 	for (int i = (int)radioWavesStates.size() - 1; i >= 0; i--) {
-		if (!radioWavesStates[i].get()->updateWithPreviousRadioWavesState(prev->radioWavesStates[i].get(), ticksTime))
+		if (!radioWavesStates[i].get()->updateWithPreviousParticle(prev->radioWavesStates[i].get(), ticksTime))
 			radioWavesStates.erase(radioWavesStates.begin() + i);
 	}
 }
-MapState::RadioWavesState* MapState::queueRadioWavesAnimation(
+Particle* MapState::queueRadioWavesAnimation(
 	float centerX, float centerY, vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> components, int ticksTime)
 {
-	RadioWavesState* radioWavesState = newRadioWavesState(centerX, centerY);
+	Particle* radioWavesState = newParticle(centerX, centerY);
 	radioWavesState->beginEntityAnimation(&components, ticksTime);
 	radioWavesStates.push_back(radioWavesState);
 	return radioWavesState;
@@ -483,14 +438,14 @@ void MapState::flipResetSwitch(short resetSwitchId, int ticksTime) {
 }
 int MapState::startRadioWavesAnimation(int initialTicksDelay, int ticksTime) {
 	radioWavesColor = lastActivatedSwitchColor;
-	RadioWavesState* radioWavesState = queueRadioWavesAnimation(
+	Particle* radioWavesState = queueRadioWavesAnimation(
 		antennaCenterWorldX(),
 		antennaCenterWorldY(),
 		{
 			newEntityAnimationDelay(initialTicksDelay),
 			entityAnimationSpriteAnimationWithDelay(SpriteRegistry::radioWavesAnimation),
 			newEntityAnimationSetSpriteAnimation(nullptr),
-			newEntityAnimationDelay(RadioWavesState::interRadioWavesAnimationTicks),
+			newEntityAnimationDelay(interRadioWavesAnimationTicks),
 			entityAnimationSpriteAnimationWithDelay(SpriteRegistry::radioWavesAnimation),
 		},
 		ticksTime);
@@ -614,7 +569,7 @@ void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int 
 		(radioWavesColor == sawColor || radioWavesColor == sineColor) ? 1.0f : 0.0f,
 		(radioWavesColor == triangleColor || radioWavesColor == sineColor) ? 1.0f : 0.0f,
 		1.0f);
-	for (ReferenceCounterHolder<RadioWavesState>& radioWavesState : radioWavesStates)
+	for (ReferenceCounterHolder<Particle>& radioWavesState : radioWavesStates)
 		radioWavesState.get()->render(camera, ticksTime);
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 }

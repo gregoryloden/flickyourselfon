@@ -4,6 +4,7 @@
 
 #define newMapState() produceWithoutArgs(MapState)
 
+class Particle;
 class Rail;
 class RailState;
 class ResetSwitch;
@@ -14,35 +15,6 @@ enum class KickActionType: int;
 
 class MapState: public PooledReferenceCounter {
 public:
-	class RadioWavesState: public EntityState {
-	public:
-		static const int interRadioWavesAnimationTicks = 1000;
-
-	private:
-		SpriteAnimation* spriteAnimation;
-		int spriteAnimationStartTicksTime;
-
-	public:
-		RadioWavesState(objCounterParameters());
-		virtual ~RadioWavesState();
-
-		//don't do anything based on a camera change
-		virtual void setNextCamera(GameState* nextGameState, int ticksTime) {}
-		//initialize and return a RadioWavesState
-		static RadioWavesState* produce(objCounterParametersComma() float pX, float pY);
-		//copy the state of the other RadioWavesState
-		void copyRadioWavesState(RadioWavesState* other);
-		//release a reference to this RadioWavesState and return it to the pool if applicable
-		virtual void release();
-		//set the animation to the given animation at the given time
-		virtual void setSpriteAnimation(SpriteAnimation* pSpriteAnimation, int pSpriteAnimationStartTicksTime);
-		//update this RadioWavesState by reading from the previous state
-		//returns whether the animation is still running
-		bool updateWithPreviousRadioWavesState(RadioWavesState* prev, int ticksTime);
-		//render the radio waves if we've got an animation
-		void render(EntityState* camera, int ticksTime);
-	};
-
 	//map state
 	static const int tileCount = 64; // tile = green / 4
 	static const int tileDivisor = 256 / tileCount;
@@ -64,6 +36,7 @@ public:
 	static const int radioTowerTopYOffset = -106 + firstLevelTileOffsetY * tileSize;
 	static const int introAnimationBootTileX = 29 + firstLevelTileOffsetX;
 	static const int introAnimationBootTileY = 26 + firstLevelTileOffsetY;
+	static const int interRadioWavesAnimationTicks = 1000;
 	static const int switchesFadeInDuration = 1000;
 	static const int switchFlipDuration = 600;
 	static constexpr float introAnimationCameraCenterX = (float)(tileSize * introAnimationBootTileX) + 4.5f;
@@ -243,8 +216,8 @@ public:
 	//update the rails and switches of the MapState by reading from the previous state
 	void updateWithPreviousMapState(MapState* prev, int ticksTime);
 	//queue a radio waves animation
-	//returns the created RadioWavesState
-	RadioWavesState* queueRadioWavesAnimation(
+	//returns the created Particle
+	Particle* queueRadioWavesAnimation(
 		float centerX,
 		float centerY,
 		vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> components,
