@@ -393,9 +393,9 @@ PauseState* PauseState::handleKeyPress(SDL_Scancode keyScancode) {
 	int optionsCount = pauseMenu->getOptionsCount();
 	switch (keyScancode) {
 		case SDL_SCANCODE_ESCAPE:
-			return nullptr;
+			return pauseMenu == homeMenu ? this : nullptr;
 		case SDL_SCANCODE_BACKSPACE:
-			return navigateToMenu(nullptr);
+			return pauseMenu == homeMenu ? this : navigateToMenu(nullptr);
 		case SDL_SCANCODE_UP:
 			return newPauseState(parentState.get(), pauseMenu, (pauseOption + optionsCount - 1) % optionsCount, nullptr, 0);
 		case SDL_SCANCODE_DOWN:
