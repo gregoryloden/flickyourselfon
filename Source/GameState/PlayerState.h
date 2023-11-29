@@ -31,9 +31,13 @@ private:
 	//only kick something if you're less than this distance from it
 	//visually, you have to be 1 pixel away or closer
 	static constexpr float kickingDistanceLimit = 1.5f;
-	static const string playerXFilePrefix;
-	static const string playerYFilePrefix;
-	static const string playerDirectionFilePrefix;
+	static constexpr char* moveTutorialText = "Move: ";
+	static constexpr char* kickTutorialText = "Kick: ";
+	static constexpr char* playerXFilePrefix = "playerX ";
+	static constexpr char* playerYFilePrefix = "playerY ";
+	static constexpr char* playerDirectionFilePrefix = "playerDirection ";
+	static constexpr char* finishedMoveTutorialFileValue = "finishedConnectionsTutorial";
+	static constexpr char* finishedKickTutorialFileValue = "finishedConnectionsTutorial";
 
 	char z;
 	char xDirection;
@@ -56,11 +60,15 @@ private:
 	float lastControlledY;
 	ReferenceCounterHolder<DynamicValue> worldGroundY;
 	float worldGroundYOffset;
+	bool finishedMoveTutorial;
+	bool finishedKickTutorial;
 
 public:
 	PlayerState(objCounterParameters());
 	virtual ~PlayerState();
 
+	bool getFinishedMoveTutorial() { return finishedMoveTutorial; }
+	bool getFinishedKickTutorial() { return finishedKickTutorial; }
 	void obtainBoot() { hasBoot = true; }
 	//initialize and return a PlayerState
 	static PlayerState* produce(objCounterParametersComma() MapState* mapState);
@@ -183,6 +191,8 @@ public:
 	void render(EntityState* camera, int ticksTime);
 	//render the kick action for this player state if one is available
 	void renderKickAction(EntityState* camera, bool hasRailsToReset, int ticksTime);
+	//render any applicable tutorials
+	void renderTutorials();
 	//set this player state with the initial state for the home screen
 	void setHomeScreenState();
 	//save this player state to the file

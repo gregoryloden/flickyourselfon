@@ -123,16 +123,16 @@ public:
 	static const int floorRailHeadValue = floorRailSwitchAndHeadValue;
 	static const int floorSwitchHeadValue = floorRailSwitchAndHeadValue | floorIsSwitchBitmask;
 	static const int floorResetSwitchHeadValue = floorSwitchHeadValue | floorIsResetSwitchBitmask;
-	//other
-	static constexpr char* showConnectionsText = "show connections: ";
-	static constexpr float showConnectionsTextLeftX = 10.0f;
-	static constexpr float showConnectionsTextBaselineY = 20.0f;
+private:
+	//tutorials and serialization
+	static constexpr char* showConnectionsTutorialText = "Show connections: ";
+	static constexpr float tutorialLeftX = 10.0f;
+	static constexpr float tutorialBaselineY = 20.0f;
 	static constexpr char* lastActivatedSwitchColorFilePrefix = "lastActivatedSwitchColor ";
 	static constexpr char* finishedConnectionsTutorialFileValue = "finishedConnectionsTutorial";
 	static constexpr char* showConnectionsFileValue = "showConnections";
 	static constexpr char* railOffsetFilePrefix = "rail ";
 
-private:
 	static char* tiles;
 	static char* heights;
 	//bits 0-11 indicate the index in the appropriate rail/switch array, bits 13 and 12 indicate a rail (01), a switch (10), or
@@ -271,6 +271,8 @@ public:
 	void renderGroupsForRailsFromSwitch(EntityState* camera, short switchId, int ticksTime);
 	//draw a graphic to represent this rail/switch group
 	static void renderGroupRect(char group, GLint leftX, GLint topY, GLint rightX, GLint bottomY);
+	//render a controls tutorial message
+	static void renderControlsTutorial(const char* text, vector<SDL_Scancode> keys);
 private:
 	//log the colors of the group to the message
 	static void logGroup(char group, stringstream* message);

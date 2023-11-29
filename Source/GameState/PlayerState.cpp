@@ -25,9 +25,6 @@
 #define newRailSwitchKickAction(type, railSwitchId, railSegmentIndex) \
 	newKickAction(type, -1, -1, MapState::invalidHeight, railSwitchId, railSegmentIndex)
 
-const string PlayerState::playerXFilePrefix = "playerX ";
-const string PlayerState::playerYFilePrefix = "playerY ";
-const string PlayerState::playerDirectionFilePrefix = "playerDirection ";
 PlayerState::PlayerState(objCounterParameters())
 : EntityState(objCounterArguments())
 , z(0)
@@ -50,7 +47,9 @@ PlayerState::PlayerState(objCounterParameters())
 , lastControlledX(0.0f)
 , lastControlledY(0.0f)
 , worldGroundY(nullptr)
-, worldGroundYOffset(0.0f) {
+, worldGroundYOffset(0.0f)
+, finishedMoveTutorial(false)
+, finishedKickTutorial(false) {
 }
 PlayerState::~PlayerState() {
 	delete collisionRect;
@@ -86,6 +85,8 @@ void PlayerState::copyPlayerState(PlayerState* other) {
 	lastControlledY = other->lastControlledY;
 	worldGroundY.set(other->worldGroundY.get());
 	worldGroundYOffset = other->worldGroundYOffset;
+	finishedMoveTutorial = other->finishedMoveTutorial;
+	finishedKickTutorial = other->finishedKickTutorial;
 }
 pooledReferenceCounterDefineRelease(PlayerState)
 float PlayerState::getWorldGroundY(int ticksTime) {
@@ -157,6 +158,8 @@ void PlayerState::updateWithPreviousPlayerState(PlayerState* prev, int ticksTime
 	entityAnimation.set(nullptr);
 	worldGroundY.set(nullptr);
 	worldGroundYOffset = 0.0f;
+	finishedMoveTutorial = prev->finishedMoveTutorial;
+	finishedKickTutorial = prev->finishedKickTutorial;
 
 	//if we can control the player then that must mean the player has the boot
 	hasBoot = true;
@@ -197,6 +200,9 @@ void PlayerState::updatePositionWithPreviousPlayerState(PlayerState* prev, int t
 	renderInterpolatedX = true;
 	renderInterpolatedY = true;
 	z = prev->z;
+
+	if (xDirection != 0 || yDirection != 0)
+		finishedMoveTutorial = true;
 }
 void PlayerState::setXAndUpdateCollisionRect(DynamicValue* newX) {
 	x.set(newX);
@@ -697,7 +703,8 @@ bool PlayerState::checkCanMoveToPosition(
 void PlayerState::tryAutoKick(PlayerState* prev, int ticksTime) {
 	autoKickStartTicksTime = -1;
 	canImmediatelyAutoKick = (xDirection != 0 || yDirection != 0) && prev->canImmediatelyAutoKick;
-	if (availableKickAction.get() == nullptr)
+	//can't auto-kick if there's no kick action, and disallow auto-kick before the player finishes the tutorial
+	if (availableKickAction.get() == nullptr || !finishedKickTutorial)
 		return;
 
 	//ensure we have an auto-compatible kick action and check any secondary requirements
@@ -741,6 +748,7 @@ void PlayerState::beginKicking(int ticksTime) {
 	if (entityAnimation.get() != nullptr)
 		return;
 
+	finishedKickTutorial = true;
 	renderInterpolatedX = true;
 	renderInterpolatedY = true;
 
@@ -1192,6 +1200,19 @@ void PlayerState::renderKickAction(EntityState* camera, bool hasRailsToReset, in
 	float renderTopY = getRenderCenterScreenY(camera,  ticksTime) - (float)SpriteRegistry::player->getSpriteHeight() / 2.0f;
 	availableKickAction.get()->render(renderCenterX, renderTopY, hasRailsToReset);
 }
+void PlayerState::renderTutorials() {
+	if (!finishedMoveTutorial)
+		MapState::renderControlsTutorial(
+			moveTutorialText,
+			{
+				Config::leftKeyBinding.value,
+				Config::upKeyBinding.value,
+				Config::rightKeyBinding.value,
+				Config::downKeyBinding.value,
+			});
+	else if (!finishedKickTutorial)
+		MapState::renderControlsTutorial(kickTutorialText, { Config::kickKeyBinding.value });
+}
 void PlayerState::setHomeScreenState() {
 	obtainBoot();
 	x.set(newConstantValue(MapState::antennaCenterWorldX()));
@@ -1201,19 +1222,27 @@ void PlayerState::saveState(ofstream& file) {
 	file << playerXFilePrefix << lastControlledX << "\n";
 	file << playerYFilePrefix << lastControlledY << "\n";
 	file << playerDirectionFilePrefix << (int)spriteDirection << "\n";
+	if (finishedMoveTutorial)
+		file << finishedMoveTutorialFileValue << "\n";
+	if (finishedKickTutorial)
+		file << finishedKickTutorialFileValue << "\n";
 }
 bool PlayerState::loadState(string& line) {
 	if (StringUtils::startsWith(line, playerXFilePrefix)) {
-		lastControlledX = (float)atof(line.c_str() + playerXFilePrefix.size());
+		lastControlledX = (float)atof(line.c_str() + StringUtils::strlenConst(playerXFilePrefix));
 		x.set(newCompositeQuarticValue(lastControlledX, 0.0f, 0.0f, 0.0f, 0.0f));
 	} else if (StringUtils::startsWith(line, playerYFilePrefix)) {
-		lastControlledY = (float)atof(line.c_str() + playerYFilePrefix.size());
+		lastControlledY = (float)atof(line.c_str() + StringUtils::strlenConst(playerYFilePrefix));
 		y.set(newCompositeQuarticValue(lastControlledY, 0.0f, 0.0f, 0.0f, 0.0f));
 	} else if (StringUtils::startsWith(line, playerDirectionFilePrefix)) {
-		int direction = atoi(line.c_str() + playerDirectionFilePrefix.size());
+		int direction = atoi(line.c_str() + StringUtils::strlenConst(playerDirectionFilePrefix));
 		if (direction >= 0 && direction < 4)
 			spriteDirection = (SpriteDirection)direction;
-	} else
+	} else if (StringUtils::startsWith(line, finishedMoveTutorialFileValue))
+		finishedMoveTutorial = true;
+	else if (StringUtils::startsWith(line, finishedKickTutorialFileValue))
+		finishedKickTutorial = true;
+	else
 		return false;
 	return true;
 }
@@ -1228,6 +1257,8 @@ void PlayerState::reset() {
 	hasBoot = false;
 	autoKickStartTicksTime = -1;
 	canImmediatelyAutoKick = false;
+	finishedMoveTutorial = false;
+	finishedKickTutorial = false;
 }
 void PlayerState::setHighestZ() {
 	z = MapState::highestFloorHeight;

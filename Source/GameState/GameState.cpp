@@ -278,6 +278,8 @@ void GameState::render(int ticksTime) {
 	mapState.get()->render(camera, playerWorldGroundY, showConnections, gameTicksTime);
 	playerState.get()->render(camera, gameTicksTime);
 	mapState.get()->renderAbovePlayer(camera, showConnections, gameTicksTime);
+	if (sawIntroAnimation)
+		playerState.get()->renderTutorials();
 
 	short contextualGroupsRailSwitchId;
 	bool hasRailsToReset = false;

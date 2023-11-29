@@ -604,15 +604,8 @@ void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int 
 				railState->renderMovementDirections(screenLeftWorldX, screenTopWorldY);
 			rail->renderGroups(screenLeftWorldX, screenTopWorldY);
 		}
-		if (!finishedConnectionsTutorial) {
-			Text::Metrics showConnectionsMetrics = Text::getMetrics(showConnectionsText, 1.0f);
-			Text::render(showConnectionsText, showConnectionsTextLeftX, showConnectionsTextBaselineY, 1.0f);
-			Text::renderWithKeyBackground(
-				ConfigTypes::KeyBindingSetting::getKeyName(Config::showConnectionsKeyBinding.value),
-				showConnectionsTextLeftX + showConnectionsMetrics.charactersWidth,
-				showConnectionsTextBaselineY,
-				1.0f);
-		}
+		if (!finishedConnectionsTutorial)
+			renderControlsTutorial(showConnectionsTutorialText, { Config::showConnectionsKeyBinding.value });
 	}
 
 	glEnable(GL_BLEND);
@@ -678,6 +671,17 @@ void MapState::renderGroupRect(char group, GLint leftX, GLint topY, GLint rightX
 	//bits 3-5
 	SpriteSheet::renderFilledRectangle(
 		(float)((group >> 3) & 1), (float)((group >> 4) & 1), (float)((group >> 5) & 1), 1.0f, midX, topY, rightX, bottomY);
+}
+void MapState::renderControlsTutorial(const char* text, vector<SDL_Scancode> keys) {
+	Text::render(text, tutorialLeftX, tutorialBaselineY, 1.0f);
+	float leftX = tutorialLeftX + Text::getMetrics(text, 1.0f).charactersWidth;
+	for (SDL_Scancode keyCode : keys) {
+		const char* key = ConfigTypes::KeyBindingSetting::getKeyName(keyCode);
+		Text::Metrics keyMetrics = Text::getMetrics(key, 1.0f);
+		Text::Metrics keyBackgroundMetrics = Text::getKeyBackgroundMetrics(&keyMetrics);
+		Text::renderWithKeyBackground(key, leftX, tutorialBaselineY, 1.0f);
+		leftX += keyBackgroundMetrics.charactersWidth + 1;
+	}
 }
 void MapState::logGroup(char group, stringstream* message) {
 	for (int i = 0; i < 2; i++) {
