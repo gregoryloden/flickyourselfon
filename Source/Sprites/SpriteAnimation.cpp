@@ -19,18 +19,16 @@ sprite(pSprite)
 , frameSearchPredecingTicksDurations(new int[pFrames.size()])
 , totalTicksDuration(0)
 , loopAnimation(true) {
-	int frameCount = (int)pFrames.size();
 	int frameSearchPredecingTicksDuration = 0;
-	for (int i = 0; i < frameCount; i++) {
+	for (int i = 0; i < (int)pFrames.size(); i++) {
 		frameSearchPredecingTicksDurations[i] = frameSearchPredecingTicksDuration;
 		frameSearchPredecingTicksDuration += pFrames[i]->getTicksDuration();
 	}
 	totalTicksDuration = frameSearchPredecingTicksDuration;
 }
 SpriteAnimation::~SpriteAnimation() {
-	for (Frame* frame : frames) {
+	for (Frame* frame : frames)
 		delete frame;
-	}
 	delete[] frameSearchPredecingTicksDurations;
 }
 SpriteAnimation::Frame* SpriteAnimation::findFrame(int animationTicksElapsed) {
