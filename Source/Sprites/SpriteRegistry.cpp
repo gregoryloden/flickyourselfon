@@ -43,6 +43,7 @@ void SpriteRegistry::loadAll() {
 	switches = newSpriteSheetWithImagePath(switchesFileName, 9, 1, true);
 	radioWaves = newSpriteSheetWithImagePath(radioWavesFileName, 5, 1, false);
 	railWaves = newSpriteSheetWithImagePath(railWavesFileName, 4, 1, true);
+	railWaves->setBottomAnchorY();
 	switchWaves = newSpriteSheetWithImagePath(switchWavesFileName, 4, 1, true);
 	resetSwitch = newSpriteSheetWithImagePath(resetSwitchFileName, 2, 1, true);
 	kickIndicator = newSpriteSheetWithImagePath(kickIndicatorFileName, 11, 1, true);

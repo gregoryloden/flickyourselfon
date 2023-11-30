@@ -12,7 +12,9 @@ textureId(0)
 , spriteWidth(imageSurface->w / horizontalSpriteCount)
 , spriteHeight(imageSurface->h / verticalSpriteCount)
 , spriteTexPixelWidth(1.0f / (float)imageSurface->w)
-, spriteTexPixelHeight(1.0f / (float)imageSurface->h) {
+, spriteTexPixelHeight(1.0f / (float)imageSurface->h)
+, centerAnchorX(0)
+, centerAnchorY(0) {
 	glGenTextures(1, &textureId);
 
 	glBindTexture(GL_TEXTURE_2D, textureId);
@@ -38,6 +40,8 @@ textureId(0)
 		if (verticalSpriteCount == 1)
 			spriteHeight--;
 	}
+	centerAnchorX = spriteWidth * 0.5f;
+	centerAnchorY = spriteHeight * 0.5f;
 }
 SpriteSheet::~SpriteSheet() {}
 SpriteSheet* SpriteSheet::produce(
@@ -99,10 +103,7 @@ void SpriteSheet::renderSpriteCenteredAtScreenPosition(
 	int spriteHorizontalIndex, int spriteVerticalIndex, float drawCenterX, float drawCenterY)
 {
 	renderSpriteAtScreenPosition(
-		spriteHorizontalIndex,
-		spriteVerticalIndex,
-		(GLint)(drawCenterX - (float)spriteWidth * 0.5f),
-		(GLint)(drawCenterY - (float)spriteHeight * 0.5f));
+		spriteHorizontalIndex, spriteVerticalIndex, (GLint)(drawCenterX - centerAnchorX), (GLint)(drawCenterY - centerAnchorY));
 }
 void SpriteSheet::renderFilledRectangle(
 	GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha, GLint leftX, GLint topY, GLint rightX, GLint bottomY)

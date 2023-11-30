@@ -12,6 +12,8 @@ private:
 	int spriteHeight;
 	float spriteTexPixelWidth;
 	float spriteTexPixelHeight;
+	float centerAnchorX;
+	float centerAnchorY;
 
 public:
 	SpriteSheet(
@@ -24,6 +26,7 @@ public:
 
 	int getSpriteWidth() { return spriteWidth; }
 	int getSpriteHeight() { return spriteHeight; }
+	void setBottomAnchorY() { centerAnchorY = (float)spriteHeight; }
 	//load the surface at the image path and then build a SpriteSheet
 	static SpriteSheet* produce(
 		objCounterParametersComma()
