@@ -9,16 +9,16 @@ public:
 	static const int playerKickingAnimationTicksPerFrame = 300;
 	static const int playerFastKickingAnimationTicksPerFrame = 250;
 	static const int radioWaveAnimationTicksPerFrame = 80;
-	static const char* playerFileName;
-	static const char* tilesFileName;
-	static const char* radioTowerFileName;
-	static const char* railsFileName;
-	static const char* switchesFileName;
-	static const char* radioWavesFileName;
-	static const char* railWavesFileName;
-	static const char* switchWavesFileName;
-	static const char* resetSwitchFileName;
-	static const char* kickIndicatorFileName;
+	static constexpr char* playerFileName = "player.png";
+	static constexpr char* tilesFileName = "tiles.png";
+	static constexpr char* radioTowerFileName = "radiotower.png";
+	static constexpr char* railsFileName = "rails.png";
+	static constexpr char* switchesFileName = "switches.png";
+	static constexpr char* radioWavesFileName = "radiowaves.png";
+	static constexpr char* railWavesFileName = "railwaves.png";
+	static constexpr char* switchWavesFileName = "switchwaves.png";
+	static constexpr char* resetSwitchFileName = "resetswitch.png";
+	static constexpr char* kickIndicatorFileName = "kickindicator.png";
 
 	static SpriteSheet* player;
 	static SpriteSheet* tiles;

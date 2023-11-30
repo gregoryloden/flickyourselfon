@@ -152,7 +152,6 @@ PauseState* PauseState::ControlsNavigationOption::handle(PauseState* currentStat
 }
 
 //////////////////////////////// PauseState::KeyBindingOption ////////////////////////////////
-const char* PauseState::KeyBindingOption::keySelectingText = "[press any key]";
 float PauseState::KeyBindingOption::cachedKeySelectingTextWidth = 0.0f;
 float PauseState::KeyBindingOption::cachedKeySelectingTextFontScale = 0.0f;
 PauseState::KeyBindingOption::KeyBindingOption(

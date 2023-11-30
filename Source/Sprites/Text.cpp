@@ -53,8 +53,6 @@ Text::Metrics::Metrics()
 Text::Metrics::~Metrics() {}
 
 //////////////////////////////// Text ////////////////////////////////
-const char* Text::fontFileName = "font.png";
-const char* Text::keyBackgroundFileName = "keybackground.png";
 SpriteSheet* Text::font = nullptr;
 SpriteSheet* Text::keyBackground = nullptr;
 vector<Text::GlyphRow*> Text::glyphRows;

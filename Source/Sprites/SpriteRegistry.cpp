@@ -4,16 +4,6 @@
 #include "Sprites/SpriteSheet.h"
 #include "Util/FileUtils.h"
 
-const char* SpriteRegistry::playerFileName = "player.png";
-const char* SpriteRegistry::tilesFileName = "tiles.png";
-const char* SpriteRegistry::radioTowerFileName = "radiotower.png";
-const char* SpriteRegistry::railsFileName = "rails.png";
-const char* SpriteRegistry::switchesFileName = "switches.png";
-const char* SpriteRegistry::radioWavesFileName = "radiowaves.png";
-const char* SpriteRegistry::railWavesFileName = "railwaves.png";
-const char* SpriteRegistry::switchWavesFileName = "switchwaves.png";
-const char* SpriteRegistry::resetSwitchFileName = "resetswitch.png";
-const char* SpriteRegistry::kickIndicatorFileName = "kickindicator.png";
 SpriteSheet* SpriteRegistry::player = nullptr;
 SpriteSheet* SpriteRegistry::tiles = nullptr;
 SpriteSheet* SpriteRegistry::radioTower = nullptr;

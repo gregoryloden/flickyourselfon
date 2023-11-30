@@ -92,7 +92,7 @@ private:
 	class KeyBindingOption: public PauseOption {
 	private:
 		static const int interKeyActionAndKeyBackgroundSpacing = 4;
-		static const char* keySelectingText;
+		static constexpr char* keySelectingText = "[press any key]";
 
 		static float cachedKeySelectingTextWidth;
 		static float cachedKeySelectingTextFontScale;
