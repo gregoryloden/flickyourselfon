@@ -36,8 +36,8 @@ private:
 	static constexpr char* playerXFilePrefix = "playerX ";
 	static constexpr char* playerYFilePrefix = "playerY ";
 	static constexpr char* playerDirectionFilePrefix = "playerDirection ";
-	static constexpr char* finishedMoveTutorialFileValue = "finishedConnectionsTutorial";
-	static constexpr char* finishedKickTutorialFileValue = "finishedConnectionsTutorial";
+	static constexpr char* finishedMoveTutorialFileValue = "finishedMoveTutorial";
+	static constexpr char* finishedKickTutorialFileValue = "finishedKickTutorial";
 
 	char z;
 	char xDirection;
