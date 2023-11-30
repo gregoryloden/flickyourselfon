@@ -117,16 +117,6 @@ void SpriteRegistry::loadAll() {
 	switchWavesShortAnimation->disableLooping();
 }
 void SpriteRegistry::unloadAll() {
-	delete player;
-	delete tiles;
-	delete radioTower;
-	delete rails;
-	delete switches;
-	delete radioWaves;
-	delete railWaves;
-	delete switchWaves;
-	delete resetSwitch;
-	delete kickIndicator;
 	delete playerWalkingAnimation;
 	delete playerLegLiftAnimation;
 	delete playerBootWalkingAnimation;
@@ -138,4 +128,14 @@ void SpriteRegistry::unloadAll() {
 	delete railWavesAnimation;
 	delete switchWavesAnimation;
 	delete switchWavesShortAnimation;
+	delete player;
+	delete tiles;
+	delete radioTower;
+	delete rails;
+	delete switches;
+	delete radioWaves;
+	delete railWaves;
+	delete switchWaves;
+	delete resetSwitch;
+	delete kickIndicator;
 }
