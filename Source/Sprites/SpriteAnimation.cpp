@@ -35,7 +35,7 @@ SpriteAnimation::~SpriteAnimation() {
 }
 SpriteAnimation::Frame* SpriteAnimation::findFrame(int animationTicksElapsed) {
 	//if we aren't looping the animation, stop at the last frame
-	if (!loopAnimation && animationTicksElapsed >= totalTicksDuration)
+	if (animationTicksElapsed >= totalTicksDuration && !loopAnimation)
 		return frames.back();
 
 	animationTicksElapsed %= totalTicksDuration;
