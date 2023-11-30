@@ -1,8 +1,6 @@
 #include "Util/PooledReferenceCounter.h"
 #include "Sprites/Text.h"
 
-#define newBasePauseState() produceWithoutArgs(PauseState)
-
 enum class KickActionType: int;
 namespace ConfigTypes {
 	class KeyBindingSetting;
@@ -195,7 +193,7 @@ private:
 		int pEndPauseDecision);
 public:
 	//return a new pause state at the base menu
-	static PauseState* produce(objCounterParameters());
+	static PauseState* produceBasePauseScreen();
 	//return a new pause state at the home screen menu
 	static PauseState* produceHomeScreen();
 	//release a reference to this PauseState and return it to the pool if applicable

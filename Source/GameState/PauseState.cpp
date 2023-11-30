@@ -295,8 +295,8 @@ PauseState* PauseState::produce(
 	p->endPauseDecision = pEndPauseDecision;
 	return p;
 }
-PauseState* PauseState::produce(objCounterParameters()) {
-	return produce(objCounterArgumentsComma() nullptr, baseMenu, 0, nullptr, 0);
+PauseState* PauseState::produceBasePauseScreen() {
+	return newPauseState(nullptr, baseMenu, 0, nullptr, 0);
 }
 PauseState* PauseState::produceHomeScreen() {
 	return newPauseState(nullptr, homeMenu, 0, nullptr, 0);

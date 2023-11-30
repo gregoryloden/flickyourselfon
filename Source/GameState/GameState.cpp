@@ -136,7 +136,7 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 					if (!Editor::isActive)
 						playerState.get()->beginKicking(gameTicksTime);
 				} else if (gameEvent.key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
-					pauseState.set(newBasePauseState());
+					pauseState.set(PauseState::produceBasePauseScreen());
 					pauseStartTicksTime = ticksTime;
 				} else if (gameEvent.key.keysym.scancode == Config::showConnectionsKeyBinding.value) {
 					if (!Config::showConnectionsMode.isHold() || !mapState.get()->getShowConnections(false) || Editor::isActive)
