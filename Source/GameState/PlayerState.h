@@ -91,6 +91,9 @@ public:
 	virtual void mapKickSwitch(short switchId, bool allowRadioTowerAnimation, int ticksTime);
 	//tell the map to kick a reset switch
 	virtual void mapKickResetSwitch(short resetSwitchId, int ticksTime);
+	//spawn a particle with the given SpriteAnimation
+	virtual void spawnParticle(
+		float pX, float pY, SpriteAnimation* pAnimation, SpriteDirection pDirection, int particleStartTicksTime);
 	//return whether we have a kick action where we can show connections
 	bool showTutorialConnectionsForKickAction();
 	//if we have a kick action matching the given type, write its railSwitchId out and return true, otherwise return false

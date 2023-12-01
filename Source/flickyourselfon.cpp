@@ -1,4 +1,5 @@
 #include "flickyourselfon.h"
+#include <time.h>
 #include "Editor/Editor.h"
 #include "GameState/CollisionRect.h"
 #include "GameState/DynamicValue.h"
@@ -22,6 +23,7 @@ SDL_GLContext glContext = nullptr;
 bool renderThreadReadyForUpdates = false;
 
 int gameMain(int argc, char* argv[]) {
+	srand((unsigned int)time(nullptr));
 	//initialize SDL before we do anything else, we need it to log timestamps
 	int initResult = SDL_Init(SDL_INIT_EVERYTHING);
 	if (initResult < 0)
@@ -161,6 +163,7 @@ int gameMain(int argc, char* argv[]) {
 		ObjectPool<EntityAnimation::SwitchToPlayerCamera>::clearPool();
 		ObjectPool<EntityAnimation::MapKickSwitch>::clearPool();
 		ObjectPool<EntityAnimation::MapKickResetSwitch>::clearPool();
+		ObjectPool<EntityAnimation::SpawnParticle>::clearPool();
 		ObjectPool<CollisionRect>::clearPool();
 		ObjectPool<KickAction>::clearPool();
 		ObjCounter::end();

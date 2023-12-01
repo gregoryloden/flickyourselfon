@@ -14,6 +14,7 @@ SpriteSheet* SpriteRegistry::railWaves = nullptr;
 SpriteSheet* SpriteRegistry::switchWaves = nullptr;
 SpriteSheet* SpriteRegistry::resetSwitch = nullptr;
 SpriteSheet* SpriteRegistry::kickIndicator = nullptr;
+SpriteSheet* SpriteRegistry::sparks = nullptr;
 SpriteAnimation* SpriteRegistry::playerWalkingAnimation = nullptr;
 SpriteAnimation* SpriteRegistry::playerLegLiftAnimation = nullptr;
 SpriteAnimation* SpriteRegistry::playerBootWalkingAnimation = nullptr;
@@ -25,6 +26,8 @@ SpriteAnimation* SpriteRegistry::radioWavesAnimation = nullptr;
 SpriteAnimation* SpriteRegistry::railWavesAnimation = nullptr;
 SpriteAnimation* SpriteRegistry::switchWavesAnimation = nullptr;
 SpriteAnimation* SpriteRegistry::switchWavesShortAnimation = nullptr;
+SpriteAnimation* SpriteRegistry::sparksAnimationA = nullptr;
+SpriteAnimation* SpriteRegistry::sparksAnimationB = nullptr;
 void SpriteRegistry::loadAll() {
 	player = newSpriteSheetWithImagePath(playerFileName, 10, 4, false);
 	tiles = newSpriteSheetWithImagePath(tilesFileName, MapState::tileCount, 1, true);
@@ -37,6 +40,7 @@ void SpriteRegistry::loadAll() {
 	switchWaves = newSpriteSheetWithImagePath(switchWavesFileName, 4, 1, true);
 	resetSwitch = newSpriteSheetWithImagePath(resetSwitchFileName, 2, 1, true);
 	kickIndicator = newSpriteSheetWithImagePath(kickIndicatorFileName, 11, 1, true);
+	sparks = newSpriteSheetWithImagePath(sparksFileName, 6, 4, true);
 	playerWalkingAnimation = newSpriteAnimation(
 		player,
 		{
@@ -115,6 +119,22 @@ void SpriteRegistry::loadAll() {
 			newSpriteAnimationFrame(2, 0, radioWaveAnimationTicksPerFrame) COMMA
 		});
 	switchWavesShortAnimation->disableLooping();
+	sparksAnimationA = newSpriteAnimation(
+		sparks,
+		{
+			newSpriteAnimationFrame(0, SpriteAnimation::absentSpriteIndex, sparksTicksPerFrame) COMMA
+			newSpriteAnimationFrame(1, SpriteAnimation::absentSpriteIndex, sparksTicksPerFrame) COMMA
+			newSpriteAnimationFrame(2, SpriteAnimation::absentSpriteIndex, sparksTicksPerFrame) COMMA
+		});
+	sparksAnimationA->disableLooping();
+	sparksAnimationB = newSpriteAnimation(
+		sparks,
+		{
+			newSpriteAnimationFrame(3, SpriteAnimation::absentSpriteIndex, sparksTicksPerFrame) COMMA
+			newSpriteAnimationFrame(4, SpriteAnimation::absentSpriteIndex, sparksTicksPerFrame) COMMA
+			newSpriteAnimationFrame(5, SpriteAnimation::absentSpriteIndex, sparksTicksPerFrame) COMMA
+		});
+	sparksAnimationB->disableLooping();
 }
 void SpriteRegistry::unloadAll() {
 	delete playerWalkingAnimation;
@@ -128,6 +148,8 @@ void SpriteRegistry::unloadAll() {
 	delete railWavesAnimation;
 	delete switchWavesAnimation;
 	delete switchWavesShortAnimation;
+	delete sparksAnimationA;
+	delete sparksAnimationB;
 	delete player;
 	delete tiles;
 	delete radioTower;
@@ -138,4 +160,5 @@ void SpriteRegistry::unloadAll() {
 	delete switchWaves;
 	delete resetSwitch;
 	delete kickIndicator;
+	delete sparks;
 }

@@ -123,6 +123,20 @@ void PlayerState::mapKickSwitch(short switchId, bool allowRadioTowerAnimation, i
 void PlayerState::mapKickResetSwitch(short resetSwitchId, int ticksTime) {
 	mapState.get()->flipResetSwitch(resetSwitchId, ticksTime);
 }
+void PlayerState::spawnParticle(
+	float pX, float pY, SpriteAnimation* pAnimation, SpriteDirection pDirection, int particleStartTicksTime)
+{
+	mapState.get()->queueParticle(
+		pX,
+		pY,
+		false,
+		{
+			newEntityAnimationSetSpriteAnimation(pAnimation),
+			newEntityAnimationSetDirection(pDirection),
+			newEntityAnimationDelay(pAnimation->getTotalTicksDuration()),
+		},
+		particleStartTicksTime);
+}
 bool PlayerState::showTutorialConnectionsForKickAction() {
 	KickAction* kickAction = availableKickAction.get();
 	if (kickAction == nullptr)
@@ -1084,6 +1098,12 @@ void PlayerState::addRailRideComponents(
 					newEntityAnimationDelay(railToRailTicksDuration - halfRailToRailTicksDuration)
 				});
 		}
+		components->push_back(
+			newEntityAnimationSpawnParticle(
+				targetXPosition,
+				targetYPosition + boundingBoxBottomOffset,
+				rand() % 2 == 0 ? SpriteRegistry::sparksAnimationA : SpriteRegistry::sparksAnimationB,
+				nextSpriteDirection));
 	}
 
 	//move to the last tile

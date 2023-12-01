@@ -3,7 +3,7 @@
 #include "Util/PooledReferenceCounter.h"
 
 #define newDynamicCameraAnchor() produceWithoutArgs(DynamicCameraAnchor)
-#define newParticle(x, y) produceWithArgs(Particle, x, y)
+#define newParticle(x, y, isAbovePlayer) produceWithArgs(Particle, x, y, isAbovePlayer)
 
 class DynamicValue;
 class EntityAnimation;
@@ -33,7 +33,7 @@ public:
 	virtual ~EntityState();
 
 	//begin a sprite animation if applicable
-	virtual void setSpriteAnimation(SpriteAnimation* spriteAnimation, int pAnimationStartTicksTime) {}
+	virtual void setSpriteAnimation(SpriteAnimation* spriteAnimation, int pSpriteAnimationStartTicksTime) {}
 	//set the direction for this state's sprite, if it has one
 	virtual void setDirection(SpriteDirection pSpriteDirection) {}
 	//set the position of a ghost sprite that this entity state should render
@@ -47,6 +47,9 @@ public:
 	virtual void mapKickSwitch(short switchId, bool allowRadioTowerAnimation, int ticksTime) {}
 	//tell the map to kick a reset switch at the given time
 	virtual void mapKickResetSwitch(short resetSwitchId, int ticksTime) {}
+	//spawn a particle with the given SpriteAnimation
+	virtual void spawnParticle(
+		float pX, float pY, SpriteAnimation* pAnimation, SpriteDirection pDirection, int particleStartTicksTime) {}
 	//copy the state of the other EntityState
 	void copyEntityState(EntityState* other);
 	//return the entity's x coordinate at the given time that we should use for rendering the world
@@ -107,21 +110,26 @@ class Particle: public EntityState {
 private:
 	SpriteAnimation* spriteAnimation;
 	int spriteAnimationStartTicksTime;
+	SpriteDirection spriteDirection;
+	bool isAbovePlayer;
 
 public:
 	Particle(objCounterParameters());
 	virtual ~Particle();
 
+	bool getIsAbovePlayer() { return isAbovePlayer; }
 	//don't do anything based on a camera change
 	virtual void setNextCamera(GameState* nextGameState, int ticksTime) {}
 	//initialize and return a Particle
-	static Particle* produce(objCounterParametersComma() float pX, float pY);
+	static Particle* produce(objCounterParametersComma() float pX, float pY, bool pIsAbovePlayer);
 	//copy the state of the other Particle
 	void copyParticle(Particle* other);
 	//release a reference to this Particle and return it to the pool if applicable
 	virtual void release();
 	//set the animation to the given animation at the given time
 	virtual void setSpriteAnimation(SpriteAnimation* pSpriteAnimation, int pSpriteAnimationStartTicksTime);
+	//set the sprite direction, and also set x and y directions to match
+	virtual void setDirection(SpriteDirection pSpriteDirection);
 	//update this Particle by reading from the previous state
 	//returns whether the animation is still running
 	bool updateWithPreviousParticle(Particle* prev, int ticksTime);

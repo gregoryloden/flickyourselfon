@@ -126,7 +126,7 @@ private:
 	bool finishedConnectionsTutorial;
 	int switchesAnimationFadeInStartTicksTime;
 	bool shouldPlayRadioTowerAnimation;
-	vector<ReferenceCounterHolder<RadioWavesState>> radioWavesStates;
+	vector<ReferenceCounterHolder<Particle>> particles;
 	char radioWavesColor;
 
 public:
@@ -215,11 +215,12 @@ public:
 	static void setIntroAnimationBootTile(bool showBootTile);
 	//update the rails and switches of the MapState by reading from the previous state
 	void updateWithPreviousMapState(MapState* prev, int ticksTime);
-	//queue a radio waves animation
+	//queue a particle
 	//returns the created Particle
-	Particle* queueRadioWavesAnimation(
+	Particle* queueParticle(
 		float centerX,
 		float centerY,
+		bool isAbovePlayer,
 		vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> components,
 		int ticksTime);
 	//flip a switch

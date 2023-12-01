@@ -40,7 +40,7 @@ MapState::MapState(objCounterParameters())
 , finishedConnectionsTutorial(false)
 , switchesAnimationFadeInStartTicksTime(0)
 , shouldPlayRadioTowerAnimation(false)
-, radioWavesStates()
+, particles()
 , radioWavesColor(-1) {
 	for (int i = 0; i < (int)rails.size(); i++)
 		railStates.push_back(newRailState(rails[i]));
@@ -80,7 +80,7 @@ MapState* MapState::produce(objCounterParameters()) {
 }
 pooledReferenceCounterDefineRelease(MapState)
 void MapState::prepareReturnToPool() {
-	radioWavesStates.clear();
+	particles.clear();
 }
 void MapState::buildMap() {
 	SDL_Surface* floor = FileUtils::loadImage(floorFileName);
@@ -376,22 +376,26 @@ void MapState::updateWithPreviousMapState(MapState* prev, int ticksTime) {
 	for (int i = 0; i < (int)prev->railStates.size(); i++)
 		railStates[i]->updateWithPreviousRailState(prev->railStates[i], ticksTime);
 
-	while (radioWavesStates.size() < prev->radioWavesStates.size())
-		radioWavesStates.push_back(newParticle(0, 0));
-	while (radioWavesStates.size() > prev->radioWavesStates.size())
-		radioWavesStates.pop_back();
-	for (int i = (int)radioWavesStates.size() - 1; i >= 0; i--) {
-		if (!radioWavesStates[i].get()->updateWithPreviousParticle(prev->radioWavesStates[i].get(), ticksTime))
-			radioWavesStates.erase(radioWavesStates.begin() + i);
+	while (particles.size() < prev->particles.size())
+		particles.push_back(newParticle(0, 0, false));
+	while (particles.size() > prev->particles.size())
+		particles.pop_back();
+	for (int i = (int)particles.size() - 1; i >= 0; i--) {
+		if (!particles[i].get()->updateWithPreviousParticle(prev->particles[i].get(), ticksTime))
+			particles.erase(particles.begin() + i);
 	}
 }
-Particle* MapState::queueRadioWavesAnimation(
-	float centerX, float centerY, vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> components, int ticksTime)
+Particle* MapState::queueParticle(
+	float centerX,
+	float centerY,
+	bool isAbovePlayer,
+	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> components,
+	int ticksTime)
 {
-	Particle* radioWavesState = newParticle(centerX, centerY);
-	radioWavesState->beginEntityAnimation(&components, ticksTime);
-	radioWavesStates.push_back(radioWavesState);
-	return radioWavesState;
+	Particle* particle = newParticle(centerX, centerY, isAbovePlayer);
+	particle->beginEntityAnimation(&components, ticksTime);
+	particles.push_back(particle);
+	return particle;
 }
 void MapState::flipSwitch(short switchId, bool allowRadioTowerAnimation, int ticksTime) {
 	SwitchState* switchState = switchStates[switchId & railSwitchIndexBitmask];
@@ -408,9 +412,10 @@ void MapState::flipSwitch(short switchId, bool allowRadioTowerAnimation, int tic
 		switchState->flip(ticksTime);
 
 		radioWavesColor = switch0->getColor();
-		queueRadioWavesAnimation(
+		queueParticle(
 			switch0->getSwitchWavesCenterX(),
 			switch0->getSwitchWavesCenterY(),
+			true,
 			{
 				entityAnimationSpriteAnimationWithDelay(SpriteRegistry::switchWavesAnimation),
 			},
@@ -420,9 +425,10 @@ void MapState::flipSwitch(short switchId, bool allowRadioTowerAnimation, int tic
 			Rail* rail = railState->getRail();
 			Rail::Segment* segments[2] = { rail->getSegment(0), rail->getSegment(rail->getSegmentCount() - 1) };
 			for (Rail::Segment* segment : segments)
-				queueRadioWavesAnimation(
+				queueParticle(
 					segment->tileCenterX(),
 					segment->tileCenterY(),
+					true,
 					{
 						newEntityAnimationDelay(SpriteRegistry::radioWaveAnimationTicksPerFrame),
 						entityAnimationSpriteAnimationWithDelay(SpriteRegistry::railWavesAnimation),
@@ -438,9 +444,10 @@ void MapState::flipResetSwitch(short resetSwitchId, int ticksTime) {
 }
 int MapState::startRadioWavesAnimation(int initialTicksDelay, int ticksTime) {
 	radioWavesColor = lastActivatedSwitchColor;
-	Particle* radioWavesState = queueRadioWavesAnimation(
+	Particle* particle = queueParticle(
 		antennaCenterWorldX(),
 		antennaCenterWorldY(),
+		true,
 		{
 			newEntityAnimationDelay(initialTicksDelay),
 			entityAnimationSpriteAnimationWithDelay(SpriteRegistry::radioWavesAnimation),
@@ -449,7 +456,7 @@ int MapState::startRadioWavesAnimation(int initialTicksDelay, int ticksTime) {
 			entityAnimationSpriteAnimationWithDelay(SpriteRegistry::radioWavesAnimation),
 		},
 		ticksTime);
-	return radioWavesState->getAnimationTicksDuration() - initialTicksDelay;
+	return particle->getAnimationTicksDuration() - initialTicksDelay;
 }
 void MapState::startSwitchesFadeInAnimation(int initialTicksDelay, int ticksTime) {
 	shouldPlayRadioTowerAnimation = false;
@@ -457,9 +464,10 @@ void MapState::startSwitchesFadeInAnimation(int initialTicksDelay, int ticksTime
 	for (Switch* switch0 : switches) {
 		if (switch0->getColor() != lastActivatedSwitchColor || switch0->getGroup() == 0)
 			continue;
-		queueRadioWavesAnimation(
+		queueParticle(
 			switch0->getSwitchWavesCenterX(),
 			switch0->getSwitchWavesCenterY(),
+			true,
 			{
 				newEntityAnimationDelay(initialTicksDelay),
 				entityAnimationSpriteAnimationWithDelay(SpriteRegistry::switchWavesShortAnimation),
@@ -539,6 +547,12 @@ void MapState::render(EntityState* camera, float playerWorldGroundY, bool showCo
 		0, 0, (GLint)(radioTowerLeftXOffset - screenLeftWorldX), (GLint)(radioTowerTopYOffset - screenTopWorldY));
 	if (Editor::isActive)
 		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+
+	//draw particles below the player
+	for (ReferenceCounterHolder<Particle>& particle : particles) {
+		if (!particle.get()->getIsAbovePlayer())
+			particle.get()->render(camera, ticksTime);
+	}
 }
 void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int ticksTime) {
 	if (Editor::isActive && editorHideNonTiles)
@@ -563,14 +577,18 @@ void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int 
 			renderControlsTutorial(showConnectionsTutorialText, { Config::showConnectionsKeyBinding.value });
 	}
 
+	//draw particles above the player
+	//these should only be radio waves
 	glEnable(GL_BLEND);
 	glColor4f(
 		(radioWavesColor == squareColor || radioWavesColor == sineColor) ? 1.0f : 0.0f,
 		(radioWavesColor == sawColor || radioWavesColor == sineColor) ? 1.0f : 0.0f,
 		(radioWavesColor == triangleColor || radioWavesColor == sineColor) ? 1.0f : 0.0f,
 		1.0f);
-	for (ReferenceCounterHolder<Particle>& radioWavesState : radioWavesStates)
-		radioWavesState.get()->render(camera, ticksTime);
+	for (ReferenceCounterHolder<Particle>& particle : particles) {
+		if (particle.get()->getIsAbovePlayer())
+			particle.get()->render(camera, ticksTime);
+	}
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 }
 bool MapState::renderGroupsForRailsToReset(EntityState* camera, short resetSwitchId, int ticksTime) {

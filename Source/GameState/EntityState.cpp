@@ -145,26 +145,34 @@ void DynamicCameraAnchor::render(int ticksTime) {
 Particle::Particle(objCounterParameters())
 : EntityState(objCounterArguments())
 , spriteAnimation(nullptr)
-, spriteAnimationStartTicksTime(0) {
+, spriteAnimationStartTicksTime(0)
+, spriteDirection(SpriteDirection::Right)
+, isAbovePlayer(false) {
 }
 Particle::~Particle() {
 	//don't delete the sprite animation, SpriteRegistry owns it
 }
-Particle* Particle::produce(objCounterParametersComma() float pX, float pY) {
+Particle* Particle::produce(objCounterParametersComma() float pX, float pY, bool pIsAbovePlayer) {
 	initializeWithNewFromPool(p, Particle)
 	p->x.set(newConstantValue(pX));
 	p->y.set(newConstantValue(pY));
 	p->spriteAnimation = nullptr;
+	p->isAbovePlayer = pIsAbovePlayer;
 	return p;
 }
 void Particle::copyParticle(Particle* other) {
 	copyEntityState(other);
 	setSpriteAnimation(other->spriteAnimation, other->spriteAnimationStartTicksTime);
+	setDirection(other->spriteDirection);
+	isAbovePlayer = other->isAbovePlayer;
 }
 pooledReferenceCounterDefineRelease(Particle)
 void Particle::setSpriteAnimation(SpriteAnimation* pSpriteAnimation, int pSpriteAnimationStartTicksTime) {
 	spriteAnimation = pSpriteAnimation;
 	spriteAnimationStartTicksTime = pSpriteAnimationStartTicksTime;
+}
+void Particle::setDirection(SpriteDirection pSpriteDirection) {
+	spriteDirection = pSpriteDirection;
 }
 bool Particle::updateWithPreviousParticle(Particle* prev, int ticksTime) {
 	copyParticle(prev);
@@ -182,5 +190,6 @@ void Particle::render(EntityState* camera, int ticksTime) {
 
 	float renderCenterX = getRenderCenterScreenX(camera,  ticksTime);
 	float renderCenterY = getRenderCenterScreenY(camera,  ticksTime);
-	spriteAnimation->renderUsingCenter(renderCenterX, renderCenterY, ticksTime - spriteAnimationStartTicksTime, 0, 0);
+	spriteAnimation->renderUsingCenter(
+		renderCenterX, renderCenterY, ticksTime - spriteAnimationStartTicksTime, 0, (int)spriteDirection);
 }

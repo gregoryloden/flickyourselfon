@@ -214,6 +214,31 @@ bool EntityAnimation::MapKickResetSwitch::handle(EntityState* entityState, int t
 	return true;
 }
 
+//////////////////////////////// EntityAnimation::SpawnParticle ////////////////////////////////
+EntityAnimation::SpawnParticle::SpawnParticle(objCounterParameters())
+: Component(objCounterArguments())
+, x(0)
+, y(0)
+, animation(nullptr)
+, direction(SpriteDirection::Right) {
+}
+EntityAnimation::SpawnParticle::~SpawnParticle() {}
+EntityAnimation::SpawnParticle* EntityAnimation::SpawnParticle::produce(
+	objCounterParametersComma() float pX, float pY, SpriteAnimation* pAnimation, SpriteDirection pDirection)
+{
+	initializeWithNewFromPool(s, EntityAnimation::SpawnParticle)
+	s->x = pX;
+	s->y = pY;
+	s->animation = pAnimation;
+	s->direction = pDirection;
+	return s;
+}
+pooledReferenceCounterDefineRelease(EntityAnimation::SpawnParticle)
+bool EntityAnimation::SpawnParticle::handle(EntityState* entityState, int ticksTime) {
+	entityState->spawnParticle(x, y, animation, direction, ticksTime);
+	return true;
+}
+
 //////////////////////////////// EntityAnimation::SwitchToPlayerCamera ////////////////////////////////
 EntityAnimation::SwitchToPlayerCamera::SwitchToPlayerCamera(objCounterParameters())
 : Component(objCounterArguments()) {

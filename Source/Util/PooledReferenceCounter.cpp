@@ -96,6 +96,7 @@ template class ObjectPool<EntityAnimation::SetScreenOverlayColor>;
 template class ObjectPool<EntityAnimation::SetSpriteAnimation>;
 template class ObjectPool<EntityAnimation::SetDirection>;
 template class ObjectPool<EntityAnimation::SetVelocity>;
+template class ObjectPool<EntityAnimation::SpawnParticle>;
 template class ObjectPool<EntityAnimation::SwitchToPlayerCamera>;
 template class ObjectPool<LinearInterpolatedValue>;
 //superclasses only need holders, the classes themselves are not allocated

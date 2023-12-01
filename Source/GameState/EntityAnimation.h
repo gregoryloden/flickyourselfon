@@ -11,6 +11,8 @@
 #define newEntityAnimationMapKickSwitch(switchId, allowRadioTowerAnimation) \
 	produceWithArgs(EntityAnimation::MapKickSwitch, switchId, allowRadioTowerAnimation)
 #define newEntityAnimationMapKickResetSwitch(resetSwitchId) produceWithArgs(EntityAnimation::MapKickResetSwitch, resetSwitchId)
+#define newEntityAnimationSpawnParticle(x, y, animation, direction) \
+	produceWithArgs(EntityAnimation::SpawnParticle, x, y, animation, direction)
 #define newEntityAnimationSwitchToPlayerCamera() produceWithoutArgs(EntityAnimation::SwitchToPlayerCamera)
 
 class DynamicValue;
@@ -184,6 +186,25 @@ public:
 		//release a reference to this MapKickResetSwitch and return it to the pool if applicable
 		virtual void release();
 		//return that the animation should continue updating after telling the map to kick the reset switch
+		virtual bool handle(EntityState* entityState, int ticksTime);
+	};
+	class SpawnParticle: public EntityAnimationTypes::Component {
+	private:
+		float x;
+		float y;
+		SpriteAnimation* animation;
+		SpriteDirection direction;
+
+	public:
+		SpawnParticle(objCounterParameters());
+		virtual ~SpawnParticle();
+
+		//initialize and return a SpawnParticle
+		static SpawnParticle* produce(
+			objCounterParametersComma() float pX, float pY, SpriteAnimation* pAnimation, SpriteDirection pDirection);
+		//release a reference to this SpawnParticle and return it to the pool if applicable
+		virtual void release();
+		//return that the animation should continue updating after spawning the particle
 		virtual bool handle(EntityState* entityState, int ticksTime);
 	};
 	class SwitchToPlayerCamera: public EntityAnimationTypes::Component {
