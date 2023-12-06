@@ -449,7 +449,7 @@ void RailState::renderMovementDirections(int screenLeftWorldX, int screenTopWorl
 		return;
 
 	constexpr GLfloat movementDirectionColor = 0.75f;
-	Rail::Segment* endSegments[2] = { rail->getSegment(0), rail->getSegment(rail->getSegmentCount() - 1) };
+	Rail::Segment* endSegments[] = { rail->getSegment(0), rail->getSegment(rail->getSegmentCount() - 1) };
 	for (Rail::Segment* segment : endSegments) {
 		char movementMagnitude = rail->getMovementMagnitude();
 		int movementMagnitudeSize = movementMagnitude * MapState::tileSize;

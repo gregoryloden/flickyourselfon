@@ -75,7 +75,7 @@ bool ResetSwitch::hasGroupForColor(char group, char color) {
 	return false;
 }
 void ResetSwitch::resetMatchingRails(vector<RailState*>* railStates) {
-	vector<ResetSwitch::Segment>* allSegments[3] = { &leftSegments, &bottomSegments, &rightSegments };
+	vector<ResetSwitch::Segment>* allSegments[] = { &leftSegments, &bottomSegments, &rightSegments };
 	for (vector<ResetSwitch::Segment>* segments : allSegments) {
 		for (ResetSwitch::Segment& segment : *segments) {
 			if (segment.group == 0)

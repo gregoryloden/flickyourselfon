@@ -425,7 +425,7 @@ void MapState::flipSwitch(short switchId, bool allowRadioTowerAnimation, int tic
 
 		for (RailState* railState : *switchState->getConnectedRailStates()) {
 			Rail* rail = railState->getRail();
-			Rail::Segment* segments[2] = { rail->getSegment(0), rail->getSegment(rail->getSegmentCount() - 1) };
+			Rail::Segment* segments[] = { rail->getSegment(0), rail->getSegment(rail->getSegmentCount() - 1) };
 			for (Rail::Segment* segment : segments)
 				queueParticle(
 					segment->tileCenterX(),
