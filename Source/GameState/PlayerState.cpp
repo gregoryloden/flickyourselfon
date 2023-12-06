@@ -1117,7 +1117,7 @@ void PlayerState::addRailRideComponents(
 		finalYPosition += 2.0f;
 	} else if (finalYPosition == targetYPosition + MapState::halfTileSize) {
 		finalXPosition += 0.5f;
-		finalYPosition += 2.0f;
+		finalYPosition += 3.0f;
 	} else
 		finalXPosition -= 0.5f;
 	components->insert(
