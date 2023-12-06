@@ -30,15 +30,15 @@ private:
 			+ introTitleDisplayTicksDuration
 			+ introTitleFadeOutTicksDuration
 			+ 500;
-	static const int bootExplanationFadeInStartTicksTime = 10900;
+	static const int bootExplanationFadeInStartTicksTime = introAnimationStartTicksTime + 5900;
 	static const int bootExplanationFadeInTicksDuration = 500;
 	static const int bootExplanationDisplayTicksDuration = 1000;
 	static const int bootExplanationFadeOutTicksDuration = 500;
-	static const int radioTowerExplanationFadeInStartTicksTime = 16000;
+	static const int radioTowerExplanationFadeInStartTicksTime = introAnimationStartTicksTime + 11000;
 	static const int radioTowerExplanationFadeInTicksDuration = 500;
 	static const int radioTowerExplanationDisplayTicksDuration = 3500;
 	static const int radioTowerExplanationFadeOutTicksDuration = 500;
-	static const int goalExplanationFadeInStartTicksTime = 23000;
+	static const int goalExplanationFadeInStartTicksTime = introAnimationStartTicksTime + 18000;
 	static const int goalExplanationFadeInTicksDuration = 500;
 	static const int goalExplanationDisplayTicksDuration = 2500;
 	static const int goalExplanationFadeOutTicksDuration = 500;
