@@ -22,8 +22,8 @@ private:
 	//title/text animation timing
 	static const int introTitleFadeInStartTicksTime = 1000;
 	static const int introTitleFadeInTicksDuration = 1000;
-	static const int introTitleFadeOutTicksDuration = 500;
 	static const int introTitleDisplayTicksDuration = 2000;
+	static const int introTitleFadeOutTicksDuration = 500;
 	static const int introAnimationStartTicksTime =
 		introTitleFadeInStartTicksTime
 			+ introTitleFadeInTicksDuration
