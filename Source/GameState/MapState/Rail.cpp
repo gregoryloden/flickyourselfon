@@ -448,29 +448,30 @@ void RailState::renderMovementDirections(int screenLeftWorldX, int screenTopWorl
 	if (Editor::isActive && rail->editorIsDeleted)
 		return;
 
+	constexpr int arrowSize = 3;
 	constexpr GLfloat movementDirectionColor = 0.75f;
 	Rail::Segment* endSegments[] = { rail->getSegment(0), rail->getSegment(rail->getSegmentCount() - 1) };
 	for (Rail::Segment* segment : endSegments) {
 		char movementMagnitude = rail->getMovementMagnitude();
-		int movementMagnitudeSize = movementMagnitude * MapState::tileSize;
-		GLint leftX = (GLint)(segment->x * MapState::tileSize - screenLeftWorldX);
-		GLint topY =
-			(GLint)(segment->y * MapState::tileSize - screenTopWorldY - (movementMagnitudeSize - MapState::tileSize) / 2);
-		glEnable(GL_BLEND);
-		for (char i = 0; i < movementMagnitude; i++)
-			SpriteRegistry::rails->renderSpriteAtScreenPosition(0, 0, leftX, topY + i * MapState::tileSize);
-		glDisable(GL_BLEND);
-		for (int i = 1; i <= 3; i++) {
-			GLint arrowTopY = nextMovementDirection < 0 ? topY + i - 1 : topY + movementMagnitudeSize - i;
-			SpriteSheet::renderFilledRectangle(
-				movementDirectionColor,
-				movementDirectionColor,
-				movementDirectionColor,
-				1.0f,
-				leftX + MapState::halfTileSize - i,
-				arrowTopY,
-				leftX + MapState::halfTileSize + i,
-				arrowTopY + 1);
+		GLint centerX = (GLint)(segment->x * MapState::tileSize - screenLeftWorldX + MapState::halfTileSize);
+		GLint baseTopY = (GLint)(segment->y * MapState::tileSize - screenTopWorldY + MapState::halfTileSize);
+		//center the arrow at the center of the tile, but if it's an odd height, make sure that the wide part of the middle
+		//	arrow is closer to the center
+		baseTopY -= (movementMagnitude * arrowSize + (int)(1 - nextMovementDirection) / 2) / 2;
+		for (char i = 0; i < movementMagnitude; i++) {
+			GLint topY = baseTopY + i * arrowSize;
+			for (int j = 1; j <= arrowSize; j++) {
+				GLint arrowTopY = topY + (nextMovementDirection < 0 ? j - 1 : arrowSize - j);
+				SpriteSheet::renderFilledRectangle(
+					movementDirectionColor,
+					movementDirectionColor,
+					movementDirectionColor,
+					1.0f,
+					centerX - j,
+					arrowTopY,
+					centerX + j,
+					arrowTopY + 1);
+			}
 		}
 	}
 }
