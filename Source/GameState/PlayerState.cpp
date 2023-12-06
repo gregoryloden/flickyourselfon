@@ -129,7 +129,7 @@ void PlayerState::spawnParticle(
 	mapState.get()->queueParticle(
 		pX,
 		pY,
-		false,
+		pDirection == SpriteDirection::Up,
 		{
 			newEntityAnimationSetSpriteAnimation(pAnimation),
 			newEntityAnimationSetDirection(pDirection),
@@ -1015,7 +1015,8 @@ void PlayerState::addRailRideComponents(
 		Rail::Segment* currentSegment = nextSegment;
 		nextSegment = rail->getSegment(nextSegmentIndex);
 
-		targetXPosition = currentSegment->tileCenterX();
+		float tileCenterX = currentSegment->tileCenterX();
+		targetXPosition = tileCenterX;
 		targetYPosition = currentSegment->tileCenterY() - boundingBoxBottomOffset;
 		bool fromSide = lastYPosition == targetYPosition;
 		bool toSide = false;
@@ -1100,8 +1101,8 @@ void PlayerState::addRailRideComponents(
 		}
 		components->push_back(
 			newEntityAnimationSpawnParticle(
-				targetXPosition,
-				targetYPosition + boundingBoxBottomOffset,
+				toSide ? targetXPosition : tileCenterX,
+				targetYPosition + boundingBoxBottomOffset + (nextSpriteDirection == SpriteDirection::Up ? -1 : 0),
 				rand() % 2 == 0 ? SpriteRegistry::sparksAnimationA : SpriteRegistry::sparksAnimationB,
 				nextSpriteDirection));
 	}

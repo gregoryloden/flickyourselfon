@@ -384,6 +384,8 @@ void MapState::updateWithPreviousMapState(MapState* prev, int ticksTime) {
 		if (!particles[i].get()->updateWithPreviousParticle(prev->particles[i].get(), ticksTime))
 			particles.erase(particles.begin() + i);
 	}
+	if (particles.empty())
+		radioWavesColor = -1;
 }
 Particle* MapState::queueParticle(
 	float centerX,
@@ -578,13 +580,13 @@ void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int 
 	}
 
 	//draw particles above the player
-	//these should only be radio waves
 	glEnable(GL_BLEND);
-	glColor4f(
-		(radioWavesColor == squareColor || radioWavesColor == sineColor) ? 1.0f : 0.0f,
-		(radioWavesColor == sawColor || radioWavesColor == sineColor) ? 1.0f : 0.0f,
-		(radioWavesColor == triangleColor || radioWavesColor == sineColor) ? 1.0f : 0.0f,
-		1.0f);
+	if (radioWavesColor >= 0)
+		glColor4f(
+			(radioWavesColor == squareColor || radioWavesColor == sineColor) ? 1.0f : 0.0f,
+			(radioWavesColor == sawColor || radioWavesColor == sineColor) ? 1.0f : 0.0f,
+			(radioWavesColor == triangleColor || radioWavesColor == sineColor) ? 1.0f : 0.0f,
+			1.0f);
 	for (ReferenceCounterHolder<Particle>& particle : particles) {
 		if (particle.get()->getIsAbovePlayer())
 			particle.get()->render(camera, ticksTime);

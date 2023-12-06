@@ -9,7 +9,7 @@ public:
 	static const int playerKickingAnimationTicksPerFrame = 300;
 	static const int playerFastKickingAnimationTicksPerFrame = 250;
 	static const int radioWaveAnimationTicksPerFrame = 80;
-	static const int sparksTicksPerFrame = 60;
+	static const int sparksTicksPerFrame = 50;
 	static constexpr char* playerFileName = "player.png";
 	static constexpr char* tilesFileName = "tiles.png";
 	static constexpr char* radioTowerFileName = "radiotower.png";
