@@ -31,6 +31,8 @@ private:
 	//only kick something if you're less than this distance from it
 	//visually, you have to be 1 pixel away or closer
 	static constexpr float kickingDistanceLimit = 1.5f;
+	//for down kicking, you have to be visually touching the switch
+	static constexpr float downKickingDistanceLimit = 0.5f;
 	static constexpr char* moveTutorialText = "Move: ";
 	static constexpr char* kickTutorialText = "Kick: ";
 	static constexpr char* playerXFilePrefix = "playerX ";
