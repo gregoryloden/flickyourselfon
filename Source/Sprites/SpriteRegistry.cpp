@@ -28,6 +28,8 @@ SpriteAnimation* SpriteRegistry::switchWavesAnimation = nullptr;
 SpriteAnimation* SpriteRegistry::switchWavesShortAnimation = nullptr;
 SpriteAnimation* SpriteRegistry::sparksAnimationA = nullptr;
 SpriteAnimation* SpriteRegistry::sparksAnimationB = nullptr;
+SpriteAnimation* SpriteRegistry::sparksSlowAnimationA = nullptr;
+SpriteAnimation* SpriteRegistry::sparksSlowAnimationB = nullptr;
 void SpriteRegistry::loadAll() {
 	player = newSpriteSheetWithImagePath(playerFileName, 10, 4, false);
 	tiles = newSpriteSheetWithImagePath(tilesFileName, MapState::tileCount, 1, true);
@@ -135,6 +137,22 @@ void SpriteRegistry::loadAll() {
 			newSpriteAnimationFrame(5, SpriteAnimation::absentSpriteIndex, sparksTicksPerFrame) COMMA
 		});
 	sparksAnimationB->disableLooping();
+	sparksSlowAnimationA = newSpriteAnimation(
+		sparks,
+		{
+			newSpriteAnimationFrame(0, SpriteAnimation::absentSpriteIndex, sparksSlowTicksPerFrame) COMMA
+			newSpriteAnimationFrame(1, SpriteAnimation::absentSpriteIndex, sparksSlowTicksPerFrame) COMMA
+			newSpriteAnimationFrame(2, SpriteAnimation::absentSpriteIndex, sparksSlowTicksPerFrame) COMMA
+		});
+	sparksSlowAnimationA->disableLooping();
+	sparksSlowAnimationB = newSpriteAnimation(
+		sparks,
+		{
+			newSpriteAnimationFrame(3, SpriteAnimation::absentSpriteIndex, sparksSlowTicksPerFrame) COMMA
+			newSpriteAnimationFrame(4, SpriteAnimation::absentSpriteIndex, sparksSlowTicksPerFrame) COMMA
+			newSpriteAnimationFrame(5, SpriteAnimation::absentSpriteIndex, sparksSlowTicksPerFrame) COMMA
+		});
+	sparksSlowAnimationB->disableLooping();
 }
 void SpriteRegistry::unloadAll() {
 	delete playerWalkingAnimation;
@@ -150,6 +168,8 @@ void SpriteRegistry::unloadAll() {
 	delete switchWavesShortAnimation;
 	delete sparksAnimationA;
 	delete sparksAnimationB;
+	delete sparksSlowAnimationA;
+	delete sparksSlowAnimationB;
 	delete player;
 	delete tiles;
 	delete radioTower;

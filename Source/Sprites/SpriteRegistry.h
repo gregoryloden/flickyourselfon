@@ -10,6 +10,7 @@ public:
 	static const int playerFastKickingAnimationTicksPerFrame = 250;
 	static const int radioWaveAnimationTicksPerFrame = 80;
 	static const int sparksTicksPerFrame = 50;
+	static const int sparksSlowTicksPerFrame = 100;
 	static constexpr char* playerFileName = "player.png";
 	static constexpr char* tilesFileName = "tiles.png";
 	static constexpr char* radioTowerFileName = "radiotower.png";
@@ -46,6 +47,8 @@ public:
 	static SpriteAnimation* switchWavesShortAnimation;
 	static SpriteAnimation* sparksAnimationA;
 	static SpriteAnimation* sparksAnimationB;
+	static SpriteAnimation* sparksSlowAnimationA;
+	static SpriteAnimation* sparksSlowAnimationB;
 
 	//load all the sprite sheets
 	//this should only be called after the gl context has been created

@@ -49,7 +49,9 @@ PlayerState::PlayerState(objCounterParameters())
 , worldGroundY(nullptr)
 , worldGroundYOffset(0.0f)
 , finishedMoveTutorial(false)
-, finishedKickTutorial(false) {
+, finishedKickTutorial(false)
+, lastGoalX(0)
+, lastGoalY(0) {
 }
 PlayerState::~PlayerState() {
 	delete collisionRect;
@@ -87,6 +89,8 @@ void PlayerState::copyPlayerState(PlayerState* other) {
 	worldGroundYOffset = other->worldGroundYOffset;
 	finishedMoveTutorial = other->finishedMoveTutorial;
 	finishedKickTutorial = other->finishedKickTutorial;
+	lastGoalX = other->lastGoalX;
+	lastGoalY = other->lastGoalY;
 }
 pooledReferenceCounterDefineRelease(PlayerState)
 float PlayerState::getWorldGroundY(int ticksTime) {
@@ -174,6 +178,8 @@ void PlayerState::updateWithPreviousPlayerState(PlayerState* prev, int ticksTime
 	worldGroundYOffset = 0.0f;
 	finishedMoveTutorial = prev->finishedMoveTutorial;
 	finishedKickTutorial = prev->finishedKickTutorial;
+	lastGoalX = prev->lastGoalX;
+	lastGoalY = prev->lastGoalY;
 
 	//if we can control the player then that must mean the player has the boot
 	hasBoot = true;
@@ -186,6 +192,7 @@ void PlayerState::updateWithPreviousPlayerState(PlayerState* prev, int ticksTime
 	if (!Editor::isActive) {
 		setKickAction();
 		tryAutoKick(prev, ticksTime);
+		trySpawnGoalSparks(ticksTime);
 	}
 
 	//copy the position to the save values
@@ -758,6 +765,41 @@ void PlayerState::tryAutoKick(PlayerState* prev, int ticksTime) {
 		canImmediatelyAutoKick = true;
 	}
 }
+void PlayerState::trySpawnGoalSparks(int ticksTime) {
+	int tileX = (int)x.get()->getValue(0) / MapState::tileSize;
+	int tileY = (int)(y.get()->getValue(0) + boundingBoxCenterYOffset) / MapState::tileSize;
+	if (MapState::getTile(tileX, tileY) != MapState::tilePuzzleEnd || (lastGoalX == tileX && lastGoalY == tileY))
+		return;
+	lastGoalX = tileX;
+	lastGoalY = tileY;
+	SpriteDirection directions[] =
+		{ SpriteDirection::Right, SpriteDirection::Up, SpriteDirection::Left, SpriteDirection::Down };
+	for (SpriteDirection direction : directions) {
+		SpriteAnimation* animations[] = { SpriteRegistry::sparksSlowAnimationA, SpriteRegistry::sparksSlowAnimationA };
+		animations[rand() % 2] = SpriteRegistry::sparksSlowAnimationB;
+		float sparkX = (float)(tileX * MapState::tileSize + MapState::halfTileSize);
+		float sparkY = (float)(tileY * MapState::tileSize + MapState::halfTileSize);
+		if (direction == SpriteDirection::Up)
+			sparkY -= 1.0f;
+		else if (direction == SpriteDirection::Down)
+			sparkY += 1.0f;
+		for (int i = 0; i < 2; i++) {
+			SpriteAnimation* animation = animations[i];
+			int initialDelay = rand() % SpriteRegistry::sparksSlowTicksPerFrame + i * SpriteRegistry::sparksSlowTicksPerFrame;
+			mapState.get()->queueParticle(
+				sparkX,
+				sparkY,
+				false,
+				{
+					newEntityAnimationDelay(initialDelay),
+					newEntityAnimationSetSpriteAnimation(animation),
+					newEntityAnimationSetDirection(direction),
+					newEntityAnimationDelay(animation->getTotalTicksDuration()),
+				},
+				ticksTime);
+		}
+	}
+}
 void PlayerState::beginKicking(int ticksTime) {
 	if (entityAnimation.get() != nullptr)
 		return;
@@ -1247,6 +1289,7 @@ void PlayerState::saveState(ofstream& file) {
 		file << finishedMoveTutorialFileValue << "\n";
 	if (finishedKickTutorial)
 		file << finishedKickTutorialFileValue << "\n";
+	file << lastGoalFilePrefix << lastGoalX << " " << lastGoalY << "\n";
 }
 bool PlayerState::loadState(string& line) {
 	if (StringUtils::startsWith(line, playerXFilePrefix)) {
@@ -1263,6 +1306,8 @@ bool PlayerState::loadState(string& line) {
 		finishedMoveTutorial = true;
 	else if (StringUtils::startsWith(line, finishedKickTutorialFileValue))
 		finishedKickTutorial = true;
+	else if (StringUtils::startsWith(line, lastGoalFilePrefix))
+		StringUtils::parsePosition(line.c_str() + StringUtils::strlenConst(lastGoalFilePrefix), &lastGoalX, &lastGoalY);
 	else
 		return false;
 	return true;
@@ -1280,6 +1325,8 @@ void PlayerState::reset() {
 	canImmediatelyAutoKick = false;
 	finishedMoveTutorial = false;
 	finishedKickTutorial = false;
+	lastGoalX = 0;
+	lastGoalY = 0;
 }
 void PlayerState::setHighestZ() {
 	z = MapState::highestFloorHeight;

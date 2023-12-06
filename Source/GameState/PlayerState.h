@@ -38,6 +38,7 @@ private:
 	static constexpr char* playerDirectionFilePrefix = "playerDirection ";
 	static constexpr char* finishedMoveTutorialFileValue = "finishedMoveTutorial";
 	static constexpr char* finishedKickTutorialFileValue = "finishedKickTutorial";
+	static constexpr char* lastGoalFilePrefix = "lastGoal ";
 
 	char z;
 	char xDirection;
@@ -62,6 +63,8 @@ private:
 	float worldGroundYOffset;
 	bool finishedMoveTutorial;
 	bool finishedKickTutorial;
+	int lastGoalX;
+	int lastGoalY;
 
 public:
 	PlayerState(objCounterParameters());
@@ -152,6 +155,8 @@ private:
 		float* outActualYPosition);
 	//auto-climb, auto-fall, or auto-ride-rail if we can
 	void tryAutoKick(PlayerState* prev, int ticksTime);
+	//spawn sparks over a goal tile if applicable
+	void trySpawnGoalSparks(int ticksTime);
 public:
 	//if we don't have a kicking animation, start one
 	//this should be called after the player has been updated
