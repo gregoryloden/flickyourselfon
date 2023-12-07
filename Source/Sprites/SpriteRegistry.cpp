@@ -15,6 +15,7 @@ SpriteSheet* SpriteRegistry::switchWaves = nullptr;
 SpriteSheet* SpriteRegistry::resetSwitch = nullptr;
 SpriteSheet* SpriteRegistry::kickIndicator = nullptr;
 SpriteSheet* SpriteRegistry::sparks = nullptr;
+SpriteSheet* SpriteRegistry::borderArrows = nullptr;
 SpriteAnimation* SpriteRegistry::playerWalkingAnimation = nullptr;
 SpriteAnimation* SpriteRegistry::playerLegLiftAnimation = nullptr;
 SpriteAnimation* SpriteRegistry::playerBootWalkingAnimation = nullptr;
@@ -43,6 +44,7 @@ void SpriteRegistry::loadAll() {
 	resetSwitch = newSpriteSheetWithImagePath(resetSwitchFileName, 2, 1, true);
 	kickIndicator = newSpriteSheetWithImagePath(kickIndicatorFileName, 11, 1, true);
 	sparks = newSpriteSheetWithImagePath(sparksFileName, 6, 4, true);
+	borderArrows = newSpriteSheetWithImagePath(borderArrowsFileName, 3, 3, false);
 	playerWalkingAnimation = newSpriteAnimation(
 		player,
 		{
@@ -181,4 +183,5 @@ void SpriteRegistry::unloadAll() {
 	delete resetSwitch;
 	delete kickIndicator;
 	delete sparks;
+	delete borderArrows;
 }

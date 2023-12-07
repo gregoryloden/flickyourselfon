@@ -3,6 +3,7 @@
 #include "GameState/EntityAnimation.h"
 #include "GameState/GameState.h"
 #include "Sprites/SpriteAnimation.h"
+#include "Sprites/SpriteRegistry.h"
 #include "Sprites/SpriteSheet.h"
 #include "Util/Config.h"
 
@@ -153,6 +154,20 @@ void DynamicCameraAnchor::render(int ticksTime) {
 	GLfloat a = (GLfloat)screenOverlayA.get()->getValue(timediff);
 	if (a > 0)
 		SpriteSheet::renderFilledRectangle(r, g, b, a, 0, 0, (GLint)Config::gameScreenWidth, (GLint)Config::gameScreenHeight);
+	if (!hasAnimation()) {
+		static constexpr int borderInset = 3;
+		int xIncrement = (Config::gameScreenWidth - SpriteRegistry::borderArrows->getSpriteWidth()) / 2 - borderInset;
+		int yIncrement = (Config::gameScreenHeight - SpriteRegistry::borderArrows->getSpriteHeight()) / 2 - borderInset;
+		for (int arrowYI = 0; arrowYI <= 2; arrowYI++) {
+			GLint arrowY = (GLint)(borderInset + arrowYI * yIncrement);
+			for (int arrowXI = 0; arrowXI <= 2; arrowXI++) {
+				if (arrowXI == 1 && arrowYI == 1)
+					continue;
+				GLint arrowX = (GLint)(borderInset + arrowXI * xIncrement);
+				SpriteRegistry::borderArrows->renderSpriteAtScreenPosition(arrowXI, arrowYI, arrowX, arrowY);
+			}
+		}
+	}
 }
 
 //////////////////////////////// Particle ////////////////////////////////

@@ -22,6 +22,7 @@ public:
 	static constexpr char* resetSwitchFileName = "resetswitch.png";
 	static constexpr char* kickIndicatorFileName = "kickindicator.png";
 	static constexpr char* sparksFileName = "sparks.png";
+	static constexpr char* borderArrowsFileName = "borderarrows.png";
 
 	static SpriteSheet* player;
 	static SpriteSheet* tiles;
@@ -34,6 +35,7 @@ public:
 	static SpriteSheet* resetSwitch;
 	static SpriteSheet* kickIndicator;
 	static SpriteSheet* sparks;
+	static SpriteSheet* borderArrows;
 	static SpriteAnimation* playerWalkingAnimation;
 	static SpriteAnimation* playerLegLiftAnimation;
 	static SpriteAnimation* playerBootWalkingAnimation;
