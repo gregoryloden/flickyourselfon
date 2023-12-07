@@ -8,7 +8,8 @@
 	produceWithArgs(PauseState, parentState, pauseMenu, pauseOption, selectingKey, endPauseDecision)
 #define newPauseMenu(title, options) newWithArgs(PauseState::PauseMenu, title, options)
 #define newNavigationOption(displayText, subMenu) newWithArgs(PauseState::NavigationOption, displayText, subMenu)
-#define newControlsNavigationOption(subMenu) newWithArgs(PauseState::ControlsNavigationOption, subMenu)
+#define newControlsNavigationOption(displayText, subMenu) \
+	newWithArgs(PauseState::ControlsNavigationOption, displayText, subMenu)
 #define newKeyBindingOption(setting, displayText) newWithArgs(PauseState::KeyBindingOption, setting, displayText)
 #define newDefaultKeyBindingsOption() newWithoutArgs(PauseState::DefaultKeyBindingsOption)
 #define newAcceptKeyBindingsOption() newWithoutArgs(PauseState::AcceptKeyBindingsOption)
@@ -59,6 +60,10 @@ int PauseState::PauseMenu::findHighlightedOption(SDL_MouseButtonEvent& clickEven
 		optionTop = optionBottom;
 	}
 	return -1;
+}
+void PauseState::PauseMenu::loadAffectedKeyBindingSettings(vector<ConfigTypes::KeyBindingSetting*>* affectedSettings) {
+	for (PauseOption* option : options)
+		option->loadAffectedKeyBindingSetting(affectedSettings);
 }
 void PauseState::PauseMenu::render(int selectedOption, KeyBindingOption* selectingKeyBindingOption) {
 	//render a translucent rectangle
@@ -141,12 +146,17 @@ PauseState* PauseState::NavigationOption::handle(PauseState* currentState) {
 }
 
 //////////////////////////////// PauseState::ControlsNavigationOption ////////////////////////////////
-PauseState::ControlsNavigationOption::ControlsNavigationOption(objCounterParametersComma() PauseMenu* pSubMenu)
-: NavigationOption(objCounterArgumentsComma() "controls", pSubMenu) {
+PauseState::ControlsNavigationOption::ControlsNavigationOption(
+	objCounterParametersComma() string pDisplayText, PauseMenu* pSubMenu)
+: NavigationOption(objCounterArgumentsComma() pDisplayText, pSubMenu)
+, affectedSettings() {
+	pSubMenu->loadAffectedKeyBindingSettings(&affectedSettings);
 }
 PauseState::ControlsNavigationOption::~ControlsNavigationOption() {}
 PauseState* PauseState::ControlsNavigationOption::handle(PauseState* currentState) {
 	for (ConfigTypes::KeyBindingSetting* keyBindingSetting : Config::allKeyBindingSettings)
+		keyBindingSetting->editingValue = SDL_SCANCODE_UNKNOWN;
+	for (ConfigTypes::KeyBindingSetting* keyBindingSetting : affectedSettings)
 		keyBindingSetting->editingValue = keyBindingSetting->value;
 	return NavigationOption::handle(currentState);
 }
@@ -224,8 +234,10 @@ PauseState::DefaultKeyBindingsOption::DefaultKeyBindingsOption(objCounterParamet
 }
 PauseState::DefaultKeyBindingsOption::~DefaultKeyBindingsOption() {}
 PauseState* PauseState::DefaultKeyBindingsOption::handle(PauseState* currentState) {
-	for (ConfigTypes::KeyBindingSetting* keyBindingSetting : Config::allKeyBindingSettings)
-		keyBindingSetting->editingValue = keyBindingSetting->defaultValue;
+	for (ConfigTypes::KeyBindingSetting* keyBindingSetting : Config::allKeyBindingSettings) {
+		if (keyBindingSetting->editingValue != SDL_SCANCODE_UNKNOWN)
+			keyBindingSetting->editingValue = keyBindingSetting->defaultValue;
+	}
 	return currentState;
 }
 
@@ -235,8 +247,10 @@ PauseState::AcceptKeyBindingsOption::AcceptKeyBindingsOption(objCounterParameter
 }
 PauseState::AcceptKeyBindingsOption::~AcceptKeyBindingsOption() {}
 PauseState* PauseState::AcceptKeyBindingsOption::handle(PauseState* currentState) {
-	for (ConfigTypes::KeyBindingSetting* keyBindingSetting : Config::allKeyBindingSettings)
-		keyBindingSetting->value = keyBindingSetting->editingValue;
+	for (ConfigTypes::KeyBindingSetting* keyBindingSetting : Config::allKeyBindingSettings) {
+		if (keyBindingSetting->editingValue != SDL_SCANCODE_UNKNOWN)
+			keyBindingSetting->value = keyBindingSetting->editingValue;
+	}
 	Config::saveSettings();
 	return currentState->navigateToMenu(nullptr);
 }
@@ -311,14 +325,24 @@ void PauseState::loadMenus() {
 			newNavigationOption("resume", nullptr) COMMA
 			newEndPauseOption("save + resume", (int)EndPauseDecision::Save) COMMA
 			newControlsNavigationOption(
+				"player controls",
 				newPauseMenu(
-					"Controls",
+					"Player Controls",
 					{
 						newKeyBindingOption(&Config::upKeyBinding, "up") COMMA
 						newKeyBindingOption(&Config::rightKeyBinding, "right") COMMA
 						newKeyBindingOption(&Config::downKeyBinding, "down") COMMA
 						newKeyBindingOption(&Config::leftKeyBinding, "left") COMMA
 						newKeyBindingOption(&Config::kickKeyBinding, "kick/climb/fall") COMMA
+						newDefaultKeyBindingsOption() COMMA
+						newAcceptKeyBindingsOption() COMMA
+						newNavigationOption("back", nullptr)
+					})) COMMA
+			newControlsNavigationOption(
+				"map controls",
+				newPauseMenu(
+					"Map Controls",
+					{
 						newKeyBindingOption(&Config::showConnectionsKeyBinding, "show connections") COMMA
 						newDefaultKeyBindingsOption() COMMA
 						newAcceptKeyBindingsOption() COMMA

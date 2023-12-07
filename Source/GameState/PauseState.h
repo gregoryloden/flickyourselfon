@@ -44,6 +44,8 @@ private:
 	public:
 		//find the option that the mouse is hovering over
 		int findHighlightedOption(SDL_MouseButtonEvent& motionEvent);
+		//load all key binding settings from this menu's options
+		void loadAffectedKeyBindingSettings(vector<ConfigTypes::KeyBindingSetting*>* affectedSettings);
 		//render this menu
 		void render(int selectedOption, KeyBindingOption* selectingKeyBindingOption);
 	};
@@ -63,6 +65,8 @@ private:
 		//PauseOption caches the metrics of the regular display text and will return it, subclasses can override this and return
 		//	a different value if they draw something else
 		virtual Text::Metrics getDisplayTextMetrics() { return displayTextMetrics; }
+		//load a key binding setting into the list, if applicable
+		virtual void loadAffectedKeyBindingSetting(vector<ConfigTypes::KeyBindingSetting*>* affectedSettings) {}
 		//render the PauseOption
 		virtual void render(float leftX, float baselineY);
 		//update the display text and its metrics
@@ -82,8 +86,11 @@ private:
 		virtual PauseState* handle(PauseState* currentState);
 	};
 	class ControlsNavigationOption: public NavigationOption {
+	private:
+		vector<ConfigTypes::KeyBindingSetting*> affectedSettings;
+
 	public:
-		ControlsNavigationOption(objCounterParametersComma() PauseMenu* pSubMenu);
+		ControlsNavigationOption(objCounterParametersComma() string pDisplayText, PauseMenu* pSubMenu);
 		virtual ~ControlsNavigationOption();
 
 		//navigate to the controls submenu after setting up the menu key bindings
@@ -107,6 +114,10 @@ private:
 		KeyBindingOption(objCounterParametersComma() ConfigTypes::KeyBindingSetting* pSetting, string displayPrefix);
 		virtual ~KeyBindingOption();
 
+		//add the key binding setting into the list
+		virtual void loadAffectedKeyBindingSetting(vector<ConfigTypes::KeyBindingSetting*>* affectedSettings) {
+			affectedSettings->push_back(setting);
+		}
 		//return metrics that include the key name and background
 		virtual Text::Metrics getDisplayTextMetrics();
 		//return metrics that include either the key-selecting text or the key name and background
