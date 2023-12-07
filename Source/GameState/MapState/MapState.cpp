@@ -39,7 +39,8 @@ MapState::MapState(objCounterParameters())
 , showConnectionsEnabled(false)
 , finishedConnectionsTutorial(false)
 , finishedMapCameraTutorial(false)
-, switchesAnimationFadeInStartTicksTime(0)
+//prevent the switches fade-in animation from playing on load by ensuring tick 0 is after the fade-in is over
+, switchesAnimationFadeInStartTicksTime(-switchesFadeInDuration)
 , shouldPlayRadioTowerAnimation(false)
 , particles()
 , radioWavesColor(-1) {
