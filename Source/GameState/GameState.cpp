@@ -149,7 +149,9 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 					else if (camera == dynamicCameraAnchor.get())
 						camera = playerState.get();
 					else {
-						playerState.get()->setVelocity(newConstantValue(0.0f), newConstantValue(0.0f), gameTicksTime);
+						ConstantValue* zero = newConstantValue(0.0f);
+						ReferenceCounterHolder<DynamicValue> zeroHolder (zero); //needed to return it to the pool
+						playerState.get()->setVelocity(zero, zero, gameTicksTime);
 						camera = dynamicCameraAnchor.get();
 						camera->copyEntityState(playerState.get());
 					}

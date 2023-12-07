@@ -398,10 +398,8 @@ PauseState* PauseState::getNextPauseState() {
 			nextPauseState = nextPauseState->handleMouseClick(gameEvent.button);
 
 		//if we got a new pause state, make sure the old one is returned to the pool if this is its only reference
-		if (nextPauseState != lastPauseState) {
-			lastPauseState->retain();
-			lastPauseState->release();
-		}
+		if (nextPauseState != lastPauseState)
+			ReferenceCounterHolder<PauseState> lastPauseStateHolder (lastPauseState);
 		if (nextPauseState == nullptr || (nextPauseState->endPauseDecision & (int)EndPauseDecision::Exit) != 0)
 			return nextPauseState;
 	}
