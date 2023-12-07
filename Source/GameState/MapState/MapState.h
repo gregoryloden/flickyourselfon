@@ -99,10 +99,12 @@ public:
 private:
 	//tutorials and serialization
 	static constexpr char* showConnectionsTutorialText = "Show connections: ";
+	static constexpr char* mapCameraTutorialText = "Map camera: ";
 	static constexpr float tutorialLeftX = 10.0f;
 	static constexpr float tutorialBaselineY = 20.0f;
 	static constexpr char* lastActivatedSwitchColorFilePrefix = "lastActivatedSwitchColor ";
 	static constexpr char* finishedConnectionsTutorialFileValue = "finishedConnectionsTutorial";
+	static constexpr char* finishedMapCameraTutorialFileValue = "finishedMapCameraTutorial";
 	static constexpr char* showConnectionsFileValue = "showConnections";
 	static constexpr char* railOffsetFilePrefix = "rail ";
 
@@ -124,6 +126,7 @@ private:
 	char lastActivatedSwitchColor;
 	bool showConnectionsEnabled;
 	bool finishedConnectionsTutorial;
+	bool finishedMapCameraTutorial;
 	int switchesAnimationFadeInStartTicksTime;
 	bool shouldPlayRadioTowerAnimation;
 	vector<ReferenceCounterHolder<Particle>> particles;
@@ -157,6 +160,7 @@ public:
 			|| (showTutorialConnections && !finishedConnectionsTutorial && lastActivatedSwitchColor >= 0);
 	}
 	bool getShouldPlayRadioTowerAnimation() { return shouldPlayRadioTowerAnimation; }
+	void finishMapCameraTutorial() { finishedMapCameraTutorial = true; }
 	static void editorSetTile(int x, int y, char tile) { tiles[y * width + x] = tile; }
 	static void editorSetHeight(int x, int y, char height) { heights[y * width + x] = height; }
 	static void editorSetRailSwitchId(int x, int y, short railSwitchId) { railSwitchIds[y * width + x] = railSwitchId; }
@@ -244,6 +248,8 @@ public:
 	bool renderGroupsForRailsToReset(EntityState* camera, short resetSwitchId, int ticksTime);
 	//render the groups for rails that have the group of this switch
 	void renderGroupsForRailsFromSwitch(EntityState* camera, short switchId, int ticksTime);
+	//render any applicable tutorials
+	void renderTutorials(bool showConnections);
 	//draw a graphic to represent this rail/switch group
 	static void renderGroupRect(char group, GLint leftX, GLint topY, GLint rightX, GLint bottomY);
 	//render a controls tutorial message

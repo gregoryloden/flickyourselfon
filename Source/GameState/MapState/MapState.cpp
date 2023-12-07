@@ -38,6 +38,7 @@ MapState::MapState(objCounterParameters())
 , lastActivatedSwitchColor(-1)
 , showConnectionsEnabled(false)
 , finishedConnectionsTutorial(false)
+, finishedMapCameraTutorial(false)
 , switchesAnimationFadeInStartTicksTime(0)
 , shouldPlayRadioTowerAnimation(false)
 , particles()
@@ -355,6 +356,7 @@ void MapState::updateWithPreviousMapState(MapState* prev, int ticksTime) {
 	lastActivatedSwitchColor = prev->lastActivatedSwitchColor;
 	showConnectionsEnabled = prev->showConnectionsEnabled;
 	finishedConnectionsTutorial = prev->finishedConnectionsTutorial;
+	finishedMapCameraTutorial = prev->finishedMapCameraTutorial;
 	shouldPlayRadioTowerAnimation = false;
 	switchesAnimationFadeInStartTicksTime = prev->switchesAnimationFadeInStartTicksTime;
 	radioWavesColor = prev->radioWavesColor;
@@ -575,8 +577,6 @@ void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int 
 				railState->renderMovementDirections(screenLeftWorldX, screenTopWorldY);
 			rail->renderGroups(screenLeftWorldX, screenTopWorldY);
 		}
-		if (!finishedConnectionsTutorial)
-			renderControlsTutorial(showConnectionsTutorialText, { Config::showConnectionsKeyBinding.value });
 	}
 
 	//draw particles above the player
@@ -637,6 +637,14 @@ void MapState::renderGroupsForRailsFromSwitch(EntityState* camera, short switchI
 		}
 	}
 	switch0->renderGroup(screenLeftWorldX, screenTopWorldY);
+}
+void MapState::renderTutorials(bool showConnections) {
+	if (lastActivatedSwitchColor < 0)
+		return;
+	if (!finishedMapCameraTutorial)
+		renderControlsTutorial(mapCameraTutorialText, { Config::mapCameraKeyBinding.value });
+	else if (showConnections && !finishedConnectionsTutorial)
+		renderControlsTutorial(showConnectionsTutorialText, { Config::showConnectionsKeyBinding.value });
 }
 void MapState::renderGroupRect(char group, GLint leftX, GLint topY, GLint rightX, GLint bottomY) {
 	GLint midX = (leftX + rightX) / 2;
@@ -709,6 +717,8 @@ void MapState::saveState(ofstream& file) {
 		file << lastActivatedSwitchColorFilePrefix << (int)lastActivatedSwitchColor << "\n";
 	if (finishedConnectionsTutorial)
 		file << finishedConnectionsTutorialFileValue << "\n";
+	if (finishedMapCameraTutorial)
+		file << finishedMapCameraTutorialFileValue << "\n";
 	if (showConnectionsEnabled)
 		file << showConnectionsFileValue << "\n";
 
@@ -730,6 +740,8 @@ bool MapState::loadState(string& line) {
 		lastActivatedSwitchColor = (char)atoi(line.c_str() + StringUtils::strlenConst(lastActivatedSwitchColorFilePrefix));
 	else if (StringUtils::startsWith(line, finishedConnectionsTutorialFileValue))
 		finishedConnectionsTutorial = true;
+	else if (StringUtils::startsWith(line, finishedMapCameraTutorialFileValue))
+		finishedMapCameraTutorial = true;
 	else if (StringUtils::startsWith(line, showConnectionsFileValue))
 		showConnectionsEnabled = true;
 	else if (StringUtils::startsWith(line, railOffsetFilePrefix)) {
@@ -746,6 +758,7 @@ bool MapState::loadState(string& line) {
 void MapState::resetMap() {
 	lastActivatedSwitchColor = -1;
 	finishedConnectionsTutorial = false;
+	finishedMapCameraTutorial = false;
 	for (RailState* railState : railStates)
 		railState->reset(false);
 }

@@ -144,6 +144,7 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 					if (!Config::showConnectionsMode.isHold() || !mapState.get()->getShowConnections(false) || Editor::isActive)
 						mapState.get()->toggleShowConnections();
 				} else if (gameEvent.key.keysym.scancode == Config::mapCameraKeyBinding.value) {
+					mapState.get()->finishMapCameraTutorial();
 					if (camera->hasAnimation())
 						; //don't touch the camera during animations
 					else if (camera == dynamicCameraAnchor.get())
@@ -292,8 +293,10 @@ void GameState::render(int ticksTime) {
 	mapState.get()->render(camera, playerWorldGroundY, showConnections, gameTicksTime);
 	playerState.get()->render(camera, gameTicksTime);
 	mapState.get()->renderAbovePlayer(camera, showConnections, gameTicksTime);
-	if (sawIntroAnimation)
+	if (sawIntroAnimation && !camera->hasAnimation()) {
 		playerState.get()->renderTutorials();
+		mapState.get()->renderTutorials(showConnections);
+	}
 
 	short contextualGroupsRailSwitchId;
 	bool hasRailsToReset = false;
