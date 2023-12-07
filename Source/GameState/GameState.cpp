@@ -112,9 +112,11 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 	mapState.set(newMapState());
 	mapState.get()->updateWithPreviousMapState(prev->mapState.get(), gameTicksTime);
 	playerState.set(newPlayerState(mapState.get()));
-	playerState.get()->updateWithPreviousPlayerState(prev->playerState.get(), gameTicksTime);
+	bool playerHasKeyboardControl = prev->camera == prev->playerState.get();
+	playerState.get()->updateWithPreviousPlayerState(prev->playerState.get(), playerHasKeyboardControl, gameTicksTime);
 	dynamicCameraAnchor.set(newDynamicCameraAnchor());
-	dynamicCameraAnchor.get()->updateWithPreviousDynamicCameraAnchor(prev->dynamicCameraAnchor.get(), gameTicksTime);
+	dynamicCameraAnchor.get()->updateWithPreviousDynamicCameraAnchor(
+		prev->dynamicCameraAnchor.get(), prev->camera == prev->dynamicCameraAnchor.get(), gameTicksTime);
 
 	//forget the previous camera if we're starting our radio tower animation
 	if (mapState.get()->getShouldPlayRadioTowerAnimation()) {
@@ -136,11 +138,21 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 					pauseState.set(PauseState::produceBasePauseScreen());
 					pauseStartTicksTime = ticksTime;
 				} else if (gameEvent.key.keysym.scancode == Config::kickKeyBinding.value) {
-					if (!Editor::isActive)
+					if (playerHasKeyboardControl && !Editor::isActive)
 						playerState.get()->beginKicking(gameTicksTime);
 				} else if (gameEvent.key.keysym.scancode == Config::showConnectionsKeyBinding.value) {
 					if (!Config::showConnectionsMode.isHold() || !mapState.get()->getShowConnections(false) || Editor::isActive)
 						mapState.get()->toggleShowConnections();
+				} else if (gameEvent.key.keysym.scancode == Config::mapCameraKeyBinding.value) {
+					if (camera->hasAnimation())
+						; //don't touch the camera during animations
+					else if (camera == dynamicCameraAnchor.get())
+						camera = playerState.get();
+					else {
+						playerState.get()->setVelocity(newConstantValue(0.0f), newConstantValue(0.0f), gameTicksTime);
+						camera = dynamicCameraAnchor.get();
+						camera->copyEntityState(playerState.get());
+					}
 				}
 				break;
 			case SDL_KEYUP:

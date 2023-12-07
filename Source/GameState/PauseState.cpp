@@ -344,6 +344,7 @@ void PauseState::loadMenus() {
 					"Map Controls",
 					{
 						newKeyBindingOption(&Config::showConnectionsKeyBinding, "show connections") COMMA
+						newKeyBindingOption(&Config::mapCameraKeyBinding, "map camera") COMMA
 						newDefaultKeyBindingsOption() COMMA
 						newAcceptKeyBindingsOption() COMMA
 						newNavigationOption("back", nullptr)

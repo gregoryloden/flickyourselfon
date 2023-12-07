@@ -61,6 +61,7 @@ KeyBindingSetting Config::downKeyBinding (SDL_SCANCODE_DOWN, "downKey ", Config:
 KeyBindingSetting Config::leftKeyBinding (SDL_SCANCODE_LEFT, "leftKey ", Config::allKeyBindingSettings);
 KeyBindingSetting Config::kickKeyBinding (SDL_SCANCODE_SPACE, "kickKey ", Config::allKeyBindingSettings);
 KeyBindingSetting Config::showConnectionsKeyBinding (SDL_SCANCODE_C, "showConnectionsKey ", Config::allKeyBindingSettings);
+KeyBindingSetting Config::mapCameraKeyBinding (SDL_SCANCODE_M, "mapCameraKey ", Config::allKeyBindingSettings);
 vector<MultiStateSetting*> Config::allMultiStateSettings;
 OnOffSetting Config::climbKickIndicator ("climb ", Config::allMultiStateSettings);
 OnOffSetting Config::fallKickIndicator ("fall ", Config::allMultiStateSettings);

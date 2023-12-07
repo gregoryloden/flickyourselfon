@@ -32,6 +32,7 @@ public:
 	EntityState(objCounterParameters());
 	virtual ~EntityState();
 
+	bool hasAnimation() { return entityAnimation.get() != nullptr; }
 	//begin a sprite animation if applicable
 	virtual void setSpriteAnimation(SpriteAnimation* spriteAnimation, int pSpriteAnimationStartTicksTime) {}
 	//set the direction for this state's sprite, if it has one
@@ -79,6 +80,9 @@ public:
 };
 class DynamicCameraAnchor: public EntityState {
 private:
+	static constexpr float speedPerSecond = 120.0f;
+	static constexpr float diagonalSpeedPerSecond = speedPerSecond * MathUtils::sqrtConst(0.5f);
+
 	ReferenceCounterHolder<DynamicValue> screenOverlayR;
 	ReferenceCounterHolder<DynamicValue> screenOverlayG;
 	ReferenceCounterHolder<DynamicValue> screenOverlayB;
@@ -97,7 +101,7 @@ public:
 	//release a reference to this DynamicCameraAnchor and return it to the pool if applicable
 	virtual void release();
 	//update this DynamicCameraAnchor by reading from the previous state
-	void updateWithPreviousDynamicCameraAnchor(DynamicCameraAnchor* prev, int ticksTime);
+	void updateWithPreviousDynamicCameraAnchor(DynamicCameraAnchor* prev, bool hasKeyboardControl, int ticksTime);
 	//use this color to render an overlay on the screen
 	virtual void setScreenOverlayColor(
 		DynamicValue* r, DynamicValue* g, DynamicValue* b, DynamicValue* a, int pLastUpdateTicksTime);

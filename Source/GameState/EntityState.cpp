@@ -108,12 +108,26 @@ void DynamicCameraAnchor::copyDynamicCameraAnchor(DynamicCameraAnchor* other) {
 	screenOverlayA.set(other->screenOverlayA.get());
 }
 pooledReferenceCounterDefineRelease(DynamicCameraAnchor)
-void DynamicCameraAnchor::updateWithPreviousDynamicCameraAnchor(DynamicCameraAnchor* prev, int ticksTime) {
+void DynamicCameraAnchor::updateWithPreviousDynamicCameraAnchor(
+	DynamicCameraAnchor* prev, bool hasKeyboardControl, int ticksTime)
+{
 	copyDynamicCameraAnchor(prev);
 	if (entityAnimation.get() != nullptr) {
 		if (entityAnimation.get()->update(this, ticksTime))
 			return;
 		entityAnimation.set(nullptr);
+	} else if (hasKeyboardControl) {
+		const Uint8* keyboardState = SDL_GetKeyboardState(nullptr);
+		char xDirection = (char)(keyboardState[Config::rightKeyBinding.value] - keyboardState[Config::leftKeyBinding.value]);
+		char yDirection = (char)(keyboardState[Config::downKeyBinding.value] - keyboardState[Config::upKeyBinding.value]);
+		float speedPerTick =
+			((xDirection & yDirection) != 0 ? diagonalSpeedPerSecond : speedPerSecond) / (float)Config::ticksPerSecond;
+		int ticksSinceLastUpdate = ticksTime - lastUpdateTicksTime;
+		float newX = x.get()->getValue(ticksSinceLastUpdate);
+		float newY = y.get()->getValue(ticksSinceLastUpdate);
+		x.set(newCompositeQuarticValue(newX, (float)xDirection * speedPerTick, 0.0f, 0.0f, 0.0f));
+		y.set(newCompositeQuarticValue(newY, (float)yDirection * speedPerTick, 0.0f, 0.0f, 0.0f));
+		lastUpdateTicksTime = ticksTime;
 	}
 }
 void DynamicCameraAnchor::setScreenOverlayColor(

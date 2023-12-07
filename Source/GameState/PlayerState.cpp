@@ -162,7 +162,7 @@ bool PlayerState::hasRailSwitchKickAction(KickActionType kickActionType, short* 
 	}
 	return false;
 }
-void PlayerState::updateWithPreviousPlayerState(PlayerState* prev, int ticksTime) {
+void PlayerState::updateWithPreviousPlayerState(PlayerState* prev, bool hasKeyboardControl, int ticksTime) {
 	bool previousStateHadEntityAnimation = prev->entityAnimation.get() != nullptr;
 
 	//if we have an entity animation, update with that instead
@@ -185,7 +185,7 @@ void PlayerState::updateWithPreviousPlayerState(PlayerState* prev, int ticksTime
 	hasBoot = true;
 
 	//update this player state normally by reading from the last state
-	updatePositionWithPreviousPlayerState(prev, ticksTime);
+	updatePositionWithPreviousPlayerState(prev, hasKeyboardControl, ticksTime);
 	if (!Editor::isActive)
 		collideWithEnvironmentWithPreviousPlayerState(prev);
 	updateSpriteWithPreviousPlayerState(prev, ticksTime, !previousStateHadEntityAnimation);
@@ -199,10 +199,15 @@ void PlayerState::updateWithPreviousPlayerState(PlayerState* prev, int ticksTime
 	lastControlledX = x.get()->getValue(0);
 	lastControlledY = y.get()->getValue(0);
 }
-void PlayerState::updatePositionWithPreviousPlayerState(PlayerState* prev, int ticksTime) {
+void PlayerState::updatePositionWithPreviousPlayerState(PlayerState* prev, bool hasKeyboardControl, int ticksTime) {
 	const Uint8* keyboardState = SDL_GetKeyboardState(nullptr);
-	xDirection = (char)(keyboardState[Config::rightKeyBinding.value] - keyboardState[Config::leftKeyBinding.value]);
-	yDirection = (char)(keyboardState[Config::downKeyBinding.value] - keyboardState[Config::upKeyBinding.value]);
+	if (hasKeyboardControl) {
+		xDirection = (char)(keyboardState[Config::rightKeyBinding.value] - keyboardState[Config::leftKeyBinding.value]);
+		yDirection = (char)(keyboardState[Config::downKeyBinding.value] - keyboardState[Config::upKeyBinding.value]);
+	} else {
+		xDirection = 0;
+		yDirection = 0;
+	}
 	float speedPerTick =
 		((xDirection & yDirection) != 0 ? diagonalSpeedPerSecond : speedPerSecond) / (float)Config::ticksPerSecond;
 	if (Editor::isActive)

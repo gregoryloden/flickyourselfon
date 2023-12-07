@@ -104,10 +104,10 @@ public:
 	//if we have a kick action matching the given type, write its railSwitchId out and return true, otherwise return false
 	bool hasRailSwitchKickAction(KickActionType kickActionType, short* outRailSwitchId);
 	//update this PlayerState by reading from the previous state
-	void updateWithPreviousPlayerState(PlayerState* prev, int ticksTime);
+	void updateWithPreviousPlayerState(PlayerState* prev, bool hasKeyboardControl, int ticksTime);
 private:
 	//update the position of this PlayerState by reading from the previous state
-	void updatePositionWithPreviousPlayerState(PlayerState* prev, int ticksTime);
+	void updatePositionWithPreviousPlayerState(PlayerState* prev, bool hasKeyboardControl, int ticksTime);
 	//set the new value and update the left and right
 	void setXAndUpdateCollisionRect(DynamicValue* newX);
 	//set the new value and update the top and bottom
