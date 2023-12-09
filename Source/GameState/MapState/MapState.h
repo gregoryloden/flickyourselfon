@@ -32,11 +32,19 @@ public:
 	//animations
 	static const int firstLevelTileOffsetX = 40;
 	static const int firstLevelTileOffsetY = 113;
+private:
 	static const int radioTowerLeftXOffset = 324 + firstLevelTileOffsetX * tileSize;
 	static const int radioTowerTopYOffset = -106 + firstLevelTileOffsetY * tileSize;
 	static const int introAnimationBootTileX = 29 + firstLevelTileOffsetX;
 	static const int introAnimationBootTileY = 26 + firstLevelTileOffsetY;
 	static const int interRadioWavesAnimationTicks = 1000;
+	static constexpr float waveformAspectRatio = 1.5f;
+	static const int waveformHeight = 24;
+	static const int waveformWidth = (int)(waveformHeight * waveformAspectRatio);
+	static const int waveformBottomRadioWavesOffset = 4;
+	static const int waveformStartEndBufferTicks = 500;
+	static constexpr float waveformAnimationPeriods = 2.0f;
+public:
 	static const int switchesFadeInDuration = 1000;
 	static const int switchFlipDuration = 600;
 	static constexpr float introAnimationCameraCenterX = (float)(tileSize * introAnimationBootTileX) + 4.5f;
@@ -131,6 +139,8 @@ private:
 	bool shouldPlayRadioTowerAnimation;
 	vector<ReferenceCounterHolder<Particle>> particles;
 	char radioWavesColor;
+	int waveformStartTicksTime;
+	int waveformEndTicksTime;
 
 public:
 	MapState(objCounterParameters());
@@ -255,6 +265,9 @@ public:
 	//render a controls tutorial message
 	static void renderControlsTutorial(const char* text, vector<SDL_Scancode> keys);
 private:
+	//get the corresponding waveform value based on which waveform it is, converted to 0 at the top and 1 at the bottom
+	//assumes 0 <= periodX < 1
+	static float waveformY(char color, float periodX);
 	//log the colors of the group to the message
 	static void logGroup(char group, stringstream* message);
 public:

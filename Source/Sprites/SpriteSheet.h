@@ -52,6 +52,8 @@ public:
 	//render a rectangle filled with the specified color at the specified region of the screen
 	static void renderFilledRectangle(
 		GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha, GLint leftX, GLint topY, GLint rightX, GLint bottomY);
+	//render a rectangle at the specified region of the screen with the current color
+	static void renderPreColoredRectangle(GLint leftX, GLint topY, GLint rightX, GLint bottomY);
 	//render a rectangle outline using the specified color at the specified region of the screen
 	static void renderRectangleOutline(
 		GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha, GLint leftX, GLint topY, GLint rightX, GLint bottomY);

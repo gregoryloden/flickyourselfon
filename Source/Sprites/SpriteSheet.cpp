@@ -109,13 +109,16 @@ void SpriteSheet::renderFilledRectangle(
 	GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha, GLint leftX, GLint topY, GLint rightX, GLint bottomY)
 {
 	setColor(red, green, blue, alpha);
+	renderPreColoredRectangle(leftX, topY, rightX, bottomY);
+	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+}
+void SpriteSheet::renderPreColoredRectangle(GLint leftX, GLint topY, GLint rightX, GLint bottomY) {
 	glBegin(GL_QUADS);
 	glVertex2i(leftX, topY);
 	glVertex2i(rightX, topY);
 	glVertex2i(rightX, bottomY);
 	glVertex2i(leftX, bottomY);
 	glEnd();
-	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 }
 //TODO: this doesn't draw it pixellated, do something different so that its pixel grid matches the game screen pixel grid
 void SpriteSheet::renderRectangleOutline(

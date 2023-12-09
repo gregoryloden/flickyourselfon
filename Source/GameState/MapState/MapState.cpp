@@ -43,7 +43,9 @@ MapState::MapState(objCounterParameters())
 , switchesAnimationFadeInStartTicksTime(-switchesFadeInDuration)
 , shouldPlayRadioTowerAnimation(false)
 , particles()
-, radioWavesColor(-1) {
+, radioWavesColor(-1)
+, waveformStartTicksTime(0)
+, waveformEndTicksTime(0) {
 	for (int i = 0; i < (int)rails.size(); i++)
 		railStates.push_back(newRailState(rails[i]));
 	for (Switch* switch0 : switches)
@@ -361,6 +363,8 @@ void MapState::updateWithPreviousMapState(MapState* prev, int ticksTime) {
 	shouldPlayRadioTowerAnimation = false;
 	switchesAnimationFadeInStartTicksTime = prev->switchesAnimationFadeInStartTicksTime;
 	radioWavesColor = prev->radioWavesColor;
+	waveformStartTicksTime = prev->waveformStartTicksTime;
+	waveformEndTicksTime = prev->waveformEndTicksTime;
 
 	if (Editor::isActive) {
 		//since the editor can add switches and rails, make sure we update our list to track them
@@ -461,7 +465,11 @@ int MapState::startRadioWavesAnimation(int initialTicksDelay, int ticksTime) {
 			entityAnimationSpriteAnimationWithDelay(SpriteRegistry::radioWavesAnimation),
 		},
 		ticksTime);
-	return particle->getAnimationTicksDuration() - initialTicksDelay;
+	int radioWavesDuration = particle->getAnimationTicksDuration() - initialTicksDelay;
+	int waveformFadedInStartTicksTime = ticksTime + initialTicksDelay;
+	waveformStartTicksTime = waveformFadedInStartTicksTime - waveformStartEndBufferTicks;
+	waveformEndTicksTime = waveformFadedInStartTicksTime + radioWavesDuration + waveformStartEndBufferTicks;
+	return radioWavesDuration;
 }
 void MapState::startSwitchesFadeInAnimation(int initialTicksDelay, int ticksTime) {
 	shouldPlayRadioTowerAnimation = false;
@@ -582,15 +590,45 @@ void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int 
 
 	//draw particles above the player
 	glEnable(GL_BLEND);
-	if (radioWavesColor >= 0)
-		glColor4f(
-			(radioWavesColor == squareColor || radioWavesColor == sineColor) ? 1.0f : 0.0f,
-			(radioWavesColor == sawColor || radioWavesColor == sineColor) ? 1.0f : 0.0f,
-			(radioWavesColor == triangleColor || radioWavesColor == sineColor) ? 1.0f : 0.0f,
-			1.0f);
+	float radioWavesR = (radioWavesColor == squareColor || radioWavesColor == sineColor) ? 1.0f : 0.0f;
+	float radioWavesG = (radioWavesColor == sawColor || radioWavesColor == sineColor) ? 1.0f : 0.0f;
+	float radioWavesB = (radioWavesColor == triangleColor || radioWavesColor == sineColor) ? 1.0f : 0.0f;
+	glColor4f(radioWavesR, radioWavesG, radioWavesB, 1.0f);
 	for (ReferenceCounterHolder<Particle>& particle : particles) {
 		if (particle.get()->getIsAbovePlayer())
 			particle.get()->render(camera, ticksTime);
+	}
+
+	//draw the waveform graphic if applicable
+	if (ticksTime < waveformEndTicksTime && ticksTime > waveformStartTicksTime) {
+		float alpha = 1.0f;
+		if (ticksTime - waveformStartTicksTime < waveformStartEndBufferTicks)
+			alpha = (float)(ticksTime - waveformStartTicksTime) / (float)waveformStartEndBufferTicks;
+		else if (waveformEndTicksTime - ticksTime < waveformStartEndBufferTicks)
+			alpha = (float)(waveformEndTicksTime - ticksTime) / (float)waveformStartEndBufferTicks;
+		glColor4f(radioWavesR, radioWavesG, radioWavesB, alpha);
+		float animationPeriodCycle =
+			(float)(ticksTime - waveformStartTicksTime)
+				/ (float)(waveformEndTicksTime - waveformStartTicksTime)
+				* waveformAnimationPeriods;
+		GLint waveformLeft = (GLint)(antennaCenterWorldX() - screenLeftWorldX - waveformWidth / 2);
+		GLint waveformTop =
+			(GLint)(antennaCenterWorldY() - screenTopWorldY)
+				- (GLint)(SpriteRegistry::radioWaves->getSpriteHeight() / 2 + waveformBottomRadioWavesOffset)
+				- (GLint)(waveformHeight + 1);
+		GLint lastPointTop = 0;
+		GLint lastPointBottom = waveformTop + (GLint)waveformHeight;
+		for (int i = 0; i < waveformWidth; i++) {
+			//divide by the height because we want one period to be a square
+			float basePeriodX = (i + 0.5f) / waveformHeight + animationPeriodCycle;
+			GLint pointLeft = (GLint)(waveformLeft + i);
+			GLint basePointTop = (GLint)(waveformY(radioWavesColor, fmodf(basePeriodX, 1.0f)) * waveformHeight) + waveformTop;
+			GLint pointTop = MathUtils::min(basePointTop, lastPointBottom);
+			GLint pointBottom = MathUtils::max(basePointTop + 1, lastPointTop);
+			SpriteSheet::renderPreColoredRectangle(pointLeft, pointTop, pointLeft + 1, pointBottom);
+			lastPointTop = pointTop;
+			lastPointBottom = pointBottom;
+		}
 	}
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 }
@@ -665,6 +703,17 @@ void MapState::renderControlsTutorial(const char* text, vector<SDL_Scancode> key
 		Text::Metrics keyBackgroundMetrics = Text::getKeyBackgroundMetrics(&keyMetrics);
 		Text::renderWithKeyBackground(key, leftX, tutorialBaselineY, 1.0f);
 		leftX += keyBackgroundMetrics.charactersWidth + 1;
+	}
+}
+float MapState::waveformY(char color, float periodX) {
+	switch (color) {
+		case squareColor: return periodX < 0.5f ? 0.0f : 1.0f;
+		case triangleColor:
+			return periodX < 0.25f ? (0.25f - periodX) * 2.0f
+				: periodX < 0.75f ? (periodX - 0.25f) * 2.0f
+				: (1.25f - periodX) * 2.0f;
+		case sawColor: return periodX < 0.5f ? 0.5f - periodX : 1.5f - periodX;
+		default: return (1.0f - sinf(MathUtils::twoPi * periodX)) * 0.5f;
 	}
 }
 void MapState::logGroup(char group, stringstream* message) {
