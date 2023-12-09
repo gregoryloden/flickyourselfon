@@ -9,6 +9,8 @@ public:
 	//Should only be allocated within an object, on the stack, or as a static object
 	class Segment {
 	public:
+		static const int spriteHorizontalIndexVertical = 0;
+		static const int spriteHorizontalIndexHorizontal = 1;
 		static const int spriteHorizontalIndexEndHorizontalFirst = 6;
 		static const int spriteHorizontalIndexEndVerticalFirst = 8;
 		static const int spriteHorizontalIndexEndFirst = spriteHorizontalIndexEndHorizontalFirst;
@@ -70,9 +72,12 @@ public:
 	static int middleSegmentSpriteHorizontalIndex(int prevX, int prevY, int x, int y, int nextX, int nextY);
 	//get the sprite index that extends straight from the previous segment
 	static int extentSegmentSpriteHorizontalIndex(int prevX, int prevY, int x, int y);
-	//set the color mask for segments of the given rail color based on how much it's been lowered, using a scale from 0 (fully
-	//	raised) to 1 (fully lowered)
+	//set the color and alpha masks for segments of the given rail color based on how much it's been lowered, using a scale from
+	//	0 (fully raised) to 1 (fully lowered)
 	static void setSegmentColor(float loweredScale, int railColor);
+	//set the color mask for segments of the given rail color based on how much it's been lowered, using a scale from 0 (fully
+	//	raised) to 1 (fully lowered), with the given alpha
+	static void setSegmentColor(float loweredScale, int railColor, float alpha);
 	//reverse the order of the segments
 	void reverseSegments();
 	//add this group to the rail if it does not already contain it

@@ -107,10 +107,10 @@ int Rail::endSegmentSpriteHorizontalIndex(int xExtents, int yExtents) {
 int Rail::middleSegmentSpriteHorizontalIndex(int prevX, int prevY, int x, int y, int nextX, int nextY) {
 	//vertical rail if they have the same x
 	if (prevX == nextX)
-		return 0;
+		return Segment::spriteHorizontalIndexVertical;
 	//horizontal rail if they have the same y
 	else if (prevY == nextY)
-		return 1;
+		return Segment::spriteHorizontalIndexHorizontal;
 	//each extents is the sum of a 0 and a 1 or -1
 	else {
 		int xExtentsSum = prevX - x + nextX - x;
@@ -122,6 +122,11 @@ int Rail::extentSegmentSpriteHorizontalIndex(int prevX, int prevY, int x, int y)
 	return middleSegmentSpriteHorizontalIndex(prevX, prevY, x, y, x + (x - prevX), y + (y - prevY));
 }
 void Rail::setSegmentColor(float loweredScale, int railColor) {
+	constexpr float loweredAlphaIntensity = 0.5f;
+	constexpr float loweredAlphaIntensityAdd = loweredAlphaIntensity - 1.0f;
+	setSegmentColor(loweredScale, railColor, 1.0f + loweredAlphaIntensityAdd * loweredScale);
+}
+void Rail::setSegmentColor(float loweredScale, int railColor, float alpha) {
 	constexpr float nonColorIntensity = 9.0f / 16.0f;
 	constexpr float fullColorIntensity = 14.0f / 16.0f;
 	float redColor = fullColorIntensity;
@@ -134,12 +139,11 @@ void Rail::setSegmentColor(float loweredScale, int railColor) {
 	}
 	float raisedScale = 1.0f - loweredScale;
 	constexpr float loweredColorIntensity = 0.625f;
-	constexpr float loweredAlphaIntensity = 0.5f;
 	glColor4f(
 		redColor * raisedScale + loweredColorIntensity * loweredScale,
 		greenColor * raisedScale + loweredColorIntensity * loweredScale,
 		blueColor * raisedScale + loweredColorIntensity * loweredScale,
-		raisedScale + loweredAlphaIntensity * loweredScale);
+		alpha);
 }
 void Rail::reverseSegments() {
 	vector<Segment>* newSegments = new vector<Segment>();

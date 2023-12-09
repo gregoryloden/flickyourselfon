@@ -601,11 +601,11 @@ void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int 
 
 	//draw the waveform graphic if applicable
 	if (ticksTime < waveformEndTicksTime && ticksTime > waveformStartTicksTime) {
-		float alpha = 1.0f;
+		float alpha = 0.625f;
 		if (ticksTime - waveformStartTicksTime < waveformStartEndBufferTicks)
-			alpha = (float)(ticksTime - waveformStartTicksTime) / (float)waveformStartEndBufferTicks;
+			alpha *= (float)(ticksTime - waveformStartTicksTime) / (float)waveformStartEndBufferTicks;
 		else if (waveformEndTicksTime - ticksTime < waveformStartEndBufferTicks)
-			alpha = (float)(waveformEndTicksTime - ticksTime) / (float)waveformStartEndBufferTicks;
+			alpha *= (float)(waveformEndTicksTime - ticksTime) / (float)waveformStartEndBufferTicks;
 		glColor4f(radioWavesR, radioWavesG, radioWavesB, alpha);
 		float animationPeriodCycle =
 			(float)(ticksTime - waveformStartTicksTime)
@@ -629,6 +629,20 @@ void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int 
 			lastPointTop = pointTop;
 			lastPointBottom = pointBottom;
 		}
+		Rail::setSegmentColor(0.0f, radioWavesColor, alpha);
+		GLint railBaseTopY = waveformTop - (GLint)SpriteRegistry::rails->getSpriteHeight() / 2;
+		SpriteRegistry::rails->renderSpriteAtScreenPosition(
+			Rail::Segment::spriteHorizontalIndexHorizontal,
+			0,
+			waveformLeft - (GLint)(SpriteRegistry::rails->getSpriteWidth() + waveformRailSpacing),
+			railBaseTopY + (GLint)(waveformY(radioWavesColor, fmodf(animationPeriodCycle, 1.0f)) * waveformHeight));
+		SpriteRegistry::rails->renderSpriteAtScreenPosition(
+			Rail::Segment::spriteHorizontalIndexHorizontal,
+			0,
+			waveformLeft + (GLint)(waveformWidth + waveformRailSpacing),
+			railBaseTopY
+				+ (GLint)(waveformY(radioWavesColor, fmodf(animationPeriodCycle + waveformAspectRatio, 1.0f))
+					* waveformHeight));
 	}
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 }

@@ -37,13 +37,14 @@ private:
 	static const int radioTowerTopYOffset = -106 + firstLevelTileOffsetY * tileSize;
 	static const int introAnimationBootTileX = 29 + firstLevelTileOffsetX;
 	static const int introAnimationBootTileY = 26 + firstLevelTileOffsetY;
-	static const int interRadioWavesAnimationTicks = 1000;
-	static constexpr float waveformAspectRatio = 1.5f;
-	static const int waveformHeight = 24;
+	static const int interRadioWavesAnimationTicks = 1500;
+	static constexpr float waveformAspectRatio = 2.5f;
+	static const int waveformHeight = 18;
 	static const int waveformWidth = (int)(waveformHeight * waveformAspectRatio);
 	static const int waveformBottomRadioWavesOffset = 4;
 	static const int waveformStartEndBufferTicks = 500;
-	static constexpr float waveformAnimationPeriods = 2.0f;
+	static constexpr float waveformAnimationPeriods = 2.5f;
+	static const int waveformRailSpacing = 1;
 public:
 	static const int switchesFadeInDuration = 1000;
 	static const int switchFlipDuration = 600;
