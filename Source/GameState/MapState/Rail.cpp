@@ -128,10 +128,10 @@ void Rail::setSegmentColor(float loweredScale, int railColor) {
 }
 void Rail::setSegmentColor(float loweredScale, int railColor, float alpha) {
 	constexpr float nonColorIntensity = 9.0f / 16.0f;
-	constexpr float fullColorIntensity = 14.0f / 16.0f;
-	float redColor = fullColorIntensity;
-	float greenColor = fullColorIntensity;
-	float blueColor = fullColorIntensity;
+	constexpr float sineColorIntensity = 14.0f / 16.0f;
+	float redColor = sineColorIntensity;
+	float greenColor = sineColorIntensity;
+	float blueColor = sineColorIntensity;
 	if (railColor != MapState::sineColor) {
 		redColor = railColor == MapState::squareColor ? 1.0f : nonColorIntensity;
 		greenColor = railColor == MapState::sawColor ? 1.0f : nonColorIntensity;
