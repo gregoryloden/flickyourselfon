@@ -3,7 +3,6 @@
 #include "GameState/MapState/MapState.h"
 #include "Sprites/SpriteRegistry.h"
 #include "Sprites/SpriteSheet.h"
-#include "Util/Config.h"
 
 //////////////////////////////// Rail::Segment ////////////////////////////////
 Rail::Segment::Segment(int pX, int pY, char pMaxTileOffset)
