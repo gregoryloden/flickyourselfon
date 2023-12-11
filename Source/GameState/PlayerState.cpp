@@ -13,7 +13,6 @@
 #include "Sprites/SpriteRegistry.h"
 #include "Sprites/SpriteSheet.h"
 #include "Sprites/Text.h"
-#include "Util/Config.h"
 #include "Util/Logger.h"
 #include "Util/StringUtils.h"
 
@@ -208,8 +207,7 @@ void PlayerState::updatePositionWithPreviousPlayerState(PlayerState* prev, bool 
 		xDirection = 0;
 		yDirection = 0;
 	}
-	float speedPerTick =
-		((xDirection & yDirection) != 0 ? diagonalSpeedPerSecond : speedPerSecond) / (float)Config::ticksPerSecond;
+	float speedPerTick = (xDirection | yDirection) != 0 ? diagonalSpeedPerTick : baseSpeedPerTick;
 	if (Editor::isActive)
 		speedPerTick *= keyboardState[Config::kickKeyBinding.value] == 0 ? 2.5f : 8.0f;
 

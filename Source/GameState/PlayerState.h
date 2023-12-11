@@ -1,4 +1,5 @@
 #include "MapState/MapState.h"
+#include "Util/Config.h"
 
 #define newPlayerState(mapState) produceWithArgs(PlayerState, mapState)
 
@@ -25,8 +26,8 @@ private:
 public:
 	static constexpr float introAnimationPlayerCenterX = 50.5f + (float)(MapState::firstLevelTileOffsetX * MapState::tileSize);
 	static constexpr float introAnimationPlayerCenterY = 106.5f + (float)(MapState::firstLevelTileOffsetY * MapState::tileSize);
-	static constexpr float speedPerSecond = 40.0f;
-	static constexpr float diagonalSpeedPerSecond = speedPerSecond * MathUtils::sqrtConst(0.5f);
+	static constexpr float baseSpeedPerTick = 40.0f / Config::ticksPerSecond;
+	static constexpr float diagonalSpeedPerTick = baseSpeedPerTick * MathUtils::sqrtConst(0.5f);
 private:
 	//only kick something if you're less than this distance from it
 	//visually, you have to be 1 pixel away or closer

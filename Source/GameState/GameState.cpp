@@ -686,16 +686,15 @@ void GameState::beginIntroAnimation(int ticksTime) {
 	titleAnimationStartTicksTime = ticksTime;
 
 	//player animation component helpers
-	constexpr float speedPerTick = PlayerState::speedPerSecond / (float)Config::ticksPerSecond;
 	EntityAnimation::SetVelocity* stopMoving = newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f));
-	EntityAnimation::SetVelocity* walkLeft =
-		newEntityAnimationSetVelocity(newCompositeQuarticValue(0.0f, -speedPerTick, 0.0f, 0.0f, 0.0f), newConstantValue(0.0f));
-	EntityAnimation::SetVelocity* walkRight =
-		newEntityAnimationSetVelocity(newCompositeQuarticValue(0.0f, speedPerTick, 0.0f, 0.0f, 0.0f), newConstantValue(0.0f));
-	EntityAnimation::SetVelocity* walkUp =
-		newEntityAnimationSetVelocity(newConstantValue(0.0f), newCompositeQuarticValue(0.0f, -speedPerTick, 0.0f, 0.0f, 0.0f));
-	EntityAnimation::SetVelocity* walkDown =
-		newEntityAnimationSetVelocity(newConstantValue(0.0f), newCompositeQuarticValue(0.0f, speedPerTick, 0.0f, 0.0f, 0.0f));
+	EntityAnimation::SetVelocity* walkLeft = newEntityAnimationSetVelocity(
+		newCompositeQuarticValue(0.0f, -PlayerState::baseSpeedPerTick, 0.0f, 0.0f, 0.0f), newConstantValue(0.0f));
+	EntityAnimation::SetVelocity* walkRight = newEntityAnimationSetVelocity(
+		newCompositeQuarticValue(0.0f, PlayerState::baseSpeedPerTick, 0.0f, 0.0f, 0.0f), newConstantValue(0.0f));
+	EntityAnimation::SetVelocity* walkUp = newEntityAnimationSetVelocity(
+		newConstantValue(0.0f), newCompositeQuarticValue(0.0f, -PlayerState::baseSpeedPerTick, 0.0f, 0.0f, 0.0f));
+	EntityAnimation::SetVelocity* walkDown = newEntityAnimationSetVelocity(
+		newConstantValue(0.0f), newCompositeQuarticValue(0.0f, PlayerState::baseSpeedPerTick, 0.0f, 0.0f, 0.0f));
 	EntityAnimation::SetSpriteAnimation* setWalkingAnimation =
 		newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerWalkingAnimation);
 	EntityAnimation::SetSpriteAnimation* clearSpriteAnimation = newEntityAnimationSetSpriteAnimation(nullptr);
@@ -738,7 +737,7 @@ void GameState::beginIntroAnimation(int ticksTime) {
 		entityAnimationVelocityAndAnimationForDelay(stopMoving, clearSpriteAnimation, 500),
 		//approach more slowly
 		newEntityAnimationSetVelocity(
-			newCompositeQuarticValue(0.0f, -speedPerTick * 0.5f, 0.0f, 0.0f, 0.0f), newConstantValue(0.0f)),
+			newCompositeQuarticValue(0.0f, -PlayerState::baseSpeedPerTick * 0.5f, 0.0f, 0.0f, 0.0f), newConstantValue(0.0f)),
 		setWalkingAnimation,
 		newEntityAnimationDelay(540),
 		entityAnimationVelocityAndAnimationForDelay(stopMoving, clearSpriteAnimation, 800),
