@@ -60,6 +60,8 @@ KeyBindingSetting Config::rightKeyBinding (SDL_SCANCODE_RIGHT, "rightKey ", Conf
 KeyBindingSetting Config::downKeyBinding (SDL_SCANCODE_DOWN, "downKey ", Config::allKeyBindingSettings);
 KeyBindingSetting Config::leftKeyBinding (SDL_SCANCODE_LEFT, "leftKey ", Config::allKeyBindingSettings);
 KeyBindingSetting Config::kickKeyBinding (SDL_SCANCODE_SPACE, "kickKey ", Config::allKeyBindingSettings);
+KeyBindingSetting Config::undoKeyBinding (SDL_SCANCODE_Z, "undoKey ", Config::allKeyBindingSettings);
+KeyBindingSetting Config::redoKeyBinding (SDL_SCANCODE_X, "redoKey ", Config::allKeyBindingSettings);
 KeyBindingSetting Config::showConnectionsKeyBinding (SDL_SCANCODE_C, "showConnectionsKey ", Config::allKeyBindingSettings);
 KeyBindingSetting Config::mapCameraKeyBinding (SDL_SCANCODE_M, "mapCameraKey ", Config::allKeyBindingSettings);
 vector<MultiStateSetting*> Config::allMultiStateSettings;

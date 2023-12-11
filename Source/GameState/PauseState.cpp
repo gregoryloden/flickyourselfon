@@ -343,6 +343,8 @@ void PauseState::loadMenus() {
 				newPauseMenu(
 					"Map Controls",
 					{
+						newKeyBindingOption(&Config::undoKeyBinding, "undo") COMMA
+						newKeyBindingOption(&Config::redoKeyBinding, "redo") COMMA
 						newKeyBindingOption(&Config::showConnectionsKeyBinding, "show connections") COMMA
 						newKeyBindingOption(&Config::mapCameraKeyBinding, "map camera") COMMA
 						newDefaultKeyBindingsOption() COMMA

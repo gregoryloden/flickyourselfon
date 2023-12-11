@@ -77,6 +77,8 @@ public:
 	static ConfigTypes::KeyBindingSetting downKeyBinding;
 	static ConfigTypes::KeyBindingSetting leftKeyBinding;
 	static ConfigTypes::KeyBindingSetting kickKeyBinding;
+	static ConfigTypes::KeyBindingSetting undoKeyBinding;
+	static ConfigTypes::KeyBindingSetting redoKeyBinding;
 	static ConfigTypes::KeyBindingSetting showConnectionsKeyBinding;
 	static ConfigTypes::KeyBindingSetting mapCameraKeyBinding;
 	static vector<ConfigTypes::MultiStateSetting*> allMultiStateSettings;
