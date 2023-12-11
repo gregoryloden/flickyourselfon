@@ -44,11 +44,11 @@ template <class ReferenceCountedObject> ReferenceCounterHolder<ReferenceCountedO
 template <class ReferenceCountedObject> void ReferenceCounterHolder<ReferenceCountedObject>::set(
 	ReferenceCountedObject* pObject)
 {
+	if (pObject != nullptr)
+		pObject->retain();
 	if (object != nullptr)
 		object->release();
 	object = pObject;
-	if (pObject != nullptr)
-		pObject->retain();
 }
 template <class ReferenceCountedObject>
 ReferenceCounterHolder<ReferenceCountedObject>& ReferenceCounterHolder<ReferenceCountedObject>::operator =(
