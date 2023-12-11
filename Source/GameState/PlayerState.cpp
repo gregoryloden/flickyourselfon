@@ -207,7 +207,7 @@ void PlayerState::updatePositionWithPreviousPlayerState(PlayerState* prev, bool 
 		xDirection = 0;
 		yDirection = 0;
 	}
-	float speedPerTick = (xDirection | yDirection) != 0 ? diagonalSpeedPerTick : baseSpeedPerTick;
+	float speedPerTick = (xDirection & yDirection) != 0 ? diagonalSpeedPerTick : baseSpeedPerTick;
 	if (Editor::isActive)
 		speedPerTick *= keyboardState[Config::kickKeyBinding.value] == 0 ? 2.5f : 8.0f;
 
