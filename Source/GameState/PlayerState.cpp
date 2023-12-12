@@ -932,13 +932,6 @@ void PlayerState::kickFall(float xMoveDistance, float yMoveDistance, char fallHe
 		? SpriteRegistry::playerFastKickingAnimationTicksPerFrame
 		: SpriteRegistry::playerKickingAnimationTicksPerFrame;
 
-	//start by stopping the player and delaying until the leg-sticking-out frame
-	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> kickingAnimationComponents ({
-		newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f)),
-		newEntityAnimationSetSpriteAnimation(fallAnimation),
-		newEntityAnimationDelay(fallAnimationFirstFrameTicks)
-	});
-
 	int climbAnimationDuration = fallAnimation->getTotalTicksDuration();
 	int moveDuration = climbAnimationDuration - fallAnimationFirstFrameTicks;
 	float floatMoveDuration = (float)moveDuration;
@@ -986,16 +979,18 @@ void PlayerState::kickFall(float xMoveDistance, float yMoveDistance, char fallHe
 	} else
 		yVelocity = newCompositeQuarticValue(
 			0.0f, -yMoveDistance / floatMoveDuration, 2.0f * yMoveDistance / moveDurationSquared, 0.0f, 0.0f);
-	kickingAnimationComponents.push_back(newEntityAnimationSetVelocity(xVelocity, yVelocity));
 
-
-	//delay for the rest of the animation and then stop the player
-	kickingAnimationComponents.insert(
-		kickingAnimationComponents.end(),
-		{
-			newEntityAnimationDelay(moveDuration),
-			newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f))
-		});
+	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> kickingAnimationComponents ({
+		//start by stopping the player and delaying until the leg-sticking-out frame
+		newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f)),
+		newEntityAnimationSetSpriteAnimation(fallAnimation),
+		newEntityAnimationDelay(fallAnimationFirstFrameTicks),
+		//set the fall velocity
+		newEntityAnimationSetVelocity(xVelocity, yVelocity),
+		//then delay for the rest of the animation and stop the player
+		newEntityAnimationDelay(moveDuration),
+		newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f)),
+	});
 
 	undoState.set(newClimbFallUndoState(undoState.get(), currentX, currentY, z));
 	beginEntityAnimation(&kickingAnimationComponents, ticksTime);
