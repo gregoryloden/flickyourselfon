@@ -94,7 +94,11 @@ void PlayerState::copyPlayerState(PlayerState* other) {
 	lastGoalX = other->lastGoalX;
 	lastGoalY = other->lastGoalY;
 	undoState.set(other->undoState.get());
-	redoState.set(other->redoState.get());
+	//to prevent a stack overflow deleting the last redo reference, make sure to safely clear it if applicable
+	if (other->redoState.get() == nullptr)
+		clearRedoState();
+	else
+		redoState.set(other->redoState.get());
 }
 pooledReferenceCounterDefineRelease(PlayerState)
 float PlayerState::getWorldGroundY(int ticksTime) {
