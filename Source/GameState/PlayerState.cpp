@@ -830,13 +830,15 @@ void PlayerState::beginKicking(int ticksTime) {
 	float yPosition = y.get()->getValue(0);
 	switch (kickAction->getType()) {
 		case KickActionType::Climb:
-			kickClimb(kickAction->getTargetPlayerX() - xPosition, kickAction->getTargetPlayerY() - yPosition, ticksTime);
+			kickClimb(xPosition, yPosition, kickAction->getTargetPlayerX(), kickAction->getTargetPlayerY(), ticksTime);
 			break;
 		case KickActionType::Fall:
 		case KickActionType::FallBig:
 			kickFall(
-				kickAction->getTargetPlayerX() - xPosition,
-				kickAction->getTargetPlayerY() - yPosition,
+				xPosition,
+				yPosition,
+				kickAction->getTargetPlayerX(),
+				kickAction->getTargetPlayerY(),
 				kickAction->getFallHeight(),
 				ticksTime);
 			break;
@@ -870,12 +872,11 @@ void PlayerState::kickAir(int ticksTime) {
 	});
 	beginEntityAnimation(&kickAnimationComponents, ticksTime);
 }
-void PlayerState::kickClimb(float xMoveDistance, float yMoveDistance, int ticksTime) {
-	float currentX = x.get()->getValue(0);
-	float currentY = y.get()->getValue(0);
+void PlayerState::kickClimb(float currentX, float currentY, float targetX, float targetY, int ticksTime) {
+	float xMoveDistance = targetX - currentX;
+	float yMoveDistance = targetY - currentY;
 	stringstream message;
-	message << "  climb " << (int)currentX << " " << (int)currentY
-		<< "  " << (int)(currentX + xMoveDistance) << " " << (int)(currentY + yMoveDistance);
+	message << "  climb " << (int)currentX << " " << (int)currentY << "  " << (int)targetX << " " << (int)targetY;
 	Logger::gameplayLogger.logString(message.str());
 
 	int climbAnimationDuration = SpriteRegistry::playerFastKickingAnimation->getTotalTicksDuration();
@@ -917,12 +918,11 @@ void PlayerState::kickClimb(float xMoveDistance, float yMoveDistance, int ticksT
 		newCompositeQuarticValue(currentWorldGroundY, worldGroundYChange / climbAnimationDuration, 0.0f, 0.0f, 0.0f));
 	z += 2;
 }
-void PlayerState::kickFall(float xMoveDistance, float yMoveDistance, char fallHeight, int ticksTime) {
-	float currentX = x.get()->getValue(0);
-	float currentY = y.get()->getValue(0);
+void PlayerState::kickFall(float currentX, float currentY, float targetX, float targetY, char fallHeight, int ticksTime) {
+	float xMoveDistance = targetX - currentX;
+	float yMoveDistance = targetY - currentY;
 	stringstream message;
-	message << "  fall " << (int)currentX << " " << (int)currentY
-		<< "  " << (int)(currentX + xMoveDistance) << " " << (int)(currentY + yMoveDistance);
+	message << "  fall " << (int)currentX << " " << (int)currentY << "  " << (int)targetX << " " << (int)targetY;
 	Logger::gameplayLogger.logString(message.str());
 
 	bool useFastKickingAnimation = fallHeight == z - 2;

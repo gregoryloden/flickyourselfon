@@ -173,9 +173,9 @@ private:
 	//begin a kicking animation without changing any state
 	void kickAir(int ticksTime);
 	//begin a kicking animation and climb up to the next tile in whatever direction we're facing
-	void kickClimb(float xMoveDistance, float yMoveDistance, int ticksTime);
+	void kickClimb(float currentX, float currentY, float targetX, float targetY, int ticksTime);
 	//begin a kicking animation and fall in whatever direction we're facing
-	void kickFall(float xMoveDistance, float yMoveDistance, char fallHeight, int ticksTime);
+	void kickFall(float currentX, float currentY, float targetX, float targetY, char fallHeight, int ticksTime);
 	//begin a rail-riding animation and follow it to its other end
 	void kickRail(short railId, float xPosition, float yPosition, int ticksTime);
 public:
