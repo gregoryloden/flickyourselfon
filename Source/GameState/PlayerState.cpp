@@ -235,7 +235,7 @@ void PlayerState::updatePositionWithPreviousPlayerState(PlayerState* prev, bool 
 	if ((xDirection | yDirection) != 0) {
 		finishedMoveTutorial = true;
 		clearRedoState();
-		if (undoState.get() == nullptr || undoState.get()->typeIdentifier != MoveUndoState::classTypeIdentifier)
+		if (undoState.get() == nullptr || undoState.get()->getTypeIdentifier() != MoveUndoState::classTypeIdentifier)
 			undoState.set(newMoveUndoState(undoState.get(), newX, newY, z));
 	}
 }

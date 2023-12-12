@@ -2,9 +2,8 @@
 #include "GameState/PlayerState.h"
 
 //////////////////////////////// UndoState ////////////////////////////////
-UndoState::UndoState(objCounterParametersComma() int pTypeIdentifier)
+UndoState::UndoState(objCounterParameters())
 : PooledReferenceCounter(objCounterArguments())
-, typeIdentifier(pTypeIdentifier)
 , next(nullptr) {
 }
 UndoState::~UndoState() {}
@@ -20,7 +19,7 @@ int UndoState::getNextClassTypeIdentifier() {
 //////////////////////////////// MoveUndoState ////////////////////////////////
 const int MoveUndoState::classTypeIdentifier = UndoState::getNextClassTypeIdentifier();
 MoveUndoState::MoveUndoState(objCounterParameters())
-: UndoState(objCounterArgumentsComma() classTypeIdentifier)
+: UndoState(objCounterArguments())
 , fromX(0)
 , fromY(0)
 , fromHeight(0) {

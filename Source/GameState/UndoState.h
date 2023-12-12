@@ -6,10 +6,9 @@ class PlayerState;
 
 class UndoState: public PooledReferenceCounter {
 public:
-	const int typeIdentifier;
 	ReferenceCounterHolder<UndoState> next;
 
-	UndoState(objCounterParametersComma() int pTypeIdentifier);
+	UndoState(objCounterParameters());
 	virtual ~UndoState();
 
 protected:
@@ -18,6 +17,8 @@ protected:
 	//get the next class type identifier for a subclass
 	static int getNextClassTypeIdentifier();
 public:
+	//get the type identifier for the implementing subclass
+	virtual int getTypeIdentifier() = 0;
 	//apply the effect of this state as an undo or a redo
 	virtual void handle(PlayerState* playerState, bool isUndo, int ticksTime) = 0;
 };
@@ -34,6 +35,7 @@ public:
 	MoveUndoState(objCounterParameters());
 	virtual ~MoveUndoState();
 
+	int getTypeIdentifier() { return classTypeIdentifier; }
 	//initialize and return a MoveUndoState
 	static MoveUndoState* produce(objCounterParametersComma() UndoState* pNext, float pFromX, float pFromY, char pFromHeight);
 	//release a reference to this MoveUndoState and return it to the pool if applicable
