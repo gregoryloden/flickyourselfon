@@ -8,6 +8,7 @@
 #include "GameState/GameState.h"
 #include "GameState/KickAction.h"
 #include "GameState/PauseState.h"
+#include "GameState/UndoState.h"
 #include "GameState/MapState/MapState.h"
 #include "Util/CircularStateQueue.h"
 #include "Util/Config.h"
@@ -166,6 +167,7 @@ int gameMain(int argc, char* argv[]) {
 		ObjectPool<EntityAnimation::SpawnParticle>::clearPool();
 		ObjectPool<CollisionRect>::clearPool();
 		ObjectPool<KickAction>::clearPool();
+		ObjectPool<MoveUndoState>::clearPool();
 		ObjCounter::end();
 	#endif
 	Logger::gameplayLogger.endLogging();

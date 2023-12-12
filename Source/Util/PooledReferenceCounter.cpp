@@ -6,6 +6,7 @@
 #include "GameState/KickAction.h"
 #include "GameState/PauseState.h"
 #include "GameState/PlayerState.h"
+#include "GameState/UndoState.h"
 #include "GameState/MapState/MapState.h"
 
 #define instantiateObjectPoolAndReferenceCounterHolder(className) \
@@ -99,10 +100,12 @@ template class ObjectPool<EntityAnimation::SetVelocity>;
 template class ObjectPool<EntityAnimation::SpawnParticle>;
 template class ObjectPool<EntityAnimation::SwitchToPlayerCamera>;
 template class ObjectPool<LinearInterpolatedValue>;
+template class ObjectPool<MoveUndoState>;
 //superclasses only need holders, the classes themselves are not allocated
 template class ReferenceCounterHolder<DynamicValue>;
 template class ReferenceCounterHolder<EntityAnimationTypes::Component>;
 template class ReferenceCounterHolder<EntityState>;
+template class ReferenceCounterHolder<UndoState>;
 //solo-concrete classes or held subclasses need both their own pools and holders
 instantiateObjectPoolAndReferenceCounterHolder(CollisionRect)
 instantiateObjectPoolAndReferenceCounterHolder(DynamicCameraAnchor)

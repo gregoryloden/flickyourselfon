@@ -156,6 +156,12 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 						camera = dynamicCameraAnchor.get();
 						camera->copyEntityState(playerState.get());
 					}
+				} else if (gameEvent.key.keysym.scancode == Config::undoKeyBinding.value) {
+					if (!Editor::isActive)
+						playerState.get()->undo(gameTicksTime);
+				} else if (gameEvent.key.keysym.scancode == Config::redoKeyBinding.value) {
+					if (!Editor::isActive)
+						playerState.get()->redo(gameTicksTime);
 				}
 				break;
 			case SDL_KEYUP:

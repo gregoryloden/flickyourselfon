@@ -7,6 +7,7 @@ class CollisionRect;
 class KickAction;
 class SpriteAnimation;
 enum class KickActionType: int;
+class UndoState;
 namespace EntityAnimationTypes {
 	class Component;
 }
@@ -29,6 +30,7 @@ public:
 	static constexpr float baseSpeedPerTick = 40.0f / Config::ticksPerSecond;
 	static constexpr float diagonalSpeedPerTick = baseSpeedPerTick * MathUtils::sqrtConst(0.5f);
 private:
+	static constexpr float undoSpeedPerTick = baseSpeedPerTick * 4;
 	//only kick something if you're less than this distance from it
 	//visually, you have to be 1 pixel away or closer
 	static constexpr float kickingDistanceLimit = 1.5f;
@@ -68,6 +70,8 @@ private:
 	bool finishedKickTutorial;
 	int lastGoalX;
 	int lastGoalY;
+	ReferenceCounterHolder<UndoState> undoState;
+	ReferenceCounterHolder<UndoState> redoState;
 
 public:
 	PlayerState(objCounterParameters());
@@ -198,6 +202,14 @@ public:
 	//add the animation components for a reset switch kicking animation
 	static void addKickResetSwitchComponents(
 		short resetSwitchId, vector<ReferenceCounterHolder<EntityAnimationTypes::Component>>* components);
+	//delete the redo stack
+	void clearRedoState();
+	//undo an action if there is one to undo
+	void undo(int ticksTime);
+	//redo an action if there is one to redo
+	void redo(int ticksTime);
+	//move the player to the given location, and place an undo state in the list opposite the one that this one came from
+	void undoMove(float fromX, float fromY, char fromHeight, bool isUndo, int ticksTime);
 	//render this player state, which was deemed to be the last state to need rendering
 	void render(EntityState* camera, int ticksTime);
 	//render the kick action for this player state if one is available
