@@ -888,11 +888,8 @@ void PlayerState::kickClimb(float xMoveDistance, float yMoveDistance, int ticksT
 		//start by stopping the player and delaying until the leg-sticking-out frame
 		newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f)),
 		newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerFastKickingAnimation),
-		newEntityAnimationDelay(SpriteRegistry::playerFastKickingAnimationTicksPerFrame)
-	});
-
-	//set the climb velocity
-	kickingAnimationComponents.push_back(
+		newEntityAnimationDelay(SpriteRegistry::playerFastKickingAnimationTicksPerFrame),
+		//set the climb velocity
 		xMoveDistance == 0
 			? newEntityAnimationSetVelocity(
 				newConstantValue(0.0f),
@@ -905,15 +902,11 @@ void PlayerState::kickClimb(float xMoveDistance, float yMoveDistance, int ticksT
 			: newEntityAnimationSetVelocity(
 				newCompositeQuarticValue(0.0f, 0.0f, xMoveDistance / moveDurationSquared, 0.0f, 0.0f),
 				newCompositeQuarticValue(
-					0.0f, 2.0f * yMoveDistance / floatMoveDuration, -yMoveDistance / moveDurationSquared, 0.0f, 0.0f)));
-
-	kickingAnimationComponents.insert(
-		kickingAnimationComponents.end(),
-		{
-			//then delay for the rest of the animation and stop the player
-			newEntityAnimationDelay(moveDuration),
-			newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f))
-		});
+					0.0f, 2.0f * yMoveDistance / floatMoveDuration, -yMoveDistance / moveDurationSquared, 0.0f, 0.0f)),
+		//then delay for the rest of the animation and stop the player
+		newEntityAnimationDelay(moveDuration),
+		newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f)),
+	});
 
 	undoState.set(newClimbFallUndoState(undoState.get(), currentX, currentY, z));
 	beginEntityAnimation(&kickingAnimationComponents, ticksTime);
