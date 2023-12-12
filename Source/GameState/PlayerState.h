@@ -30,6 +30,7 @@ public:
 	static constexpr float baseSpeedPerTick = 40.0f / Config::ticksPerSecond;
 	static constexpr float diagonalSpeedPerTick = baseSpeedPerTick * MathUtils::sqrtConst(0.5f);
 private:
+	static const int minUndoTicksDuration = 250;
 	static constexpr float undoSpeedPerTick = baseSpeedPerTick * 4;
 	//only kick something if you're less than this distance from it
 	//visually, you have to be 1 pixel away or closer
@@ -202,8 +203,8 @@ public:
 	//add the animation components for a reset switch kicking animation
 	static void addKickResetSwitchComponents(
 		short resetSwitchId, vector<ReferenceCounterHolder<EntityAnimationTypes::Component>>* components);
-	//delete the redo stack
-	void clearRedoState();
+	//set the redo state to the given state, with special handling if we're deleting the redo state
+	void setRedoState(UndoState* newRedoState);
 	//undo an action if there is one to undo
 	void undo(int ticksTime);
 	//redo an action if there is one to redo

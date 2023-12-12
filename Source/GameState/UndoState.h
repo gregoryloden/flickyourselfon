@@ -1,6 +1,8 @@
 #include "Util/PooledReferenceCounter.h"
 
-#define newMoveUndoState(next, fromX, fromY, fromHeight) produceWithArgs(MoveUndoState, next, fromX, fromY, fromHeight)
+#define newMoveUndoState(next, fromX, fromY) produceWithArgs(MoveUndoState, next, fromX, fromY)
+#define newClimbFallUndoState(next, fromX, fromY, fromHeight) \
+	produceWithArgs(ClimbFallUndoState, next, fromX, fromY, fromHeight)
 
 class PlayerState;
 
@@ -29,7 +31,6 @@ public:
 private:
 	float fromX;
 	float fromY;
-	char fromHeight;
 
 public:
 	MoveUndoState(objCounterParameters());
@@ -37,9 +38,31 @@ public:
 
 	int getTypeIdentifier() { return classTypeIdentifier; }
 	//initialize and return a MoveUndoState
-	static MoveUndoState* produce(objCounterParametersComma() UndoState* pNext, float pFromX, float pFromY, char pFromHeight);
+	static MoveUndoState* produce(objCounterParametersComma() UndoState* pNext, float pFromX, float pFromY);
 	//release a reference to this MoveUndoState and return it to the pool if applicable
 	virtual void release();
 	//move the player to the stored position
+	virtual void handle(PlayerState* playerState, bool isUndo, int ticksTime);
+};
+class ClimbFallUndoState: public UndoState {
+public:
+	static const int classTypeIdentifier;
+
+private:
+	float fromX;
+	float fromY;
+	char fromHeight;
+
+public:
+	ClimbFallUndoState(objCounterParameters());
+	virtual ~ClimbFallUndoState();
+
+	int getTypeIdentifier() { return classTypeIdentifier; }
+	//initialize and return a ClimbFallUndoState
+	static ClimbFallUndoState* produce(
+		objCounterParametersComma() UndoState* pNext, float pFromX, float pFromY, char pFromHeight);
+	//release a reference to this ClimbFallUndoState and return it to the pool if applicable
+	virtual void release();
+	//move the player to the stored position and height
 	virtual void handle(PlayerState* playerState, bool isUndo, int ticksTime);
 };

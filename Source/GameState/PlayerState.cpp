@@ -94,11 +94,7 @@ void PlayerState::copyPlayerState(PlayerState* other) {
 	lastGoalX = other->lastGoalX;
 	lastGoalY = other->lastGoalY;
 	undoState.set(other->undoState.get());
-	//to prevent a stack overflow deleting the last redo reference, make sure to safely clear it if applicable
-	if (other->redoState.get() == nullptr)
-		clearRedoState();
-	else
-		redoState.set(other->redoState.get());
+	setRedoState(other->redoState.get());
 }
 pooledReferenceCounterDefineRelease(PlayerState)
 float PlayerState::getWorldGroundY(int ticksTime) {
@@ -189,7 +185,7 @@ void PlayerState::updateWithPreviousPlayerState(PlayerState* prev, bool hasKeybo
 	lastGoalX = prev->lastGoalX;
 	lastGoalY = prev->lastGoalY;
 	undoState.set(prev->undoState.get());
-	redoState.set(prev->redoState.get());
+	setRedoState(prev->redoState.get());
 
 	//if we can control the player then that must mean the player has the boot
 	hasBoot = true;
@@ -238,9 +234,9 @@ void PlayerState::updatePositionWithPreviousPlayerState(PlayerState* prev, bool 
 
 	if ((xDirection | yDirection) != 0) {
 		finishedMoveTutorial = true;
-		clearRedoState();
+		setRedoState(nullptr);
 		if (undoState.get() == nullptr || undoState.get()->getTypeIdentifier() != MoveUndoState::classTypeIdentifier)
-			undoState.set(newMoveUndoState(undoState.get(), newX, newY, z));
+			undoState.set(newMoveUndoState(undoState.get(), newX, newY));
 	}
 }
 void PlayerState::setXAndUpdateCollisionRect(DynamicValue* newX) {
@@ -919,7 +915,7 @@ void PlayerState::kickClimb(float xMoveDistance, float yMoveDistance, int ticksT
 			newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f))
 		});
 
-
+	undoState.set(newClimbFallUndoState(undoState.get(), currentX, currentY, z));
 	beginEntityAnimation(&kickingAnimationComponents, ticksTime);
 	float currentWorldGroundY = getWorldGroundY(lastUpdateTicksTime);
 	//regardless of the movement direction, ground Y changes based on Y move distance
@@ -1008,6 +1004,7 @@ void PlayerState::kickFall(float xMoveDistance, float yMoveDistance, char fallHe
 			newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f))
 		});
 
+	undoState.set(newClimbFallUndoState(undoState.get(), currentX, currentY, z));
 	beginEntityAnimation(&kickingAnimationComponents, ticksTime);
 	float currentWorldGroundY = getWorldGroundY(lastUpdateTicksTime);
 	//regardless of the movement direction, ground Y changes based on Y move distance
@@ -1236,10 +1233,14 @@ void PlayerState::addKickResetSwitchComponents(
 					- SpriteRegistry::playerKickingAnimationTicksPerFrame)
 		});
 }
-void PlayerState::clearRedoState() {
-	//instead of just setting redoState straight to nullptr, delete it state-by-state to avoid a stack overflow
-	while (redoState.get() != nullptr)
-		redoState.set(redoState.get()->next.get());
+void PlayerState::setRedoState(UndoState* newRedoState) {
+	if (newRedoState == nullptr) {
+		//instead of just setting redoState straight to nullptr, delete it state-by-state to avoid a stack overflow
+		while (redoState.get() != nullptr)
+			redoState.set(redoState.get()->next.get());
+	} else
+		//we assume that we never replace an entire redo stack with a new one, so this will not create a stack overflow
+		redoState.set(newRedoState);
 }
 void PlayerState::undo(int ticksTime) {
 	if (hasAnimation() || undoState.get() == nullptr)
@@ -1259,20 +1260,27 @@ void PlayerState::undoMove(float fromX, float fromY, char fromHeight, bool isUnd
 	float currentX = x.get()->getValue(0);
 	float currentY = y.get()->getValue(0);
 	ReferenceCounterHolder<UndoState>* otherUndoState = isUndo ? &redoState : &undoState;
-	otherUndoState->set(newMoveUndoState(otherUndoState->get(), currentX, currentY, z));
+	SpriteAnimation* moveAnimation = SpriteRegistry::playerFastBootWalkingAnimation;
+	if (fromHeight == MapState::invalidHeight)
+		otherUndoState->set(newMoveUndoState(otherUndoState->get(), currentX, currentY));
+	else {
+		otherUndoState->set(newClimbFallUndoState(otherUndoState->get(), currentX, currentY, z));
+		moveAnimation = SpriteRegistry::playerBootLiftAnimation;
+		z = fromHeight;
+	}
 	float xDist = fromX - currentX;
 	float yDist = fromY - currentY;
-	int totalTicksDuration = (int)(sqrtf(xDist * xDist + yDist * yDist) / undoSpeedPerTick);
+	int totalTicksDuration =
+		MathUtils::max(minUndoTicksDuration, (int)(sqrtf(xDist * xDist + yDist * yDist) / undoSpeedPerTick));
 	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> undoAnimationComponents ({
 		newEntityAnimationSetVelocity(
 			newCompositeQuarticValue(currentX, xDist / totalTicksDuration, 0.0f, 0.0f, 0.0f),
 			newCompositeQuarticValue(currentY, yDist / totalTicksDuration, 0.0f, 0.0f, 0.0f)),
-		newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerFastBootWalkingAnimation),
+		newEntityAnimationSetSpriteAnimation(moveAnimation),
 		newEntityAnimationDelay(totalTicksDuration),
 		newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f)),
 	});
 	beginEntityAnimation(&undoAnimationComponents, ticksTime);
-	z = fromHeight;
 }
 void PlayerState::render(EntityState* camera, int ticksTime) {
 	if (ghostSpriteX.get() != nullptr && ghostSpriteY.get() != nullptr) {

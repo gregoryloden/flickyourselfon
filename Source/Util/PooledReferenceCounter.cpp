@@ -86,6 +86,7 @@ template <class PooledObject> void ObjectPool<PooledObject>::clearPool() {
 }
 
 //many subclasses only need their own pool, they are not held as the subclass itself
+template class ObjectPool<ClimbFallUndoState>;
 template class ObjectPool<CompositeQuarticValue>;
 template class ObjectPool<ConstantValue>;
 template class ObjectPool<EntityAnimation::Delay>;
