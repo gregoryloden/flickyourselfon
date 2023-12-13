@@ -93,8 +93,8 @@ void PlayerState::copyPlayerState(PlayerState* other) {
 	finishedKickTutorial = other->finishedKickTutorial;
 	lastGoalX = other->lastGoalX;
 	lastGoalY = other->lastGoalY;
-	undoState.set(other->undoState.get());
-	setRedoState(other->redoState.get());
+	setUndoState(undoState, other->undoState.get());
+	setUndoState(redoState, other->redoState.get());
 }
 pooledReferenceCounterDefineRelease(PlayerState)
 float PlayerState::getWorldGroundY(int ticksTime) {
@@ -186,8 +186,8 @@ void PlayerState::updateWithPreviousPlayerState(PlayerState* prev, bool hasKeybo
 	finishedKickTutorial = prev->finishedKickTutorial;
 	lastGoalX = prev->lastGoalX;
 	lastGoalY = prev->lastGoalY;
-	undoState.set(prev->undoState.get());
-	setRedoState(prev->redoState.get());
+	setUndoState(undoState, prev->undoState.get());
+	setUndoState(redoState, prev->redoState.get());
 
 	//if we can control the player then that must mean the player has the boot
 	hasBoot = true;
@@ -236,7 +236,7 @@ void PlayerState::updatePositionWithPreviousPlayerState(PlayerState* prev, bool 
 
 	if ((xDirection | yDirection) != 0) {
 		finishedMoveTutorial = true;
-		setRedoState(nullptr);
+		setUndoState(redoState, nullptr);
 		if (undoState.get() == nullptr || undoState.get()->getTypeIdentifier() != MoveUndoState::classTypeIdentifier)
 			stackNewMoveUndoState(undoState, newX, newY);
 	}
@@ -1229,14 +1229,14 @@ void PlayerState::addKickResetSwitchComponents(
 					- SpriteRegistry::playerKickingAnimationTicksPerFrame)
 		});
 }
-void PlayerState::setRedoState(UndoState* newRedoState) {
-	if (newRedoState == nullptr) {
-		//instead of just setting redoState straight to nullptr, delete it state-by-state to avoid a stack overflow
-		while (redoState.get() != nullptr)
-			redoState.set(redoState.get()->next.get());
+void PlayerState::setUndoState(ReferenceCounterHolder<UndoState>& holder, UndoState* newUndoState) {
+	if (newUndoState == nullptr) {
+		//instead of just setting the state straight to nullptr, delete it state-by-state to avoid a stack overflow
+		while (holder.get() != nullptr)
+			holder.set(holder.get()->next.get());
 	} else
-		//we assume that we never replace an entire redo stack with a new one, so this will not create a stack overflow
-		redoState.set(newRedoState);
+		//we assume that we never replace an entire state stack with a new one, so this will not create a stack overflow
+		holder.set(newUndoState);
 }
 void PlayerState::undo(int ticksTime) {
 	if (hasAnimation() || undoState.get() == nullptr)
@@ -1402,6 +1402,8 @@ void PlayerState::reset() {
 	finishedKickTutorial = false;
 	lastGoalX = 0;
 	lastGoalY = 0;
+	setUndoState(undoState, nullptr);
+	setUndoState(redoState, nullptr);
 }
 void PlayerState::setHighestZ() {
 	z = MapState::highestFloorHeight;

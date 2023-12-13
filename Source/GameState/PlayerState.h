@@ -203,8 +203,8 @@ public:
 	//add the animation components for a reset switch kicking animation
 	static void addKickResetSwitchComponents(
 		short resetSwitchId, vector<ReferenceCounterHolder<EntityAnimationTypes::Component>>* components);
-	//set the redo state to the given state, with special handling if we're deleting the redo state
-	void setRedoState(UndoState* newRedoState);
+	//set the undo/redo state to the given state, with special handling if we're deleting it
+	void setUndoState(ReferenceCounterHolder<UndoState>& holder, UndoState* newUndoState);
 	//undo an action if there is one to undo
 	void undo(int ticksTime);
 	//redo an action if there is one to redo
