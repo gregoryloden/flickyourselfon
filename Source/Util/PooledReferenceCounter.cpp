@@ -47,9 +47,10 @@ template <class ReferenceCountedObject> void ReferenceCounterHolder<ReferenceCou
 {
 	if (pObject != nullptr)
 		pObject->retain();
-	if (object != nullptr)
-		object->release();
+	ReferenceCountedObject* oldObject = object;
 	object = pObject;
+	if (oldObject != nullptr)
+		oldObject->release();
 }
 template <class ReferenceCountedObject>
 ReferenceCounterHolder<ReferenceCountedObject>& ReferenceCounterHolder<ReferenceCountedObject>::operator =(
