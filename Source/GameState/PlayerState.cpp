@@ -236,7 +236,7 @@ void PlayerState::updatePositionWithPreviousPlayerState(PlayerState* prev, bool 
 		finishedMoveTutorial = true;
 		setRedoState(nullptr);
 		if (undoState.get() == nullptr || undoState.get()->getTypeIdentifier() != MoveUndoState::classTypeIdentifier)
-			undoState.set(newMoveUndoState(undoState.get(), newX, newY));
+			stackNewMoveUndoState(undoState, newX, newY);
 	}
 }
 void PlayerState::setXAndUpdateCollisionRect(DynamicValue* newX) {
@@ -911,8 +911,8 @@ void PlayerState::kickClimb(float currentX, float currentY, float targetX, float
 
 	//include an extra no-op so that after undoing the climb and moving, the player can undo straight to the climb location
 	if (undoState.get() == nullptr || undoState.get()->getTypeIdentifier() != NoOpUndoState::classTypeIdentifier)
-		undoState.set(newNoOpUndoState(undoState.get()));
-	undoState.set(newClimbFallUndoState(undoState.get(), currentX, currentY, z));
+		stackNewNoOpUndoState(undoState);
+	stackNewClimbFallUndoState(undoState, currentX, currentY, z);
 	beginEntityAnimation(&kickingAnimationComponents, ticksTime);
 	float currentWorldGroundY = getWorldGroundY(lastUpdateTicksTime);
 	//regardless of the movement direction, ground Y changes based on Y move distance
@@ -997,8 +997,8 @@ void PlayerState::kickFall(float currentX, float currentY, float targetX, float 
 
 	//include an extra no-op so that after undoing the fall and moving, the player can undo straight to the fall location
 	if (undoState.get() == nullptr || undoState.get()->getTypeIdentifier() != NoOpUndoState::classTypeIdentifier)
-		undoState.set(newNoOpUndoState(undoState.get()));
-	undoState.set(newClimbFallUndoState(undoState.get(), currentX, currentY, z));
+		stackNewNoOpUndoState(undoState);
+	stackNewClimbFallUndoState(undoState, currentX, currentY, z);
 	beginEntityAnimation(&kickingAnimationComponents, ticksTime);
 	float currentWorldGroundY = getWorldGroundY(lastUpdateTicksTime);
 	//regardless of the movement direction, ground Y changes based on Y move distance
@@ -1259,20 +1259,20 @@ void PlayerState::redo(int ticksTime) {
 	} while (!doneProcessing && redoState.get() != nullptr);
 }
 void PlayerState::undoNoOp(bool isUndo) {
-	ReferenceCounterHolder<UndoState>* otherUndoState = isUndo ? &redoState : &undoState;
-	otherUndoState->set(newNoOpUndoState(otherUndoState->get()));
+	ReferenceCounterHolder<UndoState>& otherUndoState = isUndo ? redoState : undoState;
+	stackNewNoOpUndoState(otherUndoState);
 }
 bool PlayerState::undoMove(float fromX, float fromY, char fromHeight, bool isUndo, int ticksTime) {
 	float currentX = x.get()->getValue(0);
 	float currentY = y.get()->getValue(0);
-	ReferenceCounterHolder<UndoState>* otherUndoState = isUndo ? &redoState : &undoState;
+	ReferenceCounterHolder<UndoState>& otherUndoState = isUndo ? redoState : undoState;
 	SpriteAnimation* moveAnimation = SpriteRegistry::playerFastBootWalkingAnimation;
 	if (fromHeight == MapState::invalidHeight) {
-		otherUndoState->set(newMoveUndoState(otherUndoState->get(), currentX, currentY));
+		stackNewMoveUndoState(otherUndoState, currentX, currentY);
 		if (currentX == fromX && currentY == fromY)
 			return false;
 	} else {
-		otherUndoState->set(newClimbFallUndoState(otherUndoState->get(), currentX, currentY, z));
+		stackNewClimbFallUndoState(otherUndoState, currentX, currentY, z);
 		moveAnimation = SpriteRegistry::playerBootLiftAnimation;
 		z = fromHeight;
 	}

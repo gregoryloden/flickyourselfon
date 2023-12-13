@@ -1,9 +1,9 @@
 #include "Util/PooledReferenceCounter.h"
 
-#define newNoOpUndoState(next) produceWithArgs(NoOpUndoState, next)
-#define newMoveUndoState(next, fromX, fromY) produceWithArgs(MoveUndoState, next, fromX, fromY)
-#define newClimbFallUndoState(next, fromX, fromY, fromHeight) \
-	produceWithArgs(ClimbFallUndoState, next, fromX, fromY, fromHeight)
+#define stackNewNoOpUndoState(stack) stack.set(produceWithArgs(NoOpUndoState, stack.get()))
+#define stackNewMoveUndoState(stack, fromX, fromY) stack.set(produceWithArgs(MoveUndoState, stack.get(), fromX, fromY))
+#define stackNewClimbFallUndoState(stack, fromX, fromY, fromHeight) \
+	stack.set(produceWithArgs(ClimbFallUndoState, stack.get(), fromX, fromY, fromHeight))
 
 class PlayerState;
 
