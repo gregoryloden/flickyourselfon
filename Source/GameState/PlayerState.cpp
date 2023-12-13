@@ -818,8 +818,6 @@ void PlayerState::beginKicking(int ticksTime) {
 		return;
 
 	finishedKickTutorial = true;
-	renderInterpolatedX = true;
-	renderInterpolatedY = true;
 
 	//kicking doesn't do anything if you don't have the boot or if there is no available kick action
 	KickAction* kickAction = availableKickAction.get();
@@ -1285,8 +1283,8 @@ bool PlayerState::undoMove(float fromX, float fromY, char fromHeight, bool isUnd
 	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> undoAnimationComponents ({
 		newEntityAnimationSetGhostSprite(true, fromX, fromY),
 		newEntityAnimationSetVelocity(
-			newCompositeQuarticValue(currentX, xDist / totalTicksDuration, 0.0f, 0.0f, 0.0f),
-			newCompositeQuarticValue(currentY, yDist / totalTicksDuration, 0.0f, 0.0f, 0.0f)),
+			newCompositeQuarticValue(0.0f, xDist / totalTicksDuration, 0.0f, 0.0f, 0.0f),
+			newCompositeQuarticValue(0.0f, yDist / totalTicksDuration, 0.0f, 0.0f, 0.0f)),
 		newEntityAnimationSetSpriteAnimation(moveAnimation),
 		newEntityAnimationSetDirection(isUndo ? getSpriteDirection(-xDist, -yDist) : getSpriteDirection(xDist, yDist)),
 		newEntityAnimationDelay(totalTicksDuration),

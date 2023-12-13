@@ -78,6 +78,8 @@ void EntityState::beginEntityAnimation(
 	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>>* components, int ticksTime)
 {
 	entityAnimation.set(newEntityAnimation(ticksTime, components));
+	renderInterpolatedX = true;
+	renderInterpolatedY = true;
 	//update it once to get it started
 	entityAnimation.get()->update(this, ticksTime);
 }
