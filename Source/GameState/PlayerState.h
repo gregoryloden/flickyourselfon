@@ -210,7 +210,8 @@ public:
 	//redo an action if there is one to redo
 	void redo(int ticksTime);
 	//move the player to the given location, and place an undo state in the list opposite the one that this one came from
-	void undoMove(float fromX, float fromY, char fromHeight, bool isUndo, int ticksTime);
+	//returns whether a move was scheduled or not
+	bool undoMove(float fromX, float fromY, char fromHeight, bool isUndo, int ticksTime);
 	//render this player state, which was deemed to be the last state to need rendering
 	void render(EntityState* camera, int ticksTime);
 	//render the kick action for this player state if one is available

@@ -1234,19 +1234,27 @@ void PlayerState::undo(int ticksTime) {
 	if (hasAnimation() || undoState.get() == nullptr)
 		return;
 	availableKickAction.set(nullptr);
-	undoState.get()->handle(this, true, ticksTime);
-	undoState.set(undoState.get()->next.get());
+	bool doneProcessing;
+	do {
+		doneProcessing = undoState.get()->handle(this, true, ticksTime);
+		undoState.set(undoState.get()->next.get());
+	} while (!doneProcessing && undoState.get() != nullptr);
 }
 void PlayerState::redo(int ticksTime) {
 	if (hasAnimation() || redoState.get() == nullptr)
 		return;
 	availableKickAction.set(nullptr);
-	redoState.get()->handle(this, false, ticksTime);
-	redoState.set(redoState.get()->next.get());
+	bool doneProcessing;
+	do {
+		doneProcessing = redoState.get()->handle(this, true, ticksTime);
+		redoState.set(redoState.get()->next.get());
+	} while (!doneProcessing && redoState.get() != nullptr);
 }
-void PlayerState::undoMove(float fromX, float fromY, char fromHeight, bool isUndo, int ticksTime) {
+bool PlayerState::undoMove(float fromX, float fromY, char fromHeight, bool isUndo, int ticksTime) {
 	float currentX = x.get()->getValue(0);
 	float currentY = y.get()->getValue(0);
+	if (currentX == fromX && currentY == fromY)
+		return false;
 	ReferenceCounterHolder<UndoState>* otherUndoState = isUndo ? &redoState : &undoState;
 	SpriteAnimation* moveAnimation = SpriteRegistry::playerFastBootWalkingAnimation;
 	if (fromHeight == MapState::invalidHeight)
@@ -1269,6 +1277,7 @@ void PlayerState::undoMove(float fromX, float fromY, char fromHeight, bool isUnd
 		newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f)),
 	});
 	beginEntityAnimation(&undoAnimationComponents, ticksTime);
+	return true;
 }
 void PlayerState::render(EntityState* camera, int ticksTime) {
 	if (ghostSpriteX.get() != nullptr && ghostSpriteY.get() != nullptr) {

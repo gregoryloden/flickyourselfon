@@ -22,7 +22,8 @@ public:
 	//get the type identifier for the implementing subclass
 	virtual int getTypeIdentifier() = 0;
 	//apply the effect of this state as an undo or a redo
-	virtual void handle(PlayerState* playerState, bool isUndo, int ticksTime) = 0;
+	//returns false if we should process the next UndoState after this one, or true if we're done
+	virtual bool handle(PlayerState* playerState, bool isUndo, int ticksTime) = 0;
 };
 class MoveUndoState: public UndoState {
 public:
@@ -42,7 +43,7 @@ public:
 	//release a reference to this MoveUndoState and return it to the pool if applicable
 	virtual void release();
 	//move the player to the stored position
-	virtual void handle(PlayerState* playerState, bool isUndo, int ticksTime);
+	virtual bool handle(PlayerState* playerState, bool isUndo, int ticksTime);
 };
 class ClimbFallUndoState: public UndoState {
 public:
@@ -64,5 +65,5 @@ public:
 	//release a reference to this ClimbFallUndoState and return it to the pool if applicable
 	virtual void release();
 	//move the player to the stored position and height
-	virtual void handle(PlayerState* playerState, bool isUndo, int ticksTime);
+	virtual bool handle(PlayerState* playerState, bool isUndo, int ticksTime);
 };

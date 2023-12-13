@@ -32,8 +32,8 @@ MoveUndoState* MoveUndoState::produce(objCounterParametersComma() UndoState* pNe
 	return m;
 }
 pooledReferenceCounterDefineRelease(MoveUndoState)
-void MoveUndoState::handle(PlayerState* playerState, bool isUndo, int ticksTime) {
-	playerState->undoMove(fromX, fromY, MapState::invalidHeight, isUndo, ticksTime);
+bool MoveUndoState::handle(PlayerState* playerState, bool isUndo, int ticksTime) {
+	return playerState->undoMove(fromX, fromY, MapState::invalidHeight, isUndo, ticksTime);
 }
 
 //////////////////////////////// ClimbFallUndoState ////////////////////////////////
@@ -56,6 +56,6 @@ ClimbFallUndoState* ClimbFallUndoState::produce(
 	return c;
 }
 pooledReferenceCounterDefineRelease(ClimbFallUndoState)
-void ClimbFallUndoState::handle(PlayerState* playerState, bool isUndo, int ticksTime) {
-	playerState->undoMove(fromX, fromY, fromHeight, isUndo, ticksTime);
+bool ClimbFallUndoState::handle(PlayerState* playerState, bool isUndo, int ticksTime) {
+	return playerState->undoMove(fromX, fromY, fromHeight, isUndo, ticksTime);
 }
