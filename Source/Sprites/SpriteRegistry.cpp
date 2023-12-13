@@ -43,7 +43,7 @@ void SpriteRegistry::loadAll() {
 	railWaves->setBottomAnchorY();
 	switchWaves = newSpriteSheetWithImagePath(switchWavesFileName, 4, 1, true);
 	resetSwitch = newSpriteSheetWithImagePath(resetSwitchFileName, 2, 1, true);
-	kickIndicator = newSpriteSheetWithImagePath(kickIndicatorFileName, 11, 1, true);
+	kickIndicator = newSpriteSheetWithImagePath(kickIndicatorFileName, 13, 1, true);
 	sparks = newSpriteSheetWithImagePath(sparksFileName, 6, 4, true);
 	borderArrows = newSpriteSheetWithImagePath(borderArrowsFileName, 3, 3, false);
 	playerWalkingAnimation = newSpriteAnimation(

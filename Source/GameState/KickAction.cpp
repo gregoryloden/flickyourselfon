@@ -54,6 +54,10 @@ void KickAction::render(float centerX, float bottomY, bool hasRailsToReset) {
 		case KickActionType::Sine:
 			showKickIndicator = Config::switchKickIndicator.isOn();
 			break;
+		case KickActionType::Undo:
+		case KickActionType::Redo:
+			showKickIndicator = true;
+			break;
 		case KickActionType::ResetSwitch: {
 			if (!Config::resetSwitchKickIndicator.isOn())
 				return;

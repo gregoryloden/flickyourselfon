@@ -20,7 +20,9 @@ enum class KickActionType: int {
 	Saw = 9,
 	//radio tower sine switch
 	Sine = 10,
-	ResetSwitch = 11,
+	Undo = 11,
+	Redo = 12,
+	ResetSwitch = 100,
 };
 class KickAction: public PooledReferenceCounter {
 private:

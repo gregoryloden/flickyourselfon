@@ -1233,7 +1233,8 @@ void PlayerState::setRedoState(UndoState* newRedoState) {
 void PlayerState::undo(int ticksTime) {
 	if (hasAnimation() || undoState.get() == nullptr)
 		return;
-	availableKickAction.set(nullptr);
+	availableKickAction.set(
+		newKickAction(KickActionType::Undo, -1, -1, MapState::invalidHeight, MapState::absentRailSwitchId, -1));
 	bool doneProcessing;
 	do {
 		doneProcessing = undoState.get()->handle(this, true, ticksTime);
@@ -1243,7 +1244,8 @@ void PlayerState::undo(int ticksTime) {
 void PlayerState::redo(int ticksTime) {
 	if (hasAnimation() || redoState.get() == nullptr)
 		return;
-	availableKickAction.set(nullptr);
+	availableKickAction.set(
+		newKickAction(KickActionType::Redo, -1, -1, MapState::invalidHeight, MapState::absentRailSwitchId, -1));
 	bool doneProcessing;
 	do {
 		doneProcessing = redoState.get()->handle(this, false, ticksTime);
