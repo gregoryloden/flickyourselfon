@@ -693,14 +693,14 @@ bool PlayerState::checkCanMoveToPosition(
 			do {
 				lowMapX++;
 			} while (MapState::verticalTilesHeight(lowMapX, lowMapY, highMapY) != targetHeight);
-			highMapX = lowMapX + (int)(playerWidth + smallDistance) / MapState::tileSize;
+			highMapX = lowMapX + (int)(boundingBoxWidth + smallDistance) / MapState::tileSize;
 			*outActualXPosition = lowMapX * MapState::tileSize - boundingBoxLeftOffset + smallDistance;
 		//the left edge is valid which means the right edge isn't valid, move it left
 		} else {
 			do {
 				highMapX--;
 			} while (MapState::verticalTilesHeight(highMapX, lowMapY, highMapY) != targetHeight);
-			lowMapX = highMapX - (int)(playerWidth + smallDistance) / MapState::tileSize;
+			lowMapX = highMapX - (int)(boundingBoxWidth + smallDistance) / MapState::tileSize;
 			*outActualXPosition = (highMapX + 1) * MapState::tileSize - boundingBoxRightOffset - smallDistance;
 		}
 	} else {
@@ -715,14 +715,14 @@ bool PlayerState::checkCanMoveToPosition(
 			do {
 				lowMapY++;
 			} while (MapState::horizontalTilesHeight(lowMapX, highMapX, lowMapY) != targetHeight);
-			highMapY = lowMapY + (int)(playerHeight + smallDistance) / MapState::tileSize;
+			highMapY = lowMapY + (int)(boundingBoxHeight + smallDistance) / MapState::tileSize;
 			*outActualYPosition = lowMapY * MapState::tileSize - boundingBoxTopOffset + smallDistance;
 		//the top edge is valid which means the bottom edge isn't valid, move it up
 		} else {
 			do {
 				highMapY--;
 			} while (MapState::horizontalTilesHeight(lowMapX, highMapX, highMapY) != targetHeight);
-			lowMapY = highMapY - (int)(playerHeight + smallDistance) / MapState::tileSize;
+			lowMapY = highMapY - (int)(boundingBoxHeight + smallDistance) / MapState::tileSize;
 			*outActualYPosition = (highMapY + 1) * MapState::tileSize - boundingBoxBottomOffset - smallDistance;
 		}
 	}
@@ -1013,7 +1013,7 @@ void PlayerState::kickRail(short railId, float xPosition, float yPosition, int t
 	addRailRideComponents(railId, &ridingRailAnimationComponents, xPosition, yPosition, nullptr, nullptr);
 	beginEntityAnimation(&ridingRailAnimationComponents, ticksTime);
 	//the player is visually moved up to simulate a half-height raise on the rail, but the world ground y needs to stay the same
-	worldGroundYOffset = MapState::halfTileSize + playerHeight / 2;
+	worldGroundYOffset = MapState::halfTileSize + boundingBoxHeight / 2;
 }
 void PlayerState::addRailRideComponents(
 	short railId,

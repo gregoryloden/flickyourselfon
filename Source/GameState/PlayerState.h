@@ -17,13 +17,13 @@ private:
 	static constexpr float smallDistance = 1.0f / 256.0f;
 	static const int railToRailTicksDuration = 80;
 	static const int autoKickTriggerDelay = 400;
-	static constexpr float playerWidth = 11.0f;
-	static constexpr float playerHeight = 5.0f;
-	static constexpr float boundingBoxLeftOffset = playerWidth * -0.5f;
-	static constexpr float boundingBoxRightOffset = playerWidth * 0.5f;
+	static constexpr float boundingBoxWidth = 11.0f;
+	static constexpr float boundingBoxHeight = 5.0f;
+	static constexpr float boundingBoxLeftOffset = boundingBoxWidth * -0.5f;
+	static constexpr float boundingBoxRightOffset = boundingBoxWidth * 0.5f;
 	static constexpr float boundingBoxCenterYOffset = 7.0f;
-	static constexpr float boundingBoxTopOffset = boundingBoxCenterYOffset - playerHeight * 0.5f;
-	static constexpr float boundingBoxBottomOffset = boundingBoxCenterYOffset + playerHeight * 0.5f;
+	static constexpr float boundingBoxTopOffset = boundingBoxCenterYOffset - boundingBoxHeight * 0.5f;
+	static constexpr float boundingBoxBottomOffset = boundingBoxCenterYOffset + boundingBoxHeight * 0.5f;
 public:
 	static constexpr float introAnimationPlayerCenterX = 50.5f + (float)(MapState::firstLevelTileOffsetX * MapState::tileSize);
 	static constexpr float introAnimationPlayerCenterY = 106.5f + (float)(MapState::firstLevelTileOffsetY * MapState::tileSize);
