@@ -909,6 +909,9 @@ void PlayerState::kickClimb(float currentX, float currentY, float targetX, float
 		newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f)),
 	});
 
+	//include an extra no-op so that after undoing the climb and moving, the player can undo straight to the climb location
+	if (undoState.get() == nullptr || undoState.get()->getTypeIdentifier() != NoOpUndoState::classTypeIdentifier)
+		undoState.set(newNoOpUndoState(undoState.get()));
 	undoState.set(newClimbFallUndoState(undoState.get(), currentX, currentY, z));
 	beginEntityAnimation(&kickingAnimationComponents, ticksTime);
 	float currentWorldGroundY = getWorldGroundY(lastUpdateTicksTime);
@@ -992,6 +995,9 @@ void PlayerState::kickFall(float currentX, float currentY, float targetX, float 
 		newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f)),
 	});
 
+	//include an extra no-op so that after undoing the fall and moving, the player can undo straight to the fall location
+	if (undoState.get() == nullptr || undoState.get()->getTypeIdentifier() != NoOpUndoState::classTypeIdentifier)
+		undoState.set(newNoOpUndoState(undoState.get()));
 	undoState.set(newClimbFallUndoState(undoState.get(), currentX, currentY, z));
 	beginEntityAnimation(&kickingAnimationComponents, ticksTime);
 	float currentWorldGroundY = getWorldGroundY(lastUpdateTicksTime);
@@ -1251,6 +1257,10 @@ void PlayerState::redo(int ticksTime) {
 		doneProcessing = redoState.get()->handle(this, false, ticksTime);
 		redoState.set(redoState.get()->next.get());
 	} while (!doneProcessing && redoState.get() != nullptr);
+}
+void PlayerState::undoNoOp(bool isUndo) {
+	ReferenceCounterHolder<UndoState>* otherUndoState = isUndo ? &redoState : &undoState;
+	otherUndoState->set(newNoOpUndoState(otherUndoState->get()));
 }
 bool PlayerState::undoMove(float fromX, float fromY, char fromHeight, bool isUndo, int ticksTime) {
 	float currentX = x.get()->getValue(0);

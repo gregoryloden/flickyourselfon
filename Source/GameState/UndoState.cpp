@@ -16,6 +16,23 @@ int UndoState::getNextClassTypeIdentifier() {
 	return nextClassTypeIdentifier;
 }
 
+//////////////////////////////// NoOpUndoState ////////////////////////////////
+const int NoOpUndoState::classTypeIdentifier = UndoState::getNextClassTypeIdentifier();
+NoOpUndoState::NoOpUndoState(objCounterParameters())
+: UndoState(objCounterArguments()) {
+}
+NoOpUndoState::~NoOpUndoState() {}
+NoOpUndoState* NoOpUndoState::produce(objCounterParametersComma() UndoState* pNext) {
+	initializeWithNewFromPool(n, NoOpUndoState)
+	n->next.set(pNext);
+	return n;
+}
+pooledReferenceCounterDefineRelease(NoOpUndoState)
+bool NoOpUndoState::handle(PlayerState* playerState, bool isUndo, int ticksTime) {
+	playerState->undoNoOp(isUndo);
+	return false;
+}
+
 //////////////////////////////// MoveUndoState ////////////////////////////////
 const int MoveUndoState::classTypeIdentifier = UndoState::getNextClassTypeIdentifier();
 MoveUndoState::MoveUndoState(objCounterParameters())

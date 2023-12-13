@@ -102,6 +102,7 @@ template class ObjectPool<EntityAnimation::SpawnParticle>;
 template class ObjectPool<EntityAnimation::SwitchToPlayerCamera>;
 template class ObjectPool<LinearInterpolatedValue>;
 template class ObjectPool<MoveUndoState>;
+template class ObjectPool<NoOpUndoState>;
 //superclasses only need holders, the classes themselves are not allocated
 template class ReferenceCounterHolder<DynamicValue>;
 template class ReferenceCounterHolder<EntityAnimationTypes::Component>;

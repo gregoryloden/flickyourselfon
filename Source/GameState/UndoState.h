@@ -1,5 +1,6 @@
 #include "Util/PooledReferenceCounter.h"
 
+#define newNoOpUndoState(next) produceWithArgs(NoOpUndoState, next)
 #define newMoveUndoState(next, fromX, fromY) produceWithArgs(MoveUndoState, next, fromX, fromY)
 #define newClimbFallUndoState(next, fromX, fromY, fromHeight) \
 	produceWithArgs(ClimbFallUndoState, next, fromX, fromY, fromHeight)
@@ -24,6 +25,21 @@ public:
 	//apply the effect of this state as an undo or a redo
 	//returns false if we should process the next UndoState after this one, or true if we're done
 	virtual bool handle(PlayerState* playerState, bool isUndo, int ticksTime) = 0;
+};
+class NoOpUndoState: public UndoState {
+public:
+	static const int classTypeIdentifier;
+
+	NoOpUndoState(objCounterParameters());
+	virtual ~NoOpUndoState();
+
+	int getTypeIdentifier() { return classTypeIdentifier; }
+	//initialize and return a NoOpUndoState
+	static NoOpUndoState* produce(objCounterParametersComma() UndoState* pNext);
+	//release a reference to this NoOpUndoState and return it to the pool if applicable
+	virtual void release();
+	//do nothing, but have the PlayerState queue a state in the appropriate other undo state stack
+	virtual bool handle(PlayerState* playerState, bool isUndo, int ticksTime);
 };
 class MoveUndoState: public UndoState {
 public:

@@ -167,6 +167,7 @@ int gameMain(int argc, char* argv[]) {
 		ObjectPool<EntityAnimation::SpawnParticle>::clearPool();
 		ObjectPool<CollisionRect>::clearPool();
 		ObjectPool<KickAction>::clearPool();
+		ObjectPool<NoOpUndoState>::clearPool();
 		ObjectPool<MoveUndoState>::clearPool();
 		ObjectPool<ClimbFallUndoState>::clearPool();
 		ObjCounter::end();

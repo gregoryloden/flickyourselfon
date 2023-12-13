@@ -209,6 +209,8 @@ public:
 	void undo(int ticksTime);
 	//redo an action if there is one to redo
 	void redo(int ticksTime);
+	//don't do anything, but queue a NoOpUndoState in the other undo state stack
+	void undoNoOp(bool isUndo);
 	//move the player to the given location, and place an undo state in the list opposite the one that this one came from
 	//returns whether a move was scheduled or not
 	bool undoMove(float fromX, float fromY, char fromHeight, bool isUndo, int ticksTime);
