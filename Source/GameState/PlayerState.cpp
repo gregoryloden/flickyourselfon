@@ -1275,6 +1275,7 @@ bool PlayerState::undoMove(float fromX, float fromY, char fromHeight, bool isUnd
 			newCompositeQuarticValue(currentX, xDist / totalTicksDuration, 0.0f, 0.0f, 0.0f),
 			newCompositeQuarticValue(currentY, yDist / totalTicksDuration, 0.0f, 0.0f, 0.0f)),
 		newEntityAnimationSetSpriteAnimation(moveAnimation),
+		newEntityAnimationSetDirection(isUndo ? getSpriteDirection(-xDist, -yDist) : getSpriteDirection(xDist, yDist)),
 		newEntityAnimationDelay(totalTicksDuration),
 		newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f)),
 	});
