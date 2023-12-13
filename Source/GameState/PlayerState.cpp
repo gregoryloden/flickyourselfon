@@ -1246,7 +1246,7 @@ void PlayerState::redo(int ticksTime) {
 	availableKickAction.set(nullptr);
 	bool doneProcessing;
 	do {
-		doneProcessing = redoState.get()->handle(this, true, ticksTime);
+		doneProcessing = redoState.get()->handle(this, false, ticksTime);
 		redoState.set(redoState.get()->next.get());
 	} while (!doneProcessing && redoState.get() != nullptr);
 }
