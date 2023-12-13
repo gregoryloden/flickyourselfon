@@ -1255,13 +1255,13 @@ void PlayerState::redo(int ticksTime) {
 bool PlayerState::undoMove(float fromX, float fromY, char fromHeight, bool isUndo, int ticksTime) {
 	float currentX = x.get()->getValue(0);
 	float currentY = y.get()->getValue(0);
-	if (currentX == fromX && currentY == fromY)
-		return false;
 	ReferenceCounterHolder<UndoState>* otherUndoState = isUndo ? &redoState : &undoState;
 	SpriteAnimation* moveAnimation = SpriteRegistry::playerFastBootWalkingAnimation;
-	if (fromHeight == MapState::invalidHeight)
+	if (fromHeight == MapState::invalidHeight) {
 		otherUndoState->set(newMoveUndoState(otherUndoState->get(), currentX, currentY));
-	else {
+		if (currentX == fromX && currentY == fromY)
+			return false;
+	} else {
 		otherUndoState->set(newClimbFallUndoState(otherUndoState->get(), currentX, currentY, z));
 		moveAnimation = SpriteRegistry::playerBootLiftAnimation;
 		z = fromHeight;
