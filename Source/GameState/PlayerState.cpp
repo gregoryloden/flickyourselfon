@@ -1396,6 +1396,8 @@ void PlayerState::reset() {
 	availableKickAction.set(nullptr);
 	z = 0;
 	hasBoot = false;
+	ghostSpriteX.set(nullptr);
+	ghostSpriteY.set(nullptr);
 	autoKickStartTicksTime = -1;
 	canImmediatelyAutoKick = false;
 	finishedMoveTutorial = false;
