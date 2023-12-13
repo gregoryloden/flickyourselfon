@@ -178,6 +178,8 @@ void PlayerState::updateWithPreviousPlayerState(PlayerState* prev, bool hasKeybo
 	//if the previous play state had an animation, we copied it already so clear it
 	//if not, we might have a leftover entity animation from a previous state
 	entityAnimation.set(nullptr);
+	ghostSpriteX.set(prev->ghostSpriteX.get());
+	ghostSpriteY.set(prev->ghostSpriteY.get());
 	worldGroundY.set(nullptr);
 	worldGroundYOffset = 0.0f;
 	finishedMoveTutorial = prev->finishedMoveTutorial;
@@ -1281,12 +1283,14 @@ bool PlayerState::undoMove(float fromX, float fromY, char fromHeight, bool isUnd
 	int totalTicksDuration =
 		MathUtils::max(minUndoTicksDuration, (int)(sqrtf(xDist * xDist + yDist * yDist) / undoSpeedPerTick));
 	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> undoAnimationComponents ({
+		newEntityAnimationSetGhostSprite(true, fromX, fromY),
 		newEntityAnimationSetVelocity(
 			newCompositeQuarticValue(currentX, xDist / totalTicksDuration, 0.0f, 0.0f, 0.0f),
 			newCompositeQuarticValue(currentY, yDist / totalTicksDuration, 0.0f, 0.0f, 0.0f)),
 		newEntityAnimationSetSpriteAnimation(moveAnimation),
 		newEntityAnimationSetDirection(isUndo ? getSpriteDirection(-xDist, -yDist) : getSpriteDirection(xDist, yDist)),
 		newEntityAnimationDelay(totalTicksDuration),
+		newEntityAnimationSetGhostSprite(false, 0.0f, 0.0f),
 		newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f)),
 	});
 	beginEntityAnimation(&undoAnimationComponents, ticksTime);
@@ -1301,7 +1305,7 @@ void PlayerState::render(EntityState* camera, int ticksTime) {
 
 		glColor4f(1.0f, 1.0f, 1.0f, 0.5f);
 		SpriteRegistry::player->renderSpriteCenteredAtScreenPosition(
-			hasBoot ? 4 : 0, (int)(SpriteDirection::Down), ghostRenderCenterX, ghostRenderCenterY);
+			hasBoot ? 4 : 0, (int)spriteDirection, ghostRenderCenterX, ghostRenderCenterY);
 		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 	}
 
