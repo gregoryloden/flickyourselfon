@@ -593,7 +593,8 @@ void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int 
 	float radioWavesR = (radioWavesColor == squareColor || radioWavesColor == sineColor) ? 1.0f : 0.0f;
 	float radioWavesG = (radioWavesColor == sawColor || radioWavesColor == sineColor) ? 1.0f : 0.0f;
 	float radioWavesB = (radioWavesColor == triangleColor || radioWavesColor == sineColor) ? 1.0f : 0.0f;
-	glColor4f(radioWavesR, radioWavesG, radioWavesB, 1.0f);
+	if (radioWavesColor != -1)
+		glColor4f(radioWavesR, radioWavesG, radioWavesB, 1.0f);
 	for (ReferenceCounterHolder<Particle>& particle : particles) {
 		if (particle.get()->getIsAbovePlayer())
 			particle.get()->render(camera, ticksTime);
