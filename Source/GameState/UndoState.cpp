@@ -76,3 +76,21 @@ pooledReferenceCounterDefineRelease(ClimbFallUndoState)
 bool ClimbFallUndoState::handle(PlayerState* playerState, bool isUndo, int ticksTime) {
 	return playerState->undoMove(fromX, fromY, fromHeight, isUndo, ticksTime);
 }
+
+//////////////////////////////// RideRailUndoState ////////////////////////////////
+const int RideRailUndoState::classTypeIdentifier = UndoState::getNextClassTypeIdentifier();
+RideRailUndoState::RideRailUndoState(objCounterParameters())
+: UndoState(objCounterArguments()) {
+}
+RideRailUndoState::~RideRailUndoState() {}
+RideRailUndoState* RideRailUndoState::produce(objCounterParametersComma() UndoState* pNext, short pRailId) {
+	initializeWithNewFromPool(r, RideRailUndoState)
+	r->next.set(pNext);
+	r->railId = pRailId;
+	return r;
+}
+pooledReferenceCounterDefineRelease(RideRailUndoState)
+bool RideRailUndoState::handle(PlayerState* playerState, bool isUndo, int ticksTime) {
+	playerState->undoRideRail(railId, isUndo, ticksTime);
+	return true;
+}

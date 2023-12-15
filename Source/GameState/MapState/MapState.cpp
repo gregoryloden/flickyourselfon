@@ -505,7 +505,9 @@ void MapState::toggleShowConnections() {
 		finishedConnectionsTutorial = true;
 	}
 }
-void MapState::render(EntityState* camera, float playerWorldGroundY, bool showConnections, int ticksTime) {
+void MapState::renderBelowPlayer(
+	EntityState* camera, float playerWorldGroundY, char playerZ, bool showConnections, int ticksTime)
+{
 	glDisable(GL_BLEND);
 	//render the map
 	//these values are just right so that every tile rendered is at least partially in the window and no tiles are left out
@@ -539,8 +541,12 @@ void MapState::render(EntityState* camera, float playerWorldGroundY, bool showCo
 	//draw rail shadows, rails (that are below the player), and switches
 	for (RailState* railState : railStates)
 		railState->getRail()->renderShadow(screenLeftWorldX, screenTopWorldY);
-	for (RailState* railState : railStates)
-		railState->renderBelowPlayer(screenLeftWorldX, screenTopWorldY, playerWorldGroundY);
+	for (RailState* railState : railStates) {
+		//guarantee that the rail renders behind the player if it has a lower height than the player
+		float effectivePlayerWorldGroundY =
+			railState->getRail()->getBaseHeight() <= playerZ ? playerWorldGroundY + height : playerWorldGroundY;
+		railState->renderBelowPlayer(screenLeftWorldX, screenTopWorldY, effectivePlayerWorldGroundY);
+	}
 	for (SwitchState* switchState : switchStates)
 		switchState->render(
 			screenLeftWorldX,

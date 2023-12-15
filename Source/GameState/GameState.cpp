@@ -295,8 +295,8 @@ void GameState::render(int ticksTime) {
 	Editor::EditingMutexLocker editingMutexLocker;
 	int gameTicksTime = (pauseState.get() != nullptr ? pauseStartTicksTime : ticksTime) - gameTimeOffsetTicksDuration;
 	bool showConnections = mapState.get()->getShowConnections(playerState.get()->showTutorialConnectionsForKickAction());
-	float playerWorldGroundY = playerState.get()->getWorldGroundY(gameTicksTime);
-	mapState.get()->render(camera, playerWorldGroundY, showConnections, gameTicksTime);
+	mapState.get()->renderBelowPlayer(
+		camera, playerState.get()->getWorldGroundY(gameTicksTime), playerState.get()->getZ(), showConnections, gameTicksTime);
 	playerState.get()->render(camera, gameTicksTime);
 	mapState.get()->renderAbovePlayer(camera, showConnections, gameTicksTime);
 	if (sawIntroAnimation && !camera->hasAnimation()) {
@@ -548,7 +548,7 @@ void GameState::loadCachedSavedState(int ticksTime) {
 				replayComponents.insert(
 					replayComponents.end(),
 					{
-						newEntityAnimationSetGhostSprite(false, 0.0f, 0.0f),
+						newEntityAnimationSetGhostSprite(false, 0.0f, 0.0f, SpriteDirection::Down),
 						newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f)),
 						newEntityAnimationSetSpriteAnimation(nullptr)
 					});
@@ -577,7 +577,7 @@ void GameState::loadCachedSavedState(int ticksTime) {
 				replayComponents.insert(
 					replayComponents.end(),
 					{
-						newEntityAnimationSetGhostSprite(false, 0.0f, 0.0f),
+						newEntityAnimationSetGhostSprite(false, 0.0f, 0.0f, SpriteDirection::Down),
 						newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f)),
 						newEntityAnimationSetSpriteAnimation(nullptr)
 					});
@@ -593,7 +593,7 @@ void GameState::loadCachedSavedState(int ticksTime) {
 				replayComponents.insert(
 					replayComponents.end(),
 					{
-						newEntityAnimationSetGhostSprite(false, 0.0f, 0.0f),
+						newEntityAnimationSetGhostSprite(false, 0.0f, 0.0f, SpriteDirection::Down),
 						newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f))
 					});
 				PlayerState::addRailRideComponents(
@@ -601,8 +601,10 @@ void GameState::loadCachedSavedState(int ticksTime) {
 					&replayComponents,
 					(float)startX,
 					(float)startY,
+					PlayerState::RideRailSpeed::Forward,
 					&lastX,
-					&lastY);
+					&lastY,
+					nullptr);
 				replayComponents.push_back(newEntityAnimationSetSpriteAnimation(nullptr));
 				lastTimestamp = EntityAnimation::getComponentTotalTicksDuration(replayComponents);
 			} else if (StringUtils::startsWith(logMessageString, "  switch ")) {
@@ -618,7 +620,7 @@ void GameState::loadCachedSavedState(int ticksTime) {
 				replayComponents.insert(
 					replayComponents.end(),
 					{
-						newEntityAnimationSetGhostSprite(false, 0.0f, 0.0f),
+						newEntityAnimationSetGhostSprite(false, 0.0f, 0.0f, SpriteDirection::Down),
 						newEntityAnimationSetDirection(SpriteDirection::Down)
 					});
 				PlayerState::addKickSwitchComponents(MapState::getIdFromSwitchIndex(switchIndex), &replayComponents, false);
@@ -639,7 +641,7 @@ void GameState::loadCachedSavedState(int ticksTime) {
 				replayComponents.insert(
 					replayComponents.end(),
 					{
-						newEntityAnimationSetGhostSprite(false, 0.0f, 0.0f),
+						newEntityAnimationSetGhostSprite(false, 0.0f, 0.0f, SpriteDirection::Down),
 						newEntityAnimationSetDirection(SpriteDirection::Down)
 					});
 				PlayerState::addKickResetSwitchComponents(
@@ -676,7 +678,7 @@ void GameState::loadCachedSavedState(int ticksTime) {
 		replayComponents->insert(
 			replayComponents->end(),
 			{
-				newEntityAnimationSetGhostSprite(true, endX, endY),
+				newEntityAnimationSetGhostSprite(true, endX, endY, spriteDirection),
 				newEntityAnimationSetVelocity(
 					newCompositeQuarticValue(0.0f, moveX, 0.0f, 0.0f, 0.0f),
 					newCompositeQuarticValue(0.0f, moveY, 0.0f, 0.0f, 0.0f)),

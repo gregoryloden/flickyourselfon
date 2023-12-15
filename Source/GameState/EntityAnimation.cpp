@@ -131,21 +131,23 @@ EntityAnimation::SetGhostSprite::SetGhostSprite(objCounterParameters())
 : Component(objCounterArguments())
 , show(true)
 , x(0.0f)
-, y(0.0f) {
+, y(0.0f)
+, direction(SpriteDirection::Down) {
 }
 EntityAnimation::SetGhostSprite::~SetGhostSprite() {}
 EntityAnimation::SetGhostSprite* EntityAnimation::SetGhostSprite::produce(
-	objCounterParametersComma() bool pShow, float pX, float pY)
+	objCounterParametersComma() bool pShow, float pX, float pY, SpriteDirection pDirection)
 {
 	initializeWithNewFromPool(s, EntityAnimation::SetGhostSprite)
 	s->show = pShow;
 	s->x = pX;
 	s->y = pY;
+	s->direction = pDirection;
 	return s;
 }
 pooledReferenceCounterDefineRelease(EntityAnimation::SetGhostSprite)
 bool EntityAnimation::SetGhostSprite::handle(EntityState* entityState, int ticksTime) {
-	entityState->setGhostSprite(show, x, y, ticksTime);
+	entityState->setGhostSprite(show, x, y, direction, ticksTime);
 	return true;
 }
 

@@ -6,7 +6,8 @@
 #define newEntityAnimationSetVelocity(vx, vy) produceWithArgs(EntityAnimation::SetVelocity, vx, vy)
 #define newEntityAnimationSetSpriteAnimation(animation) produceWithArgs(EntityAnimation::SetSpriteAnimation, animation)
 #define newEntityAnimationSetDirection(direction) produceWithArgs(EntityAnimation::SetDirection, direction)
-#define newEntityAnimationSetGhostSprite(show, x, y) produceWithArgs(EntityAnimation::SetGhostSprite, show, x, y)
+#define newEntityAnimationSetGhostSprite(show, x, y, direction) \
+	produceWithArgs(EntityAnimation::SetGhostSprite, show, x, y, direction)
 #define newEntityAnimationSetScreenOverlayColor(r, g, b, a) produceWithArgs(EntityAnimation::SetScreenOverlayColor, r, g, b, a)
 #define newEntityAnimationMapKickSwitch(switchId, allowRadioTowerAnimation) \
 	produceWithArgs(EntityAnimation::MapKickSwitch, switchId, allowRadioTowerAnimation)
@@ -126,13 +127,14 @@ public:
 		bool show;
 		float x;
 		float y;
+		SpriteDirection direction;
 
 	public:
 		SetGhostSprite(objCounterParameters());
 		virtual ~SetGhostSprite();
 
 		//initialize and return a SetGhostSprite
-		static SetGhostSprite* produce(objCounterParametersComma() bool pShow, float pX, float pY);
+		static SetGhostSprite* produce(objCounterParametersComma() bool pShow, float pX, float pY, SpriteDirection pDirection);
 		//release a reference to this SetGhostSprite and return it to the pool if applicable
 		virtual void release();
 		//return that the animation should continue updating after setting the ghost sprite on the entity state

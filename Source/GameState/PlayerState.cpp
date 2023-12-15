@@ -39,6 +39,7 @@ PlayerState::PlayerState(objCounterParameters())
 , hasBoot(false)
 , ghostSpriteX(nullptr)
 , ghostSpriteY(nullptr)
+, ghostSpriteDirection(SpriteDirection::Down)
 , ghostSpriteStartTicksTime(0)
 , mapState(nullptr)
 , availableKickAction(nullptr)
@@ -80,6 +81,7 @@ void PlayerState::copyPlayerState(PlayerState* other) {
 	hasBoot = other->hasBoot;
 	ghostSpriteX.set(other->ghostSpriteX.get());
 	ghostSpriteY.set(other->ghostSpriteY.get());
+	ghostSpriteDirection = other->ghostSpriteDirection;
 	ghostSpriteStartTicksTime = other->ghostSpriteStartTicksTime;
 	//don't copy map state, it was provided when this player state was produced
 	availableKickAction.set(other->availableKickAction.get());
@@ -115,10 +117,11 @@ void PlayerState::setSpriteAnimation(SpriteAnimation* pSpriteAnimation, int pSpr
 	spriteAnimation = pSpriteAnimation;
 	spriteAnimationStartTicksTime = pSpriteAnimationStartTicksTime;
 }
-void PlayerState::setGhostSprite(bool show, float x, float y, int ticksTime) {
+void PlayerState::setGhostSprite(bool show, float x, float y, SpriteDirection direction, int ticksTime) {
 	if (show) {
 		ghostSpriteX.set(newConstantValue(x));
 		ghostSpriteY.set(newConstantValue(y));
+		ghostSpriteDirection = direction;
 		ghostSpriteStartTicksTime = ticksTime;
 	} else {
 		ghostSpriteX.set(nullptr);
@@ -909,9 +912,7 @@ void PlayerState::kickClimb(float currentX, float currentY, float targetX, float
 		newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f)),
 	});
 
-	//include an extra no-op so that after undoing the climb and moving, the player can undo straight to the climb location
-	if (undoState.get() == nullptr || undoState.get()->getTypeIdentifier() != NoOpUndoState::classTypeIdentifier)
-		stackNewNoOpUndoState(undoState);
+	tryAddNoOpUndoState();
 	stackNewClimbFallUndoState(undoState, currentX, currentY, z);
 	beginEntityAnimation(&kickingAnimationComponents, ticksTime);
 	float currentWorldGroundY = getWorldGroundY(lastUpdateTicksTime);
@@ -995,9 +996,7 @@ void PlayerState::kickFall(float currentX, float currentY, float targetX, float 
 		newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f)),
 	});
 
-	//include an extra no-op so that after undoing the fall and moving, the player can undo straight to the fall location
-	if (undoState.get() == nullptr || undoState.get()->getTypeIdentifier() != NoOpUndoState::classTypeIdentifier)
-		stackNewNoOpUndoState(undoState);
+	tryAddNoOpUndoState();
 	stackNewClimbFallUndoState(undoState, currentX, currentY, z);
 	beginEntityAnimation(&kickingAnimationComponents, ticksTime);
 	float currentWorldGroundY = getWorldGroundY(lastUpdateTicksTime);
@@ -1010,7 +1009,10 @@ void PlayerState::kickFall(float currentX, float currentY, float targetX, float 
 void PlayerState::kickRail(short railId, float xPosition, float yPosition, int ticksTime) {
 	MapState::logRailRide(railId, (int)xPosition, (int)yPosition);
 	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> ridingRailAnimationComponents;
-	addRailRideComponents(railId, &ridingRailAnimationComponents, xPosition, yPosition, nullptr, nullptr);
+	addRailRideComponents(
+		railId, &ridingRailAnimationComponents, xPosition, yPosition, RideRailSpeed::Forward, nullptr, nullptr, nullptr);
+	tryAddNoOpUndoState();
+	stackNewRideRailUndoState(undoState, railId);
 	beginEntityAnimation(&ridingRailAnimationComponents, ticksTime);
 	//the player is visually moved up to simulate a half-height raise on the rail, but the world ground y needs to stay the same
 	worldGroundYOffset = MapState::halfTileSize + boundingBoxHeight / 2;
@@ -1020,8 +1022,10 @@ void PlayerState::addRailRideComponents(
 	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>>* components,
 	float xPosition,
 	float yPosition,
+	RideRailSpeed rideRailSpeed,
 	float* outFinalXPosition,
-	float* outFinalYPosition)
+	float* outFinalYPosition,
+	SpriteDirection* outFinalSpriteDirection)
 {
 	Rail* rail = MapState::getRailFromId(railId);
 	Rail::Segment* startSegment = rail->getSegment(0);
@@ -1045,9 +1049,14 @@ void PlayerState::addRailRideComponents(
 		segmentIndexIncrement = -1;
 	}
 
-	constexpr float bootLiftDuration = (float)SpriteRegistry::playerKickingAnimationTicksPerFrame;
-	constexpr float floatRailToRailTicksDuration = (float)railToRailTicksDuration;
-	constexpr float railToRailTicksDurationSquared = floatRailToRailTicksDuration * floatRailToRailTicksDuration;
+	int bootLiftDuration = rideRailSpeed == RideRailSpeed::Forward
+		? SpriteRegistry::playerKickingAnimationTicksPerFrame
+		: (int)(SpriteRegistry::playerKickingAnimationTicksPerFrame / 2.5f);
+	int railToRailTicksDuration =
+		rideRailSpeed == RideRailSpeed::Forward ? baseRailToRailTicksDuration : railToRailFastTicksDuration;
+	float floatRailToRailTicksDuration = (float)railToRailTicksDuration;
+	float railToRailTicksDurationSquared = floatRailToRailTicksDuration * floatRailToRailTicksDuration;
+	float bootXShift = rideRailSpeed == RideRailSpeed::FastBackward ? -0.5f : 0.5f;
 
 	components->push_back(newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerBootLiftAnimation));
 
@@ -1056,6 +1065,7 @@ void PlayerState::addRailRideComponents(
 	bool firstMove = true;
 	float targetXPosition = xPosition;
 	float targetYPosition = yPosition;
+	SpriteDirection nextSpriteDirection = SpriteDirection::Down;
 	while (nextSegmentIndex != lastSegmentIndex) {
 		float lastXPosition = targetXPosition;
 		float lastYPosition = targetYPosition;
@@ -1068,7 +1078,6 @@ void PlayerState::addRailRideComponents(
 		targetYPosition = currentSegment->tileCenterY() - boundingBoxBottomOffset;
 		bool fromSide = lastYPosition == targetYPosition;
 		bool toSide = false;
-		SpriteDirection nextSpriteDirection;
 		if (nextSegment->x < currentSegment->x) {
 			targetXPosition -= MapState::halfTileSize;
 			toSide = true;
@@ -1080,14 +1089,16 @@ void PlayerState::addRailRideComponents(
 		} else if (nextSegment->y < currentSegment->y) {
 			targetYPosition -= MapState::halfTileSize;
 			//the boot is on the right foot, move left so the boot is centered over the rail when we go up
-			targetXPosition -= 0.5f;
+			targetXPosition -= bootXShift;
 			nextSpriteDirection = SpriteDirection::Up;
 		} else {
 			targetYPosition += MapState::halfTileSize;
 			//the boot is on the right foot, move right so the boot is centered over the rail when we go down
-			targetXPosition += 0.5f;
+			targetXPosition += bootXShift;
 			nextSpriteDirection = SpriteDirection::Down;
 		}
+		if (rideRailSpeed == RideRailSpeed::FastBackward)
+			nextSpriteDirection = getOppositeDirection(nextSpriteDirection);
 
 		float xMoveDistance = targetXPosition - lastXPosition;
 		float yMoveDistance = targetYPosition - lastYPosition;
@@ -1099,7 +1110,7 @@ void PlayerState::addRailRideComponents(
 					newEntityAnimationSetVelocity(
 						newCompositeQuarticValue(0.0f, xMoveDistance / bootLiftDuration, 0.0f, 0.0f, 0.0f),
 						newCompositeQuarticValue(0.0f, yMoveDistance / bootLiftDuration, 0.0f, 0.0f, 0.0f)),
-					newEntityAnimationDelay(SpriteRegistry::playerKickingAnimationTicksPerFrame),
+					newEntityAnimationDelay(bootLiftDuration),
 					newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerRidingRailAnimation),
 					newEntityAnimationSetDirection(nextSpriteDirection)
 				});
@@ -1147,12 +1158,13 @@ void PlayerState::addRailRideComponents(
 					newEntityAnimationDelay(railToRailTicksDuration - halfRailToRailTicksDuration)
 				});
 		}
-		components->push_back(
-			newEntityAnimationSpawnParticle(
-				toSide ? targetXPosition : tileCenterX,
-				targetYPosition + boundingBoxBottomOffset + (nextSpriteDirection == SpriteDirection::Up ? -1 : 0),
-				rand() % 2 == 0 ? SpriteRegistry::sparksAnimationA : SpriteRegistry::sparksAnimationB,
-				nextSpriteDirection));
+		if (rideRailSpeed == RideRailSpeed::Forward)
+			components->push_back(
+				newEntityAnimationSpawnParticle(
+					toSide ? targetXPosition : tileCenterX,
+					targetYPosition + boundingBoxBottomOffset + (nextSpriteDirection == SpriteDirection::Up ? -1 : 0),
+					rand() % 2 == 0 ? SpriteRegistry::sparksAnimationA : SpriteRegistry::sparksAnimationB,
+					nextSpriteDirection));
 	}
 
 	//move to the last tile
@@ -1165,10 +1177,10 @@ void PlayerState::addRailRideComponents(
 		finalXPosition += MapState::halfTileSize - boundingBoxRightOffset - smallDistance;
 		finalYPosition += 2.0f;
 	} else if (finalYPosition == targetYPosition + MapState::halfTileSize) {
-		finalXPosition += 0.5f;
+		finalXPosition += bootXShift;
 		finalYPosition += 3.0f;
 	} else
-		finalXPosition -= 0.5f;
+		finalXPosition -= bootXShift;
 	components->insert(
 		components->end(),
 		{
@@ -1176,7 +1188,7 @@ void PlayerState::addRailRideComponents(
 				newCompositeQuarticValue(0.0f, (finalXPosition - targetXPosition) / bootLiftDuration, 0.0f, 0.0f, 0.0f),
 				newCompositeQuarticValue(0.0f, (finalYPosition - targetYPosition) / bootLiftDuration, 0.0f, 0.0f, 0.0f)),
 			newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerBootLiftAnimation),
-			newEntityAnimationDelay(SpriteRegistry::playerKickingAnimationTicksPerFrame),
+			newEntityAnimationDelay(bootLiftDuration),
 			newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f))
 		});
 
@@ -1184,6 +1196,8 @@ void PlayerState::addRailRideComponents(
 		*outFinalXPosition = finalXPosition;
 	if (outFinalYPosition != nullptr)
 		*outFinalYPosition = finalYPosition;
+	if (outFinalSpriteDirection != nullptr)
+		*outFinalSpriteDirection = nextSpriteDirection;
 }
 void PlayerState::kickSwitch(short switchId, int ticksTime) {
 	MapState::logSwitchKick(switchId);
@@ -1236,6 +1250,11 @@ void PlayerState::setUndoState(ReferenceCounterHolder<UndoState>& holder, UndoSt
 		//we assume that we never replace an entire state stack with a new one, so this will not create a stack overflow
 		holder.set(newUndoState);
 }
+void PlayerState::tryAddNoOpUndoState() {
+	//include an extra no-op so that after undoing an action and moving, the player can undo straight to the action's location
+	if (undoState.get() == nullptr || undoState.get()->getTypeIdentifier() != NoOpUndoState::classTypeIdentifier)
+		stackNewNoOpUndoState(undoState);
+}
 void PlayerState::undo(int ticksTime) {
 	if (hasAnimation() || undoState.get() == nullptr)
 		return;
@@ -1259,6 +1278,7 @@ void PlayerState::redo(int ticksTime) {
 	} while (!doneProcessing && redoState.get() != nullptr);
 }
 void PlayerState::undoNoOp(bool isUndo) {
+	//don't do anything, but maintain the state in the stacks
 	ReferenceCounterHolder<UndoState>& otherUndoState = isUndo ? redoState : undoState;
 	stackNewNoOpUndoState(otherUndoState);
 }
@@ -1280,19 +1300,42 @@ bool PlayerState::undoMove(float fromX, float fromY, char fromHeight, bool isUnd
 	float yDist = fromY - currentY;
 	int totalTicksDuration =
 		MathUtils::max(minUndoTicksDuration, (int)(sqrtf(xDist * xDist + yDist * yDist) / undoSpeedPerTick));
+	SpriteDirection undoSpriteDirection = isUndo ? getSpriteDirection(-xDist, -yDist) : getSpriteDirection(xDist, yDist);
 	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> undoAnimationComponents ({
-		newEntityAnimationSetGhostSprite(true, fromX, fromY),
+		newEntityAnimationSetGhostSprite(true, fromX, fromY, undoSpriteDirection),
 		newEntityAnimationSetVelocity(
 			newCompositeQuarticValue(0.0f, xDist / totalTicksDuration, 0.0f, 0.0f, 0.0f),
 			newCompositeQuarticValue(0.0f, yDist / totalTicksDuration, 0.0f, 0.0f, 0.0f)),
 		newEntityAnimationSetSpriteAnimation(moveAnimation),
-		newEntityAnimationSetDirection(isUndo ? getSpriteDirection(-xDist, -yDist) : getSpriteDirection(xDist, yDist)),
+		newEntityAnimationSetDirection(undoSpriteDirection),
 		newEntityAnimationDelay(totalTicksDuration),
-		newEntityAnimationSetGhostSprite(false, 0.0f, 0.0f),
+		newEntityAnimationSetGhostSprite(false, 0.0f, 0.0f, SpriteDirection::Down),
 		newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f)),
 	});
 	beginEntityAnimation(&undoAnimationComponents, ticksTime);
 	return true;
+}
+void PlayerState::undoRideRail(short railId, bool isUndo, int ticksTime) {
+	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> ridingRailAnimationComponents ({ nullptr });
+	float finalX;
+	float finalY;
+	SpriteDirection undoGhostSpriteDirection;
+	addRailRideComponents(
+		railId,
+		&ridingRailAnimationComponents,
+		x.get()->getValue(0),
+		y.get()->getValue(0),
+		isUndo ? RideRailSpeed::FastBackward : RideRailSpeed::FastForward,
+		&finalX,
+		&finalY,
+		&undoGhostSpriteDirection);
+	ridingRailAnimationComponents[0].set(newEntityAnimationSetGhostSprite(true, finalX, finalY, undoGhostSpriteDirection));
+	ridingRailAnimationComponents.push_back(newEntityAnimationSetGhostSprite(false, 0.0f, 0.0f, SpriteDirection::Down));
+	ReferenceCounterHolder<UndoState>& otherUndoState = isUndo ? redoState : undoState;
+	stackNewRideRailUndoState(otherUndoState, railId);
+	beginEntityAnimation(&ridingRailAnimationComponents, ticksTime);
+	//the player is visually moved up to simulate a half-height raise on the rail, but the world ground y needs to stay the same
+	worldGroundYOffset = MapState::halfTileSize + boundingBoxHeight / 2;
 }
 void PlayerState::render(EntityState* camera, int ticksTime) {
 	if (ghostSpriteX.get() != nullptr && ghostSpriteY.get() != nullptr) {
@@ -1303,7 +1346,7 @@ void PlayerState::render(EntityState* camera, int ticksTime) {
 
 		glColor4f(1.0f, 1.0f, 1.0f, 0.5f);
 		SpriteRegistry::player->renderSpriteCenteredAtScreenPosition(
-			hasBoot ? 4 : 0, (int)spriteDirection, ghostRenderCenterX, ghostRenderCenterY);
+			hasBoot ? 4 : 0, (int)ghostSpriteDirection, ghostRenderCenterX, ghostRenderCenterY);
 		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 	}
 

@@ -56,6 +56,14 @@ SpriteDirection EntityState::getSpriteDirection(float x, float y) {
 		? y >= 0 ? SpriteDirection::Down : SpriteDirection::Up
 		: x >= 0 ? SpriteDirection::Right : SpriteDirection::Left;
 }
+SpriteDirection EntityState::getOppositeDirection(SpriteDirection spriteDirection) {
+	switch (spriteDirection) {
+		case SpriteDirection::Right: return SpriteDirection::Left;
+		case SpriteDirection::Up: return SpriteDirection::Down;
+		case SpriteDirection::Left: return SpriteDirection::Right;
+		default: return SpriteDirection::Up;
+	}
+}
 void EntityState::setPosition(float pX, float pY, int pLastUpdateTicksTime) {
 	//get our original position
 	float originalXPosition = x.get()->getValue(0);

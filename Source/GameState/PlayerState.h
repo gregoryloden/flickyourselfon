@@ -13,9 +13,17 @@ namespace EntityAnimationTypes {
 }
 
 class PlayerState: public EntityState {
+public:
+	enum class RideRailSpeed: int {
+		Forward,
+		FastForward,
+		FastBackward,
+	};
+
 private:
 	static constexpr float smallDistance = 1.0f / 256.0f;
-	static const int railToRailTicksDuration = 80;
+	static const int baseRailToRailTicksDuration = 80;
+	static const int railToRailFastTicksDuration = (int)(baseRailToRailTicksDuration / 2.5f);
 	static const int autoKickTriggerDelay = 400;
 	static constexpr float boundingBoxWidth = 11.0f;
 	static constexpr float boundingBoxHeight = 5.0f;
@@ -58,6 +66,7 @@ private:
 	bool hasBoot;
 	ReferenceCounterHolder<DynamicValue> ghostSpriteX;
 	ReferenceCounterHolder<DynamicValue> ghostSpriteY;
+	SpriteDirection ghostSpriteDirection;
 	int ghostSpriteStartTicksTime;
 	ReferenceCounterHolder<MapState> mapState;
 	ReferenceCounterHolder<KickAction> availableKickAction;
@@ -78,6 +87,7 @@ public:
 	PlayerState(objCounterParameters());
 	virtual ~PlayerState();
 
+	char getZ() { return z; }
 	bool getFinishedMoveTutorial() { return finishedMoveTutorial; }
 	bool getFinishedKickTutorial() { return finishedKickTutorial; }
 	void obtainBoot() { hasBoot = true; }
@@ -97,7 +107,7 @@ public:
 	//set the animation to the given animation at the given time
 	virtual void setSpriteAnimation(SpriteAnimation* pSpriteAnimation, int pSpriteAnimationStartTicksTime);
 	//set the position of the ghost sprite, or clear it
-	virtual void setGhostSprite(bool show, float x, float y, int ticksTime);
+	virtual void setGhostSprite(bool show, float x, float y, SpriteDirection direction, int ticksTime);
 	//tell the map to kick a switch
 	virtual void mapKickSwitch(short switchId, bool allowRadioTowerAnimation, int ticksTime);
 	//tell the map to kick a reset switch
@@ -185,8 +195,10 @@ public:
 		vector<ReferenceCounterHolder<EntityAnimationTypes::Component>>* components,
 		float xPosition,
 		float yPosition,
+		RideRailSpeed rideRailSpeed,
 		float* outFinalXPosition,
-		float* outFinalYPosition);
+		float* outFinalYPosition,
+		SpriteDirection* outFinalSpriteDirection);
 private:
 	//begin a kicking animation and set the switch to flip
 	void kickSwitch(short switchId, int ticksTime);
@@ -205,6 +217,8 @@ public:
 		short resetSwitchId, vector<ReferenceCounterHolder<EntityAnimationTypes::Component>>* components);
 	//set the undo/redo state to the given state, with special handling if we're deleting it
 	void setUndoState(ReferenceCounterHolder<UndoState>& holder, UndoState* newUndoState);
+	//add a no-op undo state if there isn't one already
+	void tryAddNoOpUndoState();
 	//undo an action if there is one to undo
 	void undo(int ticksTime);
 	//redo an action if there is one to redo
@@ -214,6 +228,8 @@ public:
 	//move the player to the given location, and place an undo state in the list opposite the one that this one came from
 	//returns whether a move was scheduled or not
 	bool undoMove(float fromX, float fromY, char fromHeight, bool isUndo, int ticksTime);
+	//travel across this rail
+	void undoRideRail(short railId, bool isUndo, int ticksTime);
 	//render this player state, which was deemed to be the last state to need rendering
 	void render(EntityState* camera, int ticksTime);
 	//render the kick action for this player state if one is available
