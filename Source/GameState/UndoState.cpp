@@ -80,7 +80,8 @@ bool ClimbFallUndoState::handle(PlayerState* playerState, bool isUndo, int ticks
 //////////////////////////////// RideRailUndoState ////////////////////////////////
 const int RideRailUndoState::classTypeIdentifier = UndoState::getNextClassTypeIdentifier();
 RideRailUndoState::RideRailUndoState(objCounterParameters())
-: UndoState(objCounterArguments()) {
+: UndoState(objCounterArguments())
+, railId(0) {
 }
 RideRailUndoState::~RideRailUndoState() {}
 RideRailUndoState* RideRailUndoState::produce(objCounterParametersComma() UndoState* pNext, short pRailId) {
