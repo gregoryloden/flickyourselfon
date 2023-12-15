@@ -38,7 +38,7 @@ public:
 	//set the direction for this state's sprite, if it has one
 	virtual void setDirection(SpriteDirection pSpriteDirection) {}
 	//set the position of a ghost sprite that this entity state should render
-	virtual void setGhostSprite(bool show, float x, float y, SpriteDirection direction, int ticksTime) {}
+	virtual void setGhostSprite(bool show, float pX, float pY, SpriteDirection direction, int ticksTime) {}
 	//mark that the player camera should be used as the next camera
 	virtual void setShouldSwitchToPlayerCamera() {}
 	//set a dynamic color that should be used to render an overlay over the screen
@@ -68,7 +68,7 @@ public:
 	//get the duration of our entity animation, if we have one
 	int getAnimationTicksDuration();
 	//get a sprite direction based on movement velocity
-	static SpriteDirection getSpriteDirection(float x, float y);
+	static SpriteDirection getSpriteDirection(float pX, float pY);
 	//get a sprite direction in the opposite direction of the given sprite direction
 	static SpriteDirection getOppositeDirection(SpriteDirection spriteDirection);
 	//set the position to the given position at the given time, preserving the velocity

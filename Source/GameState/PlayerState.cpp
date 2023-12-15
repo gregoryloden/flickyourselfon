@@ -117,10 +117,10 @@ void PlayerState::setSpriteAnimation(SpriteAnimation* pSpriteAnimation, int pSpr
 	spriteAnimation = pSpriteAnimation;
 	spriteAnimationStartTicksTime = pSpriteAnimationStartTicksTime;
 }
-void PlayerState::setGhostSprite(bool show, float x, float y, SpriteDirection direction, int ticksTime) {
+void PlayerState::setGhostSprite(bool show, float pX, float pY, SpriteDirection direction, int ticksTime) {
 	if (show) {
-		ghostSpriteX.set(newConstantValue(x));
-		ghostSpriteY.set(newConstantValue(y));
+		ghostSpriteX.set(newConstantValue(pX));
+		ghostSpriteY.set(newConstantValue(pY));
 		ghostSpriteDirection = direction;
 		ghostSpriteStartTicksTime = ticksTime;
 	} else {

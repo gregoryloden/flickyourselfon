@@ -51,10 +51,10 @@ float EntityState::getRenderCenterScreenYFromWorldY(float worldY, EntityState* c
 int EntityState::getAnimationTicksDuration() {
 	return entityAnimation.get() != nullptr ? entityAnimation.get()->getTotalTicksDuration() : 0;
 }
-SpriteDirection EntityState::getSpriteDirection(float x, float y) {
-	return abs(y) >= abs(x)
-		? y >= 0 ? SpriteDirection::Down : SpriteDirection::Up
-		: x >= 0 ? SpriteDirection::Right : SpriteDirection::Left;
+SpriteDirection EntityState::getSpriteDirection(float pX, float pY) {
+	return abs(pY) >= abs(pX)
+		? pY >= 0 ? SpriteDirection::Down : SpriteDirection::Up
+		: pX >= 0 ? SpriteDirection::Right : SpriteDirection::Left;
 }
 SpriteDirection EntityState::getOppositeDirection(SpriteDirection spriteDirection) {
 	switch (spriteDirection) {

@@ -107,7 +107,7 @@ public:
 	//set the animation to the given animation at the given time
 	virtual void setSpriteAnimation(SpriteAnimation* pSpriteAnimation, int pSpriteAnimationStartTicksTime);
 	//set the position of the ghost sprite, or clear it
-	virtual void setGhostSprite(bool show, float x, float y, SpriteDirection direction, int ticksTime);
+	virtual void setGhostSprite(bool show, float pX, float pY, SpriteDirection direction, int ticksTime);
 	//tell the map to kick a switch
 	virtual void mapKickSwitch(short switchId, bool allowRadioTowerAnimation, int ticksTime);
 	//tell the map to kick a reset switch
