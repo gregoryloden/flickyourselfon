@@ -290,6 +290,7 @@ void GameState::startRadioTowerAnimation(int ticksTime) {
 				- remainingKickingAimationTicksDuration)
 	});
 	playerState.get()->beginEntityAnimation(&playerAnimationComponents, ticksTime);
+	playerState.get()->clearUndoRedoStates();
 }
 void GameState::render(int ticksTime) {
 	Editor::EditingMutexLocker editingMutexLocker;

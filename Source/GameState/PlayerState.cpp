@@ -1255,6 +1255,10 @@ void PlayerState::tryAddNoOpUndoState() {
 	if (undoState.get() == nullptr || undoState.get()->getTypeIdentifier() != NoOpUndoState::classTypeIdentifier)
 		stackNewNoOpUndoState(undoState);
 }
+void PlayerState::clearUndoRedoStates() {
+	setUndoState(undoState, nullptr);
+	setUndoState(redoState, nullptr);
+}
 void PlayerState::undo(int ticksTime) {
 	if (hasAnimation() || undoState.get() == nullptr)
 		return;
@@ -1445,8 +1449,7 @@ void PlayerState::reset() {
 	finishedKickTutorial = false;
 	lastGoalX = 0;
 	lastGoalY = 0;
-	setUndoState(undoState, nullptr);
-	setUndoState(redoState, nullptr);
+	clearUndoRedoStates();
 }
 void PlayerState::setHighestZ() {
 	z = MapState::highestFloorHeight;
