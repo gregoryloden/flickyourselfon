@@ -53,7 +53,7 @@ public:
 	//add a rail state to be affected by this switch state
 	void addConnectedRailState(RailState* railState);
 	//activate rails of the same group and color because this switch was kicked
-	void flip(int flipOffTicksTime);
+	void flip(bool moveRailsForward, int flipOffTicksTime);
 	//save the time that this switch should turn back on
 	void updateWithPreviousSwitchState(SwitchState* prev);
 	//render the switch

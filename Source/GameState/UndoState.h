@@ -5,6 +5,7 @@
 #define stackNewClimbFallUndoState(stack, fromX, fromY, fromHeight) \
 	stack.set(produceWithArgs(ClimbFallUndoState, stack.get(), fromX, fromY, fromHeight))
 #define stackNewRideRailUndoState(stack, railId) stack.set(produceWithArgs(RideRailUndoState, stack.get(), railId))
+#define stackNewKickSwitchUndoState(stack, switchId) stack.set(produceWithArgs(KickSwitchUndoState, stack.get(), switchId))
 
 class PlayerState;
 
@@ -101,5 +102,24 @@ public:
 	//release a reference to this RideRailUndoState and return it to the pool if applicable
 	virtual void release();
 	//send the player across a rail
+	virtual bool handle(PlayerState* playerState, bool isUndo, int ticksTime);
+};
+class KickSwitchUndoState: public UndoState {
+public:
+	static const int classTypeIdentifier;
+
+private:
+	short switchId;
+
+public:
+	KickSwitchUndoState(objCounterParameters());
+	virtual ~KickSwitchUndoState();
+
+	int getTypeIdentifier() { return classTypeIdentifier; }
+	//initialize and return a KickSwitchUndoState
+	static KickSwitchUndoState* produce(objCounterParametersComma() UndoState* pNext, short pSwitchId);
+	//release a reference to this KickSwitchUndoState and return it to the pool if applicable
+	virtual void release();
+	//kick the switch
 	virtual bool handle(PlayerState* playerState, bool isUndo, int ticksTime);
 };

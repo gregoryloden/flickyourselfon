@@ -180,20 +180,22 @@ bool EntityAnimation::SetScreenOverlayColor::handle(EntityState* entityState, in
 EntityAnimation::MapKickSwitch::MapKickSwitch(objCounterParameters())
 : Component(objCounterArguments())
 , switchId(0)
+, moveRailsForward(true)
 , allowRadioTowerAnimation(true) {
 }
 EntityAnimation::MapKickSwitch::~MapKickSwitch() {}
 EntityAnimation::MapKickSwitch* EntityAnimation::MapKickSwitch::produce(
-	objCounterParametersComma() short pSwitchId, bool pAllowRadioTowerAnimation)
+	objCounterParametersComma() short pSwitchId, bool pMoveRailsForward, bool pAllowRadioTowerAnimation)
 {
 	initializeWithNewFromPool(m, EntityAnimation::MapKickSwitch)
 	m->switchId = pSwitchId;
+	m->moveRailsForward = pMoveRailsForward;
 	m->allowRadioTowerAnimation = pAllowRadioTowerAnimation;
 	return m;
 }
 pooledReferenceCounterDefineRelease(EntityAnimation::MapKickSwitch)
 bool EntityAnimation::MapKickSwitch::handle(EntityState* entityState, int ticksTime) {
-	entityState->mapKickSwitch(switchId, allowRadioTowerAnimation, ticksTime);
+	entityState->mapKickSwitch(switchId, moveRailsForward, allowRadioTowerAnimation, ticksTime);
 	return true;
 }
 

@@ -104,9 +104,9 @@ SwitchState::~SwitchState() {
 void SwitchState::addConnectedRailState(RailState* railState) {
 	connectedRailStates.push_back(railState);
 }
-void SwitchState::flip(int flipOffTicksTime) {
+void SwitchState::flip(bool moveRailsForward, int flipOffTicksTime) {
 	for (RailState* railState : connectedRailStates)
-		railState->triggerMovement();
+		railState->triggerMovement(moveRailsForward);
 	flipOnTicksTime = flipOffTicksTime + MapState::switchFlipDuration;
 }
 void SwitchState::updateWithPreviousSwitchState(SwitchState* prev) {

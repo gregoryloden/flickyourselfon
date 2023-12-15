@@ -45,7 +45,7 @@ public:
 	virtual void setScreenOverlayColor(
 		DynamicValue* r, DynamicValue* g, DynamicValue* b, DynamicValue* a, int pLastUpdateTicksTime) {}
 	//tell the map to kick a switch at the given time
-	virtual void mapKickSwitch(short switchId, bool allowRadioTowerAnimation, int ticksTime) {}
+	virtual void mapKickSwitch(short switchId, bool moveRailsForward, bool allowRadioTowerAnimation, int ticksTime) {}
 	//tell the map to kick a reset switch at the given time
 	virtual void mapKickResetSwitch(short resetSwitchId, int ticksTime) {}
 	//spawn a particle with the given SpriteAnimation

@@ -406,7 +406,7 @@ Particle* MapState::queueParticle(
 	particles.push_back(particle);
 	return particle;
 }
-void MapState::flipSwitch(short switchId, bool allowRadioTowerAnimation, int ticksTime) {
+void MapState::flipSwitch(short switchId, bool moveRailsForward, bool allowRadioTowerAnimation, int ticksTime) {
 	SwitchState* switchState = switchStates[switchId & railSwitchIndexBitmask];
 	Switch* switch0 = switchState->getSwitch();
 	//this is a turn-on-other-switches switch, flip it if we haven't done so already
@@ -418,7 +418,7 @@ void MapState::flipSwitch(short switchId, bool allowRadioTowerAnimation, int tic
 		}
 	//this is just a regular switch and we've turned on the parent switch, flip it
 	} else if (lastActivatedSwitchColor >= switch0->getColor()) {
-		switchState->flip(ticksTime);
+		switchState->flip(moveRailsForward, ticksTime);
 
 		radioWavesColor = switch0->getColor();
 		queueParticle(

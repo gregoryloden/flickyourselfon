@@ -9,8 +9,8 @@
 #define newEntityAnimationSetGhostSprite(show, x, y, direction) \
 	produceWithArgs(EntityAnimation::SetGhostSprite, show, x, y, direction)
 #define newEntityAnimationSetScreenOverlayColor(r, g, b, a) produceWithArgs(EntityAnimation::SetScreenOverlayColor, r, g, b, a)
-#define newEntityAnimationMapKickSwitch(switchId, allowRadioTowerAnimation) \
-	produceWithArgs(EntityAnimation::MapKickSwitch, switchId, allowRadioTowerAnimation)
+#define newEntityAnimationMapKickSwitch(switchId, moveRailsForward, allowRadioTowerAnimation) \
+	produceWithArgs(EntityAnimation::MapKickSwitch, switchId, moveRailsForward, allowRadioTowerAnimation)
 #define newEntityAnimationMapKickResetSwitch(resetSwitchId) produceWithArgs(EntityAnimation::MapKickResetSwitch, resetSwitchId)
 #define newEntityAnimationSpawnParticle(x, y, animation, direction) \
 	produceWithArgs(EntityAnimation::SpawnParticle, x, y, animation, direction)
@@ -162,6 +162,7 @@ public:
 	class MapKickSwitch: public EntityAnimationTypes::Component {
 	private:
 		short switchId;
+		bool moveRailsForward;
 		bool allowRadioTowerAnimation;
 
 	public:
@@ -169,7 +170,8 @@ public:
 		virtual ~MapKickSwitch();
 
 		//initialize and return a MapKickSwitch
-		static MapKickSwitch* produce(objCounterParametersComma() short pSwitchId, bool pAllowRadioTowerAnimation);
+		static MapKickSwitch* produce(
+			objCounterParametersComma() short pSwitchId, bool pMoveRailsForward, bool pAllowRadioTowerAnimation);
 		//release a reference to this MapKickSwitch and return it to the pool if applicable
 		virtual void release();
 		//return that the animation should continue updating after telling the map to kick the switch

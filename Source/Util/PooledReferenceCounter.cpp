@@ -102,6 +102,7 @@ template class ObjectPool<EntityAnimation::SetVelocity>;
 template class ObjectPool<EntityAnimation::SpawnParticle>;
 template class ObjectPool<EntityAnimation::SwitchToPlayerCamera>;
 template class ObjectPool<LinearInterpolatedValue>;
+template class ObjectPool<KickSwitchUndoState>;
 template class ObjectPool<MoveUndoState>;
 template class ObjectPool<NoOpUndoState>;
 template class ObjectPool<RideRailUndoState>;

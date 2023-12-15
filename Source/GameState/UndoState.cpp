@@ -95,3 +95,22 @@ bool RideRailUndoState::handle(PlayerState* playerState, bool isUndo, int ticksT
 	playerState->undoRideRail(railId, isUndo, ticksTime);
 	return true;
 }
+
+//////////////////////////////// KickSwitchUndoState ////////////////////////////////
+const int KickSwitchUndoState::classTypeIdentifier = UndoState::getNextClassTypeIdentifier();
+KickSwitchUndoState::KickSwitchUndoState(objCounterParameters())
+: UndoState(objCounterArguments())
+, switchId(0) {
+}
+KickSwitchUndoState::~KickSwitchUndoState() {}
+KickSwitchUndoState* KickSwitchUndoState::produce(objCounterParametersComma() UndoState* pNext, short pSwitchId) {
+	initializeWithNewFromPool(k, KickSwitchUndoState)
+	k->next.set(pNext);
+	k->switchId = pSwitchId;
+	return k;
+}
+pooledReferenceCounterDefineRelease(KickSwitchUndoState)
+bool KickSwitchUndoState::handle(PlayerState* playerState, bool isUndo, int ticksTime) {
+	playerState->undoKickSwitch(switchId, isUndo, ticksTime);
+	return true;
+}

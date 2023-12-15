@@ -239,7 +239,7 @@ public:
 		vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> components,
 		int ticksTime);
 	//flip a switch
-	void flipSwitch(short switchId, bool allowRadioTowerAnimation, int ticksTime);
+	void flipSwitch(short switchId, bool moveRailsForward, bool allowRadioTowerAnimation, int ticksTime);
 	//flip a reset switch
 	void flipResetSwitch(short resetSwitchId, int ticksTime);
 	//begin a radio waves animation

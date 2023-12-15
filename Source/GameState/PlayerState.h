@@ -109,7 +109,7 @@ public:
 	//set the position of the ghost sprite, or clear it
 	virtual void setGhostSprite(bool show, float pX, float pY, SpriteDirection direction, int ticksTime);
 	//tell the map to kick a switch
-	virtual void mapKickSwitch(short switchId, bool allowRadioTowerAnimation, int ticksTime);
+	virtual void mapKickSwitch(short switchId, bool moveRailsForward, bool allowRadioTowerAnimation, int ticksTime);
 	//tell the map to kick a reset switch
 	virtual void mapKickResetSwitch(short resetSwitchId, int ticksTime);
 	//spawn a particle with the given SpriteAnimation
@@ -207,6 +207,7 @@ public:
 	static void addKickSwitchComponents(
 		short switchId,
 		vector<ReferenceCounterHolder<EntityAnimationTypes::Component>>* components,
+		bool moveRailsForward,
 		bool allowRadioTowerAnimation);
 private:
 	//begin a kicking animation and set the reset switch to flip
@@ -234,6 +235,8 @@ public:
 	bool undoMove(float fromX, float fromY, char fromHeight, bool isUndo, int ticksTime);
 	//travel across this rail
 	void undoRideRail(short railId, bool isUndo, int ticksTime);
+	//kick a switch
+	void undoKickSwitch(short switchId, bool isUndo, int ticksTime);
 	//render this player state, which was deemed to be the last state to need rendering
 	void render(EntityState* camera, int ticksTime);
 	//render the kick action for this player state if one is available

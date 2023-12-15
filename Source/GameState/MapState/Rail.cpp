@@ -377,8 +377,9 @@ void RailState::updateWithPreviousRailState(RailState* prev, int ticksTime) {
 	bouncesRemaining = prev->bouncesRemaining;
 	nextMovementDirection = prev->nextMovementDirection;
 	float tileOffsetDiff = distancePerMovement * (ticksTime - prev->lastUpdateTicksTime) / fullMovementDurationTicks;
-	if (bouncesRemaining > 0) {
-		tileOffset = prev->tileOffset + tileOffsetDiff * currentMovementDirection;
+	if (bouncesRemaining != 0) {
+		tileOffset =
+			prev->tileOffset + tileOffsetDiff * (bouncesRemaining > 0 ? currentMovementDirection : -currentMovementDirection);
 		if (tileOffset < 0)
 			tileOffset = MathUtils::fmin(-tileOffset, targetTileOffset);
 		else if (tileOffset > rail->getMaxTileOffset())
@@ -386,7 +387,7 @@ void RailState::updateWithPreviousRailState(RailState* prev, int ticksTime) {
 		else
 			return;
 		currentMovementDirection = -currentMovementDirection;
-		bouncesRemaining -= 1;
+		bouncesRemaining -= (bouncesRemaining > 0 ? 1 : -1);
 	} else if (prev->tileOffset != targetTileOffset)
 		tileOffset = prev->tileOffset > targetTileOffset
 			? MathUtils::fmax(targetTileOffset, prev->tileOffset - tileOffsetDiff)
@@ -394,13 +395,13 @@ void RailState::updateWithPreviousRailState(RailState* prev, int ticksTime) {
 	else
 		tileOffset = targetTileOffset;
 }
-void RailState::triggerMovement() {
+void RailState::triggerMovement(bool moveForward) {
 	//square wave rail: swap the tile offset between 0 and the max tile offset
 	if (rail->getColor() == MapState::squareColor)
 		targetTileOffset = targetTileOffset == 0.0f ? rail->getMaxTileOffset() : 0.0f;
 	//triangle wave switch: move the rail movementMagnitude tiles in its current movement direction
 	else if (rail->getColor() == MapState::triangleColor) {
-		targetTileOffset += rail->getMovementMagnitude() * nextMovementDirection;
+		targetTileOffset += rail->getMovementMagnitude() * (moveForward ? nextMovementDirection : -nextMovementDirection);
 		if (targetTileOffset < 0)
 			targetTileOffset = -targetTileOffset;
 		else if (targetTileOffset > rail->getMaxTileOffset())
@@ -408,7 +409,7 @@ void RailState::triggerMovement() {
 		else
 			return;
 		nextMovementDirection = -nextMovementDirection;
-		bouncesRemaining += 1;
+		bouncesRemaining += (moveForward ? 1 : -1);
 	}
 }
 void RailState::renderBelowPlayer(int screenLeftWorldX, int screenTopWorldY, float playerWorldGroundY) {

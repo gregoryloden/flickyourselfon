@@ -134,7 +134,7 @@ public:
 	//check if we need to start/stop moving
 	void updateWithPreviousRailState(RailState* prev, int ticksTime);
 	//the switch connected to this rail was kicked, move this rail accordingly
-	void triggerMovement();
+	void triggerMovement(bool moveForward);
 	//render the rail behind the player by rendering each segment, and save which segments are above the player
 	void renderBelowPlayer(int screenLeftWorldX, int screenTopWorld, float playerWorldGroundY);
 	//render the rail in front of the player using the list of saved segments

@@ -128,8 +128,8 @@ void PlayerState::setGhostSprite(bool show, float pX, float pY, SpriteDirection 
 		ghostSpriteY.set(nullptr);
 	}
 }
-void PlayerState::mapKickSwitch(short switchId, bool allowRadioTowerAnimation, int ticksTime) {
-	mapState.get()->flipSwitch(switchId, allowRadioTowerAnimation, ticksTime);
+void PlayerState::mapKickSwitch(short switchId, bool moveRailsForward, bool allowRadioTowerAnimation, int ticksTime) {
+	mapState.get()->flipSwitch(switchId, moveRailsForward, allowRadioTowerAnimation, ticksTime);
 }
 void PlayerState::mapKickResetSwitch(short resetSwitchId, int ticksTime) {
 	mapState.get()->flipResetSwitch(resetSwitchId, ticksTime);
@@ -1202,11 +1202,16 @@ void PlayerState::addRailRideComponents(
 void PlayerState::kickSwitch(short switchId, int ticksTime) {
 	MapState::logSwitchKick(switchId);
 	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> kickAnimationComponents;
-	addKickSwitchComponents(switchId, &kickAnimationComponents, true);
+	addKickSwitchComponents(switchId, &kickAnimationComponents, true, true);
 	beginEntityAnimation(&kickAnimationComponents, ticksTime);
+	tryAddNoOpUndoState();
+	stackNewKickSwitchUndoState(undoState, switchId);
 }
 void PlayerState::addKickSwitchComponents(
-	short switchId, vector<ReferenceCounterHolder<EntityAnimationTypes::Component>>* components, bool allowRadioTowerAnimation)
+	short switchId,
+	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>>* components,
+	bool moveRailsForward,
+	bool allowRadioTowerAnimation)
 {
 	components->insert(
 		components->end(),
@@ -1214,7 +1219,7 @@ void PlayerState::addKickSwitchComponents(
 			newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f)),
 			newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerKickingAnimation),
 			newEntityAnimationDelay(SpriteRegistry::playerKickingAnimationTicksPerFrame),
-			newEntityAnimationMapKickSwitch(switchId, allowRadioTowerAnimation),
+			newEntityAnimationMapKickSwitch(switchId, moveRailsForward, allowRadioTowerAnimation),
 			newEntityAnimationDelay(
 				SpriteRegistry::playerKickingAnimation->getTotalTicksDuration()
 					- SpriteRegistry::playerKickingAnimationTicksPerFrame)
@@ -1340,6 +1345,13 @@ void PlayerState::undoRideRail(short railId, bool isUndo, int ticksTime) {
 	beginEntityAnimation(&ridingRailAnimationComponents, ticksTime);
 	//the player is visually moved up to simulate a half-height raise on the rail, but the world ground y needs to stay the same
 	worldGroundYOffset = MapState::halfTileSize + boundingBoxHeight / 2;
+}
+void PlayerState::undoKickSwitch(short switchId, bool isUndo, int ticksTime) {
+	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> kickAnimationComponents;
+	addKickSwitchComponents(switchId, &kickAnimationComponents, !isUndo, false);
+	beginEntityAnimation(&kickAnimationComponents, ticksTime);
+	ReferenceCounterHolder<UndoState>& otherUndoState = isUndo ? redoState : undoState;
+	stackNewKickSwitchUndoState(otherUndoState, switchId);
 }
 void PlayerState::render(EntityState* camera, int ticksTime) {
 	if (ghostSpriteX.get() != nullptr && ghostSpriteY.get() != nullptr) {
