@@ -28,6 +28,7 @@ private:
 	vector<Segment> leftSegments;
 	vector<Segment> bottomSegments;
 	vector<Segment> rightSegments;
+	vector<short> affectedRailIds;
 	int flipOnTicksTime;
 public:
 	bool editorIsDeleted;
@@ -38,6 +39,7 @@ public:
 	int getCenterX() { return centerX; }
 	int getBottomY() { return bottomY; }
 	bool hasAnySegments() { return !leftSegments.empty() || !bottomSegments.empty() || !rightSegments.empty(); }
+	vector<short>* getAffectedRailIds() { return &affectedRailIds; }
 	//add a segment to the segments list in the specified section
 	void addSegment(int x, int y, char color, char group, char segmentsSection);
 private:
@@ -46,8 +48,6 @@ private:
 public:
 	//returns whether the group can be found in any of the segments
 	bool hasGroupForColor(char group, char color);
-	//reset any rails that match the segments
-	void resetMatchingRails(vector<RailState*>* railStates);
 	//render the reset switch body and its segments
 	void render(int screenLeftWorldX, int screenTopWorldY, bool isOn, bool showGroups);
 	//remove a segment from this reset switch if it matches the end segment of one of the branches

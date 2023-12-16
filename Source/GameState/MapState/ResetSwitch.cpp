@@ -32,6 +32,8 @@ centerX(pCenterX)
 , leftSegments()
 , bottomSegments()
 , rightSegments()
+, affectedRailIds()
+, flipOnTicksTime(0)
 , editorIsDeleted(false) {
 }
 ResetSwitch::~ResetSwitch() {}
@@ -73,26 +75,6 @@ bool ResetSwitch::hasGroupForColor(char group, char color) {
 			return true;
 	}
 	return false;
-}
-void ResetSwitch::resetMatchingRails(vector<RailState*>* railStates) {
-	vector<ResetSwitch::Segment>* allSegments[] = { &leftSegments, &bottomSegments, &rightSegments };
-	for (vector<ResetSwitch::Segment>* segments : allSegments) {
-		for (ResetSwitch::Segment& segment : *segments) {
-			if (segment.group == 0)
-				continue;
-			for (RailState* railState : *railStates) {
-				Rail* rail = railState->getRail();
-				if (rail->getColor() != segment.color)
-					continue;
-				for (char group : rail->getGroups()) {
-					if (group == segment.group) {
-						railState->reset(true);
-						break;
-					}
-				}
-			}
-		}
-	}
 }
 void ResetSwitch::render(int screenLeftWorldX, int screenTopWorldY, bool isOn, bool showGroups) {
 	if (Editor::isActive && editorIsDeleted)

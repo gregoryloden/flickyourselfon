@@ -186,6 +186,19 @@ void MapState::buildMap() {
 		}
 	}
 
+	//link reset switches to their affected rails
+	for (int i = 0; i < (int)rails.size(); i++) {
+		Rail* rail = rails[i];
+		short railId = (short)i | railIdValue;
+		char color = rail->getColor();
+		for (char group : rail->getGroups()) {
+			for (ResetSwitch* resetSwitch : resetSwitches) {
+				if (resetSwitch->hasGroupForColor(group, color))
+					resetSwitch->getAffectedRailIds()->push_back(railId);
+			}
+		}
+	}
+
 	SDL_FreeSurface(floor);
 }
 vector<int> MapState::parseRail(int* pixels, int redShift, int segmentIndex, int railSwitchId) {
@@ -448,7 +461,8 @@ void MapState::flipSwitch(short switchId, bool moveRailsForward, bool allowRadio
 }
 void MapState::flipResetSwitch(short resetSwitchId, int ticksTime) {
 	ResetSwitchState* resetSwitchState = resetSwitchStates[resetSwitchId & railSwitchIndexBitmask];
-	resetSwitchState->getResetSwitch()->resetMatchingRails(&railStates);
+	for (short railId : *resetSwitchState->getResetSwitch()->getAffectedRailIds())
+		railStates[railId & railSwitchIndexBitmask]->reset(true);
 	resetSwitchState->flip(ticksTime);
 }
 int MapState::startRadioWavesAnimation(int initialTicksDelay, int ticksTime) {
@@ -656,21 +670,13 @@ void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int 
 bool MapState::renderGroupsForRailsToReset(EntityState* camera, short resetSwitchId, int ticksTime) {
 	int screenLeftWorldX = getScreenLeftWorldX(camera, ticksTime);
 	int screenTopWorldY = getScreenTopWorldY(camera, ticksTime);
-	ResetSwitch* resetSwitch = resetSwitches[resetSwitchId & railSwitchIndexBitmask];
 	bool hasRailsToReset = false;
-	for (RailState* railState : railStates) {
-		Rail* rail = railState->getRail();
+	for (short railId : *resetSwitches[resetSwitchId & railSwitchIndexBitmask]->getAffectedRailIds()) {
+		RailState* railState = railStates[railId & railSwitchIndexBitmask];
 		if (railState->isInDefaultState())
 			continue;
-		char railColor = rail->getColor();
-		for (char railGroup : rail->getGroups()) {
-			//the reset switch has a group for this rail, render groups for it
-			if (resetSwitch->hasGroupForColor(railGroup, railColor)) {
-				rail->renderGroups(screenLeftWorldX, screenTopWorldY);
-				hasRailsToReset = true;
-				break;
-			}
-		}
+		railState->getRail()->renderGroups(screenLeftWorldX, screenTopWorldY);
+		hasRailsToReset = true;
 	}
 	if (hasRailsToReset)
 		resetSwitchStates[resetSwitchId & railSwitchIndexBitmask]->render(screenLeftWorldX, screenTopWorldY, true, ticksTime);
