@@ -1,11 +1,11 @@
 #include "Util/PooledReferenceCounter.h"
 
-#define stackNewNoOpUndoState(stack) stack.set(produceWithArgs(NoOpUndoState, stack.get()))
-#define stackNewMoveUndoState(stack, fromX, fromY) stack.set(produceWithArgs(MoveUndoState, stack.get(), fromX, fromY))
+#define stackNewNoOpUndoState(stack) produceWithArgs(NoOpUndoState, stack)
+#define stackNewMoveUndoState(stack, fromX, fromY) produceWithArgs(MoveUndoState, stack, fromX, fromY)
 #define stackNewClimbFallUndoState(stack, fromX, fromY, fromHeight) \
-	stack.set(produceWithArgs(ClimbFallUndoState, stack.get(), fromX, fromY, fromHeight))
-#define stackNewRideRailUndoState(stack, railId) stack.set(produceWithArgs(RideRailUndoState, stack.get(), railId))
-#define stackNewKickSwitchUndoState(stack, switchId) stack.set(produceWithArgs(KickSwitchUndoState, stack.get(), switchId))
+	produceWithArgs(ClimbFallUndoState, stack, fromX, fromY, fromHeight)
+#define stackNewRideRailUndoState(stack, railId) produceWithArgs(RideRailUndoState, stack, railId)
+#define stackNewKickSwitchUndoState(stack, switchId) produceWithArgs(KickSwitchUndoState, stack, switchId)
 
 class PlayerState;
 
@@ -37,7 +37,7 @@ public:
 
 	int getTypeIdentifier() { return classTypeIdentifier; }
 	//initialize and return a NoOpUndoState
-	static NoOpUndoState* produce(objCounterParametersComma() UndoState* pNext);
+	static NoOpUndoState* produce(objCounterParametersComma() ReferenceCounterHolder<UndoState>& stack);
 	//release a reference to this NoOpUndoState and return it to the pool if applicable
 	virtual void release();
 	//do nothing, but have the PlayerState queue a state in the appropriate other undo state stack
@@ -57,7 +57,8 @@ public:
 
 	int getTypeIdentifier() { return classTypeIdentifier; }
 	//initialize and return a MoveUndoState
-	static MoveUndoState* produce(objCounterParametersComma() UndoState* pNext, float pFromX, float pFromY);
+	static MoveUndoState* produce(
+		objCounterParametersComma() ReferenceCounterHolder<UndoState>& stack, float pFromX, float pFromY);
 	//release a reference to this MoveUndoState and return it to the pool if applicable
 	virtual void release();
 	//move the player to the stored position
@@ -79,7 +80,7 @@ public:
 	int getTypeIdentifier() { return classTypeIdentifier; }
 	//initialize and return a ClimbFallUndoState
 	static ClimbFallUndoState* produce(
-		objCounterParametersComma() UndoState* pNext, float pFromX, float pFromY, char pFromHeight);
+		objCounterParametersComma() ReferenceCounterHolder<UndoState>& stack, float pFromX, float pFromY, char pFromHeight);
 	//release a reference to this ClimbFallUndoState and return it to the pool if applicable
 	virtual void release();
 	//move the player to the stored position and height
@@ -98,7 +99,7 @@ public:
 
 	int getTypeIdentifier() { return classTypeIdentifier; }
 	//initialize and return a RideRailUndoState
-	static RideRailUndoState* produce(objCounterParametersComma() UndoState* pNext, short pRailId);
+	static RideRailUndoState* produce(objCounterParametersComma() ReferenceCounterHolder<UndoState>& stack, short pRailId);
 	//release a reference to this RideRailUndoState and return it to the pool if applicable
 	virtual void release();
 	//send the player across a rail
@@ -117,7 +118,7 @@ public:
 
 	int getTypeIdentifier() { return classTypeIdentifier; }
 	//initialize and return a KickSwitchUndoState
-	static KickSwitchUndoState* produce(objCounterParametersComma() UndoState* pNext, short pSwitchId);
+	static KickSwitchUndoState* produce(objCounterParametersComma() ReferenceCounterHolder<UndoState>& stack, short pSwitchId);
 	//release a reference to this KickSwitchUndoState and return it to the pool if applicable
 	virtual void release();
 	//kick the switch

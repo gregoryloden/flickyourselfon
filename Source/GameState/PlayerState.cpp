@@ -1288,20 +1288,18 @@ void PlayerState::redo(int ticksTime) {
 }
 void PlayerState::undoNoOp(bool isUndo) {
 	//don't do anything, but maintain the state in the stacks
-	ReferenceCounterHolder<UndoState>& otherUndoState = isUndo ? redoState : undoState;
-	stackNewNoOpUndoState(otherUndoState);
+	stackNewNoOpUndoState(isUndo ? redoState : undoState);
 }
 bool PlayerState::undoMove(float fromX, float fromY, char fromHeight, bool isUndo, int ticksTime) {
 	float currentX = x.get()->getValue(0);
 	float currentY = y.get()->getValue(0);
-	ReferenceCounterHolder<UndoState>& otherUndoState = isUndo ? redoState : undoState;
 	SpriteAnimation* moveAnimation = SpriteRegistry::playerFastBootWalkingAnimation;
 	if (fromHeight == MapState::invalidHeight) {
-		stackNewMoveUndoState(otherUndoState, currentX, currentY);
+		stackNewMoveUndoState(isUndo ? redoState : undoState, currentX, currentY);
 		if (currentX == fromX && currentY == fromY)
 			return false;
 	} else {
-		stackNewClimbFallUndoState(otherUndoState, currentX, currentY, z);
+		stackNewClimbFallUndoState(isUndo ? redoState : undoState, currentX, currentY, z);
 		moveAnimation = SpriteRegistry::playerBootLiftAnimation;
 		z = fromHeight;
 	}
@@ -1340,8 +1338,7 @@ void PlayerState::undoRideRail(short railId, bool isUndo, int ticksTime) {
 		&undoGhostSpriteDirection);
 	ridingRailAnimationComponents[0].set(newEntityAnimationSetGhostSprite(true, finalX, finalY, undoGhostSpriteDirection));
 	ridingRailAnimationComponents.push_back(newEntityAnimationSetGhostSprite(false, 0.0f, 0.0f, SpriteDirection::Down));
-	ReferenceCounterHolder<UndoState>& otherUndoState = isUndo ? redoState : undoState;
-	stackNewRideRailUndoState(otherUndoState, railId);
+	stackNewRideRailUndoState(isUndo ? redoState : undoState, railId);
 	beginEntityAnimation(&ridingRailAnimationComponents, ticksTime);
 	//the player is visually moved up to simulate a half-height raise on the rail, but the world ground y needs to stay the same
 	worldGroundYOffset = MapState::halfTileSize + boundingBoxHeight / 2;
@@ -1350,8 +1347,7 @@ void PlayerState::undoKickSwitch(short switchId, bool isUndo, int ticksTime) {
 	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> kickAnimationComponents;
 	addKickSwitchComponents(switchId, &kickAnimationComponents, !isUndo, false);
 	beginEntityAnimation(&kickAnimationComponents, ticksTime);
-	ReferenceCounterHolder<UndoState>& otherUndoState = isUndo ? redoState : undoState;
-	stackNewKickSwitchUndoState(otherUndoState, switchId);
+	stackNewKickSwitchUndoState(isUndo ? redoState : undoState, switchId);
 }
 void PlayerState::render(EntityState* camera, int ticksTime) {
 	if (ghostSpriteX.get() != nullptr && ghostSpriteY.get() != nullptr) {

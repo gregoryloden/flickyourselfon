@@ -1,6 +1,11 @@
 #include "UndoState.h"
 #include "GameState/PlayerState.h"
 
+#define initializeWithNewFromPoolAndPlaceIntoStack(var, className, stack) \
+	initializeWithNewFromPool(var, className) \
+	var->next.set(stack.get()); \
+	stack.set(var);
+
 //////////////////////////////// UndoState ////////////////////////////////
 UndoState::UndoState(objCounterParameters())
 : PooledReferenceCounter(objCounterArguments())
@@ -22,9 +27,8 @@ NoOpUndoState::NoOpUndoState(objCounterParameters())
 : UndoState(objCounterArguments()) {
 }
 NoOpUndoState::~NoOpUndoState() {}
-NoOpUndoState* NoOpUndoState::produce(objCounterParametersComma() UndoState* pNext) {
-	initializeWithNewFromPool(n, NoOpUndoState)
-	n->next.set(pNext);
+NoOpUndoState* NoOpUndoState::produce(objCounterParametersComma() ReferenceCounterHolder<UndoState>& stack) {
+	initializeWithNewFromPoolAndPlaceIntoStack(n, NoOpUndoState, stack)
 	return n;
 }
 pooledReferenceCounterDefineRelease(NoOpUndoState)
@@ -41,9 +45,10 @@ MoveUndoState::MoveUndoState(objCounterParameters())
 , fromY(0) {
 }
 MoveUndoState::~MoveUndoState() {}
-MoveUndoState* MoveUndoState::produce(objCounterParametersComma() UndoState* pNext, float pFromX, float pFromY) {
-	initializeWithNewFromPool(m, MoveUndoState)
-	m->next.set(pNext);
+MoveUndoState* MoveUndoState::produce(
+	objCounterParametersComma() ReferenceCounterHolder<UndoState>& stack, float pFromX, float pFromY)
+{
+	initializeWithNewFromPoolAndPlaceIntoStack(m, MoveUndoState, stack);
 	m->fromX = pFromX;
 	m->fromY = pFromY;
 	return m;
@@ -63,10 +68,9 @@ ClimbFallUndoState::ClimbFallUndoState(objCounterParameters())
 }
 ClimbFallUndoState::~ClimbFallUndoState() {}
 ClimbFallUndoState* ClimbFallUndoState::produce(
-	objCounterParametersComma() UndoState* pNext, float pFromX, float pFromY, char pFromHeight)
+	objCounterParametersComma() ReferenceCounterHolder<UndoState>& stack, float pFromX, float pFromY, char pFromHeight)
 {
-	initializeWithNewFromPool(c, ClimbFallUndoState)
-	c->next.set(pNext);
+	initializeWithNewFromPoolAndPlaceIntoStack(c, ClimbFallUndoState, stack);
 	c->fromX = pFromX;
 	c->fromY = pFromY;
 	c->fromHeight = pFromHeight;
@@ -84,9 +88,10 @@ RideRailUndoState::RideRailUndoState(objCounterParameters())
 , railId(0) {
 }
 RideRailUndoState::~RideRailUndoState() {}
-RideRailUndoState* RideRailUndoState::produce(objCounterParametersComma() UndoState* pNext, short pRailId) {
-	initializeWithNewFromPool(r, RideRailUndoState)
-	r->next.set(pNext);
+RideRailUndoState* RideRailUndoState::produce(
+	objCounterParametersComma() ReferenceCounterHolder<UndoState>& stack, short pRailId)
+{
+	initializeWithNewFromPoolAndPlaceIntoStack(r, RideRailUndoState, stack);
 	r->railId = pRailId;
 	return r;
 }
@@ -103,9 +108,10 @@ KickSwitchUndoState::KickSwitchUndoState(objCounterParameters())
 , switchId(0) {
 }
 KickSwitchUndoState::~KickSwitchUndoState() {}
-KickSwitchUndoState* KickSwitchUndoState::produce(objCounterParametersComma() UndoState* pNext, short pSwitchId) {
-	initializeWithNewFromPool(k, KickSwitchUndoState)
-	k->next.set(pNext);
+KickSwitchUndoState* KickSwitchUndoState::produce(
+	objCounterParametersComma() ReferenceCounterHolder<UndoState>& stack, short pSwitchId)
+{
+	initializeWithNewFromPoolAndPlaceIntoStack(k, KickSwitchUndoState, stack);
 	k->switchId = pSwitchId;
 	return k;
 }
