@@ -250,7 +250,7 @@ public:
 	//toggle the state of showing connections, and any other relevant state
 	void toggleShowConnections();
 	//draw the map
-	void renderBelowPlayer(EntityState* camera, float playerWorldGroundY, char playerZ, bool showConnections, int ticksTime);
+	void renderBelowPlayer(EntityState* camera, float playerWorldGroundY, char playerZ, int ticksTime);
 	//draw anything (rails, groups) that render above the player
 	//assumes render() has already been called to set the rails above the player
 	void renderAbovePlayer(EntityState* camera, bool showConnections, int ticksTime);

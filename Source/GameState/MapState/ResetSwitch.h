@@ -20,7 +20,9 @@ private:
 		virtual ~Segment();
 
 		//render this reset switch segment
-		void render(int screenLeftWorldX, int screenTopWorldY, bool showGroup);
+		void render(int screenLeftWorldX, int screenTopWorldY);
+		//render the group for this reset switch segment
+		void renderGroup(int screenLeftWorldX, int screenTopWorldY);
 	};
 
 	int centerX;
@@ -49,7 +51,9 @@ public:
 	//returns whether the group can be found in any of the segments
 	bool hasGroupForColor(char group, char color);
 	//render the reset switch body and its segments
-	void render(int screenLeftWorldX, int screenTopWorldY, bool isOn, bool showGroups);
+	void render(int screenLeftWorldX, int screenTopWorldY, bool isOn);
+	//render the groups for the segments
+	void renderGroups(int screenLeftWorldX, int screenTopWorldY);
 	//remove a segment from this reset switch if it matches the end segment of one of the branches
 	bool editorRemoveEndSegment(int x, int y, char color, char group);
 	//remove any segment matching the given color and group after the corresponding switch was deleted
@@ -77,5 +81,5 @@ public:
 	//save the time that this reset switch should turn back off
 	void updateWithPreviousResetSwitchState(ResetSwitchState* prev);
 	//render the reset switch body and its segments
-	void render(int screenLeftWorldX, int screenTopWorldY, bool showGroups, int ticksTime);
+	void render(int screenLeftWorldX, int screenTopWorldY, int ticksTime);
 };

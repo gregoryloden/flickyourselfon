@@ -14,14 +14,17 @@ ResetSwitch::Segment::Segment(int pX, int pY, char pColor, char pGroup, int pSpr
 , spriteHorizontalIndex(pSpriteHorizontalIndex) {
 }
 ResetSwitch::Segment::~Segment() {}
-void ResetSwitch::Segment::render(int screenLeftWorldX, int screenTopWorldY, bool showGroup) {
+void ResetSwitch::Segment::render(int screenLeftWorldX, int screenTopWorldY) {
 	glEnable(GL_BLEND);
 	Rail::setSegmentColor(0.0f, color);
 	GLint drawLeftX = (GLint)(x * MapState::tileSize - screenLeftWorldX);
 	GLint drawTopY = (GLint)(y * MapState::tileSize - screenTopWorldY);
 	SpriteRegistry::rails->renderSpriteAtScreenPosition(spriteHorizontalIndex, 0, drawLeftX, drawTopY);
-	if (showGroup)
-		MapState::renderGroupRect(group, drawLeftX + 2, drawTopY + 2, drawLeftX + 4, drawTopY + 4);
+}
+void ResetSwitch::Segment::renderGroup(int screenLeftWorldX, int screenTopWorldY) {
+	GLint drawLeftX = (GLint)(x * MapState::tileSize - screenLeftWorldX);
+	GLint drawTopY = (GLint)(y * MapState::tileSize - screenTopWorldY);
+	MapState::renderGroupRect(group, drawLeftX + 2, drawTopY + 2, drawLeftX + 4, drawTopY + 4);
 }
 
 //////////////////////////////// ResetSwitch ////////////////////////////////
@@ -76,7 +79,7 @@ bool ResetSwitch::hasGroupForColor(char group, char color) {
 	}
 	return false;
 }
-void ResetSwitch::render(int screenLeftWorldX, int screenTopWorldY, bool isOn, bool showGroups) {
+void ResetSwitch::render(int screenLeftWorldX, int screenTopWorldY, bool isOn) {
 	if (Editor::isActive && editorIsDeleted)
 		return;
 
@@ -85,12 +88,23 @@ void ResetSwitch::render(int screenLeftWorldX, int screenTopWorldY, bool isOn, b
 	GLint drawTopY = (GLint)((bottomY - 1) * MapState::tileSize - screenTopWorldY);
 	SpriteRegistry::resetSwitch->renderSpriteAtScreenPosition(isOn ? 1 : 0, 0, drawLeftX, drawTopY);
 	for (Segment& segment : leftSegments)
-		segment.render(screenLeftWorldX, screenTopWorldY, showGroups);
+		segment.render(screenLeftWorldX, screenTopWorldY);
 	for (Segment& segment : bottomSegments)
-		segment.render(screenLeftWorldX, screenTopWorldY, showGroups);
+		segment.render(screenLeftWorldX, screenTopWorldY);
 	for (Segment& segment : rightSegments)
-		segment.render(screenLeftWorldX, screenTopWorldY, showGroups);
+		segment.render(screenLeftWorldX, screenTopWorldY);
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+}
+void ResetSwitch::renderGroups(int screenLeftWorldX, int screenTopWorldY) {
+	if (Editor::isActive && editorIsDeleted)
+		return;
+
+	for (Segment& segment : leftSegments)
+		segment.renderGroup(screenLeftWorldX, screenTopWorldY);
+	for (Segment& segment : bottomSegments)
+		segment.renderGroup(screenLeftWorldX, screenTopWorldY);
+	for (Segment& segment : rightSegments)
+		segment.renderGroup(screenLeftWorldX, screenTopWorldY);
 }
 bool ResetSwitch::editorRemoveEndSegment(int x, int y, char color, char group) {
 	vector<Segment>* allSegments[3] { &leftSegments, &bottomSegments, &rightSegments };
@@ -232,6 +246,6 @@ void ResetSwitchState::flip(int flipOnTicksTime) {
 void ResetSwitchState::updateWithPreviousResetSwitchState(ResetSwitchState* prev) {
 	flipOffTicksTime = prev->flipOffTicksTime;
 }
-void ResetSwitchState::render(int screenLeftWorldX, int screenTopWorldY, bool showGroups, int ticksTime) {
-	resetSwitch->render(screenLeftWorldX, screenTopWorldY, ticksTime < flipOffTicksTime, showGroups);
+void ResetSwitchState::render(int screenLeftWorldX, int screenTopWorldY, int ticksTime) {
+	resetSwitch->render(screenLeftWorldX, screenTopWorldY, ticksTime < flipOffTicksTime);
 }

@@ -519,9 +519,7 @@ void MapState::toggleShowConnections() {
 		finishedConnectionsTutorial = true;
 	}
 }
-void MapState::renderBelowPlayer(
-	EntityState* camera, float playerWorldGroundY, char playerZ, bool showConnections, int ticksTime)
-{
+void MapState::renderBelowPlayer(EntityState* camera, float playerWorldGroundY, char playerZ, int ticksTime) {
 	glDisable(GL_BLEND);
 	//render the map
 	//these values are just right so that every tile rendered is at least partially in the window and no tiles are left out
@@ -567,10 +565,9 @@ void MapState::renderBelowPlayer(
 			screenTopWorldY,
 			lastActivatedSwitchColor,
 			ticksTime - switchesAnimationFadeInStartTicksTime,
-			showConnections,
 			ticksTime);
 	for (ResetSwitchState* resetSwitchState : resetSwitchStates)
-		resetSwitchState->render(screenLeftWorldX, screenTopWorldY, showConnections, ticksTime);
+		resetSwitchState->render(screenLeftWorldX, screenTopWorldY, ticksTime);
 
 	//draw the radio tower after drawing everything else
 	glEnable(GL_BLEND);
@@ -606,6 +603,10 @@ void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int 
 				railState->renderMovementDirections(screenLeftWorldX, screenTopWorldY);
 			rail->renderGroups(screenLeftWorldX, screenTopWorldY);
 		}
+		for (Switch* switch0 : switches)
+			switch0->renderGroup(screenLeftWorldX, screenTopWorldY);
+		for (ResetSwitch* resetSwitch : resetSwitches)
+			resetSwitch->renderGroups(screenLeftWorldX, screenTopWorldY);
 	}
 
 	//draw particles above the player
@@ -670,8 +671,9 @@ void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int 
 bool MapState::renderGroupsForRailsToReset(EntityState* camera, short resetSwitchId, int ticksTime) {
 	int screenLeftWorldX = getScreenLeftWorldX(camera, ticksTime);
 	int screenTopWorldY = getScreenTopWorldY(camera, ticksTime);
+	ResetSwitch* resetSwitch = resetSwitches[resetSwitchId & railSwitchIndexBitmask];
 	bool hasRailsToReset = false;
-	for (short railId : *resetSwitches[resetSwitchId & railSwitchIndexBitmask]->getAffectedRailIds()) {
+	for (short railId : *resetSwitch->getAffectedRailIds()) {
 		RailState* railState = railStates[railId & railSwitchIndexBitmask];
 		if (railState->isInDefaultState())
 			continue;
@@ -679,7 +681,7 @@ bool MapState::renderGroupsForRailsToReset(EntityState* camera, short resetSwitc
 		hasRailsToReset = true;
 	}
 	if (hasRailsToReset)
-		resetSwitchStates[resetSwitchId & railSwitchIndexBitmask]->render(screenLeftWorldX, screenTopWorldY, true, ticksTime);
+		resetSwitch->renderGroups(screenLeftWorldX, screenTopWorldY);
 	return hasRailsToReset;
 }
 void MapState::renderGroupsForRailsFromSwitch(EntityState* camera, short switchId, int ticksTime) {

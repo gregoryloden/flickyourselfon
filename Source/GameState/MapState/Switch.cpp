@@ -26,8 +26,7 @@ void Switch::render(
 	int screenTopWorldY,
 	char lastActivatedSwitchColor,
 	int lastActivatedSwitchColorFadeInTicksOffset,
-	bool isOn,
-	bool showGroup)
+	bool isOn)
 {
 	if (Editor::isActive) {
 		if (editorIsDeleted)
@@ -67,8 +66,6 @@ void Switch::render(
 			lightSpriteLeftX, 1, lightSpriteLeftX + 10, 11, drawLeftX + 1, drawTopY + 1, drawLeftX + 11, drawTopY + 11);
 		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 	}
-	if (showGroup)
-		MapState::renderGroupRect(group, drawLeftX + 4, drawTopY + 4, drawLeftX + 8, drawTopY + 8);
 }
 void Switch::renderGroup(int screenLeftWorldX, int screenTopWorldY) {
 	GLint drawLeftX = (GLint)(leftX * MapState::tileSize - screenLeftWorldX);
@@ -117,7 +114,6 @@ void SwitchState::render(
 	int screenTopWorldY,
 	char lastActivatedSwitchColor,
 	int lastActivatedSwitchColorFadeInTicksOffset,
-	bool showGroup,
 	int ticksTime)
 {
 	switch0->render(
@@ -125,6 +121,5 @@ void SwitchState::render(
 		screenTopWorldY,
 		lastActivatedSwitchColor,
 		lastActivatedSwitchColorFadeInTicksOffset,
-		ticksTime >= flipOnTicksTime,
-		showGroup);
+		ticksTime >= flipOnTicksTime);
 }

@@ -29,8 +29,7 @@ public:
 		int screenTopWorldY,
 		char lastActivatedSwitchColor,
 		int lastActivatedSwitchColorFadeInTicksOffset,
-		bool isOn,
-		bool showGroup);
+		bool isOn);
 	//render the group without rendering the switch
 	void renderGroup(int screenLeftWorldX, int screenTopWorldY);
 	//update the position of this switch
@@ -62,6 +61,5 @@ public:
 		int screenTopWorldY,
 		char lastActivatedSwitchColor,
 		int lastActivatedSwitchColorFadeInTicksOffset,
-		bool showGroup,
 		int ticksTime);
 };
