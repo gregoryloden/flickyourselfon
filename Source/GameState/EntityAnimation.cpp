@@ -171,6 +171,12 @@ EntityAnimation::SetScreenOverlayColor* EntityAnimation::SetScreenOverlayColor::
 	return s;
 }
 pooledReferenceCounterDefineRelease(EntityAnimation::SetScreenOverlayColor)
+void EntityAnimation::SetScreenOverlayColor::prepareReturnToPool() {
+	r.set(nullptr);
+	g.set(nullptr);
+	b.set(nullptr);
+	a.set(nullptr);
+}
 bool EntityAnimation::SetScreenOverlayColor::handle(EntityState* entityState, int ticksTime) {
 	entityState->setScreenOverlayColor(r.get(), g.get(), b.get(), a.get(), ticksTime);
 	return true;

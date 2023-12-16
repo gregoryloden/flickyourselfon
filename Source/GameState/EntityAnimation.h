@@ -156,6 +156,10 @@ public:
 			objCounterParametersComma() DynamicValue* pR, DynamicValue* pG, DynamicValue* pB, DynamicValue* pA);
 		//release a reference to this SetScreenOverlayColor and return it to the pool if applicable
 		virtual void release();
+	protected:
+		//release components before this is returned to the pool
+		virtual void prepareReturnToPool();
+	public:
 		//return that the animation should continue updating after setting the screen overlay color on the entity state
 		virtual bool handle(EntityState* entityState, int ticksTime);
 	};
