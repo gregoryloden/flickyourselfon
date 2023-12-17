@@ -1261,7 +1261,7 @@ void PlayerState::setUndoState(ReferenceCounterHolder<UndoState>& holder, UndoSt
 }
 void PlayerState::tryAddNoOpUndoState() {
 	//include an extra no-op so that after undoing an action and moving, the player can undo straight to the action's location
-	if (undoState.get() == nullptr || undoState.get()->getTypeIdentifier() != NoOpUndoState::classTypeIdentifier)
+	if (undoState.get() != nullptr && undoState.get()->getTypeIdentifier() != NoOpUndoState::classTypeIdentifier)
 		stackNewNoOpUndoState(undoState);
 }
 void PlayerState::clearUndoRedoStates() {
