@@ -239,11 +239,15 @@ public:
 	//travel across this rail, and queue a RideRailUndoState in the other undo state stack
 	void undoRideRail(short railId, bool isUndo, int ticksTime);
 	//kick a switch, and queue a KickSwitchUndoState in the other undo state stack
-	void undoKickSwitch(short switchId, bool isUndo, int ticksTime);
+	void undoKickSwitch(short switchId, SpriteDirection direction, bool isUndo, int ticksTime);
 	//restore rails to the positions they were before kicking this reset switch, and queue a KickResetSwitchUndoState in the
 	//	other undo state stack
 	void undoKickResetSwitch(
-		short resetSwitchId, KickResetSwitchUndoState* kickResetSwitchUndoState, bool isUndo, int ticksTime);
+		short resetSwitchId,
+		SpriteDirection direction,
+		KickResetSwitchUndoState* kickResetSwitchUndoState,
+		bool isUndo,
+		int ticksTime);
 	//render this player state, which was deemed to be the last state to need rendering
 	void render(EntityState* camera, int ticksTime);
 	//render the kick action for this player state if one is available

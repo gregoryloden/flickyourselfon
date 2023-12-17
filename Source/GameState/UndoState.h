@@ -5,10 +5,12 @@
 #define stackNewClimbFallUndoState(stack, fromX, fromY, fromHeight) \
 	produceWithArgs(ClimbFallUndoState, stack, fromX, fromY, fromHeight)
 #define stackNewRideRailUndoState(stack, railId) produceWithArgs(RideRailUndoState, stack, railId)
-#define stackNewKickSwitchUndoState(stack, switchId) produceWithArgs(KickSwitchUndoState, stack, switchId)
-#define stackNewKickResetSwitchUndoState(stack, resetSwitchId) produceWithArgs(KickResetSwitchUndoState, stack, resetSwitchId)
+#define stackNewKickSwitchUndoState(stack, switchId, direction) produceWithArgs(KickSwitchUndoState, stack, switchId, direction)
+#define stackNewKickResetSwitchUndoState(stack, resetSwitchId, direction) \
+	produceWithArgs(KickResetSwitchUndoState, stack, resetSwitchId, direction)
 
 class PlayerState;
+enum class SpriteDirection: int;
 
 class UndoState: public PooledReferenceCounter {
 public:
@@ -112,6 +114,7 @@ public:
 
 private:
 	short switchId;
+	SpriteDirection direction;
 
 public:
 	KickSwitchUndoState(objCounterParameters());
@@ -119,7 +122,8 @@ public:
 
 	int getTypeIdentifier() { return classTypeIdentifier; }
 	//initialize and return a KickSwitchUndoState
-	static KickSwitchUndoState* produce(objCounterParametersComma() ReferenceCounterHolder<UndoState>& stack, short pSwitchId);
+	static KickSwitchUndoState* produce(
+		objCounterParametersComma() ReferenceCounterHolder<UndoState>& stack, short pSwitchId, SpriteDirection pDirection);
 	//release a reference to this KickSwitchUndoState and return it to the pool if applicable
 	virtual void release();
 	//kick the switch
@@ -142,6 +146,7 @@ public:
 
 private:
 	short resetSwitchId;
+	SpriteDirection direction;
 	vector<RailUndoState> railUndoStates;
 
 public:
@@ -152,7 +157,7 @@ public:
 	vector<RailUndoState>* getRailUndoStates() { return &railUndoStates; }
 	//initialize and return a KickResetSwitchUndoState
 	static KickResetSwitchUndoState* produce(
-		objCounterParametersComma() ReferenceCounterHolder<UndoState>& stack, short pResetSwitchId);
+		objCounterParametersComma() ReferenceCounterHolder<UndoState>& stack, short pResetSwitchId, SpriteDirection pDirection);
 	//release a reference to this KickResetSwitchUndoState and return it to the pool if applicable
 	virtual void release();
 	//kick the switch

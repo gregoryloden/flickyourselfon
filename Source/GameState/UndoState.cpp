@@ -105,19 +105,21 @@ bool RideRailUndoState::handle(PlayerState* playerState, bool isUndo, int ticksT
 const int KickSwitchUndoState::classTypeIdentifier = UndoState::getNextClassTypeIdentifier();
 KickSwitchUndoState::KickSwitchUndoState(objCounterParameters())
 : UndoState(objCounterArguments())
-, switchId(0) {
+, switchId(0)
+, direction(SpriteDirection::Down) {
 }
 KickSwitchUndoState::~KickSwitchUndoState() {}
 KickSwitchUndoState* KickSwitchUndoState::produce(
-	objCounterParametersComma() ReferenceCounterHolder<UndoState>& stack, short pSwitchId)
+	objCounterParametersComma() ReferenceCounterHolder<UndoState>& stack, short pSwitchId, SpriteDirection pDirection)
 {
 	initializeWithNewFromPoolAndPlaceIntoStack(k, KickSwitchUndoState, stack);
 	k->switchId = pSwitchId;
+	k->direction = pDirection;
 	return k;
 }
 pooledReferenceCounterDefineRelease(KickSwitchUndoState)
 bool KickSwitchUndoState::handle(PlayerState* playerState, bool isUndo, int ticksTime) {
-	playerState->undoKickSwitch(switchId, isUndo, ticksTime);
+	playerState->undoKickSwitch(switchId, direction, isUndo, ticksTime);
 	return true;
 }
 
@@ -134,19 +136,21 @@ const int KickResetSwitchUndoState::classTypeIdentifier = UndoState::getNextClas
 KickResetSwitchUndoState::KickResetSwitchUndoState(objCounterParameters())
 : UndoState(objCounterArguments())
 , resetSwitchId(0)
+, direction(SpriteDirection::Down)
 , railUndoStates() {
 }
 KickResetSwitchUndoState::~KickResetSwitchUndoState() {}
 KickResetSwitchUndoState* KickResetSwitchUndoState::produce(
-	objCounterParametersComma() ReferenceCounterHolder<UndoState>& stack, short pResetSwitchId)
+	objCounterParametersComma() ReferenceCounterHolder<UndoState>& stack, short pResetSwitchId, SpriteDirection pDirection)
 {
 	initializeWithNewFromPoolAndPlaceIntoStack(k, KickResetSwitchUndoState, stack);
 	k->resetSwitchId = pResetSwitchId;
+	k->direction = pDirection;
 	k->railUndoStates.clear();
 	return k;
 }
 pooledReferenceCounterDefineRelease(KickResetSwitchUndoState)
 bool KickResetSwitchUndoState::handle(PlayerState* playerState, bool isUndo, int ticksTime) {
-	playerState->undoKickResetSwitch(resetSwitchId, this, isUndo, ticksTime);
+	playerState->undoKickResetSwitch(resetSwitchId, direction, this, isUndo, ticksTime);
 	return true;
 }

@@ -1205,7 +1205,7 @@ void PlayerState::kickSwitch(short switchId, int ticksTime) {
 	addKickSwitchComponents(switchId, &kickAnimationComponents, true, true);
 	beginEntityAnimation(&kickAnimationComponents, ticksTime);
 	tryAddNoOpUndoState();
-	stackNewKickSwitchUndoState(undoState, switchId);
+	stackNewKickSwitchUndoState(undoState, switchId, spriteDirection);
 }
 void PlayerState::addKickSwitchComponents(
 	short switchId,
@@ -1231,7 +1231,8 @@ void PlayerState::kickResetSwitch(short resetSwitchId, int ticksTime) {
 	addKickResetSwitchComponents(resetSwitchId, &kickAnimationComponents, nullptr);
 	beginEntityAnimation(&kickAnimationComponents, ticksTime);
 	tryAddNoOpUndoState();
-	mapState.get()->writeCurrentRailStates(resetSwitchId, stackNewKickResetSwitchUndoState(undoState, resetSwitchId));
+	mapState.get()->writeCurrentRailStates(
+		resetSwitchId, stackNewKickResetSwitchUndoState(undoState, resetSwitchId, spriteDirection));
 }
 void PlayerState::addKickResetSwitchComponents(
 	short resetSwitchId,
@@ -1347,20 +1348,28 @@ void PlayerState::undoRideRail(short railId, bool isUndo, int ticksTime) {
 	//the player is visually moved up to simulate a half-height raise on the rail, but the world ground y needs to stay the same
 	worldGroundYOffset = MapState::halfTileSize + boundingBoxHeight / 2;
 }
-void PlayerState::undoKickSwitch(short switchId, bool isUndo, int ticksTime) {
-	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> kickAnimationComponents;
+void PlayerState::undoKickSwitch(short switchId, SpriteDirection direction, bool isUndo, int ticksTime) {
+	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> kickAnimationComponents ({
+		newEntityAnimationSetDirection(direction),
+	});
 	addKickSwitchComponents(switchId, &kickAnimationComponents, !isUndo, false);
 	beginEntityAnimation(&kickAnimationComponents, ticksTime);
-	stackNewKickSwitchUndoState(isUndo ? redoState : undoState, switchId);
+	stackNewKickSwitchUndoState(isUndo ? redoState : undoState, switchId, direction);
 }
 void PlayerState::undoKickResetSwitch(
-	short resetSwitchId, KickResetSwitchUndoState* kickResetSwitchUndoState, bool isUndo, int ticksTime)
+	short resetSwitchId,
+	SpriteDirection direction,
+	KickResetSwitchUndoState* kickResetSwitchUndoState,
+	bool isUndo,
+	int ticksTime)
 {
-	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> kickAnimationComponents;
+	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> kickAnimationComponents ({
+		newEntityAnimationSetDirection(direction),
+	});
 	addKickResetSwitchComponents(resetSwitchId, &kickAnimationComponents, kickResetSwitchUndoState);
 	beginEntityAnimation(&kickAnimationComponents, ticksTime);
 	mapState.get()->writeCurrentRailStates(
-		resetSwitchId, stackNewKickResetSwitchUndoState(isUndo ? redoState : undoState, resetSwitchId));
+		resetSwitchId, stackNewKickResetSwitchUndoState(isUndo ? redoState : undoState, resetSwitchId, direction));
 }
 void PlayerState::render(EntityState* camera, int ticksTime) {
 	if (ghostSpriteX.get() != nullptr && ghostSpriteY.get() != nullptr) {
