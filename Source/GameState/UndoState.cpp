@@ -120,3 +120,33 @@ bool KickSwitchUndoState::handle(PlayerState* playerState, bool isUndo, int tick
 	playerState->undoKickSwitch(switchId, isUndo, ticksTime);
 	return true;
 }
+
+//////////////////////////////// KickResetSwitchUndoState::RailUndoState ////////////////////////////////
+KickResetSwitchUndoState::RailUndoState::RailUndoState(short pRailId, float pFromTargetTileOffset, char pFromMovementDirection)
+: railId(pRailId)
+, fromTargetTileOffset(pFromTargetTileOffset)
+, fromMovementDirection(pFromMovementDirection) {
+}
+KickResetSwitchUndoState::RailUndoState::~RailUndoState() {}
+
+//////////////////////////////// KickResetSwitchUndoState ////////////////////////////////
+const int KickResetSwitchUndoState::classTypeIdentifier = UndoState::getNextClassTypeIdentifier();
+KickResetSwitchUndoState::KickResetSwitchUndoState(objCounterParameters())
+: UndoState(objCounterArguments())
+, resetSwitchId(0)
+, railUndoStates() {
+}
+KickResetSwitchUndoState::~KickResetSwitchUndoState() {}
+KickResetSwitchUndoState* KickResetSwitchUndoState::produce(
+	objCounterParametersComma() ReferenceCounterHolder<UndoState>& stack, short pResetSwitchId)
+{
+	initializeWithNewFromPoolAndPlaceIntoStack(k, KickResetSwitchUndoState, stack);
+	k->resetSwitchId = pResetSwitchId;
+	k->railUndoStates.clear();
+	return k;
+}
+pooledReferenceCounterDefineRelease(KickResetSwitchUndoState)
+bool KickResetSwitchUndoState::handle(PlayerState* playerState, bool isUndo, int ticksTime) {
+	playerState->undoKickResetSwitch(resetSwitchId, this, isUndo, ticksTime);
+	return true;
+}

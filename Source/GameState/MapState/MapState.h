@@ -4,6 +4,7 @@
 
 #define newMapState() produceWithoutArgs(MapState)
 
+class KickResetSwitchUndoState;
 class Particle;
 class Rail;
 class RailState;
@@ -241,7 +242,9 @@ public:
 	//flip a switch
 	void flipSwitch(short switchId, bool moveRailsForward, bool allowRadioTowerAnimation, int ticksTime);
 	//flip a reset switch
-	void flipResetSwitch(short resetSwitchId, int ticksTime);
+	void flipResetSwitch(short resetSwitchId, KickResetSwitchUndoState* kickResetSwitchUndoState, int ticksTime);
+	//write the states of all rails affected by the given reset switch into the undo state
+	void writeCurrentRailStates(short resetSwitchId, KickResetSwitchUndoState* kickResetSwitchUndoState);
 	//begin a radio waves animation
 	//returns the duration of the animation that takes place after the initial delay
 	int startRadioWavesAnimation(int initialTicksDelay, int ticksTime);

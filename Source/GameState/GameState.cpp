@@ -647,7 +647,7 @@ void GameState::loadCachedSavedState(int ticksTime) {
 						newEntityAnimationSetDirection(SpriteDirection::Down)
 					});
 				PlayerState::addKickResetSwitchComponents(
-					MapState::getIdFromResetSwitchIndex(resetSwitchIndex), &replayComponents);
+					MapState::getIdFromResetSwitchIndex(resetSwitchIndex), &replayComponents, nullptr);
 				replayComponents.push_back(newEntityAnimationSetSpriteAnimation(nullptr));
 				lastX = moveX;
 				lastY = moveY;

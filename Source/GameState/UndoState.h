@@ -6,6 +6,7 @@
 	produceWithArgs(ClimbFallUndoState, stack, fromX, fromY, fromHeight)
 #define stackNewRideRailUndoState(stack, railId) produceWithArgs(RideRailUndoState, stack, railId)
 #define stackNewKickSwitchUndoState(stack, switchId) produceWithArgs(KickSwitchUndoState, stack, switchId)
+#define stackNewKickResetSwitchUndoState(stack, resetSwitchId) produceWithArgs(KickResetSwitchUndoState, stack, resetSwitchId)
 
 class PlayerState;
 
@@ -120,6 +121,39 @@ public:
 	//initialize and return a KickSwitchUndoState
 	static KickSwitchUndoState* produce(objCounterParametersComma() ReferenceCounterHolder<UndoState>& stack, short pSwitchId);
 	//release a reference to this KickSwitchUndoState and return it to the pool if applicable
+	virtual void release();
+	//kick the switch
+	virtual bool handle(PlayerState* playerState, bool isUndo, int ticksTime);
+};
+class KickResetSwitchUndoState: public UndoState {
+public:
+	//Should only be allocated within an object, on the stack, or as a static object
+	class RailUndoState {
+	public:
+		const short railId;
+		const float fromTargetTileOffset;
+		const char fromMovementDirection;
+
+		RailUndoState(short pRailId, float pFromTargetTileOffset, char pFromMovementDirection);
+		virtual ~RailUndoState();
+	};
+
+	static const int classTypeIdentifier;
+
+private:
+	short resetSwitchId;
+	vector<RailUndoState> railUndoStates;
+
+public:
+	KickResetSwitchUndoState(objCounterParameters());
+	virtual ~KickResetSwitchUndoState();
+
+	int getTypeIdentifier() { return classTypeIdentifier; }
+	vector<RailUndoState>* getRailUndoStates() { return &railUndoStates; }
+	//initialize and return a KickResetSwitchUndoState
+	static KickResetSwitchUndoState* produce(
+		objCounterParametersComma() ReferenceCounterHolder<UndoState>& stack, short pResetSwitchId);
+	//release a reference to this KickResetSwitchUndoState and return it to the pool if applicable
 	virtual void release();
 	//kick the switch
 	virtual bool handle(PlayerState* playerState, bool isUndo, int ticksTime);

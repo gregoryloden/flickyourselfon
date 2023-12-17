@@ -4,6 +4,7 @@
 #include "GameState/EntityAnimation.h"
 #include "GameState/EntityState.h"
 #include "GameState/KickAction.h"
+#include "GameState/UndoState.h"
 #include "GameState/MapState/Rail.h"
 #include "GameState/MapState/ResetSwitch.h"
 #include "GameState/MapState/Switch.h"
@@ -459,11 +460,26 @@ void MapState::flipSwitch(short switchId, bool moveRailsForward, bool allowRadio
 		}
 	}
 }
-void MapState::flipResetSwitch(short resetSwitchId, int ticksTime) {
+void MapState::flipResetSwitch(short resetSwitchId, KickResetSwitchUndoState* kickResetSwitchUndoState, int ticksTime) {
 	ResetSwitchState* resetSwitchState = resetSwitchStates[resetSwitchId & railSwitchIndexBitmask];
-	for (short railId : *resetSwitchState->getResetSwitch()->getAffectedRailIds())
-		railStates[railId & railSwitchIndexBitmask]->reset(true);
+	if (kickResetSwitchUndoState != nullptr) {
+		for (KickResetSwitchUndoState::RailUndoState& railUndoState : *kickResetSwitchUndoState->getRailUndoStates())
+			railStates[railUndoState.railId & railSwitchIndexBitmask]->loadState(
+				railUndoState.fromTargetTileOffset, railUndoState.fromMovementDirection, true);
+	} else {
+		for (short railId : *resetSwitchState->getResetSwitch()->getAffectedRailIds())
+			railStates[railId & railSwitchIndexBitmask]->reset(true);
+	}
 	resetSwitchState->flip(ticksTime);
+}
+void MapState::writeCurrentRailStates(short resetSwitchId, KickResetSwitchUndoState* kickResetSwitchUndoState) {
+	vector<KickResetSwitchUndoState::RailUndoState>* railUndoStates = kickResetSwitchUndoState->getRailUndoStates();
+	for (short railId : *resetSwitches[resetSwitchId & railSwitchIndexBitmask]->getAffectedRailIds()) {
+		RailState* railState = railStates[railId & railSwitchIndexBitmask];
+		railUndoStates->push_back(
+			KickResetSwitchUndoState::RailUndoState(
+				railId, railState->getTargetTileOffset(), railState->getNextMovementDirection()));
+	}
 }
 int MapState::startRadioWavesAnimation(int initialTicksDelay, int ticksTime) {
 	radioWavesColor = lastActivatedSwitchColor;

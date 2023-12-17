@@ -8,6 +8,7 @@
 class DynamicValue;
 class EntityAnimation;
 class GameState;
+class KickResetSwitchUndoState;
 class SpriteAnimation;
 namespace EntityAnimationTypes {
 	class Component;
@@ -47,7 +48,7 @@ public:
 	//tell the map to kick a switch at the given time
 	virtual void mapKickSwitch(short switchId, bool moveRailsForward, bool allowRadioTowerAnimation, int ticksTime) {}
 	//tell the map to kick a reset switch at the given time
-	virtual void mapKickResetSwitch(short resetSwitchId, int ticksTime) {}
+	virtual void mapKickResetSwitch(short resetSwitchId, KickResetSwitchUndoState* kickResetSwitchUndoState, int ticksTime) {}
 	//spawn a particle with the given SpriteAnimation
 	virtual void spawnParticle(
 		float pX, float pY, SpriteAnimation* pAnimation, SpriteDirection pDirection, int particleStartTicksTime) {}

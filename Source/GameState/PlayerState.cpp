@@ -131,8 +131,8 @@ void PlayerState::setGhostSprite(bool show, float pX, float pY, SpriteDirection 
 void PlayerState::mapKickSwitch(short switchId, bool moveRailsForward, bool allowRadioTowerAnimation, int ticksTime) {
 	mapState.get()->flipSwitch(switchId, moveRailsForward, allowRadioTowerAnimation, ticksTime);
 }
-void PlayerState::mapKickResetSwitch(short resetSwitchId, int ticksTime) {
-	mapState.get()->flipResetSwitch(resetSwitchId, ticksTime);
+void PlayerState::mapKickResetSwitch(short resetSwitchId, KickResetSwitchUndoState* kickResetSwitchUndoState, int ticksTime) {
+	mapState.get()->flipResetSwitch(resetSwitchId, kickResetSwitchUndoState, ticksTime);
 }
 void PlayerState::spawnParticle(
 	float pX, float pY, SpriteAnimation* pAnimation, SpriteDirection pDirection, int particleStartTicksTime)
@@ -1228,11 +1228,15 @@ void PlayerState::addKickSwitchComponents(
 void PlayerState::kickResetSwitch(short resetSwitchId, int ticksTime) {
 	MapState::logResetSwitchKick(resetSwitchId);
 	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> kickAnimationComponents;
-	addKickResetSwitchComponents(resetSwitchId, &kickAnimationComponents);
+	addKickResetSwitchComponents(resetSwitchId, &kickAnimationComponents, nullptr);
 	beginEntityAnimation(&kickAnimationComponents, ticksTime);
+	tryAddNoOpUndoState();
+	mapState.get()->writeCurrentRailStates(resetSwitchId, stackNewKickResetSwitchUndoState(undoState, resetSwitchId));
 }
 void PlayerState::addKickResetSwitchComponents(
-	short resetSwitchId, vector<ReferenceCounterHolder<EntityAnimationTypes::Component>>* components)
+	short resetSwitchId,
+	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>>* components,
+	KickResetSwitchUndoState* kickResetSwitchUndoState)
 {
 	components->insert(
 		components->end(),
@@ -1240,7 +1244,7 @@ void PlayerState::addKickResetSwitchComponents(
 			newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f)),
 			newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerKickingAnimation),
 			newEntityAnimationDelay(SpriteRegistry::playerKickingAnimationTicksPerFrame),
-			newEntityAnimationMapKickResetSwitch(resetSwitchId),
+			newEntityAnimationMapKickResetSwitch(resetSwitchId, kickResetSwitchUndoState),
 			newEntityAnimationDelay(
 				SpriteRegistry::playerKickingAnimation->getTotalTicksDuration()
 					- SpriteRegistry::playerKickingAnimationTicksPerFrame)
@@ -1348,6 +1352,15 @@ void PlayerState::undoKickSwitch(short switchId, bool isUndo, int ticksTime) {
 	addKickSwitchComponents(switchId, &kickAnimationComponents, !isUndo, false);
 	beginEntityAnimation(&kickAnimationComponents, ticksTime);
 	stackNewKickSwitchUndoState(isUndo ? redoState : undoState, switchId);
+}
+void PlayerState::undoKickResetSwitch(
+	short resetSwitchId, KickResetSwitchUndoState* kickResetSwitchUndoState, bool isUndo, int ticksTime)
+{
+	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> kickAnimationComponents;
+	addKickResetSwitchComponents(resetSwitchId, &kickAnimationComponents, kickResetSwitchUndoState);
+	beginEntityAnimation(&kickAnimationComponents, ticksTime);
+	mapState.get()->writeCurrentRailStates(
+		resetSwitchId, stackNewKickResetSwitchUndoState(isUndo ? redoState : undoState, resetSwitchId));
 }
 void PlayerState::render(EntityState* camera, int ticksTime) {
 	if (ghostSpriteX.get() != nullptr && ghostSpriteY.get() != nullptr) {

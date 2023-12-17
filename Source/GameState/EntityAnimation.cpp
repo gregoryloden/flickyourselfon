@@ -1,6 +1,7 @@
 #include "EntityAnimation.h"
 #include "GameState/DynamicValue.h"
 #include "GameState/EntityState.h"
+#include "GameState/UndoState.h"
 #include "Sprites/SpriteAnimation.h"
 
 //////////////////////////////// EntityAnimationTypes::Component ////////////////////////////////
@@ -208,19 +209,24 @@ bool EntityAnimation::MapKickSwitch::handle(EntityState* entityState, int ticksT
 //////////////////////////////// EntityAnimation::MapKickResetSwitch ////////////////////////////////
 EntityAnimation::MapKickResetSwitch::MapKickResetSwitch(objCounterParameters())
 : Component(objCounterArguments())
-, resetSwitchId(0) {
+, resetSwitchId(0)
+, kickResetSwitchUndoState(nullptr) {
 }
 EntityAnimation::MapKickResetSwitch::~MapKickResetSwitch() {}
 EntityAnimation::MapKickResetSwitch* EntityAnimation::MapKickResetSwitch::produce(
-	objCounterParametersComma() short pResetSwitchId)
+	objCounterParametersComma() short pResetSwitchId, KickResetSwitchUndoState* pKickResetSwitchUndoState)
 {
 	initializeWithNewFromPool(m, EntityAnimation::MapKickResetSwitch)
 	m->resetSwitchId = pResetSwitchId;
+	m->kickResetSwitchUndoState.set(pKickResetSwitchUndoState);
 	return m;
 }
 pooledReferenceCounterDefineRelease(EntityAnimation::MapKickResetSwitch)
+void EntityAnimation::MapKickResetSwitch::prepareReturnToPool() {
+	kickResetSwitchUndoState.set(nullptr);
+}
 bool EntityAnimation::MapKickResetSwitch::handle(EntityState* entityState, int ticksTime) {
-	entityState->mapKickResetSwitch(resetSwitchId, ticksTime);
+	entityState->mapKickResetSwitch(resetSwitchId, kickResetSwitchUndoState.get(), ticksTime);
 	return true;
 }
 

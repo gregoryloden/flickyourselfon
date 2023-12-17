@@ -11,13 +11,15 @@
 #define newEntityAnimationSetScreenOverlayColor(r, g, b, a) produceWithArgs(EntityAnimation::SetScreenOverlayColor, r, g, b, a)
 #define newEntityAnimationMapKickSwitch(switchId, moveRailsForward, allowRadioTowerAnimation) \
 	produceWithArgs(EntityAnimation::MapKickSwitch, switchId, moveRailsForward, allowRadioTowerAnimation)
-#define newEntityAnimationMapKickResetSwitch(resetSwitchId) produceWithArgs(EntityAnimation::MapKickResetSwitch, resetSwitchId)
+#define newEntityAnimationMapKickResetSwitch(resetSwitchId, kickResetSwitchUndoState) \
+	produceWithArgs(EntityAnimation::MapKickResetSwitch, resetSwitchId, kickResetSwitchUndoState)
 #define newEntityAnimationSpawnParticle(x, y, animation, direction) \
 	produceWithArgs(EntityAnimation::SpawnParticle, x, y, animation, direction)
 #define newEntityAnimationSwitchToPlayerCamera() produceWithoutArgs(EntityAnimation::SwitchToPlayerCamera)
 
 class DynamicValue;
 class EntityState;
+class KickResetSwitchUndoState;
 class SpriteAnimation;
 enum class SpriteDirection: int;
 
@@ -184,15 +186,21 @@ public:
 	class MapKickResetSwitch: public EntityAnimationTypes::Component {
 	private:
 		short resetSwitchId;
+		ReferenceCounterHolder<KickResetSwitchUndoState> kickResetSwitchUndoState;
 
 	public:
 		MapKickResetSwitch(objCounterParameters());
 		virtual ~MapKickResetSwitch();
 
 		//initialize and return a MapKickResetSwitch
-		static MapKickResetSwitch* produce(objCounterParametersComma() short pResetSwitchId);
+		static MapKickResetSwitch* produce(
+			objCounterParametersComma() short pResetSwitchId, KickResetSwitchUndoState* pKickResetSwitchUndoState);
 		//release a reference to this MapKickResetSwitch and return it to the pool if applicable
 		virtual void release();
+	protected:
+		//release components before this is returned to the pool
+		virtual void prepareReturnToPool();
+	public:
 		//return that the animation should continue updating after telling the map to kick the reset switch
 		virtual bool handle(EntityState* entityState, int ticksTime);
 	};

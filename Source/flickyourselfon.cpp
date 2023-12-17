@@ -172,6 +172,7 @@ int gameMain(int argc, char* argv[]) {
 		ObjectPool<ClimbFallUndoState>::clearPool();
 		ObjectPool<RideRailUndoState>::clearPool();
 		ObjectPool<KickSwitchUndoState>::clearPool();
+		ObjectPool<KickResetSwitchUndoState>::clearPool();
 		ObjCounter::end();
 	#endif
 	Logger::gameplayLogger.endLogging();
