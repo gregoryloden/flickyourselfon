@@ -5,8 +5,9 @@
 
 class CollisionRect;
 class KickAction;
-class SpriteAnimation;
 enum class KickActionType: int;
+class KickResetSwitchUndoState;
+class SpriteAnimation;
 class UndoState;
 namespace EntityAnimationTypes {
 	class Component;
@@ -111,7 +112,7 @@ public:
 	//tell the map to kick a switch
 	virtual void mapKickSwitch(short switchId, bool moveRailsForward, bool allowRadioTowerAnimation, int ticksTime);
 	//tell the map to kick a reset switch
-	virtual void mapKickResetSwitch(short resetSwitchId, int ticksTime);
+	virtual void mapKickResetSwitch(short resetSwitchId, KickResetSwitchUndoState* kickResetSwitchUndoState, int ticksTime);
 	//spawn a particle with the given SpriteAnimation
 	virtual void spawnParticle(
 		float pX, float pY, SpriteAnimation* pAnimation, SpriteDirection pDirection, int particleStartTicksTime);
@@ -215,7 +216,9 @@ private:
 public:
 	//add the animation components for a reset switch kicking animation
 	static void addKickResetSwitchComponents(
-		short resetSwitchId, vector<ReferenceCounterHolder<EntityAnimationTypes::Component>>* components);
+		short resetSwitchId,
+		vector<ReferenceCounterHolder<EntityAnimationTypes::Component>>* components,
+		KickResetSwitchUndoState* kickResetSwitchUndoState);
 private:
 	//set the undo/redo state to the given state, with special handling if we're deleting it
 	void setUndoState(ReferenceCounterHolder<UndoState>& holder, UndoState* newUndoState);
@@ -230,13 +233,17 @@ public:
 	void redo(int ticksTime);
 	//don't do anything, but queue a NoOpUndoState in the other undo state stack
 	void undoNoOp(bool isUndo);
-	//move the player to the given location, and place an undo state in the list opposite the one that this one came from
+	//move the player to the given location, and queue a MoveUndoState in the other undo state stack
 	//returns whether a move was scheduled or not
 	bool undoMove(float fromX, float fromY, char fromHeight, bool isUndo, int ticksTime);
-	//travel across this rail
+	//travel across this rail, and queue a RideRailUndoState in the other undo state stack
 	void undoRideRail(short railId, bool isUndo, int ticksTime);
-	//kick a switch
+	//kick a switch, and queue a KickSwitchUndoState in the other undo state stack
 	void undoKickSwitch(short switchId, bool isUndo, int ticksTime);
+	//restore rails to the positions they were before kicking this reset switch, and queue a KickResetSwitchUndoState in the
+	//	other undo state stack
+	void undoKickResetSwitch(
+		short resetSwitchId, KickResetSwitchUndoState* kickResetSwitchUndoState, bool isUndo, int ticksTime);
 	//render this player state, which was deemed to be the last state to need rendering
 	void render(EntityState* camera, int ticksTime);
 	//render the kick action for this player state if one is available
