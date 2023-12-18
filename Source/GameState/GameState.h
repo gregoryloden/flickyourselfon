@@ -1,4 +1,4 @@
-#include "MapState/MapState.h"
+#include "GameState/MapState/MapState.h"
 
 #define newGameState() newWithoutArgs(GameState)
 

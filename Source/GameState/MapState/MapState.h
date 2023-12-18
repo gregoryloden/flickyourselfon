@@ -1,9 +1,11 @@
 #ifndef MAP_STATE_H
 #define MAP_STATE_H
-#include "GameState/EntityState.h"
+#include "Util/PooledReferenceCounter.h"
 
 #define newMapState() produceWithoutArgs(MapState)
 
+class DynamicCameraAnchor;
+class EntityState;
 class KickResetSwitchUndoState;
 class Particle;
 class Rail;
@@ -13,6 +15,9 @@ class ResetSwitchState;
 class Switch;
 class SwitchState;
 enum class KickActionType: int;
+namespace EntityAnimationTypes {
+	class Component;
+}
 
 class MapState: public PooledReferenceCounter {
 public:

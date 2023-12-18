@@ -1,4 +1,5 @@
-#include "MapState/MapState.h"
+#include "GameState/EntityState.h"
+#include "GameState/MapState/MapState.h"
 #include "Util/Config.h"
 
 #define newPlayerState(mapState) produceWithArgs(PlayerState, mapState)
