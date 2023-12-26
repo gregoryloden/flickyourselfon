@@ -330,6 +330,31 @@ bool MapState::tileHasRailEnd(int x, int y) {
 	Rail::Segment* endSegment = rail->getSegment(rail->getSegmentCount() - 1);
 	return endSegment->x == x && endSegment->y == y;
 }
+bool MapState::tileFalls(int x, int y, char initialHeight, int* outFallY, char* outFallHeight) {
+	//start one tile down and look for an eligible floor below our current height
+	for (char tileOffset = 1; true; tileOffset++) {
+		char fallHeight = getHeight(x, y + tileOffset);
+		char targetHeight = initialHeight - tileOffset * 2;
+		//an empty tile height is fine...
+		if (fallHeight == MapState::emptySpaceHeight) {
+			//...unless we reached the lowest height, in which case there is no longer a possible fall height
+			if (targetHeight == 0)
+				return false;
+			continue;
+		//the tile is higher than us, we can't fall here
+		} else if (fallHeight > targetHeight)
+			return false;
+		//this is a cliff face or lower floor, keep looking
+		else if (fallHeight < targetHeight)
+			continue;
+
+		//we found a matching floor tile
+		*outFallY = y + tileOffset;
+		if (outFallHeight != nullptr)
+			*outFallHeight = fallHeight;
+		return true;
+	}
+}
 KickActionType MapState::getSwitchKickActionType(short switchId) {
 	Switch* switch0 = switches[switchId & railSwitchIndexBitmask];
 	bool group0 = switch0->getGroup() == 0;

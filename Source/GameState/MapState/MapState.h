@@ -224,6 +224,9 @@ public:
 	static bool tileHasResetSwitchBody(int x, int y);
 	//check that the tile has the end segment of a rail
 	static bool tileHasRailEnd(int x, int y);
+	//check if there is a floor tile that is lower than the given height and corresponds to the world ground Y of the given tile
+	//	at the given height, and write it if there is one
+	static bool tileFalls(int x, int y, char initialHeight, int* outFallY, char* outFallHeight);
 	//a switch can only be kicked if it's group 0 or if its color is activated
 	KickActionType getSwitchKickActionType(short switchId);
 	//check the height of all the tiles in the row (indices inclusive), and return it if they're all the same or invalidHeight

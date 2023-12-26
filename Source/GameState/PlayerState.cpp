@@ -596,24 +596,13 @@ bool PlayerState::setFallKickAction(float xPosition, float yPosition) {
 	} else if (spriteDirection == SpriteDirection::Down) {
 		int centerMapX = (int)xPosition / MapState::tileSize;
 		int oneTileDownMapY = (int)(yPosition + boundingBoxBottomOffset + kickingDistanceLimit) / MapState::tileSize;
-		//start two tiles down and look for an eligible floor below our current height
-		for (char tileOffset = 1; true; tileOffset++) {
-			fallHeight = MapState::getHeight(centerMapX, oneTileDownMapY + tileOffset);
-			char targetHeight = z - tileOffset * 2;
-			//the tile is higher than us (or it's the empty tile), we can't fall here
-			if (fallHeight > targetHeight)
-				return false;
-			//this is a cliff face, keep looking
-			else if (fallHeight < targetHeight)
-				continue;
-
-			//we found a matching floor tile, move a distance such that the bottom of the player is slightly below the bottom of
-			//	the cliff
-			targetXPosition = xPosition;
-			targetYPosition =
-				(float)((oneTileDownMapY + tileOffset) * MapState::tileSize) - boundingBoxTopOffset + smallDistance;
-			break;
-		}
+		int fallY;
+		if (!MapState::tileFalls(centerMapX, oneTileDownMapY, z, &fallY, &fallHeight))
+			return false;
+		//we found a matching floor tile, move a distance such that the bottom of the player is slightly below the bottom of the
+		//	cliff
+		targetXPosition = xPosition;
+		targetYPosition = (float)(fallY * MapState::tileSize) - boundingBoxTopOffset + smallDistance;
 	} else {
 		int centerMapY = (int)(yPosition + boundingBoxCenterYOffset) / MapState::tileSize;
 		int sideTilesEdgeMapX;
@@ -625,27 +614,10 @@ bool PlayerState::setFallKickAction(float xPosition, float yPosition) {
 			sideTilesEdgeMapX = (int)(xPosition + boundingBoxRightOffset + kickingDistanceLimit) / MapState::tileSize;
 			targetXPosition = (float)(sideTilesEdgeMapX * MapState::tileSize) - boundingBoxLeftOffset + smallDistance;
 		}
-		//start one tile down and look for an eligible floor below our current height
-		for (char tileOffset = 1; true; tileOffset++) {
-			fallHeight = MapState::getHeight(sideTilesEdgeMapX, centerMapY + tileOffset);
-			char targetHeight = z - tileOffset * 2;
-			//an empty tile height is fine...
-			if (fallHeight == MapState::emptySpaceHeight) {
-				//...unless we reached the lowest height, in which case there is no longer a possible fall height
-				if (targetHeight == 0)
-					return false;
-				continue;
-			//the tile is higher than us, we can't fall here
-			} else if (fallHeight > targetHeight)
-				return false;
-			//this is a cliff face or lower floor, keep looking
-			else if (fallHeight < targetHeight)
-				continue;
-
-			//we found a matching floor tile
-			targetYPosition = yPosition + tileOffset * MapState::tileSize;
-			break;
-		}
+		int fallY;
+		if (!MapState::tileFalls(sideTilesEdgeMapX, centerMapY, z, &fallY, &fallHeight))
+			return false;
+		targetYPosition = yPosition + (fallY - centerMapY) * MapState::tileSize;
 	}
 
 	if (!checkCanMoveToPosition(
