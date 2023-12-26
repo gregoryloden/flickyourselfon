@@ -104,7 +104,7 @@ void MapState::buildMap() {
 	int blueMask = (int)floor->format->Bmask;
 	int* pixels = static_cast<int*>(floor->pixels);
 
-	//set all tiles and heights before loading rails/switches
+	//set all tiles, heights, and IDs before loading rails/switches
 	for (int i = 0; i < totalTiles; i++) {
 		tiles[i] = (char)(((pixels[i] & greenMask) >> greenShift) / tileDivisor);
 		heights[i] = (char)(((pixels[i] & blueMask) >> blueShift) / heightDivisor);
@@ -204,6 +204,7 @@ vector<int> MapState::parseRail(int* pixels, int redShift, int segmentIndex, int
 	int floorRailSwitchTailShiftedValue = floorIsRailSwitchBitmask << redShift;
 	vector<int> segmentIndices;
 	while (true) {
+		//rails are never placed at the edge of the map, so we don't need to check whether we wrapped around the edge
 		if ((pixels[segmentIndex + 1] & floorIsRailSwitchAndHeadShiftedBitmask) == floorRailSwitchTailShiftedValue
 				&& railSwitchIds[segmentIndex + 1] == 0)
 			segmentIndex++;

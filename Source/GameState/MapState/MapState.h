@@ -86,11 +86,13 @@ public:
 	//rail/switch state serialization
 	static constexpr char* floorFileName = "floor.png";
 	static const short absentRailSwitchId = 0;
+private:
 	static const short railSwitchIdBitmask = 3 << 12;
 	static const short railIdValue = 1 << 12;
 	static const short switchIdValue = 2 << 12;
 	static const short resetSwitchIdValue = 3 << 12;
 	static const short railSwitchIndexBitmask = railIdValue - 1;
+public:
 	static const int floorIsRailSwitchBitmask = 1;
 	static const int floorIsRailSwitchHeadBitmask = 2;
 	static const int floorIsRailSwitchAndHeadBitmask = floorIsRailSwitchHeadBitmask | floorIsRailSwitchBitmask;
