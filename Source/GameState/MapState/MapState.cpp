@@ -96,10 +96,6 @@ void MapState::buildMap() {
 	heights = new char[totalTiles];
 	railSwitchIds = new short[totalTiles];
 
-	//these need to be initialized so that we can update them without erasing already-updated ids
-	for (int i = 0; i < totalTiles; i++)
-		railSwitchIds[i] = 0;
-
 	int redShift = (int)floor->format->Rshift;
 	int redMask = (int)floor->format->Rmask;
 	int greenShift = (int)floor->format->Gshift;
