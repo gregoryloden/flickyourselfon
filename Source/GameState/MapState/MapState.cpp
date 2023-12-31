@@ -5,6 +5,7 @@
 #include "GameState/EntityState.h"
 #include "GameState/KickAction.h"
 #include "GameState/UndoState.h"
+#include "GameState/MapState/Level.h"
 #include "GameState/MapState/Rail.h"
 #include "GameState/MapState/ResetSwitch.h"
 #include "GameState/MapState/Switch.h"
@@ -25,9 +26,12 @@
 char* MapState::tiles = nullptr;
 char* MapState::heights = nullptr;
 short* MapState::railSwitchIds = nullptr;
+short* MapState::planeIds = nullptr;
 vector<Rail*> MapState::rails;
 vector<Switch*> MapState::switches;
 vector<ResetSwitch*> MapState::resetSwitches;
+vector<LevelTypes::Plane*> MapState::planes;
+vector<Level*> MapState::levels;
 int MapState::width = 1;
 int MapState::height = 1;
 bool MapState::editorHideNonTiles = false;
@@ -196,6 +200,8 @@ void MapState::buildMap() {
 		}
 	}
 
+	buildLevels();
+
 	SDL_FreeSurface(floor);
 }
 vector<int> MapState::parseRail(int* pixels, int redShift, int segmentIndex, int railSwitchId) {
@@ -253,10 +259,126 @@ void MapState::addResetSwitchSegments(
 		resetSwitch->addSegment(segmentX, segmentY, segmentColor, group, segmentsSection);
 	}
 }
+void MapState::buildLevels() {
+	//initialize the base levels state
+	planeIds = new short[width * height] {};
+	Level* activeLevel = newLevel();
+	levels.push_back(activeLevel);
+
+	//the first tile we'll check is the tile where the boot starts
+	deque<int> tileChecks ({ introAnimationBootTileY * width + introAnimationBootTileX });
+	while (!tileChecks.empty()) {
+		int nextTile = tileChecks.front();
+		tileChecks.pop_front();
+		//skip any plane that's already filled
+		if (planeIds[nextTile] != 0)
+			continue;
+
+		//this tile is a victory tile - start a new level if this is the last tile we know about, otherwise keep building planes
+		bool isVictoryTile = tiles[nextTile] == tilePuzzleEnd;
+		if (isVictoryTile) {
+			if (!tileChecks.empty()) {
+				tileChecks.push_back(nextTile);
+				continue;
+			}
+			levels.push_back(activeLevel = newLevel());
+		}
+		LevelTypes::Plane* newPlane = buildPlane(nextTile, activeLevel, tileChecks);
+		if (isVictoryTile)
+			levels[levels.size() - 2]->assignVictoryPlane(newPlane);
+	}
+}
+LevelTypes::Plane* MapState::buildPlane(int tile, Level* activeLevel, deque<int>& tileChecks) {
+	//prep a new plane
+	LevelTypes::Plane* plane = activeLevel->addNewPlane();
+	planes.push_back(plane);
+	int planeId = (int)planes.size();
+	planeIds[tile] = planeId;
+	int planeHeight = heights[tile];
+
+	//mark tiles with it via breadth-first search
+	deque<int> planeTileChecks ({ tile });
+	while (!planeTileChecks.empty()) {
+		tile = planeTileChecks.front();
+		planeTileChecks.pop_front();
+		plane->addTile(tile % width, tile / width);
+		//planes never extend to the edge of the map, so we don't need to check whether we wrapped around the edge
+		int upNeighbor = tile - width;
+		int downNeighbor = tile + width;
+		int neighbors[] = { tile - 1, tile + 1, upNeighbor, downNeighbor };
+
+		//check neighboring tiles of interest to add to this plane or a climb/fall plane
+		for (int neighbor : neighbors) {
+			char neighborHeight = heights[neighbor];
+			//check for neighboring tiles at the same height to include in the plane
+			if (neighborHeight == planeHeight) {
+				if (planeIds[neighbor] == 0) {
+					planeTileChecks.push_back(neighbor);
+					planeIds[neighbor] = planeId;
+				}
+			//check for neighboring tiles to climb to
+			} else if (neighborHeight > planeHeight && neighborHeight != emptySpaceHeight) {
+				//for all neighbors but the down neighbor, the tile to climb to is one tile up
+				if (neighbor != downNeighbor) {
+					neighbor -= width;
+					neighborHeight = heights[neighbor];
+				}
+				if (neighborHeight != planeHeight + 2)
+					continue;
+				tileChecks.push_back(neighbor);
+			//check for neighboring tiles to fall to
+			} else {
+				//for all neighbors but the up neighbor, the tile to climb to is further down
+				if (neighbor != upNeighbor) {
+					int fallX = neighbor % width;
+					int fallY;
+					if (!tileFalls(fallX, neighbor / width, planeHeight, &fallY, nullptr))
+						continue;
+					neighbor = fallY * width + fallX;
+				} else if (neighborHeight % 2 != 0)
+					continue;
+				tileChecks.push_back(neighbor);
+			}
+		}
+
+		//check for other tiles of interest to connect planes
+		//if there's a rail, check if it's the start/end segment
+		if ((railSwitchIds[tile] & railSwitchIdBitmask) == railIdValue) {
+			Rail* rail = rails[railSwitchIds[tile] & railSwitchIndexBitmask];
+			Rail::Segment* startSegment = rail->getSegment(0);
+			Rail::Segment* endSegment = rail->getSegment(rail->getSegmentCount() - 1);
+			int startTile = startSegment->y * width + startSegment->x;
+			int endTile = endSegment->y * width + endSegment->x;
+			if (tile == startTile) {
+				if (planeIds[endTile] == 0) {
+					Rail::Segment* endAdjacentSegment = rail->getSegment(rail->getSegmentCount() - 2);
+					int endAdjacentTile = endTile * 2 - endAdjacentSegment->y * width - endAdjacentSegment->x;
+					if (tiles[endAdjacentTile] == tilePuzzleEnd)
+						tileChecks.push_back(endAdjacentTile);
+					else
+						tileChecks.push_back(endTile);
+				}
+			} else if (tile == endTile) {
+				if (planeIds[startTile] == 0) {
+					Rail::Segment* startAdjacentSegment = rail->getSegment(1);
+					int startAdjacentTile = startTile * 2 - startAdjacentSegment->y * width - startAdjacentSegment->x;
+					if (tiles[startAdjacentTile] == tilePuzzleEnd)
+						tileChecks.push_back(startAdjacentTile);
+					else
+						tileChecks.push_back(startTile);
+				}
+			}
+		//if there's a switch, make sure the plane knows about it
+		} else if ((railSwitchIds[tile] & railSwitchIdBitmask) == switchIdValue)
+			plane->addSwitchId(railSwitchIds[tile] & railSwitchIndexBitmask);
+	}
+	return plane;
+}
 void MapState::deleteMap() {
 	delete[] tiles;
 	delete[] heights;
 	delete[] railSwitchIds;
+	delete[] planeIds;
 	for (Rail* rail : rails)
 		delete rail;
 	rails.clear();
@@ -266,6 +388,11 @@ void MapState::deleteMap() {
 	for (ResetSwitch* resetSwitch : resetSwitches)
 		delete resetSwitch;
 	resetSwitches.clear();
+	//don't delete planes, they are owned by the Levels
+	planes.clear();
+	for (Level* level : levels)
+		delete level;
+	levels.clear();
 }
 int MapState::getScreenLeftWorldX(EntityState* camera, int ticksTime) {
 	//we convert the camera center to int first because with a position with 0.5 offsets, we render all pixels aligned (because

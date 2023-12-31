@@ -7,6 +7,7 @@
 class DynamicCameraAnchor;
 class EntityState;
 class KickResetSwitchUndoState;
+class Level;
 class Particle;
 class Rail;
 class RailState;
@@ -17,6 +18,9 @@ class SwitchState;
 enum class KickActionType: int;
 namespace EntityAnimationTypes {
 	class Component;
+}
+namespace LevelTypes {
+	class Plane;
 }
 
 class MapState: public PooledReferenceCounter {
@@ -130,9 +134,12 @@ private:
 	//bits 0-11 indicate the index in the appropriate rail/switch array, bits 13 and 12 indicate a rail (01), a switch (10), or
 	//	a reset switch (11)
 	static short* railSwitchIds;
+	static short* planeIds;
 	static vector<Rail*> rails;
 	static vector<Switch*> switches;
 	static vector<ResetSwitch*> resetSwitches;
+	static vector<LevelTypes::Plane*> planes;
+	static vector<Level*> levels;
 	static int width;
 	static int height;
 	static bool editorHideNonTiles;
@@ -201,6 +208,10 @@ private:
 	//read rail colors and groups from the reset switch segments starting from the given tile, if there is a segment there
 	static void addResetSwitchSegments(
 		int* pixels, int redShift, int firstSegmentIndex, int resetSwitchId, ResetSwitch* resetSwitch, char segmentsSection);
+	//go through the map and figure out which parts of the map belong to which level
+	static void buildLevels();
+	//breadth-first-search to build a plane
+	static LevelTypes::Plane* buildPlane(int tile, Level* activeLevel, deque<int>& tileChecks);
 public:
 	//delete the resources used to handle the map
 	static void deleteMap();

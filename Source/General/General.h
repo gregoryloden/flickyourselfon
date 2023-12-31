@@ -11,6 +11,7 @@
 	#include <SDL2_image/SDL_image.h>
 	#include <OpenGL/OpenGL.h>
 #endif
+#include <deque>
 #include <fstream>
 #include <iomanip>
 #include <math.h>
