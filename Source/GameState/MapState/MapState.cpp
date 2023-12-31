@@ -335,7 +335,7 @@ bool MapState::tileFalls(int x, int y, char initialHeight, int* outFallY, char* 
 		//an empty tile height is fine...
 		if (fallHeight == MapState::emptySpaceHeight) {
 			//...unless we reached the lowest height, in which case there is no longer a possible fall height
-			if (targetHeight == 0)
+			if (targetHeight <= 0)
 				return false;
 			continue;
 		//the tile is higher than us, we can't fall here
