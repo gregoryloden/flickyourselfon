@@ -9,7 +9,7 @@ EntityAnimationTypes::Component::Component(objCounterParameters())
 : PooledReferenceCounter(objCounterArguments()) {
 }
 EntityAnimationTypes::Component::~Component() {}
-using EntityAnimationTypes::Component;
+using namespace EntityAnimationTypes;
 
 //////////////////////////////// EntityAnimation::Delay ////////////////////////////////
 EntityAnimation::Delay::Delay(objCounterParameters())

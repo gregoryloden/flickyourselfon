@@ -1,6 +1,6 @@
 #include "Level.h"
 
-//////////////////////////////// LevelTypes::Plane ////////////////////////////////
+//////////////////////////////// LevelTypes::Plane::Tile ////////////////////////////////
 LevelTypes::Plane::Tile::Tile(int pX, int pY)
 : x(pX)
 , y(pY) {
@@ -24,7 +24,7 @@ void LevelTypes::Plane::addSwitchId(short switchId) {
 	}
 	switchIds.push_back(switchId);
 }
-using LevelTypes::Plane;
+using namespace LevelTypes;
 
 //////////////////////////////// Level ////////////////////////////////
 Level::Level(objCounterParameters())

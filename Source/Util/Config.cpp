@@ -21,7 +21,6 @@ const char* ConfigTypes::KeyBindingSetting::getKeyName(SDL_Scancode key) {
 		default: return SDL_GetKeyName(SDL_GetKeyFromScancode(key));
 	}
 }
-using ConfigTypes::KeyBindingSetting;
 
 //////////////////////////////// Config::MultiStateSetting ////////////////////////////////
 ConfigTypes::MultiStateSetting::MultiStateSetting(
@@ -32,21 +31,19 @@ ConfigTypes::MultiStateSetting::MultiStateSetting(
 	containingList.push_back(this);
 }
 ConfigTypes::MultiStateSetting::~MultiStateSetting() {}
-using ConfigTypes::MultiStateSetting;
 
 //////////////////////////////// Config::OnOffSetting ////////////////////////////////
 ConfigTypes::OnOffSetting::OnOffSetting(string pFilePrefix, vector<MultiStateSetting*>& containingList)
 : MultiStateSetting({ "on", "off" }, pFilePrefix, containingList) {
 }
 ConfigTypes::OnOffSetting::~OnOffSetting() {}
-using ConfigTypes::OnOffSetting;
 
 //////////////////////////////// Config::HoldToggleSetting ////////////////////////////////
 ConfigTypes::HoldToggleSetting::HoldToggleSetting(string pFilePrefix, vector<MultiStateSetting*>& containingList)
 : MultiStateSetting({ "hold", "toggle" }, pFilePrefix, containingList) {
 }
 ConfigTypes::HoldToggleSetting::~HoldToggleSetting() {}
-using ConfigTypes::HoldToggleSetting;
+using namespace ConfigTypes;
 
 //////////////////////////////// Config ////////////////////////////////
 float Config::currentPixelWidth = Config::defaultPixelWidth;
