@@ -1,6 +1,5 @@
 #include "General/General.h"
 
-#define newPlane(owningLevel) newWithArgs(LevelTypes::Plane, owningLevel)
 #define newLevel() newWithoutArgs(Level)
 
 class Level;

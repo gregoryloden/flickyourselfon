@@ -1,5 +1,7 @@
 #include "Level.h"
 
+#define newLevelPlane(owningLevel) newWithArgs(LevelTypes::Plane, owningLevel)
+
 //////////////////////////////// LevelTypes::Plane::Tile ////////////////////////////////
 LevelTypes::Plane::Tile::Tile(int pX, int pY)
 : x(pX)
@@ -38,7 +40,7 @@ Level::~Level() {
 	//don't delete victoryPlane, it's owned by another Level
 }
 Plane* Level::addNewPlane() {
-	Plane* plane = newPlane(this);
+	Plane* plane = newLevelPlane(this);
 	planes.push_back(plane);
 	return plane;
 }
