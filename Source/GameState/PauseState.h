@@ -153,7 +153,7 @@ private:
 		//accept the new key bindings and save them to the options file
 		virtual PauseState* handle(PauseState* currentState);
 	};
-	class MultiStateOption : public PauseOption {
+	class MultiStateOption: public PauseOption {
 	private:
 		ConfigTypes::MultiStateSetting* setting;
 		string displayPrefix;

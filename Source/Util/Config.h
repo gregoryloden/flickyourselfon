@@ -31,7 +31,7 @@ namespace ConfigTypes {
 		void cycleState() { state = (state + 1) % options.size(); }
 	};
 	//Should only be allocated within an object, on the stack, or as a static object
-	class OnOffSetting : public MultiStateSetting {
+	class OnOffSetting: public MultiStateSetting {
 	public:
 		OnOffSetting(string pFilePrefix, vector<MultiStateSetting*>& containingList);
 		virtual ~OnOffSetting();
@@ -39,7 +39,7 @@ namespace ConfigTypes {
 		bool isOn() { return state == 0; }
 	};
 	//Should only be allocated within an object, on the stack, or as a static object
-	class HoldToggleSetting : public MultiStateSetting {
+	class HoldToggleSetting: public MultiStateSetting {
 	public:
 		HoldToggleSetting(string pFilePrefix, vector<MultiStateSetting*>& containingList);
 		virtual ~HoldToggleSetting();
