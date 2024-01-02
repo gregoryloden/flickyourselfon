@@ -24,6 +24,18 @@ namespace LevelTypes {
 }
 
 class MapState: public PooledReferenceCounter {
+private:
+	//Should only be allocated within an object, on the stack, or as a static object
+	class PlaneConnection {
+	public:
+		LevelTypes::Plane* fromPlane;
+		int toTile;
+		short railId;
+
+		PlaneConnection(LevelTypes::Plane* pFromPlane, int pToTile, short pRailId);
+		virtual ~PlaneConnection();
+	};
+
 public:
 	//map state
 	static const int tileCount = 64; // tile = green / 4
@@ -211,7 +223,8 @@ private:
 	//go through the map and figure out which parts of the map belong to which level
 	static void buildLevels();
 	//breadth-first-search to build a plane
-	static LevelTypes::Plane* buildPlane(int tile, Level* activeLevel, deque<int>& tileChecks);
+	static LevelTypes::Plane* buildPlane(
+		int tile, Level* activeLevel, deque<int>& tileChecks, vector<PlaneConnection>& planeConnections);
 public:
 	//delete the resources used to handle the map
 	static void deleteMap();

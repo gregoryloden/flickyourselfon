@@ -22,6 +22,14 @@
 	newEntityAnimationSetSpriteAnimation(animation), \
 	newEntityAnimationDelay(animation->getTotalTicksDuration())
 
+//////////////////////////////// MapState::PlaneConnection ////////////////////////////////
+MapState::PlaneConnection::PlaneConnection(LevelTypes::Plane* pFromPlane, int pToTile, short pRailId)
+: fromPlane(pFromPlane)
+, toTile(pToTile)
+, railId(pRailId) {
+}
+MapState::PlaneConnection::~PlaneConnection() {}
+
 //////////////////////////////// MapState ////////////////////////////////
 char* MapState::tiles = nullptr;
 char* MapState::heights = nullptr;
@@ -264,6 +272,7 @@ void MapState::buildLevels() {
 	planeIds = new short[width * height] {};
 	Level* activeLevel = newLevel();
 	levels.push_back(activeLevel);
+	vector<PlaneConnection> planeConnections;
 
 	//the first tile we'll check is the tile where the boot starts
 	deque<int> tileChecks ({ introAnimationBootTileY * width + introAnimationBootTileX });
@@ -283,12 +292,17 @@ void MapState::buildLevels() {
 			}
 			levels.push_back(activeLevel = newLevel());
 		}
-		LevelTypes::Plane* newPlane = buildPlane(nextTile, activeLevel, tileChecks);
+		LevelTypes::Plane* newPlane = buildPlane(nextTile, activeLevel, tileChecks, planeConnections);
 		if (isVictoryTile)
 			levels[levels.size() - 2]->assignVictoryPlane(newPlane);
 	}
+
+	for (PlaneConnection& planeConnection : planeConnections)
+		planeConnection.fromPlane->addConnection(planes[planeIds[planeConnection.toTile] - 1], planeConnection.railId);
 }
-LevelTypes::Plane* MapState::buildPlane(int tile, Level* activeLevel, deque<int>& tileChecks) {
+LevelTypes::Plane* MapState::buildPlane(
+	int tile, Level* activeLevel, deque<int>& tileChecks, vector<PlaneConnection>& planeConnections)
+{
 	//prep a new plane
 	LevelTypes::Plane* plane = activeLevel->addNewPlane();
 	planes.push_back(plane);
@@ -325,6 +339,7 @@ LevelTypes::Plane* MapState::buildPlane(int tile, Level* activeLevel, deque<int>
 				}
 				if (neighborHeight != planeHeight + 2)
 					continue;
+				planeConnections.push_back(PlaneConnection(plane, neighbor, absentRailSwitchId));
 				tileChecks.push_back(neighbor);
 			//check for neighboring tiles to fall to
 			} else {
@@ -340,6 +355,7 @@ LevelTypes::Plane* MapState::buildPlane(int tile, Level* activeLevel, deque<int>
 					neighbor = fallY * width + fallX;
 				} else if (neighborHeight % 2 != 0)
 					continue;
+				planeConnections.push_back(PlaneConnection(plane, neighbor, absentRailSwitchId));
 				tileChecks.push_back(neighbor);
 			}
 		}
@@ -347,12 +363,14 @@ LevelTypes::Plane* MapState::buildPlane(int tile, Level* activeLevel, deque<int>
 		//check for other tiles of interest to connect planes
 		//if there's a rail, check if it's the start/end segment
 		if ((railSwitchIds[tile] & railSwitchIdBitmask) == railIdValue) {
-			Rail* rail = rails[railSwitchIds[tile] & railSwitchIndexBitmask];
+			short railId = railSwitchIds[tile];
+			Rail* rail = rails[railId & railSwitchIndexBitmask];
 			Rail::Segment* startSegment = rail->getSegment(0);
 			Rail::Segment* endSegment = rail->getSegment(rail->getSegmentCount() - 1);
 			int startTile = startSegment->y * width + startSegment->x;
 			int endTile = endSegment->y * width + endSegment->x;
 			if (tile == startTile) {
+				planeConnections.push_back(PlaneConnection(plane, endTile, railId));
 				if (planeIds[endTile] == 0) {
 					Rail::Segment* endAdjacentSegment = rail->getSegment(rail->getSegmentCount() - 2);
 					int endAdjacentTile = endTile * 2 - endAdjacentSegment->y * width - endAdjacentSegment->x;
@@ -362,6 +380,7 @@ LevelTypes::Plane* MapState::buildPlane(int tile, Level* activeLevel, deque<int>
 						tileChecks.push_back(endTile);
 				}
 			} else if (tile == endTile) {
+				planeConnections.push_back(PlaneConnection(plane, startTile, railId));
 				if (planeIds[startTile] == 0) {
 					Rail::Segment* startAdjacentSegment = rail->getSegment(1);
 					int startAdjacentTile = startTile * 2 - startAdjacentSegment->y * width - startAdjacentSegment->x;
