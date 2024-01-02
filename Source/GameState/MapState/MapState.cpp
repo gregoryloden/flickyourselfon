@@ -328,8 +328,11 @@ LevelTypes::Plane* MapState::buildPlane(int tile, Level* activeLevel, deque<int>
 				tileChecks.push_back(neighbor);
 			//check for neighboring tiles to fall to
 			} else {
+				//no falling if there was a rail on the center tile
+				if ((railSwitchIds[tile] & railSwitchIdBitmask) == railIdValue)
+					continue;
 				//for all neighbors but the up neighbor, the tile to climb to is further down
-				if (neighbor != upNeighbor) {
+				else if (neighbor != upNeighbor) {
 					int fallX = neighbor % width;
 					int fallY;
 					if (!tileFalls(fallX, neighbor / width, planeHeight, &fallY, nullptr))
