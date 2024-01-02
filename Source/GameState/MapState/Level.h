@@ -46,12 +46,14 @@ class Level onlyInDebug(: public ObjCounter) {
 private:
 	vector<LevelTypes::Plane*> planes;
 	LevelTypes::Plane* victoryPlane;
+	char minimumRailColor;
 
 public:
 	Level(objCounterParameters());
 	virtual ~Level();
 
 	void assignVictoryPlane(LevelTypes::Plane* pVictoryPlane) { victoryPlane = pVictoryPlane; }
+	void setMinimumRailColor(char color) { minimumRailColor = MathUtils::max(color, minimumRailColor); }
 	//add a new plane to this level
 	LevelTypes::Plane* addNewPlane();
 };

@@ -225,6 +225,15 @@ private:
 	//breadth-first-search to build a plane
 	static LevelTypes::Plane* buildPlane(
 		int tile, Level* activeLevel, deque<int>& tileChecks, vector<PlaneConnection>& planeConnections);
+	static void addRailPlaneConnection(
+		LevelTypes::Plane* plane,
+		int toTile,
+		short railId,
+		vector<PlaneConnection>& planeConnections,
+		Level* activeLevel,
+		Rail* rail,
+		int adjacentRailSegmentIndex,
+		deque<int>& tileChecks);
 public:
 	//delete the resources used to handle the map
 	static void deleteMap();

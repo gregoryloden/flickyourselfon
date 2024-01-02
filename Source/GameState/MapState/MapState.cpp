@@ -369,32 +369,37 @@ LevelTypes::Plane* MapState::buildPlane(
 			Rail::Segment* endSegment = rail->getSegment(rail->getSegmentCount() - 1);
 			int startTile = startSegment->y * width + startSegment->x;
 			int endTile = endSegment->y * width + endSegment->x;
-			if (tile == startTile) {
-				planeConnections.push_back(PlaneConnection(plane, endTile, railId));
-				if (planeIds[endTile] == 0) {
-					Rail::Segment* endAdjacentSegment = rail->getSegment(rail->getSegmentCount() - 2);
-					int endAdjacentTile = endTile * 2 - endAdjacentSegment->y * width - endAdjacentSegment->x;
-					if (tiles[endAdjacentTile] == tilePuzzleEnd)
-						tileChecks.push_back(endAdjacentTile);
-					else
-						tileChecks.push_back(endTile);
-				}
-			} else if (tile == endTile) {
-				planeConnections.push_back(PlaneConnection(plane, startTile, railId));
-				if (planeIds[startTile] == 0) {
-					Rail::Segment* startAdjacentSegment = rail->getSegment(1);
-					int startAdjacentTile = startTile * 2 - startAdjacentSegment->y * width - startAdjacentSegment->x;
-					if (tiles[startAdjacentTile] == tilePuzzleEnd)
-						tileChecks.push_back(startAdjacentTile);
-					else
-						tileChecks.push_back(startTile);
-				}
-			}
+			if (tile == startTile)
+				addRailPlaneConnection(
+					plane, endTile, railId, planeConnections, activeLevel, rail, rail->getSegmentCount() - 2, tileChecks);
+			else if (tile == endTile)
+				addRailPlaneConnection(plane, startTile, railId, planeConnections, activeLevel, rail, 1, tileChecks);
 		//if there's a switch, make sure the plane knows about it
 		} else if ((railSwitchIds[tile] & railSwitchIdBitmask) == switchIdValue)
 			plane->addSwitchId(railSwitchIds[tile] & railSwitchIndexBitmask);
 	}
 	return plane;
+}
+void MapState::addRailPlaneConnection(
+	LevelTypes::Plane* plane,
+	int toTile,
+	short railId,
+	vector<PlaneConnection>& planeConnections,
+	Level* activeLevel,
+	Rail* rail,
+	int adjacentRailSegmentIndex,
+	deque<int>& tileChecks)
+{
+	planeConnections.push_back(PlaneConnection(plane, toTile, railId));
+	if (planeIds[toTile] == 0) {
+		activeLevel->setMinimumRailColor(rail->getColor());
+		Rail::Segment* toAdjacentSegment = rail->getSegment(adjacentRailSegmentIndex);
+		int toAdjacentTile = toTile * 2 - toAdjacentSegment->y * width - toAdjacentSegment->x;
+		if (tiles[toAdjacentTile] == tilePuzzleEnd)
+			tileChecks.push_back(toAdjacentTile);
+		else
+			tileChecks.push_back(toTile);
+	}
 }
 void MapState::deleteMap() {
 	delete[] tiles;

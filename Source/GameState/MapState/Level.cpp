@@ -49,7 +49,8 @@ using namespace LevelTypes;
 Level::Level(objCounterParameters())
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
 planes()
-, victoryPlane(nullptr) {
+, victoryPlane(nullptr)
+, minimumRailColor(-1) {
 }
 Level::~Level() {
 	for (Plane* plane : planes)
