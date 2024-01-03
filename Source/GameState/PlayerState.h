@@ -117,6 +117,8 @@ public:
 	//spawn a particle with the given SpriteAnimation
 	virtual void spawnParticle(
 		float pX, float pY, SpriteAnimation* pAnimation, SpriteDirection pDirection, int particleStartTicksTime);
+	//generate a hint based on our current state
+	virtual void generateHint(int ticksTime);
 	//return whether we have a kick action where we can show connections
 	bool showTutorialConnectionsForKickAction();
 	//if we have a kick action matching the given type, write its railSwitchId out and return true, otherwise return false

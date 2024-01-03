@@ -91,6 +91,7 @@ template class ObjectPool<ClimbFallUndoState>;
 template class ObjectPool<CompositeQuarticValue>;
 template class ObjectPool<ConstantValue>;
 template class ObjectPool<EntityAnimation::Delay>;
+template class ObjectPool<EntityAnimation::GenerateHint>;
 template class ObjectPool<EntityAnimation::MapKickResetSwitch>;
 template class ObjectPool<EntityAnimation::MapKickSwitch>;
 template class ObjectPool<EntityAnimation::SetGhostSprite>;

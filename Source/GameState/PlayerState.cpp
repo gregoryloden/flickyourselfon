@@ -148,6 +148,8 @@ void PlayerState::spawnParticle(
 		},
 		particleStartTicksTime);
 }
+void PlayerState::generateHint(int ticksTime) {
+}
 bool PlayerState::showTutorialConnectionsForKickAction() {
 	KickAction* kickAction = availableKickAction.get();
 	if (kickAction == nullptr)
@@ -882,6 +884,7 @@ void PlayerState::kickClimb(float currentX, float currentY, float targetX, float
 		//then delay for the rest of the animation and stop the player
 		newEntityAnimationDelay(moveDuration),
 		newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f)),
+		newEntityAnimationGenerateHint(),
 	});
 
 	tryAddNoOpUndoState();
@@ -966,6 +969,7 @@ void PlayerState::kickFall(float currentX, float currentY, float targetX, float 
 		//then delay for the rest of the animation and stop the player
 		newEntityAnimationDelay(moveDuration),
 		newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f)),
+		newEntityAnimationGenerateHint(),
 	});
 
 	tryAddNoOpUndoState();
@@ -1161,7 +1165,8 @@ void PlayerState::addRailRideComponents(
 				newCompositeQuarticValue(0.0f, (finalYPosition - targetYPosition) / bootLiftDuration, 0.0f, 0.0f, 0.0f)),
 			newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerBootLiftAnimation),
 			newEntityAnimationDelay(bootLiftDuration),
-			newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f))
+			newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f)),
+			newEntityAnimationGenerateHint(),
 		});
 
 	if (outFinalXPosition != nullptr)
@@ -1192,6 +1197,7 @@ void PlayerState::addKickSwitchComponents(
 			newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerKickingAnimation),
 			newEntityAnimationDelay(SpriteRegistry::playerKickingAnimationTicksPerFrame),
 			newEntityAnimationMapKickSwitch(switchId, moveRailsForward, allowRadioTowerAnimation),
+			newEntityAnimationGenerateHint(),
 			newEntityAnimationDelay(
 				SpriteRegistry::playerKickingAnimation->getTotalTicksDuration()
 					- SpriteRegistry::playerKickingAnimationTicksPerFrame)
@@ -1218,6 +1224,7 @@ void PlayerState::addKickResetSwitchComponents(
 			newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerKickingAnimation),
 			newEntityAnimationDelay(SpriteRegistry::playerKickingAnimationTicksPerFrame),
 			newEntityAnimationMapKickResetSwitch(resetSwitchId, kickResetSwitchUndoState),
+			newEntityAnimationGenerateHint(),
 			newEntityAnimationDelay(
 				SpriteRegistry::playerKickingAnimation->getTotalTicksDuration()
 					- SpriteRegistry::playerKickingAnimationTicksPerFrame)
