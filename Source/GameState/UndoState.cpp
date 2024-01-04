@@ -48,7 +48,7 @@ MoveUndoState::~MoveUndoState() {}
 MoveUndoState* MoveUndoState::produce(
 	objCounterParametersComma() ReferenceCounterHolder<UndoState>& stack, float pFromX, float pFromY)
 {
-	initializeWithNewFromPoolAndPlaceIntoStack(m, MoveUndoState, stack);
+	initializeWithNewFromPoolAndPlaceIntoStack(m, MoveUndoState, stack)
 	m->fromX = pFromX;
 	m->fromY = pFromY;
 	return m;
@@ -70,7 +70,7 @@ ClimbFallUndoState::~ClimbFallUndoState() {}
 ClimbFallUndoState* ClimbFallUndoState::produce(
 	objCounterParametersComma() ReferenceCounterHolder<UndoState>& stack, float pFromX, float pFromY, char pFromHeight)
 {
-	initializeWithNewFromPoolAndPlaceIntoStack(c, ClimbFallUndoState, stack);
+	initializeWithNewFromPoolAndPlaceIntoStack(c, ClimbFallUndoState, stack)
 	c->fromX = pFromX;
 	c->fromY = pFromY;
 	c->fromHeight = pFromHeight;
@@ -91,7 +91,7 @@ RideRailUndoState::~RideRailUndoState() {}
 RideRailUndoState* RideRailUndoState::produce(
 	objCounterParametersComma() ReferenceCounterHolder<UndoState>& stack, short pRailId)
 {
-	initializeWithNewFromPoolAndPlaceIntoStack(r, RideRailUndoState, stack);
+	initializeWithNewFromPoolAndPlaceIntoStack(r, RideRailUndoState, stack)
 	r->railId = pRailId;
 	return r;
 }
@@ -112,7 +112,7 @@ KickSwitchUndoState::~KickSwitchUndoState() {}
 KickSwitchUndoState* KickSwitchUndoState::produce(
 	objCounterParametersComma() ReferenceCounterHolder<UndoState>& stack, short pSwitchId, SpriteDirection pDirection)
 {
-	initializeWithNewFromPoolAndPlaceIntoStack(k, KickSwitchUndoState, stack);
+	initializeWithNewFromPoolAndPlaceIntoStack(k, KickSwitchUndoState, stack)
 	k->switchId = pSwitchId;
 	k->direction = pDirection;
 	return k;
@@ -143,7 +143,7 @@ KickResetSwitchUndoState::~KickResetSwitchUndoState() {}
 KickResetSwitchUndoState* KickResetSwitchUndoState::produce(
 	objCounterParametersComma() ReferenceCounterHolder<UndoState>& stack, short pResetSwitchId, SpriteDirection pDirection)
 {
-	initializeWithNewFromPoolAndPlaceIntoStack(k, KickResetSwitchUndoState, stack);
+	initializeWithNewFromPoolAndPlaceIntoStack(k, KickResetSwitchUndoState, stack)
 	k->resetSwitchId = pResetSwitchId;
 	k->direction = pDirection;
 	k->railUndoStates.clear();
