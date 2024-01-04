@@ -99,6 +99,10 @@ public:
 	void copyPlayerState(PlayerState* other);
 	//release a reference to this PlayerState and return it to the pool if applicable
 	virtual void release();
+protected:
+	//release held states before this is returned to the pool
+	virtual void prepareReturnToPool();
+public:
 	//get the world Y after translating to what the world-terrain-space-Y would be at height 0
 	float getWorldGroundY(int ticksTime);
 	//set the sprite direction, and also set x and y directions to match

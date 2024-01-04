@@ -99,6 +99,15 @@ void PlayerState::copyPlayerState(PlayerState* other) {
 	setUndoState(redoState, other->redoState.get());
 }
 pooledReferenceCounterDefineRelease(PlayerState)
+void PlayerState::prepareReturnToPool() {
+	ghostSpriteX.set(nullptr);
+	ghostSpriteY.set(nullptr);
+	mapState.set(nullptr);
+	availableKickAction.set(nullptr);
+	worldGroundY.set(nullptr);
+	undoState.set(nullptr);
+	redoState.set(nullptr);
+}
 float PlayerState::getWorldGroundY(int ticksTime) {
 	int ticksSinceLastUpdate = ticksTime - lastUpdateTicksTime;
 	return worldGroundY.get() != nullptr
