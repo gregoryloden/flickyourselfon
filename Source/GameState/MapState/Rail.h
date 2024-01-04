@@ -1,7 +1,7 @@
 #include "Util/Config.h"
 
-#define newRail(x, y, baseHeight, color, initialTileOffset, movementDirection, movementMagnitude) \
-	newWithArgs(Rail, x, y, baseHeight, color, initialTileOffset, movementDirection, movementMagnitude)
+#define newRail(x, y, baseHeight, color, initialTileOffset, initialMovementDirection, movementMagnitude) \
+	newWithArgs(Rail, x, y, baseHeight, color, initialTileOffset, initialMovementDirection, movementMagnitude)
 #define newRailState(rail) newWithArgs(RailState, rail)
 
 class Rail onlyInDebug(: public ObjCounter) {
@@ -41,7 +41,7 @@ private:
 	vector<char> groups;
 	char initialTileOffset;
 	char maxTileOffset;
-	char movementDirection;
+	char initialMovementDirection;
 	char movementMagnitude;
 public:
 	bool editorIsDeleted;
@@ -53,7 +53,7 @@ public:
 		char pBaseHeight,
 		char pColor,
 		char pInitialTileOffset,
-		char pMovementDirection,
+		char pInitialMovementDirection,
 		char pMovementMagnitude);
 	virtual ~Rail();
 
@@ -62,7 +62,7 @@ public:
 	vector<char>& getGroups() { return groups; }
 	char getInitialTileOffset() { return initialTileOffset; }
 	char getMaxTileOffset() { return maxTileOffset; }
-	char getMovementDirection() { return movementDirection; }
+	char getInitialMovementDirection() { return initialMovementDirection; }
 	char getMovementMagnitude() { return movementMagnitude; }
 	int getSegmentCount() { return (int)(segments->size()); }
 	Segment* getSegment(int i) { return &(*segments)[i]; }
@@ -128,7 +128,7 @@ public:
 	float getTargetTileOffset() { return targetTileOffset; }
 	char getNextMovementDirection() { return (char)nextMovementDirection; }
 	bool isInDefaultState() {
-		return targetTileOffset == rail->getInitialTileOffset() && nextMovementDirection == rail->getMovementDirection();
+		return targetTileOffset == rail->getInitialTileOffset() && nextMovementDirection == rail->getInitialMovementDirection();
 	}
 	bool canRide() { return tileOffset == 0.0f; }
 	//check if we need to start/stop moving

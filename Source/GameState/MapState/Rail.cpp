@@ -80,7 +80,7 @@ Rail::Rail(
 	char pBaseHeight,
 	char pColor,
 	char pInitialTileOffset,
-	char pMovementDirection,
+	char pInitialMovementDirection,
 	char pMovementMagnitude)
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
 baseHeight(pBaseHeight)
@@ -90,7 +90,7 @@ baseHeight(pBaseHeight)
 , initialTileOffset(pInitialTileOffset)
 //give a default tile offset extending to the lowest height, we'll correct it as we add segments
 , maxTileOffset(pBaseHeight / 2)
-, movementDirection(pMovementDirection)
+, initialMovementDirection(pInitialMovementDirection)
 , movementMagnitude(pMovementMagnitude)
 , editorIsDeleted(false) {
 	segments->push_back(Segment(x, y, 0));
@@ -320,7 +320,7 @@ void Rail::editorAdjustMovementMagnitude(int x, int y, char magnitudeAdd) {
 		movementMagnitude = MathUtils::max(1, MathUtils::min(maxTileOffset, movementMagnitude + magnitudeAdd));
 }
 void Rail::editorToggleMovementDirection() {
-	movementDirection = -movementDirection;
+	initialMovementDirection = -initialMovementDirection;
 }
 void Rail::editorAdjustInitialTileOffset(int x, int y, char tileOffset) {
 	Segment& start = segments->front();
@@ -336,7 +336,7 @@ char Rail::editorGetFloorSaveData(int x, int y) {
 			| MapState::floorRailHeadValue;
 	Segment& second = (*segments)[1];
 	if (x == second.x && y == second.y) {
-		char unshiftedData = ((movementDirection + 1) / 2) | movementMagnitude << 1;
+		char unshiftedData = ((initialMovementDirection + 1) / 2) | movementMagnitude << 1;
 		return unshiftedData << MapState::floorRailByte2DataShift | MapState::floorIsRailSwitchBitmask;
 	}
 	for (int i = 2; i < (int)segments->size() && i - 2 < (int)groups.size(); i++) {
@@ -354,9 +354,9 @@ RailState::RailState(objCounterParametersComma() Rail* pRail)
 rail(pRail)
 , tileOffset((float)pRail->getInitialTileOffset())
 , targetTileOffset((float)pRail->getInitialTileOffset())
-, currentMovementDirection((float)pRail->getMovementDirection())
+, currentMovementDirection((float)pRail->getInitialMovementDirection())
 , bouncesRemaining(0)
-, nextMovementDirection((float)pRail->getMovementDirection())
+, nextMovementDirection((float)pRail->getInitialMovementDirection())
 , distancePerMovement(rail->getColor() == MapState::squareColor ? rail->getMaxTileOffset() : rail->getMovementMagnitude())
 , segmentsAbovePlayer()
 , lastUpdateTicksTime(0) {
@@ -369,7 +369,7 @@ void RailState::updateWithPreviousRailState(RailState* prev, int ticksTime) {
 	lastUpdateTicksTime = ticksTime;
 	if (Editor::isActive) {
 		tileOffset = (float)rail->getInitialTileOffset();
-		nextMovementDirection = rail->getMovementDirection();
+		nextMovementDirection = rail->getInitialMovementDirection();
 		return;
 	}
 
@@ -488,5 +488,5 @@ void RailState::loadState(float pTileOffset, float pNextMovementDirection, bool 
 	nextMovementDirection = pNextMovementDirection;
 }
 void RailState::reset(bool animateMovement) {
-	loadState((float)rail->getInitialTileOffset(), (float)rail->getMovementDirection(), animateMovement);
+	loadState((float)rail->getInitialTileOffset(), (float)rail->getInitialMovementDirection(), animateMovement);
 }
