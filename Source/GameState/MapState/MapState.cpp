@@ -1021,7 +1021,7 @@ bool MapState::loadState(string& line) {
 		dataString = StringUtils::parseNextInt(dataString, &railIndex);
 		dataString = StringUtils::parseNextInt(dataString, &tileOffset);
 		StringUtils::parseNextInt(dataString, &movementDirection);
-		railStates[railIndex]->loadState((float)tileOffset, (float)movementDirection, false);
+		railStates[railIndex]->loadState(tileOffset, movementDirection, false);
 	} else
 		return false;
 	return true;

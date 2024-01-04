@@ -84,6 +84,9 @@ public:
 	void addGroup(char group);
 	//add a segment on this tile to the rail
 	void addSegment(int x, int y);
+	//the switch connected to this rail was kicked, move this rail accordingly
+	//returns whether a bounce occurred
+	bool triggerMovement(char movementDirection, char* inOutTileOffset);
 	//render the shadow below the rail
 	void renderShadow(int screenLeftWorldX, int screenTopWorldY);
 	//render groups where the rail would be at 0 offset
@@ -112,10 +115,10 @@ private:
 
 	Rail* rail;
 	float tileOffset;
-	float targetTileOffset;
-	float currentMovementDirection;
+	char targetTileOffset;
+	char currentMovementDirection;
 	int bouncesRemaining;
-	float nextMovementDirection;
+	char nextMovementDirection;
 	float distancePerMovement;
 	vector<Rail::Segment*> segmentsAbovePlayer;
 	int lastUpdateTicksTime;
@@ -125,8 +128,8 @@ public:
 	virtual ~RailState();
 
 	Rail* getRail() { return rail; }
-	float getTargetTileOffset() { return targetTileOffset; }
-	char getNextMovementDirection() { return (char)nextMovementDirection; }
+	char getTargetTileOffset() { return targetTileOffset; }
+	char getNextMovementDirection() { return nextMovementDirection; }
 	bool isInDefaultState() {
 		return targetTileOffset == rail->getInitialTileOffset() && nextMovementDirection == rail->getInitialMovementDirection();
 	}
@@ -144,7 +147,7 @@ public:
 	//render the movement direction over the ends of the rail
 	void renderMovementDirections(int screenLeftWorldX, int screenTopWorldY);
 	//set this rail to the initial tile offset and movement direction, with or without a moving animation
-	void loadState(float pTileOffset, float pNextMovementDirection, bool animateMovement);
+	void loadState(char pTileOffset, char pNextMovementDirection, bool animateMovement);
 	//reset this rail to its default state, with or without a moving animation
 	void reset(bool animateMovement);
 };

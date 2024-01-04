@@ -213,6 +213,26 @@ void Rail::addSegment(int x, int y) {
 	} else
 		lastEnd->spriteHorizontalIndex = endSegmentSpriteHorizontalIndex(end->x - lastEnd->x, end->y - lastEnd->y);
 }
+bool Rail::triggerMovement(char movementDirection, char* inOutTileOffset) {
+	switch (color) {
+		//square wave rail: swap the tile offset between 0 and the max tile offset
+		case MapState::squareColor:
+			*inOutTileOffset = *inOutTileOffset == 0 ? maxTileOffset : 0;
+			return false;
+		//triangle wave switch: move the rail movementMagnitude tiles in its current movement direction
+		case MapState::triangleColor:
+			*inOutTileOffset += movementMagnitude * movementDirection;
+			if (*inOutTileOffset < 0)
+				*inOutTileOffset = -*inOutTileOffset;
+			else if (*inOutTileOffset > maxTileOffset)
+				*inOutTileOffset = maxTileOffset * 2 - *inOutTileOffset;
+			else
+				return false;
+			return true;
+		default:
+			return false;
+	}
+}
 void Rail::renderShadow(int screenLeftWorldX, int screenTopWorldY) {
 	if (Editor::isActive && editorIsDeleted)
 		return;
@@ -353,10 +373,10 @@ RailState::RailState(objCounterParametersComma() Rail* pRail)
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
 rail(pRail)
 , tileOffset((float)pRail->getInitialTileOffset())
-, targetTileOffset((float)pRail->getInitialTileOffset())
-, currentMovementDirection((float)pRail->getInitialMovementDirection())
+, targetTileOffset(pRail->getInitialTileOffset())
+, currentMovementDirection(pRail->getInitialMovementDirection())
 , bouncesRemaining(0)
-, nextMovementDirection((float)pRail->getInitialMovementDirection())
+, nextMovementDirection(pRail->getInitialMovementDirection())
 , distancePerMovement(rail->getColor() == MapState::squareColor ? rail->getMaxTileOffset() : rail->getMovementMagnitude())
 , segmentsAbovePlayer()
 , lastUpdateTicksTime(0) {
@@ -396,18 +416,7 @@ void RailState::updateWithPreviousRailState(RailState* prev, int ticksTime) {
 		tileOffset = targetTileOffset;
 }
 void RailState::triggerMovement(bool moveForward) {
-	//square wave rail: swap the tile offset between 0 and the max tile offset
-	if (rail->getColor() == MapState::squareColor)
-		targetTileOffset = targetTileOffset == 0.0f ? rail->getMaxTileOffset() : 0.0f;
-	//triangle wave switch: move the rail movementMagnitude tiles in its current movement direction
-	else if (rail->getColor() == MapState::triangleColor) {
-		targetTileOffset += rail->getMovementMagnitude() * (moveForward ? nextMovementDirection : -nextMovementDirection);
-		if (targetTileOffset < 0)
-			targetTileOffset = -targetTileOffset;
-		else if (targetTileOffset > rail->getMaxTileOffset())
-			targetTileOffset = rail->getMaxTileOffset() * 2 - targetTileOffset;
-		else
-			return;
+	if (rail->triggerMovement(moveForward ? nextMovementDirection : -nextMovementDirection, &targetTileOffset)) {
 		nextMovementDirection = -nextMovementDirection;
 		bouncesRemaining += (moveForward ? 1 : -1);
 	}
@@ -479,7 +488,7 @@ void RailState::renderMovementDirections(int screenLeftWorldX, int screenTopWorl
 		}
 	}
 }
-void RailState::loadState(float pTileOffset, float pNextMovementDirection, bool animateMovement) {
+void RailState::loadState(char pTileOffset, char pNextMovementDirection, bool animateMovement) {
 	if (!animateMovement)
 		tileOffset = pTileOffset;
 	targetTileOffset = pTileOffset;
@@ -488,5 +497,5 @@ void RailState::loadState(float pTileOffset, float pNextMovementDirection, bool 
 	nextMovementDirection = pNextMovementDirection;
 }
 void RailState::reset(bool animateMovement) {
-	loadState((float)rail->getInitialTileOffset(), (float)rail->getInitialMovementDirection(), animateMovement);
+	loadState(rail->getInitialTileOffset(), rail->getInitialMovementDirection(), animateMovement);
 }
