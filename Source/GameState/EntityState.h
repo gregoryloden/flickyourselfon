@@ -52,6 +52,8 @@ public:
 	//spawn a particle with the given SpriteAnimation
 	virtual void spawnParticle(
 		float pX, float pY, SpriteAnimation* pAnimation, SpriteDirection pDirection, int particleStartTicksTime) {}
+	//generate a hint based on our current state
+	virtual void generateHint(int ticksTime) {}
 	//copy the state of the other EntityState
 	void copyEntityState(EntityState* other);
 	//return the entity's x coordinate at the given time that we should use for rendering the world
