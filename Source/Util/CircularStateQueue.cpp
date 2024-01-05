@@ -16,8 +16,8 @@ template <class Type> CircularStateQueue<Type>::Node::~Node() {
 }
 
 //////////////////////////////// CircularStateQueue ////////////////////////////////
-template <class Type> CircularStateQueue<Type>::CircularStateQueue(
-	objCounterParametersComma() Type* writeHeadState, Type* nextState)
+template <class Type>
+CircularStateQueue<Type>::CircularStateQueue(objCounterParametersComma() Type* writeHeadState, Type* nextState)
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
 writeHead(newNode(writeHeadState))
 , readHead(nullptr)

@@ -20,20 +20,21 @@ referenceCount(0) {
 PooledReferenceCounter::~PooledReferenceCounter() {}
 
 //////////////////////////////// ReferenceCounterHolder ////////////////////////////////
-template <class ReferenceCountedObject> ReferenceCounterHolder<ReferenceCountedObject>::ReferenceCounterHolder(
-	ReferenceCountedObject* pObject)
+template <class ReferenceCountedObject>
+ReferenceCounterHolder<ReferenceCountedObject>::ReferenceCounterHolder(ReferenceCountedObject* pObject)
 : object(pObject) {
 	if (pObject != nullptr)
 		pObject->retain();
 }
-template <class ReferenceCountedObject> ReferenceCounterHolder<ReferenceCountedObject>::ReferenceCounterHolder(
+template <class ReferenceCountedObject>
+ReferenceCounterHolder<ReferenceCountedObject>::ReferenceCounterHolder(
 	const ReferenceCounterHolder<ReferenceCountedObject>& other)
 : object(other.object) {
 	if (object != nullptr)
 		object->retain();
 }
-template <class ReferenceCountedObject> ReferenceCounterHolder<ReferenceCountedObject>::ReferenceCounterHolder(
-	ReferenceCounterHolder<ReferenceCountedObject>&& other)
+template <class ReferenceCountedObject>
+ReferenceCounterHolder<ReferenceCountedObject>::ReferenceCounterHolder(ReferenceCounterHolder<ReferenceCountedObject>&& other)
 : object(other.object) {
 	if (object != nullptr)
 		object->retain();
@@ -42,9 +43,8 @@ template <class ReferenceCountedObject> ReferenceCounterHolder<ReferenceCountedO
 	if (object != nullptr)
 		object->release();
 }
-template <class ReferenceCountedObject> void ReferenceCounterHolder<ReferenceCountedObject>::set(
-	ReferenceCountedObject* pObject)
-{
+template <class ReferenceCountedObject>
+void ReferenceCounterHolder<ReferenceCountedObject>::set(ReferenceCountedObject* pObject) {
 	if (pObject != nullptr)
 		pObject->retain();
 	ReferenceCountedObject* oldObject = object;
