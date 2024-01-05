@@ -20,9 +20,12 @@ namespace LevelTypes {
 		class Connection {
 		public:
 			Plane* toPlane;
-			short railId;
+			int railByteIndex;
+			unsigned int railByteMask;
+			unsigned int inverseRailByteMask;
+			int railBitShift;
 
-			Connection(Plane* pToPlane, short pRailId);
+			Connection(Plane* pToPlane, int pRailByteIndex, int pRailBitShift);
 			virtual ~Connection();
 		};
 
@@ -43,8 +46,14 @@ namespace LevelTypes {
 	};
 }
 class Level onlyInDebug(: public ObjCounter) {
+public:
+	static const int absentRailByteIndex = -1;
+	static const int railByteMaskBitCount = 4;
+	static const unsigned int baseRailByteMask = (1 << railByteMaskBitCount) - 1;
+
 private:
 	vector<LevelTypes::Plane*> planes;
+	int railByteMaskBitsTracked;
 	LevelTypes::Plane* victoryPlane;
 	char minimumRailColor;
 
@@ -56,4 +65,6 @@ public:
 	void setMinimumRailColor(char color) { minimumRailColor = MathUtils::max(color, minimumRailColor); }
 	//add a new plane to this level
 	LevelTypes::Plane* addNewPlane();
+	//create a byte mask for a new rail
+	void getNextRailByteMask(int* outRailByteIndex, int* outRailBitShift);
 };
