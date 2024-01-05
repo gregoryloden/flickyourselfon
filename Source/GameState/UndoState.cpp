@@ -124,7 +124,7 @@ bool KickSwitchUndoState::handle(PlayerState* playerState, bool isUndo, int tick
 }
 
 //////////////////////////////// KickResetSwitchUndoState::RailUndoState ////////////////////////////////
-KickResetSwitchUndoState::RailUndoState::RailUndoState(short pRailId, float pFromTargetTileOffset, char pFromMovementDirection)
+KickResetSwitchUndoState::RailUndoState::RailUndoState(short pRailId, char pFromTargetTileOffset, char pFromMovementDirection)
 : railId(pRailId)
 , fromTargetTileOffset(pFromTargetTileOffset)
 , fromMovementDirection(pFromMovementDirection) {

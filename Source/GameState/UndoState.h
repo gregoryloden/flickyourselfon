@@ -135,10 +135,10 @@ public:
 	class RailUndoState {
 	public:
 		const short railId;
-		const float fromTargetTileOffset;
+		const char fromTargetTileOffset;
 		const char fromMovementDirection;
 
-		RailUndoState(short pRailId, float pFromTargetTileOffset, char pFromMovementDirection);
+		RailUndoState(short pRailId, char pFromTargetTileOffset, char pFromMovementDirection);
 		virtual ~RailUndoState();
 	};
 
