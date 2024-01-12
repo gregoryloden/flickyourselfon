@@ -35,6 +35,16 @@ private:
 		PlaneConnection(LevelTypes::Plane* pFromPlane, int pToTile, short pRailId);
 		virtual ~PlaneConnection();
 	};
+	//Should only be allocated within an object, on the stack, or as a static object
+	class PlaneConnectionSwitch {
+	public:
+		Switch* switch0;
+		LevelTypes::Plane* plane;
+		int planeConnectionSwitchIndex;
+
+		PlaneConnectionSwitch(Switch* pSwitch0, LevelTypes::Plane* pPlane, int pPlaneConnectionSwitchIndex);
+		virtual ~PlaneConnectionSwitch();
+	};
 
 public:
 	//map state

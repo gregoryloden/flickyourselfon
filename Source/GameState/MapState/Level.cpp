@@ -1,16 +1,18 @@
 #include "Level.h"
-#include "GameState/MapState/MapState.h"
 
 #define newPlane(owningLevel) newWithArgs(Plane, owningLevel)
 
+//////////////////////////////// LevelTypes::Plane::ConnectionSwitch ////////////////////////////////
+LevelTypes::Plane::ConnectionSwitch::ConnectionSwitch()
+: affectedRailByteMaskData() {
+}
+LevelTypes::Plane::ConnectionSwitch::~ConnectionSwitch() {}
+
 //////////////////////////////// LevelTypes::Plane::Connection ////////////////////////////////
-LevelTypes::Plane::Connection::Connection(Plane* pToPlane, int pRailByteIndex, int pRailBitShift)
+LevelTypes::Plane::Connection::Connection(Plane* pToPlane, int pRailByteIndex, int pRailTileOffsetByteMask)
 : toPlane(pToPlane)
 , railByteIndex(pRailByteIndex)
-, railBitShift(pRailBitShift)
-, railByteMask(Level::baseRailByteMask << pRailBitShift)
-//this is fine because inverseRailByteMask is declared after railByteMask
-, inverseRailByteMask(~railByteMask) {
+, railTileOffsetByteMask(pRailTileOffsetByteMask) {
 }
 LevelTypes::Plane::Connection::~Connection() {
 	//don't delete the plane, it's owned by a Level
@@ -28,44 +30,48 @@ LevelTypes::Plane::Plane(objCounterParametersComma() Level* pOwningLevel)
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
 owningLevel(pOwningLevel)
 , tiles()
-, switchIds()
+, connectionSwitches()
 , connections() {
 }
 LevelTypes::Plane::~Plane() {
 	//don't delete owningLevel, it owns and deletes this
 }
-void LevelTypes::Plane::addConnection(Plane* toPlane, short railId) {
+int LevelTypes::Plane::addConnectionSwitch() {
+	connectionSwitches.push_back(ConnectionSwitch());
+	return (int)connectionSwitches.size() - 1;
+}
+bool LevelTypes::Plane::addConnection(Plane* toPlane, bool isRail) {
+	//don't connect to a plane twice
 	for (Connection& connection : connections) {
 		if (connection.toPlane == toPlane)
-			return;
+			return true;
 	}
-	if (railId == MapState::absentRailSwitchId)
+	//add a climb/fall connection
+	if (!isRail) {
 		connections.push_back(Connection(toPlane, Level::absentRailByteIndex, 0));
-	else {
-		Connection* copyConnection = nullptr;
-		for (Connection& connection : toPlane->connections) {
-			if (connection.toPlane == this) {
-				copyConnection = &connection;
-				break;
-			}
-		}
-		if (copyConnection != nullptr)
-			connections.push_back(Connection(toPlane, copyConnection->railByteIndex, copyConnection->railBitShift));
-		else {
-			int railByteIndex;
-			int railBitShift;
-			owningLevel->getNextRailByteMask(&railByteIndex, &railBitShift);
-			connections.push_back(Connection(toPlane, railByteIndex, railBitShift));
+		return true;
+	}
+	//add a rail connection to a plane that is already connected to this plane
+	for (Connection& connection : toPlane->connections) {
+		if (connection.toPlane == this) {
+			connections.push_back(Connection(toPlane, connection.railByteIndex, connection.railTileOffsetByteMask));
+			return true;
 		}
 	}
+	return false;
 }
-void LevelTypes::Plane::addSwitchId(short switchId) {
-	for (short otherSwitchId : switchIds) {
-		if (otherSwitchId == switchId)
-			return;
-	}
-	switchIds.push_back(switchId);
+void LevelTypes::Plane::addRailConnection(Plane* toPlane, LevelTypes::RailByteMaskData& railByteMaskData) {
+	connections.push_back(
+		Connection(
+			toPlane, railByteMaskData.railByteIndex, Level::baseRailTileOffsetByteMask << railByteMaskData.railBitShift));
 }
+
+//////////////////////////////// LevelTypes::RailByteMaskData ////////////////////////////////
+LevelTypes::RailByteMaskData::RailByteMaskData(int pRailByteIndex, int pRailBitShift)
+: railByteIndex(pRailByteIndex)
+, railBitShift(pRailBitShift) {
+}
+LevelTypes::RailByteMaskData::~RailByteMaskData() {}
 using namespace LevelTypes;
 
 //////////////////////////////// Level ////////////////////////////////
@@ -86,14 +92,15 @@ Plane* Level::addNewPlane() {
 	planes.push_back(plane);
 	return plane;
 }
-void Level::getNextRailByteMask(int* outRailByteIndex, int* outRailBitShift) {
-	*outRailByteIndex = railByteMaskBitsTracked / 32;
-	*outRailBitShift = railByteMaskBitsTracked % 32;
+LevelTypes::RailByteMaskData Level::getNextRailByteMask() {
+	int railByteIndex = railByteMaskBitsTracked / 32;
+	int railBitShift = railByteMaskBitsTracked % 32;
 	//make sure there are enough bits to fit the new mask
-	if (*outRailBitShift + railByteMaskBitCount > 32) {
-		*outRailByteIndex++;
-		*outRailBitShift = 0;
-		railByteMaskBitsTracked = railByteMaskBitsTracked / 32 * 32 + 32 + railByteMaskBitCount;
+	if (railBitShift + railByteMaskBitCount > 32) {
+		railByteIndex++;
+		railBitShift = 0;
+		railByteMaskBitsTracked = (railByteMaskBitsTracked / 32 + 1) * 32 + railByteMaskBitCount;
 	} else
 		railByteMaskBitsTracked += railByteMaskBitCount;
+	return RailByteMaskData(railByteIndex, railBitShift);
 }

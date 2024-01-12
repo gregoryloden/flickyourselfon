@@ -30,6 +30,18 @@ MapState::PlaneConnection::PlaneConnection(LevelTypes::Plane* pFromPlane, int pT
 }
 MapState::PlaneConnection::~PlaneConnection() {}
 
+//////////////////////////////// MapState::PlaneConnectionSwitch ////////////////////////////////
+MapState::PlaneConnectionSwitch::PlaneConnectionSwitch(
+	Switch* pSwitch0, LevelTypes::Plane* pPlane, int pPlaneConnectionSwitchIndex)
+: switch0(pSwitch0)
+, plane(pPlane)
+, planeConnectionSwitchIndex(pPlaneConnectionSwitchIndex) {
+}
+MapState::PlaneConnectionSwitch::~PlaneConnectionSwitch() {
+	//don't delete the switch, it's owned by MapState
+	//don't delete the plane, it's owned by a Level
+}
+
 //////////////////////////////// MapState ////////////////////////////////
 char* MapState::tiles = nullptr;
 char* MapState::heights = nullptr;
@@ -297,8 +309,42 @@ void MapState::buildLevels() {
 			levels[levels.size() - 2]->assignVictoryPlane(newPlane);
 	}
 
-	for (PlaneConnection& planeConnection : planeConnections)
-		planeConnection.fromPlane->addConnection(planes[planeIds[planeConnection.toTile] - 1], planeConnection.railId);
+	//add switches to planes
+	vector<PlaneConnectionSwitch> planeConnectionSwitches;
+	for (Switch* switch0 : switches) {
+		LevelTypes::Plane* plane = planes[planeIds[switch0->getTopY() * width + switch0->getLeftX()] - 1];
+		planeConnectionSwitches.push_back(PlaneConnectionSwitch(switch0, plane, plane->addConnectionSwitch()));
+	}
+
+	//organize switch/plane combinations so that we can refer to them when adding rail connections
+	vector<PlaneConnectionSwitch*> planeConnectionSwitchesByGroupByColor[4];
+	for (PlaneConnectionSwitch& planeConnectionSwitch : planeConnectionSwitches) {
+		vector<PlaneConnectionSwitch*>& planeConnectionSwitchesByGroup =
+			planeConnectionSwitchesByGroupByColor[planeConnectionSwitch.switch0->getColor()];
+		char group = planeConnectionSwitch.switch0->getGroup();
+		while ((int)planeConnectionSwitchesByGroup.size() <= group)
+			planeConnectionSwitchesByGroup.push_back(nullptr);
+		planeConnectionSwitchesByGroup[group] = &planeConnectionSwitch;
+	}
+
+	//add connections between planes
+	for (PlaneConnection& planeConnection : planeConnections) {
+		LevelTypes::Plane* toPlane = planes[planeIds[planeConnection.toTile] - 1];
+		if (planeConnection.fromPlane->addConnection(toPlane, planeConnection.railId != absentRailSwitchId))
+			continue;
+
+		//we have a new rail - add a connection to it and add the data to all applicable switches
+		LevelTypes::RailByteMaskData railByteMaskData = planeConnection.fromPlane->getOwningLevel()->getNextRailByteMask();
+		planeConnection.fromPlane->addRailConnection(toPlane, railByteMaskData);
+		Rail* rail = rails[planeConnection.railId & railSwitchIndexBitmask];
+		vector<PlaneConnectionSwitch*>& planeConnectionSwitchesByGroup =
+			planeConnectionSwitchesByGroupByColor[rail->getColor()];
+		for (char group : rail->getGroups()) {
+			PlaneConnectionSwitch* planeConnectionSwitch = planeConnectionSwitchesByGroup[group];
+			planeConnectionSwitch->plane->addRailConnectionToSwitch(
+				railByteMaskData, planeConnectionSwitch->planeConnectionSwitchIndex);
+		}
+	}
 }
 LevelTypes::Plane* MapState::buildPlane(
 	int tile, Level* activeLevel, deque<int>& tileChecks, vector<PlaneConnection>& planeConnections)
@@ -374,9 +420,7 @@ LevelTypes::Plane* MapState::buildPlane(
 					plane, endTile, railId, planeConnections, activeLevel, rail, rail->getSegmentCount() - 2, tileChecks);
 			else if (tile == endTile)
 				addRailPlaneConnection(plane, startTile, railId, planeConnections, activeLevel, rail, 1, tileChecks);
-		//if there's a switch, make sure the plane knows about it
-		} else if ((railSwitchIds[tile] & railSwitchIdBitmask) == switchIdValue)
-			plane->addSwitchId(railSwitchIds[tile] & railSwitchIndexBitmask);
+		}
 	}
 	return plane;
 }

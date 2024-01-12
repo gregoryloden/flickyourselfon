@@ -17,6 +17,8 @@ public:
 	Switch(objCounterParametersComma() int pLeftX, int pTopY, char pColor, char pGroup);
 	virtual ~Switch();
 
+	int getLeftX() { return leftX; }
+	int getTopY() { return topY; }
 	char getColor() { return color; }
 	char getGroup() { return group; }
 	//get the map center x that radio waves should originate from
