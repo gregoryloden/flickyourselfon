@@ -312,7 +312,12 @@ void MapState::buildLevels() {
 	//add switches to planes
 	vector<PlaneConnectionSwitch> planeConnectionSwitches;
 	for (Switch* switch0 : switches) {
-		LevelTypes::Plane* plane = planes[planeIds[switch0->getTopY() * width + switch0->getLeftX()] - 1];
+		//TODO: don't validate the planeId, once the 4th group 0 switch is reachable
+		//during development, we might have switches which aren't on any plane accessible from the start, so skip those
+		short planeId = planeIds[switch0->getTopY() * width + switch0->getLeftX()];
+		if (planeId == 0)
+			continue;
+		LevelTypes::Plane* plane = planes[planeId - 1];
 		planeConnectionSwitches.push_back(PlaneConnectionSwitch(switch0, plane, plane->addConnectionSwitch()));
 	}
 
