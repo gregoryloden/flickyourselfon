@@ -81,7 +81,7 @@ MapState::MapState(objCounterParameters())
 		resetSwitchStates.push_back(newResetSwitchState(resetSwitch));
 
 	//add all the rail states to their appropriate switch states
-	vector<SwitchState*> switchStatesByGroupByColor[4];
+	vector<SwitchState*> switchStatesByGroupByColor[colorCount];
 	for (SwitchState* switchState : switchStates) {
 		Switch* switch0 = switchState->getSwitch();
 		vector<SwitchState*>& switchStatesByGroup = switchStatesByGroupByColor[switch0->getColor()];
@@ -326,7 +326,7 @@ void MapState::buildLevels() {
 	}
 
 	//organize switch/plane combinations so that we can refer to them when adding rail connections
-	vector<PlaneConnectionSwitch*> planeConnectionSwitchesByGroupByColor[4];
+	vector<PlaneConnectionSwitch*> planeConnectionSwitchesByGroupByColor[colorCount];
 	for (PlaneConnectionSwitch& planeConnectionSwitch : planeConnectionSwitches) {
 		vector<PlaneConnectionSwitch*>& planeConnectionSwitchesByGroup =
 			planeConnectionSwitchesByGroupByColor[planeConnectionSwitch.switch0->getColor()];
