@@ -109,6 +109,7 @@ void Logger::endLogging() {
 	}
 	file->close();
 	delete file;
+	file = nullptr;
 }
 void Logger::logLoop() {
 	Logger* lastWrittenLogger = &debugLogger;
@@ -173,7 +174,9 @@ void Logger::logString(const string& message) {
 		if (threadRunning)
 			preQueueMessages << messageWithTimestamp.str();
 		//if not, write directly to the file
-		else
+		//any messages written before the file has been opened or after it has been closed will be simply discarded (ex ObjCounter
+		//	messages for statically allocated objects)
+		else if (file != nullptr)
 			*file << messageWithTimestamp.str();
 		return;
 	}
