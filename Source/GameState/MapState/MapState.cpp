@@ -23,10 +23,12 @@
 	newEntityAnimationDelay(animation->getTotalTicksDuration())
 
 //////////////////////////////// MapState::PlaneConnection ////////////////////////////////
-MapState::PlaneConnection::PlaneConnection(LevelTypes::Plane* pFromPlane, int pToTile, short pRailId)
+MapState::PlaneConnection::PlaneConnection(
+	LevelTypes::Plane* pFromPlane, int pToTile, bool pIsRail, int pLevelRailByteMaskDataIndex)
 : fromPlane(pFromPlane)
 , toTile(pToTile)
-, railId(pRailId) {
+, isRail(pIsRail)
+, levelRailByteMaskDataIndex(pLevelRailByteMaskDataIndex) {
 }
 MapState::PlaneConnection::~PlaneConnection() {}
 
@@ -335,13 +337,14 @@ void MapState::buildLevels() {
 	//add connections between planes
 	for (PlaneConnection& planeConnection : planeConnections) {
 		LevelTypes::Plane* toPlane = planes[planeIds[planeConnection.toTile] - 1];
-		if (planeConnection.fromPlane->addConnection(toPlane, planeConnection.railId != absentRailSwitchId))
+		if (planeConnection.fromPlane->addConnection(toPlane, planeConnection.isRail))
 			continue;
 
 		//we have a new rail - add a connection to it and add the data to all applicable switches
-		LevelTypes::RailByteMaskData railByteMaskData = planeConnection.fromPlane->getOwningLevel()->getNextRailByteMask();
+		LevelTypes::RailByteMaskData* railByteMaskData =
+			planeConnection.fromPlane->getOwningLevel()->getRailByteMaskData(planeConnection.levelRailByteMaskDataIndex);
 		planeConnection.fromPlane->addRailConnection(toPlane, railByteMaskData);
-		Rail* rail = rails[planeConnection.railId & railSwitchIndexBitmask];
+		Rail* rail = rails[railByteMaskData->railId & railSwitchIndexBitmask];
 		vector<PlaneConnectionSwitch*>& planeConnectionSwitchesByGroup =
 			planeConnectionSwitchesByGroupByColor[rail->getColor()];
 		for (char group : rail->getGroups()) {
@@ -390,7 +393,7 @@ LevelTypes::Plane* MapState::buildPlane(
 				}
 				if (neighborHeight != planeHeight + 2)
 					continue;
-				planeConnections.push_back(PlaneConnection(plane, neighbor, absentRailSwitchId));
+				planeConnections.push_back(PlaneConnection(plane, neighbor, false, -1));
 				tileChecks.push_back(neighbor);
 			//check for neighboring tiles to fall to
 			} else {
@@ -406,7 +409,7 @@ LevelTypes::Plane* MapState::buildPlane(
 					neighbor = fallY * width + fallX;
 				} else if (neighborHeight % 2 != 0)
 					continue;
-				planeConnections.push_back(PlaneConnection(plane, neighbor, absentRailSwitchId));
+				planeConnections.push_back(PlaneConnection(plane, neighbor, false, -1));
 				tileChecks.push_back(neighbor);
 			}
 		}
@@ -439,16 +442,16 @@ void MapState::addRailPlaneConnection(
 	int adjacentRailSegmentIndex,
 	deque<int>& tileChecks)
 {
-	planeConnections.push_back(PlaneConnection(plane, toTile, railId));
 	if (planeIds[toTile] == 0) {
-		activeLevel->setMinimumRailColor(rail->getColor());
+		planeConnections.push_back(PlaneConnection(plane, toTile, true, activeLevel->trackNextRail(railId, rail->getColor())));
 		Rail::Segment* toAdjacentSegment = rail->getSegment(adjacentRailSegmentIndex);
 		int toAdjacentTile = toTile * 2 - toAdjacentSegment->y * width - toAdjacentSegment->x;
 		if (tiles[toAdjacentTile] == tilePuzzleEnd)
 			tileChecks.push_back(toAdjacentTile);
 		else
 			tileChecks.push_back(toTile);
-	}
+	} else
+		planeConnections.push_back(PlaneConnection(plane, toTile, true, -1));
 }
 void MapState::deleteMap() {
 	delete[] tiles;

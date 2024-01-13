@@ -60,15 +60,16 @@ bool LevelTypes::Plane::addConnection(Plane* toPlane, bool isRail) {
 	}
 	return false;
 }
-void LevelTypes::Plane::addRailConnection(Plane* toPlane, LevelTypes::RailByteMaskData& railByteMaskData) {
+void LevelTypes::Plane::addRailConnection(Plane* toPlane, LevelTypes::RailByteMaskData* railByteMaskData) {
 	connections.push_back(
 		Connection(
-			toPlane, railByteMaskData.railByteIndex, Level::baseRailTileOffsetByteMask << railByteMaskData.railBitShift));
+			toPlane, railByteMaskData->railByteIndex, Level::baseRailTileOffsetByteMask << railByteMaskData->railBitShift));
 }
 
 //////////////////////////////// LevelTypes::RailByteMaskData ////////////////////////////////
-LevelTypes::RailByteMaskData::RailByteMaskData(int pRailByteIndex, int pRailBitShift)
-: railByteIndex(pRailByteIndex)
+LevelTypes::RailByteMaskData::RailByteMaskData(short pRailId, int pRailByteIndex, int pRailBitShift)
+: railId(pRailId)
+, railByteIndex(pRailByteIndex)
 , railBitShift(pRailBitShift) {
 }
 LevelTypes::RailByteMaskData::~RailByteMaskData() {}
@@ -78,6 +79,7 @@ using namespace LevelTypes;
 Level::Level(objCounterParameters())
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
 planes()
+, railByteMaskData()
 , railByteMaskBitsTracked(0)
 , victoryPlane(nullptr)
 , minimumRailColor(-1) {
@@ -92,7 +94,8 @@ Plane* Level::addNewPlane() {
 	planes.push_back(plane);
 	return plane;
 }
-LevelTypes::RailByteMaskData Level::getNextRailByteMask() {
+int Level::trackNextRail(short railId, char color) {
+	minimumRailColor = MathUtils::max(color, minimumRailColor);
 	int railByteIndex = railByteMaskBitsTracked / 32;
 	int railBitShift = railByteMaskBitsTracked % 32;
 	//make sure there are enough bits to fit the new mask
@@ -102,5 +105,6 @@ LevelTypes::RailByteMaskData Level::getNextRailByteMask() {
 		railByteMaskBitsTracked = (railByteMaskBitsTracked / 32 + 1) * 32 + railByteMaskBitCount;
 	} else
 		railByteMaskBitsTracked += railByteMaskBitCount;
-	return RailByteMaskData(railByteIndex, railBitShift);
+	railByteMaskData.push_back(RailByteMaskData(railId, railByteIndex, railBitShift));
+	return (int)railByteMaskData.size() - 1;
 }

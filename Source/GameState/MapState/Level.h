@@ -22,7 +22,7 @@ namespace LevelTypes {
 		//Should only be allocated within an object, on the stack, or as a static object
 		class ConnectionSwitch {
 		public:
-			vector<RailByteMaskData> affectedRailByteMaskData;
+			vector<RailByteMaskData*> affectedRailByteMaskData;
 
 			ConnectionSwitch();
 			virtual ~ConnectionSwitch();
@@ -49,7 +49,7 @@ namespace LevelTypes {
 
 		void addTile(int x, int y) { tiles.push_back(Tile(x, y)); }
 		Level* getOwningLevel() { return owningLevel; }
-		void addRailConnectionToSwitch(LevelTypes::RailByteMaskData& railByteMaskData, int connectionSwitchesIndex) {
+		void addRailConnectionToSwitch(LevelTypes::RailByteMaskData* railByteMaskData, int connectionSwitchesIndex) {
 			connectionSwitches[connectionSwitchesIndex].affectedRailByteMaskData.push_back(railByteMaskData);
 		}
 		//add a switch
@@ -59,15 +59,16 @@ namespace LevelTypes {
 		//returns true if the connection was redundant or added, and false if we need to add a rail connection instead
 		bool addConnection(Plane* toPlane, bool isRail);
 		//add a rail connection to another plane
-		void addRailConnection(Plane* toPlane, LevelTypes::RailByteMaskData& railByteMaskData);
+		void addRailConnection(Plane* toPlane, LevelTypes::RailByteMaskData* railByteMaskData);
 	};
 	//Should only be allocated within an object, on the stack, or as a static object
 	class RailByteMaskData {
 	public:
+		short railId;
 		int railByteIndex;
 		int railBitShift;
 
-		RailByteMaskData(int pRailByteIndex, int pRailBitShift);
+		RailByteMaskData(short railId, int pRailByteIndex, int pRailBitShift);
 		virtual ~RailByteMaskData();
 	};
 }
@@ -84,6 +85,7 @@ public:
 
 private:
 	vector<LevelTypes::Plane*> planes;
+	vector<LevelTypes::RailByteMaskData> railByteMaskData;
 	int railByteMaskBitsTracked;
 	LevelTypes::Plane* victoryPlane;
 	char minimumRailColor;
@@ -93,12 +95,11 @@ public:
 	virtual ~Level();
 
 	void assignVictoryPlane(LevelTypes::Plane* pVictoryPlane) { victoryPlane = pVictoryPlane; }
-	void setMinimumRailColor(char color) { minimumRailColor = MathUtils::max(color, minimumRailColor); }
-	int getPlaneCount() { return (int)planes.size(); }
-	LevelTypes::Plane* getPlane(int i) { return planes[i]; }
-	int getRailByteCount() { return (railByteMaskBitsTracked + 31) / 32; }
+	int getRailByteMaskDataCount() { return (int)railByteMaskData.size(); }
+	LevelTypes::RailByteMaskData* getRailByteMaskData(int i) { return &railByteMaskData[i]; }
 	//add a new plane to this level
 	LevelTypes::Plane* addNewPlane();
 	//create a byte mask for a new rail
-	LevelTypes::RailByteMaskData getNextRailByteMask();
+	//returns the index into the internal byte mask vector for use in getRailByteMaskData()
+	int trackNextRail(short railId, char color);
 };

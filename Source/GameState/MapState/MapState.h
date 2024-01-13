@@ -30,9 +30,10 @@ private:
 	public:
 		LevelTypes::Plane* fromPlane;
 		int toTile;
-		short railId;
+		bool isRail;
+		int levelRailByteMaskDataIndex;
 
-		PlaneConnection(LevelTypes::Plane* pFromPlane, int pToTile, short pRailId);
+		PlaneConnection(LevelTypes::Plane* pFromPlane, int pToTile, bool pIsRail, int pLevelRailByteMaskDataIndex);
 		virtual ~PlaneConnection();
 	};
 	//Should only be allocated within an object, on the stack, or as a static object
