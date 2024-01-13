@@ -340,7 +340,7 @@ void MapState::buildLevels() {
 	for (PlaneConnection& planeConnection : planeConnections) {
 		LevelTypes::Plane* toPlane = planes[planeIds[planeConnection.toTile] - 1];
 		if (planeConnection.fromPlane->addConnection(
-				toPlane, planeConnection.railId == absentRailSwitchId, planeConnection.railId))
+				toPlane, planeConnection.railId != absentRailSwitchId, planeConnection.railId))
 			continue;
 
 		//we have a new rail - add a connection to it and add the data to all applicable switches
