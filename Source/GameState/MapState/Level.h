@@ -23,8 +23,9 @@ namespace LevelTypes {
 		class ConnectionSwitch {
 		public:
 			vector<RailByteMaskData*> affectedRailByteMaskData;
+			short switchId;
 
-			ConnectionSwitch();
+			ConnectionSwitch(short pSwitchId);
 			virtual ~ConnectionSwitch();
 		};
 		//Should only be allocated within an object, on the stack, or as a static object
@@ -33,8 +34,9 @@ namespace LevelTypes {
 			Plane* toPlane;
 			int railByteIndex;
 			unsigned int railTileOffsetByteMask;
+			short railId;
 
-			Connection(Plane* pToPlane, int pRailByteIndex, int pRailTileOffsetByteMask);
+			Connection(Plane* pToPlane, int pRailByteIndex, int pRailTileOffsetByteMask, short pRailId);
 			virtual ~Connection();
 		};
 
@@ -54,12 +56,12 @@ namespace LevelTypes {
 		}
 		//add a switch
 		//returns the index of the switch in this plane
-		int addConnectionSwitch();
+		int addConnectionSwitch(short switchId);
 		//add a connection to another plane, if we don't already have one
 		//returns true if the connection was redundant or added, and false if we need to add a rail connection instead
-		bool addConnection(Plane* toPlane, bool isRail);
+		bool addConnection(Plane* toPlane, bool isRail, short railId);
 		//add a rail connection to another plane
-		void addRailConnection(Plane* toPlane, LevelTypes::RailByteMaskData* railByteMaskData);
+		void addRailConnection(Plane* toPlane, LevelTypes::RailByteMaskData* railByteMaskData, short railId);
 	};
 	//Should only be allocated within an object, on the stack, or as a static object
 	class RailByteMaskData {

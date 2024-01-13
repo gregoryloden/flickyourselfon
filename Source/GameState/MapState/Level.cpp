@@ -3,16 +3,18 @@
 #define newPlane(owningLevel) newWithArgs(Plane, owningLevel)
 
 //////////////////////////////// LevelTypes::Plane::ConnectionSwitch ////////////////////////////////
-LevelTypes::Plane::ConnectionSwitch::ConnectionSwitch()
-: affectedRailByteMaskData() {
+LevelTypes::Plane::ConnectionSwitch::ConnectionSwitch(short pSwitchId)
+: affectedRailByteMaskData()
+, switchId(pSwitchId) {
 }
 LevelTypes::Plane::ConnectionSwitch::~ConnectionSwitch() {}
 
 //////////////////////////////// LevelTypes::Plane::Connection ////////////////////////////////
-LevelTypes::Plane::Connection::Connection(Plane* pToPlane, int pRailByteIndex, int pRailTileOffsetByteMask)
+LevelTypes::Plane::Connection::Connection(Plane* pToPlane, int pRailByteIndex, int pRailTileOffsetByteMask, short pRailId)
 : toPlane(pToPlane)
 , railByteIndex(pRailByteIndex)
-, railTileOffsetByteMask(pRailTileOffsetByteMask) {
+, railTileOffsetByteMask(pRailTileOffsetByteMask)
+, railId(pRailId) {
 }
 LevelTypes::Plane::Connection::~Connection() {
 	//don't delete the plane, it's owned by a Level
@@ -36,11 +38,11 @@ owningLevel(pOwningLevel)
 LevelTypes::Plane::~Plane() {
 	//don't delete owningLevel, it owns and deletes this
 }
-int LevelTypes::Plane::addConnectionSwitch() {
-	connectionSwitches.push_back(ConnectionSwitch());
+int LevelTypes::Plane::addConnectionSwitch(short switchId) {
+	connectionSwitches.push_back(ConnectionSwitch(switchId));
 	return (int)connectionSwitches.size() - 1;
 }
-bool LevelTypes::Plane::addConnection(Plane* toPlane, bool isRail) {
+bool LevelTypes::Plane::addConnection(Plane* toPlane, bool isRail, short railId) {
 	//don't connect to a plane twice
 	for (Connection& connection : connections) {
 		if (connection.toPlane == toPlane)
@@ -48,22 +50,25 @@ bool LevelTypes::Plane::addConnection(Plane* toPlane, bool isRail) {
 	}
 	//add a climb/fall connection
 	if (!isRail) {
-		connections.push_back(Connection(toPlane, Level::absentRailByteIndex, 0));
+		connections.push_back(Connection(toPlane, Level::absentRailByteIndex, 0, railId));
 		return true;
 	}
 	//add a rail connection to a plane that is already connected to this plane
 	for (Connection& connection : toPlane->connections) {
 		if (connection.toPlane == this) {
-			connections.push_back(Connection(toPlane, connection.railByteIndex, connection.railTileOffsetByteMask));
+			connections.push_back(Connection(toPlane, connection.railByteIndex, connection.railTileOffsetByteMask, railId));
 			return true;
 		}
 	}
 	return false;
 }
-void LevelTypes::Plane::addRailConnection(Plane* toPlane, LevelTypes::RailByteMaskData* railByteMaskData) {
+void LevelTypes::Plane::addRailConnection(Plane* toPlane, LevelTypes::RailByteMaskData* railByteMaskData, short railId) {
 	connections.push_back(
 		Connection(
-			toPlane, railByteMaskData->railByteIndex, Level::baseRailTileOffsetByteMask << railByteMaskData->railBitShift));
+			toPlane,
+			railByteMaskData->railByteIndex,
+			Level::baseRailTileOffsetByteMask << railByteMaskData->railBitShift,
+			railId));
 }
 
 //////////////////////////////// LevelTypes::RailByteMaskData ////////////////////////////////

@@ -24,10 +24,10 @@
 
 //////////////////////////////// MapState::PlaneConnection ////////////////////////////////
 MapState::PlaneConnection::PlaneConnection(
-	LevelTypes::Plane* pFromPlane, int pToTile, bool pIsRail, int pLevelRailByteMaskDataIndex)
+	LevelTypes::Plane* pFromPlane, int pToTile, short pRailId, int pLevelRailByteMaskDataIndex)
 : fromPlane(pFromPlane)
 , toTile(pToTile)
-, isRail(pIsRail)
+, railId(pRailId)
 , levelRailByteMaskDataIndex(pLevelRailByteMaskDataIndex) {
 }
 MapState::PlaneConnection::~PlaneConnection() {}
@@ -314,13 +314,15 @@ void MapState::buildLevels() {
 	//add switches to planes
 	vector<PlaneConnectionSwitch> planeConnectionSwitches;
 	for (Switch* switch0 : switches) {
+		int tile = switch0->getTopY() * width + switch0->getLeftX();
 		//TODO: don't validate the planeId, once the 4th group 0 switch is reachable
 		//during development, we might have switches which aren't on any plane accessible from the start, so skip those
-		short planeId = planeIds[switch0->getTopY() * width + switch0->getLeftX()];
+		short planeId = planeIds[tile];
 		if (planeId == 0)
 			continue;
 		LevelTypes::Plane* plane = planes[planeId - 1];
-		planeConnectionSwitches.push_back(PlaneConnectionSwitch(switch0, plane, plane->addConnectionSwitch()));
+		planeConnectionSwitches.push_back(
+			PlaneConnectionSwitch(switch0, plane, plane->addConnectionSwitch(railSwitchIds[tile])));
 	}
 
 	//organize switch/plane combinations so that we can refer to them when adding rail connections
@@ -337,14 +339,15 @@ void MapState::buildLevels() {
 	//add connections between planes
 	for (PlaneConnection& planeConnection : planeConnections) {
 		LevelTypes::Plane* toPlane = planes[planeIds[planeConnection.toTile] - 1];
-		if (planeConnection.fromPlane->addConnection(toPlane, planeConnection.isRail))
+		if (planeConnection.fromPlane->addConnection(
+				toPlane, planeConnection.railId == absentRailSwitchId, planeConnection.railId))
 			continue;
 
 		//we have a new rail - add a connection to it and add the data to all applicable switches
 		LevelTypes::RailByteMaskData* railByteMaskData =
 			planeConnection.fromPlane->getOwningLevel()->getRailByteMaskData(planeConnection.levelRailByteMaskDataIndex);
-		planeConnection.fromPlane->addRailConnection(toPlane, railByteMaskData);
-		Rail* rail = rails[railByteMaskData->railId & railSwitchIndexBitmask];
+		planeConnection.fromPlane->addRailConnection(toPlane, railByteMaskData, planeConnection.railId);
+		Rail* rail = rails[planeConnection.railId & railSwitchIndexBitmask];
 		vector<PlaneConnectionSwitch*>& planeConnectionSwitchesByGroup =
 			planeConnectionSwitchesByGroupByColor[rail->getColor()];
 		for (char group : rail->getGroups()) {
