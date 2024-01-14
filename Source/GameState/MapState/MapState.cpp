@@ -321,8 +321,11 @@ void MapState::buildLevels() {
 		if (planeId == 0)
 			continue;
 		LevelTypes::Plane* plane = planes[planeId - 1];
-		planeConnectionSwitches.push_back(
-			PlaneConnectionSwitch(switch0, plane, plane->addConnectionSwitch(railSwitchIds[tile])));
+		short switchId = railSwitchIds[tile];
+		if (switch0->getGroup() == 0)
+			plane->getOwningLevel()->assignRadioTowerSwitchId(switchId);
+		else
+			planeConnectionSwitches.push_back(PlaneConnectionSwitch(switch0, plane, plane->addConnectionSwitch(switchId)));
 	}
 
 	//organize switch/plane combinations so that we can refer to them when adding rail connections
@@ -396,7 +399,7 @@ LevelTypes::Plane* MapState::buildPlane(
 				}
 				if (neighborHeight != planeHeight + 2)
 					continue;
-				planeConnections.push_back(PlaneConnection(plane, neighbor, false, -1));
+				planeConnections.push_back(PlaneConnection(plane, neighbor, absentRailSwitchId, -1));
 				tileChecks.push_back(neighbor);
 			//check for neighboring tiles to fall to
 			} else {
@@ -412,7 +415,7 @@ LevelTypes::Plane* MapState::buildPlane(
 					neighbor = fallY * width + fallX;
 				} else if (neighborHeight % 2 != 0)
 					continue;
-				planeConnections.push_back(PlaneConnection(plane, neighbor, false, -1));
+				planeConnections.push_back(PlaneConnection(plane, neighbor, absentRailSwitchId, -1));
 				tileChecks.push_back(neighbor);
 			}
 		}
@@ -446,7 +449,7 @@ void MapState::addRailPlaneConnection(
 	deque<int>& tileChecks)
 {
 	if (planeIds[toTile] == 0) {
-		planeConnections.push_back(PlaneConnection(plane, toTile, true, activeLevel->trackNextRail(railId, rail->getColor())));
+		planeConnections.push_back(PlaneConnection(plane, toTile, railId, activeLevel->trackNextRail(railId, rail)));
 		Rail::Segment* toAdjacentSegment = rail->getSegment(adjacentRailSegmentIndex);
 		int toAdjacentTile = toTile * 2 - toAdjacentSegment->y * width - toAdjacentSegment->x;
 		if (tiles[toAdjacentTile] == tilePuzzleEnd)
@@ -454,7 +457,7 @@ void MapState::addRailPlaneConnection(
 		else
 			tileChecks.push_back(toTile);
 	} else
-		planeConnections.push_back(PlaneConnection(plane, toTile, true, -1));
+		planeConnections.push_back(PlaneConnection(plane, toTile, railId, -1));
 }
 void MapState::deleteMap() {
 	delete[] tiles;

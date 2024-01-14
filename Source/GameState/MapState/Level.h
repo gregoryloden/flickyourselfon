@@ -3,6 +3,7 @@
 #define newLevel() newWithoutArgs(Level)
 
 class Level;
+class Rail;
 namespace LevelTypes {
 	class RailByteMaskData;
 }
@@ -69,8 +70,10 @@ namespace LevelTypes {
 		short railId;
 		int railByteIndex;
 		int railBitShift;
+		Rail* rail;
+		unsigned int inverseRailByteMask;
 
-		RailByteMaskData(short railId, int pRailByteIndex, int pRailBitShift);
+		RailByteMaskData(short railId, int pRailByteIndex, int pRailBitShift, Rail* pRail);
 		virtual ~RailByteMaskData();
 	};
 }
@@ -91,17 +94,19 @@ private:
 	int railByteMaskBitsTracked;
 	LevelTypes::Plane* victoryPlane;
 	char minimumRailColor;
+	short radioTowerSwitchId;
 
 public:
 	Level(objCounterParameters());
 	virtual ~Level();
 
 	void assignVictoryPlane(LevelTypes::Plane* pVictoryPlane) { victoryPlane = pVictoryPlane; }
+	void assignRadioTowerSwitchId(short pRadioTowerSwitchId) { radioTowerSwitchId = pRadioTowerSwitchId; }
 	int getRailByteMaskDataCount() { return (int)railByteMaskData.size(); }
 	LevelTypes::RailByteMaskData* getRailByteMaskData(int i) { return &railByteMaskData[i]; }
 	//add a new plane to this level
 	LevelTypes::Plane* addNewPlane();
 	//create a byte mask for a new rail
 	//returns the index into the internal byte mask vector for use in getRailByteMaskData()
-	int trackNextRail(short railId, char color);
+	int trackNextRail(short railId, Rail* rail);
 };

@@ -1,4 +1,5 @@
 #include "Level.h"
+#include "GameState/MapState/Rail.h"
 
 #define newPlane(owningLevel) newWithArgs(Plane, owningLevel)
 
@@ -62,7 +63,7 @@ bool LevelTypes::Plane::addConnection(Plane* toPlane, bool isRail, short railId)
 	}
 	return false;
 }
-void LevelTypes::Plane::addRailConnection(Plane* toPlane, LevelTypes::RailByteMaskData* railByteMaskData, short railId) {
+void LevelTypes::Plane::addRailConnection(Plane* toPlane, RailByteMaskData* railByteMaskData, short railId) {
 	connections.push_back(
 		Connection(
 			toPlane,
@@ -72,10 +73,12 @@ void LevelTypes::Plane::addRailConnection(Plane* toPlane, LevelTypes::RailByteMa
 }
 
 //////////////////////////////// LevelTypes::RailByteMaskData ////////////////////////////////
-LevelTypes::RailByteMaskData::RailByteMaskData(short pRailId, int pRailByteIndex, int pRailBitShift)
+LevelTypes::RailByteMaskData::RailByteMaskData(short pRailId, int pRailByteIndex, int pRailBitShift, Rail* pRail)
 : railId(pRailId)
 , railByteIndex(pRailByteIndex)
-, railBitShift(pRailBitShift) {
+, railBitShift(pRailBitShift)
+, rail(pRail)
+, inverseRailByteMask(~(Level::baseRailByteMask << pRailBitShift)) {
 }
 LevelTypes::RailByteMaskData::~RailByteMaskData() {}
 using namespace LevelTypes;
@@ -87,7 +90,8 @@ planes()
 , railByteMaskData()
 , railByteMaskBitsTracked(0)
 , victoryPlane(nullptr)
-, minimumRailColor(-1) {
+, minimumRailColor(-1)
+, radioTowerSwitchId(0) {
 }
 Level::~Level() {
 	for (Plane* plane : planes)
@@ -99,8 +103,8 @@ Plane* Level::addNewPlane() {
 	planes.push_back(plane);
 	return plane;
 }
-int Level::trackNextRail(short railId, char color) {
-	minimumRailColor = MathUtils::max(color, minimumRailColor);
+int Level::trackNextRail(short railId, Rail* rail) {
+	minimumRailColor = MathUtils::max(rail->getColor(), minimumRailColor);
 	int railByteIndex = railByteMaskBitsTracked / 32;
 	int railBitShift = railByteMaskBitsTracked % 32;
 	//make sure there are enough bits to fit the new mask
@@ -110,6 +114,6 @@ int Level::trackNextRail(short railId, char color) {
 		railByteMaskBitsTracked = (railByteMaskBitsTracked / 32 + 1) * 32 + railByteMaskBitCount;
 	} else
 		railByteMaskBitsTracked += railByteMaskBitCount;
-	railByteMaskData.push_back(RailByteMaskData(railId, railByteIndex, railBitShift));
+	railByteMaskData.push_back(RailByteMaskData(railId, railByteIndex, railBitShift, rail));
 	return (int)railByteMaskData.size() - 1;
 }
