@@ -127,12 +127,13 @@ HintState* LevelTypes::Plane::pursueSolution(
 		for (RailByteMaskData* railByteMaskData : connectionSwitch.affectedRailByteMaskData) {
 			unsigned int* railByteMask =
 				&HintStateTypes::PotentialLevelState::draftState.railByteMasks[railByteMaskData->railByteIndex];
-			char extractedRailState = (char)(*railByteMask >> railByteMaskData->railBitShift);
-			char movementDirection = (extractedRailState >> Level::railTileOffsetByteMaskBitCount) * 2 - 1;
-			char tileOffset = extractedRailState & (char)Level::baseRailTileOffsetByteMask;
+			char shiftedRailState = (char)(*railByteMask >> railByteMaskData->railBitShift);
+			char movementDirectionBit = shiftedRailState & (char)Level::baseRailMovementDirectionByteMask;
+			char tileOffset = shiftedRailState & (char)Level::baseRailTileOffsetByteMask;
+			char movementDirection = (movementDirectionBit >> Level::railTileOffsetByteMaskBitCount) * 2 - 1;
 			char resultRailState = railByteMaskData->rail->triggerMovement(movementDirection, &tileOffset)
-				? tileOffset | (extractedRailState & (char)Level::baseRailMovementDirectionByteMask)
-				: tileOffset | (~extractedRailState & (char)Level::baseRailMovementDirectionByteMask);
+				? tileOffset | (movementDirectionBit ^ Level::baseRailMovementDirectionByteMask)
+				: tileOffset | movementDirectionBit;
 			*railByteMask =
 				(*railByteMask & railByteMaskData->inverseRailByteMask)
 					| ((unsigned int)resultRailState << railByteMaskData->railBitShift);
