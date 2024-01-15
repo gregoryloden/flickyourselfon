@@ -6,6 +6,7 @@
 #include "GameState/EntityAnimation.h"
 #include "GameState/EntityState.h"
 #include "GameState/GameState.h"
+#include "GameState/HintState.h"
 #include "GameState/KickAction.h"
 #include "GameState/PauseState.h"
 #include "GameState/UndoState.h"
@@ -174,6 +175,7 @@ int gameMain(int argc, char* argv[]) {
 		ObjectPool<RideRailUndoState>::clearPool();
 		ObjectPool<KickSwitchUndoState>::clearPool();
 		ObjectPool<KickResetSwitchUndoState>::clearPool();
+		ObjectPool<HintState>::clearPool();
 		ObjCounter::end();
 	#endif
 	Logger::gameplayLogger.endLogging();

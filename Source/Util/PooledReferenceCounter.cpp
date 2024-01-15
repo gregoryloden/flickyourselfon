@@ -3,6 +3,7 @@
 #include "GameState/DynamicValue.h"
 #include "GameState/EntityAnimation.h"
 #include "GameState/EntityState.h"
+#include "GameState/HintState.h"
 #include "GameState/KickAction.h"
 #include "GameState/PauseState.h"
 #include "GameState/PlayerState.h"
@@ -116,6 +117,7 @@ template class ReferenceCounterHolder<UndoState>;
 instantiateObjectPoolAndReferenceCounterHolder(CollisionRect)
 instantiateObjectPoolAndReferenceCounterHolder(DynamicCameraAnchor)
 instantiateObjectPoolAndReferenceCounterHolder(EntityAnimation)
+instantiateObjectPoolAndReferenceCounterHolder(HintState)
 instantiateObjectPoolAndReferenceCounterHolder(KickAction)
 instantiateObjectPoolAndReferenceCounterHolder(KickResetSwitchUndoState)
 instantiateObjectPoolAndReferenceCounterHolder(MapState)
