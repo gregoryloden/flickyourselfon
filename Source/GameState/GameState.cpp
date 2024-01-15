@@ -484,7 +484,7 @@ void GameState::loadCachedSavedState(int ticksTime) {
 	if (sawIntroAnimation) {
 		playerState.get()->obtainBoot();
 		playerState.get()->setInitialZ();
-		playerState.get()->generateHint(ticksTime);
+		playerState.get()->generateHint(nullptr, ticksTime);
 	} else {
 		playerState.get()->reset();
 		beginIntroAnimation(ticksTime);
@@ -604,6 +604,7 @@ void GameState::loadCachedSavedState(int ticksTime) {
 					(float)startX,
 					(float)startY,
 					PlayerState::RideRailSpeed::Forward,
+					nullptr,
 					&lastX,
 					&lastY,
 					nullptr);
@@ -626,7 +627,7 @@ void GameState::loadCachedSavedState(int ticksTime) {
 						newEntityAnimationSetDirection(SpriteDirection::Down)
 					});
 				PlayerState::addKickSwitchComponents(
-					MapState::getIdFromSwitchIndex(switchIndex), &replayComponents, true, false);
+					MapState::getIdFromSwitchIndex(switchIndex), &replayComponents, true, false, nullptr);
 				replayComponents.push_back(newEntityAnimationSetSpriteAnimation(nullptr));
 				lastX = moveX;
 				lastY = moveY;
@@ -648,7 +649,7 @@ void GameState::loadCachedSavedState(int ticksTime) {
 						newEntityAnimationSetDirection(SpriteDirection::Down)
 					});
 				PlayerState::addKickResetSwitchComponents(
-					MapState::getIdFromResetSwitchIndex(resetSwitchIndex), &replayComponents, nullptr);
+					MapState::getIdFromResetSwitchIndex(resetSwitchIndex), &replayComponents, nullptr, nullptr);
 				replayComponents.push_back(newEntityAnimationSetSpriteAnimation(nullptr));
 				lastX = moveX;
 				lastY = moveY;
@@ -760,7 +761,7 @@ void GameState::beginIntroAnimation(int ticksTime) {
 		newEntityAnimationDelay(SpriteRegistry::playerLegLiftAnimation->getTotalTicksDuration()),
 		stopMoving,
 		clearSpriteAnimation,
-		newEntityAnimationGenerateHint(),
+		newEntityAnimationGenerateHint(nullptr),
 	});
 	playerState.get()->beginEntityAnimation(&playerAnimationComponents, ticksTime);
 	//fix the initial z because the player teleported to the start of the intro animation

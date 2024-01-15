@@ -272,16 +272,21 @@ bool EntityAnimation::SwitchToPlayerCamera::handle(EntityState* entityState, int
 
 //////////////////////////////// EntityAnimation::GenerateHint ////////////////////////////////
 EntityAnimation::GenerateHint::GenerateHint(objCounterParameters())
-: Component(objCounterArguments()) {
+: Component(objCounterArguments())
+, useHint(nullptr) {
 }
 EntityAnimation::GenerateHint::~GenerateHint() {}
-EntityAnimation::GenerateHint* EntityAnimation::GenerateHint::produce(objCounterParameters()) {
+EntityAnimation::GenerateHint* EntityAnimation::GenerateHint::produce(objCounterParametersComma() HintState* pUseHint) {
 	initializeWithNewFromPool(g, EntityAnimation::GenerateHint)
+	g->useHint.set(pUseHint);
 	return g;
 }
 pooledReferenceCounterDefineRelease(EntityAnimation::GenerateHint)
+void EntityAnimation::GenerateHint::prepareReturnToPool() {
+	useHint.set(nullptr);
+}
 bool EntityAnimation::GenerateHint::handle(EntityState* entityState, int ticksTime) {
-	entityState->generateHint(ticksTime);
+	entityState->generateHint(useHint.get(), ticksTime);
 	return true;
 }
 

@@ -123,8 +123,8 @@ public:
 	//spawn a particle with the given SpriteAnimation
 	virtual void spawnParticle(
 		float pX, float pY, SpriteAnimation* pAnimation, SpriteDirection pDirection, int particleStartTicksTime);
-	//generate a hint based on our current state
-	virtual void generateHint(int ticksTime);
+	//generate a hint based on our current state, or use the given state if present
+	virtual void generateHint(HintState* useHint, int ticksTime);
 	//return whether we have a kick action where we can show connections
 	bool showTutorialConnectionsForKickAction();
 	//if we have a kick action matching the given type, write its railSwitchId out and return true, otherwise return false
@@ -206,6 +206,7 @@ public:
 		float xPosition,
 		float yPosition,
 		RideRailSpeed rideRailSpeed,
+		HintState* useHint,
 		float* outFinalXPosition,
 		float* outFinalYPosition,
 		SpriteDirection* outFinalSpriteDirection);
@@ -218,7 +219,8 @@ public:
 		short switchId,
 		vector<ReferenceCounterHolder<EntityAnimationTypes::Component>>* components,
 		bool moveRailsForward,
-		bool allowRadioTowerAnimation);
+		bool allowRadioTowerAnimation,
+		HintState* useHint);
 private:
 	//begin a kicking animation and set the reset switch to flip
 	void kickResetSwitch(short resetSwitchId, int ticksTime);
@@ -227,7 +229,8 @@ public:
 	static void addKickResetSwitchComponents(
 		short resetSwitchId,
 		vector<ReferenceCounterHolder<EntityAnimationTypes::Component>>* components,
-		KickResetSwitchUndoState* kickResetSwitchUndoState);
+		KickResetSwitchUndoState* kickResetSwitchUndoState,
+		HintState* useHint);
 private:
 	//set the undo/redo state to the given state, with special handling if we're deleting it
 	void setUndoState(ReferenceCounterHolder<UndoState>& holder, UndoState* newUndoState);
@@ -244,17 +247,18 @@ public:
 	void undoNoOp(bool isUndo);
 	//move the player to the given location, and queue a MoveUndoState in the other undo state stack
 	//returns whether a move was scheduled or not
-	bool undoMove(float fromX, float fromY, char fromHeight, bool isUndo, int ticksTime);
+	bool undoMove(float fromX, float fromY, char fromHeight, HintState* fromHint, bool isUndo, int ticksTime);
 	//travel across this rail, and queue a RideRailUndoState in the other undo state stack
-	void undoRideRail(short railId, bool isUndo, int ticksTime);
+	void undoRideRail(short railId, HintState* fromHint, bool isUndo, int ticksTime);
 	//kick a switch, and queue a KickSwitchUndoState in the other undo state stack
-	void undoKickSwitch(short switchId, SpriteDirection direction, bool isUndo, int ticksTime);
+	void undoKickSwitch(short switchId, SpriteDirection direction, HintState* fromHint, bool isUndo, int ticksTime);
 	//restore rails to the positions they were before kicking this reset switch, and queue a KickResetSwitchUndoState in the
 	//	other undo state stack
 	void undoKickResetSwitch(
 		short resetSwitchId,
 		SpriteDirection direction,
 		KickResetSwitchUndoState* kickResetSwitchUndoState,
+		HintState* fromHint,
 		bool isUndo,
 		int ticksTime);
 	//render this player state, which was deemed to be the last state to need rendering

@@ -15,11 +15,12 @@
 	produceWithArgs(EntityAnimation::MapKickResetSwitch, resetSwitchId, kickResetSwitchUndoState)
 #define newEntityAnimationSpawnParticle(x, y, animation, direction) \
 	produceWithArgs(EntityAnimation::SpawnParticle, x, y, animation, direction)
-#define newEntityAnimationGenerateHint() produceWithoutArgs(EntityAnimation::GenerateHint)
+#define newEntityAnimationGenerateHint(useHint) produceWithArgs(EntityAnimation::GenerateHint, useHint)
 #define newEntityAnimationSwitchToPlayerCamera() produceWithoutArgs(EntityAnimation::SwitchToPlayerCamera)
 
 class DynamicValue;
 class EntityState;
+class HintState;
 class KickResetSwitchUndoState;
 class SpriteAnimation;
 enum class SpriteDirection: int;
@@ -226,13 +227,19 @@ public:
 	};
 	class GenerateHint: public EntityAnimationTypes::Component {
 	public:
+		ReferenceCounterHolder<HintState> useHint;
+
 		GenerateHint(objCounterParameters());
 		virtual ~GenerateHint();
 
 		//initialize and return a GenerateHint
-		static GenerateHint* produce(objCounterParameters());
+		static GenerateHint* produce(objCounterParametersComma() HintState* pUseHint);
 		//release a reference to this GenerateHint and return it to the pool if applicable
 		virtual void release();
+	protected:
+		//release components before this is returned to the pool
+		virtual void prepareReturnToPool();
+	public:
 		//return that the animation should continue updating after requesting the entity state to generate a hint
 		virtual bool handle(EntityState* entityState, int ticksTime);
 	};

@@ -59,7 +59,7 @@ bool HintStateTypes::PotentialLevelState::isNewState(vector<PotentialLevelState*
 	return true;
 }
 HintState* HintStateTypes::PotentialLevelState::getHint() {
-	HintStateTypes::PotentialLevelState* hintLevelState = this;
+	PotentialLevelState* hintLevelState = this;
 	while (hintLevelState->priorState->priorState != nullptr)
 		hintLevelState = hintLevelState->priorState;
 	return newHintState(hintLevelState->type, hintLevelState->data);
