@@ -4,6 +4,7 @@
 #include "GameState/DynamicValue.h"
 #include "GameState/EntityAnimation.h"
 #include "GameState/GameState.h"
+#include "GameState/HintState.h"
 #include "GameState/KickAction.h"
 #include "GameState/UndoState.h"
 #include "GameState/MapState/MapState.h"
@@ -54,7 +55,8 @@ PlayerState::PlayerState(objCounterParameters())
 , lastGoalX(0)
 , lastGoalY(0)
 , undoState(nullptr)
-, redoState(nullptr) {
+, redoState(nullptr)
+, hintState(nullptr) {
 }
 PlayerState::~PlayerState() {
 	delete collisionRect;
@@ -97,6 +99,7 @@ void PlayerState::copyPlayerState(PlayerState* other) {
 	lastGoalY = other->lastGoalY;
 	setUndoState(undoState, other->undoState.get());
 	setUndoState(redoState, other->redoState.get());
+	hintState.set(other->hintState.get());
 }
 pooledReferenceCounterDefineRelease(PlayerState)
 void PlayerState::prepareReturnToPool() {
@@ -107,6 +110,7 @@ void PlayerState::prepareReturnToPool() {
 	worldGroundY.set(nullptr);
 	undoState.set(nullptr);
 	redoState.set(nullptr);
+	hintState.set(nullptr);
 }
 float PlayerState::getWorldGroundY(int ticksTime) {
 	int ticksSinceLastUpdate = ticksTime - lastUpdateTicksTime;
@@ -158,6 +162,9 @@ void PlayerState::spawnParticle(
 		particleStartTicksTime);
 }
 void PlayerState::generateHint(int ticksTime) {
+	int timeDiff = lastUpdateTicksTime - ticksTime;
+	hintState.set(
+		mapState.get()->generateHint(x.get()->getValue(timeDiff), y.get()->getValue(timeDiff) + boundingBoxCenterYOffset));
 }
 bool PlayerState::showTutorialConnectionsForKickAction() {
 	KickAction* kickAction = availableKickAction.get();
@@ -202,6 +209,7 @@ void PlayerState::updateWithPreviousPlayerState(PlayerState* prev, bool hasKeybo
 	lastGoalY = prev->lastGoalY;
 	setUndoState(undoState, prev->undoState.get());
 	setUndoState(redoState, prev->redoState.get());
+	hintState.set(prev->hintState.get());
 
 	//if we can control the player then that must mean the player has the boot
 	hasBoot = true;
@@ -1468,6 +1476,7 @@ void PlayerState::reset() {
 	lastGoalX = 0;
 	lastGoalY = 0;
 	clearUndoRedoStates();
+	hintState.set(newHintState(HintStateTypes::Type::None, {}));
 }
 void PlayerState::setHighestZ() {
 	z = MapState::highestFloorHeight;

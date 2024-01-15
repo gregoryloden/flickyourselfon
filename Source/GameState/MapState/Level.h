@@ -2,8 +2,12 @@
 
 #define newLevel() newWithoutArgs(Level)
 
+class HintState;
 class Level;
 class Rail;
+namespace HintStateTypes {
+	class PotentialLevelState;
+}
 namespace LevelTypes {
 	class RailByteMaskData;
 }
@@ -41,17 +45,23 @@ namespace LevelTypes {
 			virtual ~Connection();
 		};
 
+	public:
+		static Plane* cachedHintSearchVictoryPlane;
+
+	private:
 		Level* owningLevel;
+		int indexInOwningLevel;
 		vector<Tile> tiles;
 		vector<ConnectionSwitch> connectionSwitches;
 		vector<Connection> connections;
 
 	public:
-		Plane(objCounterParametersComma() Level* pOwningLevel);
+		Plane(objCounterParametersComma() Level* pOwningLevel, int pIndexInOwningLevel);
 		virtual ~Plane();
 
 		void addTile(int x, int y) { tiles.push_back(Tile(x, y)); }
 		Level* getOwningLevel() { return owningLevel; }
+		int getIndexInOwningLevel() { return indexInOwningLevel; }
 		void addRailConnectionToSwitch(LevelTypes::RailByteMaskData* railByteMaskData, int connectionSwitchesIndex) {
 			connectionSwitches[connectionSwitchesIndex].affectedRailByteMaskData.push_back(railByteMaskData);
 		}
@@ -63,6 +73,14 @@ namespace LevelTypes {
 		bool addConnection(Plane* toPlane, bool isRail, short railId);
 		//add a rail connection to another plane
 		void addRailConnection(Plane* toPlane, LevelTypes::RailByteMaskData* railByteMaskData, short railId);
+		//reset the indexInOwningLevel to 0 for this plane, and set it to the given value on the given plane
+		//assumes this plane is a victory plane for a previous level, meaning its true indexInOwningLevel will always be 0
+		void writeVictoryPlaneIndex(Plane* victoryPlane, int pIndexInOwningLevel);
+		//follow all possible actions, and see if any of them lead to reaching the victory plane
+		HintState* pursueSolution(
+			HintStateTypes::PotentialLevelState* currentState,
+			vector<vector<HintStateTypes::PotentialLevelState*>>& potentialLevelStatesByPlane,
+			deque<HintStateTypes::PotentialLevelState*>& nextPotentialLevelStates);
 	};
 	//Should only be allocated within an object, on the stack, or as a static object
 	class RailByteMaskData {
@@ -104,9 +122,12 @@ public:
 	void assignRadioTowerSwitchId(short pRadioTowerSwitchId) { radioTowerSwitchId = pRadioTowerSwitchId; }
 	int getRailByteMaskDataCount() { return (int)railByteMaskData.size(); }
 	LevelTypes::RailByteMaskData* getRailByteMaskData(int i) { return &railByteMaskData[i]; }
+	int getRailByteCount() { return (railByteMaskBitsTracked + 31) / 32; }
 	//add a new plane to this level
 	LevelTypes::Plane* addNewPlane();
 	//create a byte mask for a new rail
 	//returns the index into the internal byte mask vector for use in getRailByteMaskData()
 	int trackNextRail(short railId, Rail* rail);
+	//generate a hint based on the initial state in this level
+	HintState* generateHint(HintStateTypes::PotentialLevelState* baseLevelState, char lastActivatedSwitchColor);
 };

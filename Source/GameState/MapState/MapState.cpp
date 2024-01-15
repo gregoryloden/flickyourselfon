@@ -3,6 +3,7 @@
 #include "GameState/DynamicValue.h"
 #include "GameState/EntityAnimation.h"
 #include "GameState/EntityState.h"
+#include "GameState/HintState.h"
 #include "GameState/KickAction.h"
 #include "GameState/UndoState.h"
 #include "GameState/MapState/Level.h"
@@ -768,6 +769,24 @@ void MapState::toggleShowConnections() {
 		showConnectionsEnabled = !showConnectionsEnabled;
 		finishedConnectionsTutorial = true;
 	}
+}
+HintState* MapState::generateHint(float playerX, float playerY) {
+	//find our current state
+	LevelTypes::Plane* currentPlane = planes[planeIds[(int)playerY / tileSize * width + (int)playerX / tileSize] - 1];
+	Level* currentLevel = currentPlane->getOwningLevel();
+
+	//setup the base potential level state
+	HintStateTypes::PotentialLevelState* baseLevelState = newHintStatePotentialLevelStateFromCurrentPlane(currentPlane);
+	for (int i = 0; i < currentLevel->getRailByteMaskDataCount(); i++) {
+		LevelTypes::RailByteMaskData* railByteMaskData = currentLevel->getRailByteMaskData(i);
+		RailState* railState = railStates[railByteMaskData->railId & railSwitchIndexBitmask];
+		unsigned int railMovementDirectionByteMask =
+			(unsigned int)(((railState->getNextMovementDirection() + 1) / 2) << Level::railTileOffsetByteMaskBitCount);
+		baseLevelState->railByteMasks[railByteMaskData->railByteIndex] |=
+			(railMovementDirectionByteMask | (unsigned int)railState->getTargetTileOffset()) << railByteMaskData->railBitShift;
+	}
+
+	return currentLevel->generateHint(baseLevelState, lastActivatedSwitchColor);
 }
 void MapState::renderBelowPlayer(EntityState* camera, float playerWorldGroundY, char playerZ, int ticksTime) {
 	glDisable(GL_BLEND);

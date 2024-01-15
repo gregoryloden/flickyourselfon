@@ -484,6 +484,7 @@ void GameState::loadCachedSavedState(int ticksTime) {
 	if (sawIntroAnimation) {
 		playerState.get()->obtainBoot();
 		playerState.get()->setInitialZ();
+		playerState.get()->generateHint(ticksTime);
 	} else {
 		playerState.get()->reset();
 		beginIntroAnimation(ticksTime);
@@ -758,7 +759,8 @@ void GameState::beginIntroAnimation(int ticksTime) {
 		newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerLegLiftAnimation),
 		newEntityAnimationDelay(SpriteRegistry::playerLegLiftAnimation->getTotalTicksDuration()),
 		stopMoving,
-		clearSpriteAnimation
+		clearSpriteAnimation,
+		newEntityAnimationGenerateHint(),
 	});
 	playerState.get()->beginEntityAnimation(&playerAnimationComponents, ticksTime);
 	//fix the initial z because the player teleported to the start of the intro animation

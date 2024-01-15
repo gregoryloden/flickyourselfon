@@ -6,6 +6,7 @@
 
 class DynamicCameraAnchor;
 class EntityState;
+class HintState;
 class KickResetSwitchUndoState;
 class Level;
 class Particle;
@@ -306,6 +307,8 @@ public:
 	void startSwitchesFadeInAnimation(int initialTicksDelay, int ticksTime);
 	//toggle the state of showing connections, and any other relevant state
 	void toggleShowConnections();
+	//generate a hint based on the state of the map and the given player position
+	HintState* generateHint(float playerX, float playerY);
 	//draw the map
 	void renderBelowPlayer(EntityState* camera, float playerWorldGroundY, char playerZ, int ticksTime);
 	//draw anything (rails, groups) that render above the player

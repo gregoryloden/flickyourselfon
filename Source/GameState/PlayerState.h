@@ -5,6 +5,7 @@
 #define newPlayerState(mapState) produceWithArgs(PlayerState, mapState)
 
 class CollisionRect;
+class HintState;
 class KickAction;
 enum class KickActionType: int;
 class KickResetSwitchUndoState;
@@ -84,6 +85,7 @@ private:
 	int lastGoalY;
 	ReferenceCounterHolder<UndoState> undoState;
 	ReferenceCounterHolder<UndoState> redoState;
+	ReferenceCounterHolder<HintState> hintState;
 
 public:
 	PlayerState(objCounterParameters());
