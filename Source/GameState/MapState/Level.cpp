@@ -30,7 +30,6 @@ LevelTypes::Plane::Tile::Tile(int pX, int pY)
 LevelTypes::Plane::Tile::~Tile() {}
 
 //////////////////////////////// LevelTypes::Plane ////////////////////////////////
-LevelTypes::Plane* LevelTypes::Plane::cachedHintSearchVictoryPlane = nullptr;
 LevelTypes::Plane::Plane(objCounterParametersComma() Level* pOwningLevel, int pIndexInOwningLevel)
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
 owningLevel(pOwningLevel)
@@ -78,11 +77,8 @@ void LevelTypes::Plane::writeVictoryPlaneIndex(Plane* victoryPlane, int pIndexIn
 	indexInOwningLevel = 0;
 	victoryPlane->indexInOwningLevel = pIndexInOwningLevel;
 }
-HintState* LevelTypes::Plane::pursueSolution(
-	HintStateTypes::PotentialLevelState* currentState,
-	vector<vector<HintStateTypes::PotentialLevelState*>>& potentialLevelStatesByPlane,
-	deque<HintStateTypes::PotentialLevelState*>& nextPotentialLevelStates)
-{
+HintState* LevelTypes::Plane::pursueSolution(HintStateTypes::PotentialLevelState* currentState) {
+	int bucket = currentState->railByteMasksHash % Level::PotentialLevelStatesByBucket::bucketSize;
 	//check connections
 	for (Connection& connection : connections) {
 		//make sure that this is a climb/fall, or that the rail is raised
@@ -92,7 +88,7 @@ HintState* LevelTypes::Plane::pursueSolution(
 
 		//make sure we haven't seen this state before
 		vector<HintStateTypes::PotentialLevelState*>& potentialLevelStates =
-			potentialLevelStatesByPlane[connection.toPlane->indexInOwningLevel];
+			Level::potentialLevelStatesByBucketByPlane[connection.toPlane->indexInOwningLevel].buckets[bucket];
 		if (!currentState->isNewState(potentialLevelStates))
 			continue;
 
@@ -108,14 +104,14 @@ HintState* LevelTypes::Plane::pursueSolution(
 		}
 
 		//if it goes to the victory plane, return the hint for the first transition
-		if (connection.toPlane == cachedHintSearchVictoryPlane) {
+		if (connection.toPlane == Level::cachedHintSearchVictoryPlane) {
 			HintState* result = nextPotentialLevelState->getHint();
 			delete nextPotentialLevelState;
 			return result;
 		}
 		//otherwise, track it
 		potentialLevelStates.push_back(nextPotentialLevelState);
-		nextPotentialLevelStates.push_back(nextPotentialLevelState);
+		Level::nextPotentialLevelStates.push_back(nextPotentialLevelState);
 	}
 
 	//check switches
@@ -138,9 +134,13 @@ HintState* LevelTypes::Plane::pursueSolution(
 				(*railByteMask & railByteMaskData->inverseRailByteMask)
 					| ((unsigned int)resultRailState << railByteMaskData->railBitShift);
 		}
+		HintStateTypes::PotentialLevelState::draftState.setHash();
+		bucket =
+			HintStateTypes::PotentialLevelState::draftState.railByteMasksHash % Level::PotentialLevelStatesByBucket::bucketSize;
 
 		//make sure we haven't seen this state before
-		vector<HintStateTypes::PotentialLevelState*>& potentialLevelStates = potentialLevelStatesByPlane[indexInOwningLevel];
+		vector<HintStateTypes::PotentialLevelState*>& potentialLevelStates =
+			Level::potentialLevelStatesByBucketByPlane[indexInOwningLevel].buckets[bucket];
 		if (!HintStateTypes::PotentialLevelState::draftState.isNewState(potentialLevelStates))
 			continue;
 
@@ -150,7 +150,7 @@ HintState* LevelTypes::Plane::pursueSolution(
 		nextPotentialLevelState->type = HintStateTypes::Type::Switch;
 		nextPotentialLevelState->data.switchId = connectionSwitch.switchId;
 		potentialLevelStates.push_back(nextPotentialLevelState);
-		nextPotentialLevelStates.push_back(nextPotentialLevelState);
+		Level::nextPotentialLevelStates.push_back(nextPotentialLevelState);
 	}
 
 	return nullptr;
@@ -167,7 +167,16 @@ LevelTypes::RailByteMaskData::RailByteMaskData(short pRailId, int pRailByteIndex
 LevelTypes::RailByteMaskData::~RailByteMaskData() {}
 using namespace LevelTypes;
 
+//////////////////////////////// Level::PotentialLevelStatesByBucket ////////////////////////////////
+Level::PotentialLevelStatesByBucket::PotentialLevelStatesByBucket()
+: buckets() {
+}
+Level::PotentialLevelStatesByBucket::~PotentialLevelStatesByBucket() {}
+
 //////////////////////////////// Level ////////////////////////////////
+vector<Level::PotentialLevelStatesByBucket> Level::potentialLevelStatesByBucketByPlane;
+deque<HintStateTypes::PotentialLevelState*> Level::nextPotentialLevelStates;
+Plane* Level::cachedHintSearchVictoryPlane = nullptr;
 Level::Level(objCounterParameters())
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
 planes()
@@ -201,6 +210,14 @@ int Level::trackNextRail(short railId, Rail* rail) {
 	railByteMaskData.push_back(RailByteMaskData(railId, railByteIndex, railBitShift, rail));
 	return (int)railByteMaskData.size() - 1;
 }
+void Level::buildPotentialLevelStatesByBucketByPlane(vector<Level*>& allLevels) {
+	int maxPlaneCount = 0;
+	for (Level* level : allLevels)
+		maxPlaneCount = MathUtils::max(maxPlaneCount, (int)level->planes.size());
+	//include one extra for the victory plane
+	for (int i = 0; i <= maxPlaneCount; i++)
+		potentialLevelStatesByBucketByPlane.push_back(PotentialLevelStatesByBucket());
+}
 HintState* Level::generateHint(HintStateTypes::PotentialLevelState* baseLevelState, char lastActivatedSwitchColor) {
 	if (lastActivatedSwitchColor < minimumRailColor) {
 		delete baseLevelState;
@@ -213,13 +230,13 @@ HintState* Level::generateHint(HintStateTypes::PotentialLevelState* baseLevelSta
 	}
 
 	//setup the potential level state structures
-	vector<vector<HintStateTypes::PotentialLevelState*>> potentialLevelStatesByPlane;
-	for (int i = (int)planes.size(); i >= 0; i--)
-		potentialLevelStatesByPlane.push_back(vector<HintStateTypes::PotentialLevelState*>());
-	potentialLevelStatesByPlane[baseLevelState->plane->getIndexInOwningLevel()].push_back(baseLevelState);
-	deque<HintStateTypes::PotentialLevelState*> nextPotentialLevelStates ({ baseLevelState });
+	baseLevelState->setHash();
+	potentialLevelStatesByBucketByPlane[baseLevelState->plane->getIndexInOwningLevel()]
+		.buckets[baseLevelState->railByteMasksHash % PotentialLevelStatesByBucket::bucketSize]
+		.push_back(baseLevelState);
+	nextPotentialLevelStates.push_back(baseLevelState);
 	HintStateTypes::PotentialLevelState::draftState.loadState(this);
-	Plane::cachedHintSearchVictoryPlane = victoryPlane;
+	cachedHintSearchVictoryPlane = victoryPlane;
 	//make sure to distinguish our plane 0 from the victory plane, which is always plane 0 of the next level
 	planes[0]->writeVictoryPlaneIndex(victoryPlane, (int)planes.size());
 
@@ -228,16 +245,22 @@ HintState* Level::generateHint(HintStateTypes::PotentialLevelState* baseLevelSta
 	while (!nextPotentialLevelStates.empty()) {
 		HintStateTypes::PotentialLevelState* potentialLevelState = nextPotentialLevelStates.front();
 		nextPotentialLevelStates.pop_front();
-		result = potentialLevelState->plane->pursueSolution(
-			potentialLevelState, potentialLevelStatesByPlane, nextPotentialLevelStates);
+		result = potentialLevelState->plane->pursueSolution(potentialLevelState);
 		if (result != nullptr)
 			break;
 	}
 
 	//cleanup
-	for (vector<HintStateTypes::PotentialLevelState*>& potentialLevelStates : potentialLevelStatesByPlane) {
-		for (HintStateTypes::PotentialLevelState* potentialLevelState : potentialLevelStates)
-			delete potentialLevelState;
+	nextPotentialLevelStates.clear();
+	//only clear as many plane buckets as we used
+	for (int i = 0; i < (int)planes.size(); i++) {
+		for (vector<HintStateTypes::PotentialLevelState*>& potentialLevelStates
+				: potentialLevelStatesByBucketByPlane[i].buckets)
+		{
+			for (HintStateTypes::PotentialLevelState* potentialLevelState : potentialLevelStates)
+				delete potentialLevelState;
+			potentialLevelStates.clear();
+		}
 	}
 
 	return result != nullptr ? result : newHintState(HintStateTypes::Type::None, {});

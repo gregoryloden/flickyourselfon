@@ -1,7 +1,7 @@
 #include "HintState.h"
 #include "GameState/MapState/Level.h"
 
-//////////////////////////////// HintState::PotentialLevelState ////////////////////////////////
+//////////////////////////////// HintStateTypes::PotentialLevelState ////////////////////////////////
 HintStateTypes::PotentialLevelState HintStateTypes::PotentialLevelState::draftState (
 	objCounterLocalArgumentsComma(HintStateTypes::PotentialLevelState) nullptr);
 HintStateTypes::PotentialLevelState::PotentialLevelState(objCounterParametersComma() LevelTypes::Plane* pPlane)
@@ -10,6 +10,7 @@ priorState(nullptr)
 , plane(pPlane)
 , railByteMaskCount(0)
 , railByteMasks(nullptr)
+, railByteMasksHash(0)
 , type(Type::None)
 , data() {
 	if (pPlane != nullptr)
@@ -22,32 +23,39 @@ priorState(pPriorState)
 , plane(pPlane)
 , railByteMaskCount(draftState->railByteMaskCount)
 , railByteMasks(new unsigned int[draftState->railByteMaskCount])
+, railByteMasksHash(0)
 , type(Type::None)
 , data() {
 	for (int i = railByteMaskCount - 1; i >= 0; i--)
 		railByteMasks[i] = draftState->railByteMasks[i];
+	setHash();
 }
 HintStateTypes::PotentialLevelState::~PotentialLevelState() {
 	//don't delete the prior state, it's being tracked separately
 	//don't delete the currentPlane, it's owned by a Level
 	delete[] railByteMasks;
 }
+void HintStateTypes::PotentialLevelState::setHash() {
+	int val = 0;
+	for (int i = railByteMaskCount - 1; i >= 0; i--)
+		val = val ^ railByteMasks[i];
+	railByteMasksHash = (size_t)val;
+}
 void HintStateTypes::PotentialLevelState::loadState(Level* level) {
 	delete[] railByteMasks;
 	railByteMaskCount = level->getRailByteCount();
 	railByteMasks = new unsigned int[railByteMaskCount] {};
+	setHash();
 }
 bool HintStateTypes::PotentialLevelState::isNewState(vector<PotentialLevelState*>& potentialLevelStates) {
-	//for speed, cache these values
-	int cachedRailByteMaskCountMinus1 = railByteMaskCount - 1;
-	unsigned int* cachedRailByteMasks = railByteMasks;
-
 	//look through every other state, and see if it matches this one
 	for (PotentialLevelState* potentialLevelState : potentialLevelStates) {
-		unsigned int* otherRailByteMasks = potentialLevelState->railByteMasks;
-		for (int i = cachedRailByteMaskCountMinus1; true; i--) {
+		//they can't be the same if their hashes don't match
+		if (railByteMasksHash != potentialLevelState->railByteMasksHash)
+			continue;
+		for (int i = railByteMaskCount - 1; true; i--) {
 			//the bytes are not the same, so the states are not the same, move on to check the next PotentialLevelState
-			if (cachedRailByteMasks[i] != otherRailByteMasks[i])
+			if (railByteMasks[i] != potentialLevelState->railByteMasks[i])
 				break;
 			//if we've looked at every byte and they're all the same, this state is not new
 			if (i == 0)

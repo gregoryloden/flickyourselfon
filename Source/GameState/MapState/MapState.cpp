@@ -360,6 +360,9 @@ void MapState::buildLevels() {
 				railByteMaskData, planeConnectionSwitch->planeConnectionSwitchIndex);
 		}
 	}
+
+	//initialize utilities for hints
+	Level::buildPotentialLevelStatesByBucketByPlane(levels);
 }
 LevelTypes::Plane* MapState::buildPlane(
 	int tile, Level* activeLevel, deque<int>& tileChecks, vector<PlaneConnection>& planeConnections)

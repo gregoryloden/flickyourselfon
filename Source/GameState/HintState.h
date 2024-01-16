@@ -32,6 +32,7 @@ namespace HintStateTypes {
 		LevelTypes::Plane* plane;
 		int railByteMaskCount;
 		unsigned int* railByteMasks;
+		size_t railByteMasksHash;
 		Type type;
 		Data data;
 
@@ -42,6 +43,8 @@ namespace HintStateTypes {
 			LevelTypes::Plane* pPlane,
 			PotentialLevelState* draftState);
 		virtual ~PotentialLevelState();
+		//set a hash based on the railByteMasks
+		void setHash();
 		//load the state to match the level
 		void loadState(Level* level);
 		//check whether this state already appears in the given list of potential states
