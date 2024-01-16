@@ -113,6 +113,11 @@ public:
 	static vector<PotentialLevelStatesByBucket> potentialLevelStatesByBucketByPlane;
 	static deque<HintStateTypes::PotentialLevelState*> nextPotentialLevelStates;
 	static LevelTypes::Plane* cachedHintSearchVictoryPlane;
+	#ifdef DEBUG
+		static int hintSearchActionsChecked;
+		static int hintSearchUniqueStates;
+		static int hintSearchComparisonsPerformed;
+	#endif
 
 private:
 	vector<LevelTypes::Plane*> planes;

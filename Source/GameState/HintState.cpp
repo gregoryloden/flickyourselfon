@@ -50,6 +50,9 @@ void HintStateTypes::PotentialLevelState::loadState(Level* level) {
 bool HintStateTypes::PotentialLevelState::isNewState(vector<PotentialLevelState*>& potentialLevelStates) {
 	//look through every other state, and see if it matches this one
 	for (PotentialLevelState* potentialLevelState : potentialLevelStates) {
+		#ifdef DEBUG
+			Level::hintSearchComparisonsPerformed++;
+		#endif
 		//they can't be the same if their hashes don't match
 		if (railByteMasksHash != potentialLevelState->railByteMasksHash)
 			continue;

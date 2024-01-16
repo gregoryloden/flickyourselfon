@@ -81,6 +81,9 @@ HintState* LevelTypes::Plane::pursueSolution(HintStateTypes::PotentialLevelState
 	int bucket = currentState->railByteMasksHash % Level::PotentialLevelStatesByBucket::bucketSize;
 	//check connections
 	for (Connection& connection : connections) {
+		#ifdef DEBUG
+			Level::hintSearchActionsChecked++;
+		#endif
 		//make sure that this is a climb/fall, or that the rail is raised
 		if (connection.railByteIndex >= 0
 				&& (currentState->railByteMasks[connection.railByteIndex] & connection.railTileOffsetByteMask) != 0)
@@ -102,6 +105,9 @@ HintState* LevelTypes::Plane::pursueSolution(HintStateTypes::PotentialLevelState
 			nextPotentialLevelState->type = HintStateTypes::Type::Rail;
 			nextPotentialLevelState->data.railId = connection.railId;
 		}
+		#ifdef DEBUG
+			Level::hintSearchUniqueStates++;
+		#endif
 
 		//if it goes to the victory plane, return the hint for the first transition
 		if (connection.toPlane == Level::cachedHintSearchVictoryPlane) {
@@ -116,6 +122,9 @@ HintState* LevelTypes::Plane::pursueSolution(HintStateTypes::PotentialLevelState
 
 	//check switches
 	for (ConnectionSwitch& connectionSwitch : connectionSwitches) {
+		#ifdef DEBUG
+			Level::hintSearchActionsChecked++;
+		#endif
 		//first, reset the draft rail byte masks
 		for (int i = currentState->railByteMaskCount - 1; i >= 0; i--)
 			HintStateTypes::PotentialLevelState::draftState.railByteMasks[i] = currentState->railByteMasks[i];
@@ -149,6 +158,9 @@ HintState* LevelTypes::Plane::pursueSolution(HintStateTypes::PotentialLevelState
 			newHintStatePotentialLevelStateFromDraftState(currentState, this, &HintStateTypes::PotentialLevelState::draftState);
 		nextPotentialLevelState->type = HintStateTypes::Type::Switch;
 		nextPotentialLevelState->data.switchId = connectionSwitch.switchId;
+		#ifdef DEBUG
+			Level::hintSearchUniqueStates++;
+		#endif
 		potentialLevelStates.push_back(nextPotentialLevelState);
 		Level::nextPotentialLevelStates.push_back(nextPotentialLevelState);
 	}
@@ -177,6 +189,11 @@ Level::PotentialLevelStatesByBucket::~PotentialLevelStatesByBucket() {}
 vector<Level::PotentialLevelStatesByBucket> Level::potentialLevelStatesByBucketByPlane;
 deque<HintStateTypes::PotentialLevelState*> Level::nextPotentialLevelStates;
 Plane* Level::cachedHintSearchVictoryPlane = nullptr;
+#ifdef DEBUG
+	int Level::hintSearchActionsChecked = 0;
+	int Level::hintSearchUniqueStates = 0;
+	int Level::hintSearchComparisonsPerformed = 0;
+#endif
 Level::Level(objCounterParameters())
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
 planes()
@@ -242,6 +259,12 @@ HintState* Level::generateHint(HintStateTypes::PotentialLevelState* baseLevelSta
 
 	//go through all states and see if there's anything we could do to get closer to the victory plane
 	HintState* result = nullptr;
+	#ifdef DEBUG
+		hintSearchActionsChecked = 0;
+		hintSearchUniqueStates = 0;
+		hintSearchComparisonsPerformed = 0;
+		int timeBeforeSearch = SDL_GetTicks();
+	#endif
 	while (!nextPotentialLevelStates.empty()) {
 		HintStateTypes::PotentialLevelState* potentialLevelState = nextPotentialLevelStates.front();
 		nextPotentialLevelStates.pop_front();
@@ -251,6 +274,9 @@ HintState* Level::generateHint(HintStateTypes::PotentialLevelState* baseLevelSta
 	}
 
 	//cleanup
+	#ifdef DEBUG
+		int timeAfterSearchBeforeCleanup = SDL_GetTicks();
+	#endif
 	nextPotentialLevelStates.clear();
 	//only clear as many plane buckets as we used
 	for (int i = 0; i < (int)planes.size(); i++) {
@@ -262,6 +288,18 @@ HintState* Level::generateHint(HintStateTypes::PotentialLevelState* baseLevelSta
 			potentialLevelStates.clear();
 		}
 	}
+
+	#ifdef DEBUG
+		int timeAfterCleanup = SDL_GetTicks();
+		stringstream hintSearchPerformanceMessage;
+		hintSearchPerformanceMessage
+			<< "actionsChecked " << hintSearchActionsChecked
+			<< "  uniqueStates " << hintSearchUniqueStates
+			<< "  comparisonsPerformed " << hintSearchComparisonsPerformed
+			<< "  searchTime " << (timeAfterSearchBeforeCleanup - timeBeforeSearch)
+			<< "  cleanupTime " << (timeAfterCleanup - timeAfterSearchBeforeCleanup);
+		Logger::debugLogger.logString(hintSearchPerformanceMessage.str());
+	#endif
 
 	return result != nullptr ? result : newHintState(HintStateTypes::Type::None, {});
 }
