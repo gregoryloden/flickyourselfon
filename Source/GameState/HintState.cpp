@@ -4,12 +4,12 @@
 //////////////////////////////// HintStateTypes::PotentialLevelState ////////////////////////////////
 HintStateTypes::PotentialLevelState HintStateTypes::PotentialLevelState::draftState (
 	objCounterLocalArguments(HintStateTypes::PotentialLevelState));
+int HintStateTypes::PotentialLevelState::railByteMaskCount = 0;
 HintStateTypes::PotentialLevelState::PotentialLevelState(objCounterParameters())
 : PooledReferenceCounter(objCounterArguments())
 , priorState(nullptr)
 , plane(nullptr)
-, railByteMaskCount(0)
-, railByteMasks(nullptr)
+, railByteMasks(new unsigned int[railByteMaskCount])
 , railByteMasksHash(0)
 , type(Type::None)
 , data() {
@@ -25,8 +25,7 @@ HintStateTypes::PotentialLevelState* HintStateTypes::PotentialLevelState::produc
 	initializeWithNewFromPool(p, PotentialLevelState)
 	p->priorState = pPriorState;
 	p->plane = pPlane;
-	p->resizeRailByteMasks(draftState->railByteMaskCount);
-	for (int i = p->railByteMaskCount - 1; i >= 0; i--)
+	for (int i = railByteMaskCount - 1; i >= 0; i--)
 		p->railByteMasks[i] = draftState->railByteMasks[i];
 	p->railByteMasksHash = draftState->railByteMasksHash;
 	return p;
@@ -37,13 +36,6 @@ void HintStateTypes::PotentialLevelState::setHash() {
 	for (int i = railByteMaskCount - 1; i >= 0; i--)
 		val = val ^ railByteMasks[i];
 	railByteMasksHash = val;
-}
-void HintStateTypes::PotentialLevelState::resizeRailByteMasks(int pRailByteMaskCount) {
-	if (railByteMaskCount == pRailByteMaskCount)
-		return;
-	delete[] railByteMasks;
-	railByteMaskCount = pRailByteMaskCount;
-	railByteMasks = new unsigned int[pRailByteMaskCount];
 }
 bool HintStateTypes::PotentialLevelState::isNewState(vector<PotentialLevelState*>& potentialLevelStates) {
 	//look through every other state, and see if it matches this one

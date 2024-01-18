@@ -26,10 +26,10 @@ namespace HintStateTypes {
 	class PotentialLevelState: public PooledReferenceCounter {
 	public:
 		static PotentialLevelState draftState;
+		static int railByteMaskCount;
 
 		PotentialLevelState* priorState;
 		LevelTypes::Plane* plane;
-		int railByteMaskCount;
 		unsigned int* railByteMasks;
 		unsigned int railByteMasksHash;
 		Type type;
@@ -48,8 +48,6 @@ namespace HintStateTypes {
 		virtual void release();
 		//set a hash based on the railByteMasks
 		void setHash();
-		//resize the rail byte masks to the given size, if needed
-		void resizeRailByteMasks(int pRailByteMaskCount);
 		//check whether this state already appears in the given list of potential states
 		bool isNewState(vector<PotentialLevelState*>& potentialLevelStates);
 		//get the hint that leads the player to the second state in the priorState stack

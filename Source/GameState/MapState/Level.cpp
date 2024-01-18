@@ -227,13 +227,21 @@ int Level::trackNextRail(short railId, Rail* rail) {
 	allRailByteMaskData.push_back(RailByteMaskData(railId, railByteIndex, railBitShift, rail));
 	return (int)allRailByteMaskData.size() - 1;
 }
-void Level::buildPotentialLevelStatesByBucketByPlane(vector<Level*>& allLevels) {
+void Level::setupPotentialLevelStateHelpers(vector<Level*>& allLevels) {
 	int maxPlaneCount = 0;
-	for (Level* level : allLevels)
+	int maxRailByteCount = 0;
+	for (Level* level : allLevels) {
 		maxPlaneCount = MathUtils::max(maxPlaneCount, (int)level->planes.size());
-	//include one extra for the victory plane
+		maxRailByteCount = MathUtils::max(maxRailByteCount, (level->railByteMaskBitsTracked + 31) / 32);
+	}
+	//add one PotentialLevelStatesByBucket per plane, plus one extra for the victory plane
 	for (int i = 0; i <= maxPlaneCount; i++)
 		potentialLevelStatesByBucketByPlane.push_back(PotentialLevelStatesByBucket());
+	HintStateTypes::PotentialLevelState::railByteMaskCount = maxRailByteCount;
+	//just once, fix the draft state byte list
+	delete[] HintStateTypes::PotentialLevelState::draftState.railByteMasks;
+	HintStateTypes::PotentialLevelState::draftState.railByteMasks = new unsigned int[maxRailByteCount];
+}
 }
 HintState* Level::generateHint(
 	LevelTypes::Plane* currentPlane,
@@ -248,8 +256,7 @@ HintState* Level::generateHint(
 		return newHintState(HintStateTypes::Type::None, {});
 
 	//setup the base potential level state
-	HintStateTypes::PotentialLevelState::draftState.resizeRailByteMasks(getRailByteCount());
-	for (int i = getRailByteCount() - 1; i >= 0; i--)
+	for (int i = 0; i < HintStateTypes::PotentialLevelState::railByteMaskCount; i++)
 		HintStateTypes::PotentialLevelState::draftState.railByteMasks[i] = 0;
 	for (LevelTypes::RailByteMaskData& railByteMaskData : allRailByteMaskData) {
 		char movementDirection, tileOffset;

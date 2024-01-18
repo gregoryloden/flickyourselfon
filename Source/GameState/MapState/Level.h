@@ -134,14 +134,13 @@ public:
 	void assignVictoryPlane(LevelTypes::Plane* pVictoryPlane) { victoryPlane = pVictoryPlane; }
 	void assignRadioTowerSwitchId(short pRadioTowerSwitchId) { radioTowerSwitchId = pRadioTowerSwitchId; }
 	LevelTypes::RailByteMaskData* getRailByteMaskData(int i) { return &allRailByteMaskData[i]; }
-	int getRailByteCount() { return (railByteMaskBitsTracked + 31) / 32; }
 	//add a new plane to this level
 	LevelTypes::Plane* addNewPlane();
 	//create a byte mask for a new rail
 	//returns the index into the internal byte mask vector for use in getRailByteMaskData()
 	int trackNextRail(short railId, Rail* rail);
-	//initialize potentialLevelStatesByBucketByPlane to accomodate all of the given levels
-	static void buildPotentialLevelStatesByBucketByPlane(vector<Level*>& allLevels);
+	//initialize PotentialLevelState helper objects to accomodate all of the given levels
+	static void setupPotentialLevelStateHelpers(vector<Level*>& allLevels);
 	//generate a hint based on the initial state in this level
 	HintState* generateHint(
 		LevelTypes::Plane* currentPlane,

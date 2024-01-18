@@ -362,7 +362,7 @@ void MapState::buildLevels() {
 	}
 
 	//initialize utilities for hints
-	Level::buildPotentialLevelStatesByBucketByPlane(levels);
+	Level::setupPotentialLevelStateHelpers(levels);
 }
 LevelTypes::Plane* MapState::buildPlane(
 	int tile, Level* activeLevel, deque<int>& tileChecks, vector<PlaneConnection>& planeConnections)
