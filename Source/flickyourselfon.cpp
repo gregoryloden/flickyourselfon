@@ -176,6 +176,7 @@ int gameMain(int argc, char* argv[]) {
 		ObjectPool<KickSwitchUndoState>::clearPool();
 		ObjectPool<KickResetSwitchUndoState>::clearPool();
 		ObjectPool<HintState>::clearPool();
+		ObjectPool<HintStateTypes::PotentialLevelState>::clearPool();
 		ObjCounter::end();
 	#endif
 	Logger::gameplayLogger.endLogging();

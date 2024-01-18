@@ -1,9 +1,8 @@
 #include "Util/PooledReferenceCounter.h"
 
 #define newHintState(type, data) produceWithArgs(HintState, type, data)
-#define newHintStatePotentialLevelStateFromCurrentPlane(plane) newWithArgs(HintStateTypes::PotentialLevelState, plane)
-#define newHintStatePotentialLevelStateFromDraftState(priorState, plane, draftState) \
-	newWithArgs(HintStateTypes::PotentialLevelState, priorState, plane, draftState)
+#define newHintStatePotentialLevelState(priorState, plane, draftState) \
+	produceWithArgs(HintStateTypes::PotentialLevelState, priorState, plane, draftState)
 
 class HintState;
 class Level;
@@ -24,7 +23,7 @@ namespace HintStateTypes {
 		short railId;
 		short switchId;
 	};
-	class PotentialLevelState onlyInDebug(: public ObjCounter) {
+	class PotentialLevelState: public PooledReferenceCounter {
 	public:
 		static PotentialLevelState draftState;
 
@@ -32,21 +31,25 @@ namespace HintStateTypes {
 		LevelTypes::Plane* plane;
 		int railByteMaskCount;
 		unsigned int* railByteMasks;
-		size_t railByteMasksHash;
+		unsigned int railByteMasksHash;
 		Type type;
 		Data data;
 
-		PotentialLevelState(objCounterParametersComma() LevelTypes::Plane* pPlane);
-		PotentialLevelState(
+		PotentialLevelState(objCounterParameters());
+		virtual ~PotentialLevelState();
+
+		//initialize and return a PotentialLevelState
+		static PotentialLevelState* produce(
 			objCounterParametersComma()
 			PotentialLevelState* pPriorState,
 			LevelTypes::Plane* pPlane,
 			PotentialLevelState* draftState);
-		virtual ~PotentialLevelState();
+		//release a reference to this PotentialLevelState and return it to the pool if applicable
+		virtual void release();
 		//set a hash based on the railByteMasks
 		void setHash();
-		//load the state to match the level
-		void loadState(Level* level);
+		//resize the rail byte masks to the given size, if needed
+		void resizeRailByteMasks(int pRailByteMaskCount);
 		//check whether this state already appears in the given list of potential states
 		bool isNewState(vector<PotentialLevelState*>& potentialLevelStates);
 		//get the hint that leads the player to the second state in the priorState stack
