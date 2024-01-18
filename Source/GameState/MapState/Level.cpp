@@ -316,7 +316,8 @@ HintState* Level::generateHint(
 		int timeAfterCleanup = SDL_GetTicks();
 		stringstream hintSearchPerformanceMessage;
 		hintSearchPerformanceMessage
-			<< "actionsChecked " << hintSearchActionsChecked
+			<< "level (" << planes.size() << "p, " << allRailByteMaskData.size() << "r, " << (int)minimumRailColor << "c)"
+			<< "  actionsChecked " << hintSearchActionsChecked
 			<< "  uniqueStates " << hintSearchUniqueStates
 			<< "  comparisonsPerformed " << hintSearchComparisonsPerformed
 			<< "  searchTime " << (timeAfterSearchBeforeCleanup - timeBeforeSearch)
