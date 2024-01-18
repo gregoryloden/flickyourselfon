@@ -297,7 +297,8 @@ HintState* Level::generateHint(HintStateTypes::PotentialLevelState* baseLevelSta
 			<< "  uniqueStates " << hintSearchUniqueStates
 			<< "  comparisonsPerformed " << hintSearchComparisonsPerformed
 			<< "  searchTime " << (timeAfterSearchBeforeCleanup - timeBeforeSearch)
-			<< "  cleanupTime " << (timeAfterCleanup - timeAfterSearchBeforeCleanup);
+			<< "  cleanupTime " << (timeAfterCleanup - timeAfterSearchBeforeCleanup)
+			<< "  found solution? " << (result != nullptr ? "true" : "false");
 		Logger::debugLogger.logString(hintSearchPerformanceMessage.str());
 	#endif
 
