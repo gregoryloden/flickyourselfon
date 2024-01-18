@@ -121,7 +121,7 @@ public:
 
 private:
 	vector<LevelTypes::Plane*> planes;
-	vector<LevelTypes::RailByteMaskData> railByteMaskData;
+	vector<LevelTypes::RailByteMaskData> allRailByteMaskData;
 	int railByteMaskBitsTracked;
 	LevelTypes::Plane* victoryPlane;
 	char minimumRailColor;
@@ -133,8 +133,7 @@ public:
 
 	void assignVictoryPlane(LevelTypes::Plane* pVictoryPlane) { victoryPlane = pVictoryPlane; }
 	void assignRadioTowerSwitchId(short pRadioTowerSwitchId) { radioTowerSwitchId = pRadioTowerSwitchId; }
-	int getRailByteMaskDataCount() { return (int)railByteMaskData.size(); }
-	LevelTypes::RailByteMaskData* getRailByteMaskData(int i) { return &railByteMaskData[i]; }
+	LevelTypes::RailByteMaskData* getRailByteMaskData(int i) { return &allRailByteMaskData[i]; }
 	int getRailByteCount() { return (railByteMaskBitsTracked + 31) / 32; }
 	//add a new plane to this level
 	LevelTypes::Plane* addNewPlane();
@@ -144,5 +143,8 @@ public:
 	//initialize potentialLevelStatesByBucketByPlane to accomodate all of the given levels
 	static void buildPotentialLevelStatesByBucketByPlane(vector<Level*>& allLevels);
 	//generate a hint based on the initial state in this level
-	HintState* generateHint(HintStateTypes::PotentialLevelState* baseLevelState, char lastActivatedSwitchColor);
+	HintState* generateHint(
+		LevelTypes::Plane* currentPlane,
+		function<void(short railId, char* outMovementDirection, char* outTileOffset)> getRailState,
+		char lastActivatedSwitchColor);
 };

@@ -197,7 +197,7 @@ Plane* Level::cachedHintSearchVictoryPlane = nullptr;
 Level::Level(objCounterParameters())
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
 planes()
-, railByteMaskData()
+, allRailByteMaskData()
 , railByteMaskBitsTracked(0)
 , victoryPlane(nullptr)
 , minimumRailColor(-1)
@@ -224,8 +224,8 @@ int Level::trackNextRail(short railId, Rail* rail) {
 		railByteMaskBitsTracked = (railByteMaskBitsTracked / 32 + 1) * 32 + railByteMaskBitCount;
 	} else
 		railByteMaskBitsTracked += railByteMaskBitCount;
-	railByteMaskData.push_back(RailByteMaskData(railId, railByteIndex, railBitShift, rail));
-	return (int)railByteMaskData.size() - 1;
+	allRailByteMaskData.push_back(RailByteMaskData(railId, railByteIndex, railBitShift, rail));
+	return (int)allRailByteMaskData.size() - 1;
 }
 void Level::buildPotentialLevelStatesByBucketByPlane(vector<Level*>& allLevels) {
 	int maxPlaneCount = 0;
@@ -235,15 +235,26 @@ void Level::buildPotentialLevelStatesByBucketByPlane(vector<Level*>& allLevels) 
 	for (int i = 0; i <= maxPlaneCount; i++)
 		potentialLevelStatesByBucketByPlane.push_back(PotentialLevelStatesByBucket());
 }
-HintState* Level::generateHint(HintStateTypes::PotentialLevelState* baseLevelState, char lastActivatedSwitchColor) {
+HintState* Level::generateHint(
+	LevelTypes::Plane* currentPlane,
+	function<void(short railId, char* outMovementDirection, char* outTileOffset)> getRailState,
+	char lastActivatedSwitchColor)
+{
 	if (lastActivatedSwitchColor < minimumRailColor) {
-		delete baseLevelState;
 		HintStateTypes::Data data;
 		data.switchId = radioTowerSwitchId;
 		return newHintState(HintStateTypes::Type::Switch, data);
-	} else if (victoryPlane == nullptr) {
-		delete baseLevelState;
+	} else if (victoryPlane == nullptr)
 		return newHintState(HintStateTypes::Type::None, {});
+
+	//setup the base potential level state
+	HintStateTypes::PotentialLevelState* baseLevelState = newHintStatePotentialLevelStateFromCurrentPlane(currentPlane);
+	for (LevelTypes::RailByteMaskData& railByteMaskData : allRailByteMaskData) {
+		char movementDirection, tileOffset;
+		getRailState(railByteMaskData.railId, &movementDirection, &tileOffset);
+		char movementDirectionBit = ((movementDirection + 1) / 2) << Level::railTileOffsetByteMaskBitCount;
+		baseLevelState->railByteMasks[railByteMaskData.railByteIndex] |=
+			(unsigned int)(movementDirectionBit | tileOffset) << railByteMaskData.railBitShift;
 	}
 
 	//setup the potential level state structures
