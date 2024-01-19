@@ -2,8 +2,7 @@
 #include "GameState/MapState/Level.h"
 
 //////////////////////////////// HintStateTypes::PotentialLevelState ////////////////////////////////
-HintStateTypes::PotentialLevelState HintStateTypes::PotentialLevelState::draftState (
-	objCounterLocalArguments(HintStateTypes::PotentialLevelState));
+newInPlaceWithoutArgs(HintStateTypes::PotentialLevelState, HintStateTypes::PotentialLevelState::draftState);
 int HintStateTypes::PotentialLevelState::railByteMaskCount = 0;
 HintStateTypes::PotentialLevelState::PotentialLevelState(objCounterParameters())
 : PooledReferenceCounter(objCounterArguments())

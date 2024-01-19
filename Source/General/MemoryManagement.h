@@ -7,6 +7,7 @@
 		#define objCounterParametersComma() objCounterParameters(),
 		#define objCounterArguments() pObjType, pObjFile, pObjLine
 		#define objCounterArgumentsComma() objCounterArguments(),
+		#define newInPlaceWithoutArgs(className, varName) className varName (objCounterLocalArguments(className))
 	#endif
 #endif
 #ifndef objCounterLocalArguments
@@ -16,6 +17,7 @@
 	#define objCounterParametersComma()
 	#define objCounterArguments()
 	#define objCounterArgumentsComma()
+	#define newInPlaceWithoutArgs(className, varName) className varName
 #endif
 #define newWithArgs(className, ...) new className(objCounterLocalArgumentsComma(className) __VA_ARGS__)
 #define newWithoutArgs(className) new className(objCounterLocalArguments(className))
