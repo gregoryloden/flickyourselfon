@@ -48,7 +48,7 @@ int gameMain(int argc, char* argv[]) {
 	Logger::debugLogger.beginLogging();
 	Logger::gameplayLogger.beginLogging();
 	Logger::beginMultiThreadedLogging();
-	Logger::setupLogQueue();
+	Logger::setupLogQueue("M");
 
 	Logger::debugLogger.log("SDL set up /// Setting up window...");
 
@@ -192,7 +192,7 @@ int gameMain(int argc, char* argv[]) {
 	return 0;
 }
 void renderLoop(CircularStateQueue<GameState>* gameStateQueue) {
-	Logger::setupLogQueue();
+	Logger::setupLogQueue("R");
 
 	//setup opengl
 	Logger::debugLogger.log("Render thread began /// Setting up OpenGL...");

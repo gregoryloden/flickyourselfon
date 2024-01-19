@@ -41,6 +41,7 @@ Logger::PendingMessage::~PendingMessage() {
 
 //////////////////////////////// Logger ////////////////////////////////
 thread_local CircularStateQueue<Logger::Message>* Logger::currentThreadLogQueue = nullptr;
+thread_local const char* Logger::currentThreadTagPrefix = " ";
 thread_local Logger::PendingMessage* Logger::currentPendingMessage = nullptr;
 bool Logger::threadRunning = false;
 thread* Logger::logThread = nullptr;
@@ -71,7 +72,9 @@ void Logger::beginMultiThreadedLogging() {
 	threadRunning = true;
 	logThread = new thread(logLoop);
 }
-void Logger::setupLogQueue() {
+void Logger::setupLogQueue(const char* threadTagPrefix) {
+	currentThreadTagPrefix = threadTagPrefix;
+
 	//create our new objects, these may cause logs so don't assign them to the static values yet
 	int preQueueTimestamp = (int)SDL_GetTicks();
 	CircularStateQueue<Message>* newThreadLogQueue = newCircularStateQueue(Message, newMessage(), newMessage());
@@ -83,9 +86,10 @@ void Logger::setupLogQueue() {
 
 	//now set the queue values and write the messages because we know we won't create any new objects/debug logs
 	currentThreadLogQueue = newThreadLogQueue;
-	logQueueStack = newLogQueueStack;
+	logQueueStack = currentThreadLogQueueStack;
 	for (Logger* logger : loggers) {
 		logger->queueMessage(&logger->preQueueMessages, preQueueTimestamp);
+		logger->preQueueMessages.str(string());
 	}
 }
 void Logger::endMultiThreadedLogging() {
@@ -166,7 +170,7 @@ void Logger::logString(const string& message) {
 		<< setw(7) << setfill(' ') << (timestamp / Config::ticksPerSecond)
 		<< setw(1) << '.'
 		<< setw(3) << setfill('0') << (timestamp % Config::ticksPerSecond)
-		<< setw(1) << "  " << message << '\n';
+		<< setw(1) << ' ' << currentThreadTagPrefix << "  " << message << '\n';
 
 	//we might get logs before we've initialized our log queue
 	if (currentThreadLogQueue == nullptr) {

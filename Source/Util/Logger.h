@@ -34,6 +34,7 @@ private:
 	};
 
 	static thread_local CircularStateQueue<Message>* currentThreadLogQueue;
+	static thread_local const char* currentThreadTagPrefix;
 	static thread_local PendingMessage* currentPendingMessage;
 	static bool threadRunning;
 	static thread* logThread;
@@ -64,7 +65,7 @@ public:
 	static void beginMultiThreadedLogging();
 	//create the log queue for this thread
 	//does not lock- callers are responsible for ensuring only one thread runs this at a time
-	static void setupLogQueue();
+	static void setupLogQueue(const char* threadTagPrefix);
 	//stop the logging thread and delete the queues, but leave the files open for single threaded logging
 	static void endMultiThreadedLogging();
 	//finally close the file and remove this from the list of loggers
