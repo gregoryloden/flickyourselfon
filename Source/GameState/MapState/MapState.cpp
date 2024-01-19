@@ -394,8 +394,11 @@ LevelTypes::Plane* MapState::buildPlane(
 					planeTileChecks.push_back(neighbor);
 					planeIds[neighbor] = planeId;
 				}
+				continue;
+			}
+
 			//check for neighboring tiles to climb to
-			} else if (neighborHeight > planeHeight && neighborHeight != emptySpaceHeight) {
+			if (neighborHeight > planeHeight && neighborHeight != emptySpaceHeight) {
 				//for all neighbors but the down neighbor, the tile to climb to is one tile up
 				if (neighbor != downNeighbor) {
 					neighbor -= width;
@@ -403,8 +406,6 @@ LevelTypes::Plane* MapState::buildPlane(
 				}
 				if (neighborHeight != planeHeight + 2)
 					continue;
-				planeConnections.push_back(PlaneConnection(plane, neighbor, absentRailSwitchId, -1));
-				tileChecks.push_back(neighbor);
 			//check for neighboring tiles to fall to
 			} else {
 				//no falling if there was a rail on the center tile
@@ -419,9 +420,13 @@ LevelTypes::Plane* MapState::buildPlane(
 					neighbor = fallY * width + fallX;
 				} else if (neighborHeight % 2 != 0)
 					continue;
-				planeConnections.push_back(PlaneConnection(plane, neighbor, absentRailSwitchId, -1));
-				tileChecks.push_back(neighbor);
 			}
+
+			//we have a neighboring tile that we can climb or fall to, but if it belongs to a plane on a previous level, drop it
+			if (planeIds[neighbor] != 0 && planes[planeIds[neighbor] - 1]->getOwningLevel() != activeLevel)
+				continue;
+			planeConnections.push_back(PlaneConnection(plane, neighbor, absentRailSwitchId, -1));
+			tileChecks.push_back(neighbor);
 		}
 
 		//check for other tiles of interest to connect planes
@@ -460,7 +465,8 @@ void MapState::addRailPlaneConnection(
 			tileChecks.push_back(toAdjacentTile);
 		else
 			tileChecks.push_back(toTile);
-	} else
+	//only add reverse rail connections to planes in the same level
+	} else if (planes[planeIds[toTile] - 1]->getOwningLevel() == activeLevel)
 		planeConnections.push_back(PlaneConnection(plane, toTile, railId, -1));
 }
 void MapState::deleteMap() {

@@ -60,9 +60,7 @@ bool LevelTypes::Plane::addConnection(Plane* toPlane, bool isRail, short railId)
 	for (Connection& connection : toPlane->connections) {
 		if (connection.toPlane != this)
 			continue;
-		//but only within the same level - don't add a connection to a previous level
-		if (toPlane->owningLevel == owningLevel)
-			connections.push_back(Connection(toPlane, connection.railByteIndex, connection.railTileOffsetByteMask, railId));
+		connections.push_back(Connection(toPlane, connection.railByteIndex, connection.railTileOffsetByteMask, railId));
 		return true;
 	}
 	return false;
