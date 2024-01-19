@@ -193,6 +193,7 @@ Plane* Level::cachedHintSearchVictoryPlane = nullptr;
 	int Level::hintSearchActionsChecked = 0;
 	int Level::hintSearchUniqueStates = 0;
 	int Level::hintSearchComparisonsPerformed = 0;
+	int Level::foundHintSearchTotalSteps = 0;
 #endif
 Level::Level(objCounterParameters())
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
@@ -295,6 +296,7 @@ HintState* Level::generateHint(
 		hintSearchActionsChecked = 0;
 		hintSearchUniqueStates = 0;
 		hintSearchComparisonsPerformed = 0;
+		foundHintSearchTotalSteps = 0;
 		int timeBeforeSearch = SDL_GetTicks();
 	#endif
 	while (!nextPotentialLevelStates.empty()) {
@@ -333,7 +335,8 @@ HintState* Level::generateHint(
 			<< "  comparisonsPerformed " << hintSearchComparisonsPerformed
 			<< "  searchTime " << (timeAfterSearchBeforeCleanup - timeBeforeSearch)
 			<< "  cleanupTime " << (timeAfterCleanup - timeAfterSearchBeforeCleanup)
-			<< "  found solution? " << (result != nullptr ? "true" : "false");
+			<< "  found solution? " << (result != nullptr ? "true" : "false")
+			<< "  steps " << foundHintSearchTotalSteps;
 		Logger::debugLogger.logString(hintSearchPerformanceMessage.str());
 	#endif
 

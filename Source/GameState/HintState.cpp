@@ -60,8 +60,15 @@ bool HintStateTypes::PotentialLevelState::isNewState(vector<PotentialLevelState*
 }
 HintState* HintStateTypes::PotentialLevelState::getHint() {
 	PotentialLevelState* hintLevelState = this;
-	while (hintLevelState->priorState->priorState != nullptr)
+	#ifdef DEBUG
+		Level::foundHintSearchTotalSteps = 1;
+	#endif
+	while (hintLevelState->priorState->priorState != nullptr) {
 		hintLevelState = hintLevelState->priorState;
+		#ifdef DEBUG
+			Level::foundHintSearchTotalSteps++;
+		#endif
+	}
 	return newHintState(hintLevelState->type, hintLevelState->data);
 }
 using namespace HintStateTypes;
