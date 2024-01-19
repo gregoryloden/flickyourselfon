@@ -117,6 +117,7 @@ public:
 		static int hintSearchActionsChecked;
 		static int hintSearchUniqueStates;
 		static int hintSearchComparisonsPerformed;
+		static int foundHintSearchTotalSteps;
 	#endif
 
 private:
