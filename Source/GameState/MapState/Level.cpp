@@ -255,6 +255,11 @@ HintState* Level::generateHint(
 	} else if (victoryPlane == nullptr)
 		return newHintState(HintStateTypes::Type::None, {});
 
+	//prepare the victory plane
+	cachedHintSearchVictoryPlane = victoryPlane;
+	//make sure to distinguish our plane 0 from the victory plane, which is always plane 0 of the next level
+	planes[0]->writeVictoryPlaneIndex(victoryPlane, (int)planes.size());
+
 	//setup the base potential level state
 	for (int i = 0; i < HintStateTypes::PotentialLevelState::railByteMaskCount; i++)
 		HintStateTypes::PotentialLevelState::draftState.railByteMasks[i] = 0;
@@ -266,17 +271,14 @@ HintState* Level::generateHint(
 			(unsigned int)(movementDirectionBit | tileOffset) << railByteMaskData.railBitShift;
 	}
 	HintStateTypes::PotentialLevelState::draftState.setHash();
+
+	//load it into the potential level state structures
 	HintStateTypes::PotentialLevelState* baseLevelState =
 		newHintStatePotentialLevelState(nullptr, currentPlane, &HintStateTypes::PotentialLevelState::draftState);
-
-	//setup the potential level state structures
-	potentialLevelStatesByBucketByPlane[baseLevelState->plane->getIndexInOwningLevel()]
+	potentialLevelStatesByBucketByPlane[currentPlane->getIndexInOwningLevel()]
 		.buckets[baseLevelState->railByteMasksHash % PotentialLevelStatesByBucket::bucketSize]
 		.push_back(baseLevelState);
 	nextPotentialLevelStates.push_back(baseLevelState);
-	cachedHintSearchVictoryPlane = victoryPlane;
-	//make sure to distinguish our plane 0 from the victory plane, which is always plane 0 of the next level
-	planes[0]->writeVictoryPlaneIndex(victoryPlane, (int)planes.size());
 
 	//go through all states and see if there's anything we could do to get closer to the victory plane
 	HintState* result = nullptr;
