@@ -141,9 +141,12 @@ public:
 	int trackNextRail(short railId, Rail* rail);
 	//initialize PotentialLevelState helper objects to accomodate all of the given levels
 	static void setupPotentialLevelStateHelpers(vector<Level*>& allLevels);
+	//generate a hint to solve this level from the start, to save time in the future allocating PotentialLevelStates when
+	//	generating hints
+	void preAllocatePotentialLevelStates();
 	//generate a hint based on the initial state in this level
 	HintState* generateHint(
 		LevelTypes::Plane* currentPlane,
-		function<void(short railId, char* outMovementDirection, char* outTileOffset)> getRailState,
+		function<void(short railId, Rail* rail, char* outMovementDirection, char* outTileOffset)> getRailState,
 		char lastActivatedSwitchColor);
 };

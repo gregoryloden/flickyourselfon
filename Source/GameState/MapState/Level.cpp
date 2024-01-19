@@ -242,10 +242,19 @@ void Level::setupPotentialLevelStateHelpers(vector<Level*>& allLevels) {
 	delete[] HintStateTypes::PotentialLevelState::draftState.railByteMasks;
 	HintStateTypes::PotentialLevelState::draftState.railByteMasks = new unsigned int[maxRailByteCount];
 }
+void Level::preAllocatePotentialLevelStates() {
+	ReferenceCounterHolder<HintState> hintHolder (
+		generateHint(
+			planes[0],
+			[](short railId, Rail* rail, char* outMovementDirection, char* outTileOffset) {
+				*outMovementDirection = rail->getInitialMovementDirection();
+				*outTileOffset = rail->getInitialTileOffset();
+			},
+			minimumRailColor));
 }
 HintState* Level::generateHint(
 	LevelTypes::Plane* currentPlane,
-	function<void(short railId, char* outMovementDirection, char* outTileOffset)> getRailState,
+	function<void(short railId, Rail* rail, char* outMovementDirection, char* outTileOffset)> getRailState,
 	char lastActivatedSwitchColor)
 {
 	if (lastActivatedSwitchColor < minimumRailColor) {
@@ -265,7 +274,7 @@ HintState* Level::generateHint(
 		HintStateTypes::PotentialLevelState::draftState.railByteMasks[i] = 0;
 	for (LevelTypes::RailByteMaskData& railByteMaskData : allRailByteMaskData) {
 		char movementDirection, tileOffset;
-		getRailState(railByteMaskData.railId, &movementDirection, &tileOffset);
+		getRailState(railByteMaskData.railId, railByteMaskData.rail, &movementDirection, &tileOffset);
 		char movementDirectionBit = ((movementDirection + 1) / 2) << Level::railTileOffsetByteMaskBitCount;
 		HintStateTypes::PotentialLevelState::draftState.railByteMasks[railByteMaskData.railByteIndex] |=
 			(unsigned int)(movementDirectionBit | tileOffset) << railByteMaskData.railBitShift;

@@ -363,6 +363,8 @@ void MapState::buildLevels() {
 
 	//initialize utilities for hints
 	Level::setupPotentialLevelStateHelpers(levels);
+	for (Level* level : levels)
+		level->preAllocatePotentialLevelStates();
 }
 LevelTypes::Plane* MapState::buildPlane(
 	int tile, Level* activeLevel, deque<int>& tileChecks, vector<PlaneConnection>& planeConnections)
@@ -783,7 +785,7 @@ HintState* MapState::generateHint(float playerX, float playerY) {
 	LevelTypes::Plane* currentPlane = planes[planeIds[(int)playerY / tileSize * width + (int)playerX / tileSize] - 1];
 	return currentPlane->getOwningLevel()->generateHint(
 		currentPlane,
-		[this](short railId, char* outMovementDirection, char* outTileOffset) {
+		[this](short railId, Rail* rail, char* outMovementDirection, char* outTileOffset) {
 			RailState* railState = railStates[railId & railSwitchIndexBitmask];
 			*outMovementDirection = railState->getNextMovementDirection();
 			*outTileOffset = railState->getTargetTileOffset();
