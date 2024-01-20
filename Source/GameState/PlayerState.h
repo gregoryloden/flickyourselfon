@@ -57,6 +57,9 @@ private:
 	static constexpr char* finishedKickTutorialFileValue = "finishedKickTutorial";
 	static constexpr char* lastGoalFilePrefix = "lastGoal ";
 
+	static thread* hintSearchThread;
+	static ReferenceCounterHolder<HintState> hintSearchStorage;
+
 	char z;
 	char xDirection;
 	char yDirection;
@@ -185,6 +188,8 @@ private:
 	void tryAutoKick(PlayerState* prev, int ticksTime);
 	//spawn sparks over a goal tile if applicable
 	void trySpawnGoalSparks(int ticksTime);
+	//collect the completed hint if applicable
+	void tryCollectCompletedHint(PlayerState* other);
 public:
 	//if we don't have a kicking animation, start one
 	//this should be called after the player has been updated

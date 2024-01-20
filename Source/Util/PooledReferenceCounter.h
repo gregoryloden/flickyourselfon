@@ -40,7 +40,7 @@ public:
 	ReferenceCounterHolder(ReferenceCounterHolder<ReferenceCountedObject>&& other);
 	virtual ~ReferenceCounterHolder();
 
-	ReferenceCountedObject* get() { return object; }
+	ReferenceCountedObject* get() const { return object; }
 	//hold the new object and release/retain objects as appropriate
 	void set(ReferenceCountedObject* pObject);
 

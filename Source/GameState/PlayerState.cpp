@@ -26,6 +26,8 @@
 #define newRailSwitchKickAction(type, railSwitchId, railSegmentIndex) \
 	newKickAction(type, -1, -1, MapState::invalidHeight, railSwitchId, railSegmentIndex)
 
+thread* PlayerState::hintSearchThread = nullptr;
+ReferenceCounterHolder<HintState> PlayerState::hintSearchStorage (nullptr);
 PlayerState::PlayerState(objCounterParameters())
 : EntityState(objCounterArguments())
 , z(0)
@@ -99,7 +101,7 @@ void PlayerState::copyPlayerState(PlayerState* other) {
 	lastGoalY = other->lastGoalY;
 	setUndoState(undoState, other->undoState.get());
 	setUndoState(redoState, other->redoState.get());
-	hintState.set(other->hintState.get());
+	tryCollectCompletedHint(other);
 }
 pooledReferenceCounterDefineRelease(PlayerState)
 void PlayerState::prepareReturnToPool() {
@@ -166,8 +168,20 @@ void PlayerState::generateHint(HintState* useHint, int ticksTime) {
 		hintState.set(useHint);
 	else {
 		int timeDiff = lastUpdateTicksTime - ticksTime;
-		hintState.set(
-			mapState.get()->generateHint(x.get()->getValue(timeDiff), y.get()->getValue(timeDiff) + boundingBoxCenterYOffset));
+		float hintX = x.get()->getValue(timeDiff);
+		float hintY = y.get()->getValue(timeDiff) + boundingBoxCenterYOffset;
+		ReferenceCounterHolder<MapState> mapStateCapture (mapState.get());
+		//if another hint is being generated, force-wait for it to finish, even if it delays the update
+		if (hintSearchThread != nullptr) {
+			hintSearchThread->join();
+			delete hintSearchThread;
+			hintSearchStorage.set(nullptr);
+		}
+		hintSearchThread = new thread([hintX, hintY, mapStateCapture]() {
+			Logger::setupLogQueue("H");
+			hintSearchStorage.set(mapStateCapture.get()->generateHint(hintX, hintY));
+			Logger::markLogQueueUnused();
+		});
 	}
 }
 bool PlayerState::showTutorialConnectionsForKickAction() {
@@ -213,7 +227,6 @@ void PlayerState::updateWithPreviousPlayerState(PlayerState* prev, bool hasKeybo
 	lastGoalY = prev->lastGoalY;
 	setUndoState(undoState, prev->undoState.get());
 	setUndoState(redoState, prev->redoState.get());
-	hintState.set(prev->hintState.get());
 
 	//if we can control the player then that must mean the player has the boot
 	hasBoot = true;
@@ -227,6 +240,7 @@ void PlayerState::updateWithPreviousPlayerState(PlayerState* prev, bool hasKeybo
 		setKickAction();
 		tryAutoKick(prev, ticksTime);
 		trySpawnGoalSparks(ticksTime);
+		tryCollectCompletedHint(prev);
 	}
 
 	//copy the position to the save values
@@ -810,6 +824,17 @@ void PlayerState::trySpawnGoalSparks(int ticksTime) {
 				ticksTime);
 		}
 	}
+}
+void PlayerState::tryCollectCompletedHint(PlayerState* other) {
+	if (hintSearchThread == nullptr || hintSearchStorage.get() == nullptr) {
+		hintState.set(other->hintState.get());
+		return;
+	}
+	hintSearchThread->join();
+	delete hintSearchThread;
+	hintSearchThread = nullptr;
+	hintState.set(hintSearchStorage.get());
+	hintSearchStorage.set(nullptr);
 }
 void PlayerState::beginKicking(int ticksTime) {
 	if (entityAnimation.get() != nullptr)
@@ -1496,7 +1521,7 @@ void PlayerState::reset() {
 	lastGoalX = 0;
 	lastGoalY = 0;
 	clearUndoRedoStates();
-	hintState.set(newHintState(HintStateTypes::Type::None, {}));
+	hintState.set(nullptr);
 }
 void PlayerState::setHighestZ() {
 	z = MapState::highestFloorHeight;

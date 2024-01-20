@@ -22,7 +22,8 @@ Logger::Message::~Message() {
 Logger::LogQueueStack::LogQueueStack(objCounterParametersComma() CircularStateQueue<Message>* pLogQueue, LogQueueStack* pNext)
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
 logQueue(pLogQueue)
-, next(pNext) {
+, next(pNext)
+, isUsed(true) {
 }
 Logger::LogQueueStack::~LogQueueStack() {
 	delete logQueue;
@@ -41,6 +42,7 @@ Logger::PendingMessage::~PendingMessage() {
 
 //////////////////////////////// Logger ////////////////////////////////
 thread_local CircularStateQueue<Logger::Message>* Logger::currentThreadLogQueue = nullptr;
+thread_local Logger::LogQueueStack* Logger::currentThreadLogQueueStack = nullptr;
 thread_local const char* Logger::currentThreadTagPrefix = " ";
 thread_local Logger::PendingMessage* Logger::currentPendingMessage = nullptr;
 bool Logger::threadRunning = false;
@@ -75,10 +77,23 @@ void Logger::beginMultiThreadedLogging() {
 void Logger::setupLogQueue(const char* threadTagPrefix) {
 	currentThreadTagPrefix = threadTagPrefix;
 
+	//reuse any LogQueueStack that isn't being used
+	for (LogQueueStack* checkLogQueueStack = logQueueStack;
+		checkLogQueueStack != nullptr;
+		checkLogQueueStack = checkLogQueueStack->next)
+	{
+		if (checkLogQueueStack->isUsed)
+			continue;
+		checkLogQueueStack->isUsed = true;
+		currentThreadLogQueueStack = checkLogQueueStack;
+		currentThreadLogQueue = checkLogQueueStack->logQueue;
+		return;
+	}
+
 	//create our new objects, these may cause logs so don't assign them to the static values yet
 	int preQueueTimestamp = (int)SDL_GetTicks();
 	CircularStateQueue<Message>* newThreadLogQueue = newCircularStateQueue(Message, newMessage(), newMessage());
-	LogQueueStack* newLogQueueStack = newLogQueueStack(newThreadLogQueue, logQueueStack);
+	currentThreadLogQueueStack = newLogQueueStack(newThreadLogQueue, logQueueStack);
 
 	//add states until we have at least one per logger, enough that we know we won't be adding any messages
 	for (int statesNeeded = (int)loggers.size() - newThreadLogQueue->getStatesCount(); statesNeeded > 0; statesNeeded--)
@@ -91,6 +106,9 @@ void Logger::setupLogQueue(const char* threadTagPrefix) {
 		logger->queueMessage(&logger->preQueueMessages, preQueueTimestamp);
 		logger->preQueueMessages.str(string());
 	}
+}
+void Logger::markLogQueueUnused() {
+	currentThreadLogQueueStack->isUsed = false;
 }
 void Logger::endMultiThreadedLogging() {
 	threadRunning = false;
