@@ -220,6 +220,7 @@ void renderLoop(CircularStateQueue<GameState>* gameStateQueue) {
 	int lastWindowWidth = 0;
 	int lastWindowHeight = 0;
 	const int minMsPerFrame = Config::ticksPerSecond / Config::refreshRate;
+	const int lagFrameMs = minMsPerFrame + 2;
 	while (true) {
 		int preRenderTicksTime = (int)SDL_GetTicks();
 
@@ -250,8 +251,15 @@ void renderLoop(CircularStateQueue<GameState>* gameStateQueue) {
 		if (gameState->getShouldQuitGame())
 			break;
 
+		int renderTime = (int)SDL_GetTicks() - preRenderTicksTime;
+		if (renderTime > lagFrameMs) {
+			stringstream message;
+			message << "lag frame took " << renderTime << "ms";
+			Logger::debugLogger.logString(message.str());
+		}
+
 		//sleep if we don't expect to render for at least 2 more milliseconds
-		int remainingDelay = minMsPerFrame - ((int)SDL_GetTicks() - preRenderTicksTime);
+		int remainingDelay = minMsPerFrame - renderTime;
 		if (remainingDelay >= 2)
 			SDL_Delay(remainingDelay);
 	}
