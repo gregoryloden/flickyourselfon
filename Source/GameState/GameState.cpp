@@ -297,9 +297,10 @@ void GameState::startRadioTowerAnimation(int ticksTime) {
 void GameState::render(int ticksTime) {
 	Editor::EditingMutexLocker editingMutexLocker;
 	int gameTicksTime = (pauseState.get() != nullptr ? pauseStartTicksTime : ticksTime) - gameTimeOffsetTicksDuration;
+
 	bool showConnections = mapState.get()->getShowConnections(playerState.get()->showTutorialConnectionsForKickAction());
-	mapState.get()->renderBelowPlayer(
-		camera, playerState.get()->getWorldGroundY(gameTicksTime), playerState.get()->getZ(), gameTicksTime);
+	char playerZ = (char)(floorf(playerState.get()->getDynamicZ(gameTicksTime) + 0.5f));
+	mapState.get()->renderBelowPlayer(camera, playerState.get()->getWorldGroundY(gameTicksTime), playerZ, gameTicksTime);
 	playerState.get()->render(camera, gameTicksTime);
 	mapState.get()->renderAbovePlayer(camera, showConnections, gameTicksTime);
 	if (sawIntroAnimation && !camera->hasAnimation()) {

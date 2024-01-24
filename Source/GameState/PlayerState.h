@@ -95,7 +95,6 @@ public:
 	PlayerState(objCounterParameters());
 	virtual ~PlayerState();
 
-	char getZ() { return z; }
 	bool getFinishedMoveTutorial() { return finishedMoveTutorial; }
 	bool getFinishedKickTutorial() { return finishedKickTutorial; }
 	HintState* getHint() { return hintState.get(); }
@@ -112,6 +111,8 @@ protected:
 public:
 	//get the world Y after translating to what the world-terrain-space-Y would be at height 0
 	float getWorldGroundY(int ticksTime);
+	//get the Z that the player appears at based on animation
+	float getDynamicZ(int ticksTime);
 	//set the sprite direction, and also set x and y directions to match
 	virtual void setDirection(SpriteDirection pSpriteDirection);
 	//tell the game state to use the player as the next camera anchor, we will handle actually switching to a different camera

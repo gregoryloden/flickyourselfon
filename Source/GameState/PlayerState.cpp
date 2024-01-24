@@ -124,6 +124,16 @@ float PlayerState::getWorldGroundY(int ticksTime) {
 			+ boundingBoxCenterYOffset
 			+ worldGroundYOffset;
 }
+float PlayerState::getDynamicZ(int ticksTime) {
+	return worldGroundY.get() != nullptr
+		? (worldGroundY.get()->getValue(ticksTime - worldGroundYStartTicksTime)
+				- y.get()->getValue(ticksTime - lastUpdateTicksTime)
+				- boundingBoxCenterYOffset
+				- worldGroundYOffset)
+			* 2
+			/ MapState::tileSize
+		: z;
+}
 void PlayerState::setDirection(SpriteDirection pSpriteDirection) {
 	spriteDirection = pSpriteDirection;
 	xDirection = pSpriteDirection == SpriteDirection::Left ? -1 : pSpriteDirection == SpriteDirection::Right ? 1 : 0;

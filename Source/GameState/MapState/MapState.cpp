@@ -212,6 +212,8 @@ void MapState::buildMap() {
 		}
 	}
 
+	SDL_FreeSurface(floor);
+
 	//link reset switches to their affected rails
 	for (int i = 0; i < (int)rails.size(); i++) {
 		Rail* rail = rails[i];
@@ -226,8 +228,6 @@ void MapState::buildMap() {
 	}
 
 	buildLevels();
-
-	SDL_FreeSurface(floor);
 }
 vector<int> MapState::parseRail(int* pixels, int redShift, int segmentIndex, int railSwitchId) {
 	//cache shift values so that we can iterate the floor data quicker
@@ -813,16 +813,49 @@ void MapState::renderBelowPlayer(EntityState* camera, float playerWorldGroundY, 
 		for (int x = tileMinX; x < tileMaxX; x++) {
 			//consider any tile at the max height to be filler
 			int mapIndex = y * width + x;
-			char mapHeight = heights[mapIndex];
-			if (mapHeight == emptySpaceHeight)
+			if (heights[mapIndex] == emptySpaceHeight)
 				continue;
 
 			GLint leftX = (GLint)(x * tileSize - screenLeftWorldX);
 			GLint topY = (GLint)(y * tileSize - screenTopWorldY);
 			SpriteRegistry::tiles->renderSpriteAtScreenPosition((int)(tiles[mapIndex]), 0, leftX, topY);
-			if (Editor::isActive && editorSelectedHeight != invalidHeight && editorSelectedHeight != mapHeight)
+		}
+	}
+
+	//color tiles that are above or below the player, based on how far above or below the player they are
+	if (!Editor::isActive) {
+		glEnable(GL_BLEND);
+		for (int y = tileMinY; y < tileMaxY; y++) {
+			for (int x = tileMinX; x < tileMaxX; x++) {
+				//consider any tile at the max height to be filler
+				char mapHeight = heights[y * width + x];
+				if (mapHeight == emptySpaceHeight || mapHeight == playerZ)
+					continue;
+
+				if (mapHeight > playerZ)
+					glColor4f(1.0f, 1.0f, 1.0f, (mapHeight - playerZ) / 32.0f);
+				else
+					glColor4f(0.0f, 0.0f, 0.0f, (playerZ - mapHeight) / 32.0f);
+				GLint leftX = (GLint)(x * tileSize - screenLeftWorldX);
+				GLint topY = (GLint)(y * tileSize - screenTopWorldY);
+				SpriteSheet::renderPreColoredRectangle(leftX, topY, leftX + (GLint)tileSize, topY + (GLint)tileSize);
+			}
+		}
+		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+	//darken tiles that don't match the selected height in the editor, if one is selected
+	} else if (editorSelectedHeight != invalidHeight) {
+		for (int y = tileMinY; y < tileMaxY; y++) {
+			for (int x = tileMinX; x < tileMaxX; x++) {
+				//consider any tile at the max height to be filler
+				char mapHeight = heights[y * width + x];
+				if (mapHeight == emptySpaceHeight || mapHeight == editorSelectedHeight)
+					continue;
+
+				GLint leftX = (GLint)(x * tileSize - screenLeftWorldX);
+				GLint topY = (GLint)(y * tileSize - screenTopWorldY);
 				SpriteSheet::renderFilledRectangle(
 					0.0f, 0.0f, 0.0f, 0.5f, leftX, topY, leftX + (GLint)tileSize, topY + (GLint)tileSize);
+			}
 		}
 	}
 
