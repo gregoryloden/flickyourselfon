@@ -370,6 +370,7 @@ void PauseState::loadMenus() {
 						newMultiStateOption(&Config::switchKickIndicator, "switch indicator") COMMA
 						newMultiStateOption(&Config::resetSwitchKickIndicator, "reset switch indicator") COMMA
 						newMultiStateOption(&Config::showConnectionsMode, "show-connections mode") COMMA
+						newMultiStateOption(&Config::heightBasedShading, "height-based shading") COMMA
 						newNavigationOption("back", nullptr)
 					})) COMMA
 			newEndPauseOption("reset game", (int)EndPauseDecision::Reset) COMMA

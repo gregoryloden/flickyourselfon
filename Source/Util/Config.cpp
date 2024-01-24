@@ -68,6 +68,7 @@ OnOffSetting Config::railKickIndicator ("rail ", Config::allMultiStateSettings);
 OnOffSetting Config::switchKickIndicator ("switch ", Config::allMultiStateSettings);
 OnOffSetting Config::resetSwitchKickIndicator ("resetSwitch ", Config::allMultiStateSettings);
 HoldToggleSetting Config::showConnectionsMode ("showConnectionsMode ", Config::allMultiStateSettings);
+OnOffSetting Config::heightBasedShading ("heightBasedShading ", Config::allMultiStateSettings);
 void Config::saveSettings() {
 	ofstream file;
 	FileUtils::openFileForWrite(&file, optionsFileName, ios::out | ios::trunc);

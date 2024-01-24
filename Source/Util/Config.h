@@ -88,6 +88,7 @@ public:
 	static ConfigTypes::OnOffSetting switchKickIndicator;
 	static ConfigTypes::OnOffSetting resetSwitchKickIndicator;
 	static ConfigTypes::HoldToggleSetting showConnectionsMode;
+	static ConfigTypes::OnOffSetting heightBasedShading;
 
 	//save the key bindings to the save file
 	static void saveSettings();

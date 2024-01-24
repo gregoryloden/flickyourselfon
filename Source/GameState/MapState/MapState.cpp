@@ -808,7 +808,6 @@ void MapState::renderBelowPlayer(EntityState* camera, float playerWorldGroundY, 
 	int tileMinY = MathUtils::max(screenTopWorldY / tileSize, 0);
 	int tileMaxX = MathUtils::min((Config::gameScreenWidth + screenLeftWorldX - 1) / tileSize + 1, width);
 	int tileMaxY = MathUtils::min((Config::gameScreenHeight + screenTopWorldY - 1) / tileSize + 1, height);
-	char editorSelectedHeight = Editor::isActive ? Editor::getSelectedHeight() : invalidHeight;
 	for (int y = tileMinY; y < tileMaxY; y++) {
 		for (int x = tileMinX; x < tileMaxX; x++) {
 			//consider any tile at the max height to be filler
@@ -822,8 +821,31 @@ void MapState::renderBelowPlayer(EntityState* camera, float playerWorldGroundY, 
 		}
 	}
 
-	//color tiles that are above or below the player, based on how far above or below the player they are
-	if (!Editor::isActive) {
+	if (Editor::isActive) {
+		//darken tiles that don't match the selected height in the editor, if one is selected
+		char editorSelectedHeight = Editor::getSelectedHeight();
+		if (editorSelectedHeight != invalidHeight) {
+			for (int y = tileMinY; y < tileMaxY; y++) {
+				for (int x = tileMinX; x < tileMaxX; x++) {
+					//consider any tile at the max height to be filler
+					char mapHeight = heights[y * width + x];
+					if (mapHeight == emptySpaceHeight || mapHeight == editorSelectedHeight)
+						continue;
+
+					GLint leftX = (GLint)(x * tileSize - screenLeftWorldX);
+					GLint topY = (GLint)(y * tileSize - screenTopWorldY);
+					SpriteSheet::renderFilledRectangle(
+						0.0f, 0.0f, 0.0f, 0.5f, leftX, topY, leftX + (GLint)tileSize, topY + (GLint)tileSize);
+				}
+			}
+		}
+
+		//stop here if we only render tiles
+		if (editorHideNonTiles)
+			return;
+	//color tiles that are above or below the player, based on how far above or below the player they are, if the setting is
+	//	enabled
+	} else if (Config::heightBasedShading.isOn()) {
 		glEnable(GL_BLEND);
 		for (int y = tileMinY; y < tileMaxY; y++) {
 			for (int x = tileMinX; x < tileMaxX; x++) {
@@ -842,25 +864,7 @@ void MapState::renderBelowPlayer(EntityState* camera, float playerWorldGroundY, 
 			}
 		}
 		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-	//darken tiles that don't match the selected height in the editor, if one is selected
-	} else if (editorSelectedHeight != invalidHeight) {
-		for (int y = tileMinY; y < tileMaxY; y++) {
-			for (int x = tileMinX; x < tileMaxX; x++) {
-				//consider any tile at the max height to be filler
-				char mapHeight = heights[y * width + x];
-				if (mapHeight == emptySpaceHeight || mapHeight == editorSelectedHeight)
-					continue;
-
-				GLint leftX = (GLint)(x * tileSize - screenLeftWorldX);
-				GLint topY = (GLint)(y * tileSize - screenTopWorldY);
-				SpriteSheet::renderFilledRectangle(
-					0.0f, 0.0f, 0.0f, 0.5f, leftX, topY, leftX + (GLint)tileSize, topY + (GLint)tileSize);
-			}
-		}
 	}
-
-	if (Editor::isActive && editorHideNonTiles)
-		return;
 
 	//draw plane hints below rails, if applicable
 	HintStateTypes::Type hintType = hintState.get() != nullptr && hintState.get()->animationEndTicksTime >= ticksTime
