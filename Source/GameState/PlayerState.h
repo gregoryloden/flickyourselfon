@@ -81,6 +81,7 @@ private:
 	float lastControlledX;
 	float lastControlledY;
 	ReferenceCounterHolder<DynamicValue> worldGroundY;
+	int worldGroundYStartTicksTime;
 	float worldGroundYOffset;
 	bool finishedMoveTutorial;
 	bool finishedKickTutorial;

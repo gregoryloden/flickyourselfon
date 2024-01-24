@@ -51,6 +51,7 @@ PlayerState::PlayerState(objCounterParameters())
 , lastControlledX(0.0f)
 , lastControlledY(0.0f)
 , worldGroundY(nullptr)
+, worldGroundYStartTicksTime(0)
 , worldGroundYOffset(0.0f)
 , finishedMoveTutorial(false)
 , finishedKickTutorial(false)
@@ -94,6 +95,7 @@ void PlayerState::copyPlayerState(PlayerState* other) {
 	lastControlledX = other->lastControlledX;
 	lastControlledY = other->lastControlledY;
 	worldGroundY.set(other->worldGroundY.get());
+	worldGroundYStartTicksTime = other->worldGroundYStartTicksTime;
 	worldGroundYOffset = other->worldGroundYOffset;
 	finishedMoveTutorial = other->finishedMoveTutorial;
 	finishedKickTutorial = other->finishedKickTutorial;
@@ -115,10 +117,12 @@ void PlayerState::prepareReturnToPool() {
 	hintState.set(nullptr);
 }
 float PlayerState::getWorldGroundY(int ticksTime) {
-	int ticksSinceLastUpdate = ticksTime - lastUpdateTicksTime;
 	return worldGroundY.get() != nullptr
-		? worldGroundY.get()->getValue(ticksSinceLastUpdate)
-		: y.get()->getValue(ticksSinceLastUpdate) + z / 2 * MapState::tileSize + boundingBoxCenterYOffset + worldGroundYOffset;
+		? worldGroundY.get()->getValue(ticksTime - worldGroundYStartTicksTime)
+		: y.get()->getValue(ticksTime - lastUpdateTicksTime)
+			+ z / 2 * MapState::tileSize
+			+ boundingBoxCenterYOffset
+			+ worldGroundYOffset;
 }
 void PlayerState::setDirection(SpriteDirection pSpriteDirection) {
 	spriteDirection = pSpriteDirection;
@@ -939,11 +943,16 @@ void PlayerState::kickClimb(float currentX, float currentY, float targetX, float
 	tryAddNoOpUndoState();
 	stackNewClimbFallUndoState(undoState, currentX, currentY, z, hintState.get());
 	beginEntityAnimation(&kickingAnimationComponents, ticksTime);
-	float currentWorldGroundY = getWorldGroundY(lastUpdateTicksTime);
+	float currentWorldGroundY = getWorldGroundY(ticksTime);
 	//regardless of the movement direction, ground Y changes based on Y move distance
-	const float worldGroundYChange = (yMoveDistance + 1) * MapState::tileSize;
+	float newWorldGroundY = currentWorldGroundY + yMoveDistance + MapState::tileSize;
 	worldGroundY.set(
-		newCompositeQuarticValue(currentWorldGroundY, worldGroundYChange / climbAnimationDuration, 0.0f, 0.0f, 0.0f));
+		newLinearInterpolatedValue({
+			LinearInterpolatedValue::ValueAtTime(
+				currentWorldGroundY, SpriteRegistry::playerFastKickingAnimationTicksPerFrame) COMMA
+			LinearInterpolatedValue::ValueAtTime(newWorldGroundY, climbAnimationDuration) COMMA
+		}));
+	worldGroundYStartTicksTime = ticksTime;
 	z += 2;
 }
 void PlayerState::kickFall(float currentX, float currentY, float targetX, float targetY, char fallHeight, int ticksTime) {
@@ -960,8 +969,8 @@ void PlayerState::kickFall(float currentX, float currentY, float targetX, float 
 		? SpriteRegistry::playerFastKickingAnimationTicksPerFrame
 		: SpriteRegistry::playerKickingAnimationTicksPerFrame;
 
-	int climbAnimationDuration = fallAnimation->getTotalTicksDuration();
-	int moveDuration = climbAnimationDuration - fallAnimationFirstFrameTicks;
+	int fallAnimationDuration = fallAnimation->getTotalTicksDuration();
+	int moveDuration = fallAnimationDuration - fallAnimationFirstFrameTicks;
 	float floatMoveDuration = (float)moveDuration;
 	float moveDurationSquared = floatMoveDuration * floatMoveDuration;
 	//regardless of the fall direction or movement distance, x is linear
@@ -1024,11 +1033,15 @@ void PlayerState::kickFall(float currentX, float currentY, float targetX, float 
 	tryAddNoOpUndoState();
 	stackNewClimbFallUndoState(undoState, currentX, currentY, z, hintState.get());
 	beginEntityAnimation(&kickingAnimationComponents, ticksTime);
-	float currentWorldGroundY = getWorldGroundY(lastUpdateTicksTime);
+	float currentWorldGroundY = getWorldGroundY(ticksTime);
 	//regardless of the movement direction, ground Y changes based on Y move distance
-	const float worldGroundYChange = (yMoveDistance + (fallHeight - z) / 2) * MapState::tileSize;
+	float newWorldGroundY = currentWorldGroundY + yMoveDistance + (fallHeight - z) / 2 * MapState::tileSize;
 	worldGroundY.set(
-		newCompositeQuarticValue(currentWorldGroundY, worldGroundYChange / climbAnimationDuration, 0.0f, 0.0f, 0.0f));
+		newLinearInterpolatedValue({
+			LinearInterpolatedValue::ValueAtTime(currentWorldGroundY, fallAnimationFirstFrameTicks) COMMA
+			LinearInterpolatedValue::ValueAtTime(newWorldGroundY, fallAnimationDuration) COMMA
+		}));
+	worldGroundYStartTicksTime = ticksTime;
 	z = fallHeight;
 }
 void PlayerState::kickRail(short railId, float xPosition, float yPosition, int ticksTime) {
