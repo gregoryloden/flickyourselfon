@@ -145,6 +145,8 @@ private:
 	//tutorials and serialization
 	static constexpr char* showConnectionsTutorialText = "Show connections: ";
 	static constexpr char* mapCameraTutorialText = "Map camera: ";
+	static constexpr char* undoTutorialText = "Undo: ";
+	static constexpr char* slashResetTutorialText = " / Reset";
 	static constexpr float tutorialLeftX = 10.0f;
 	static constexpr float tutorialBaselineY = 20.0f;
 	static constexpr char* lastActivatedSwitchColorFilePrefix = "lastActivatedSwitchColor ";
@@ -181,6 +183,7 @@ private:
 	char radioWavesColor;
 	int waveformStartTicksTime;
 	int waveformEndTicksTime;
+	ReferenceCounterHolder<HintState> hintState;
 
 public:
 	MapState(objCounterParameters());
@@ -309,10 +312,12 @@ public:
 	void toggleShowConnections();
 	//generate a hint based on the state of the map and the given player position
 	HintState* generateHint(float playerX, float playerY);
-	//draw the map
+	//set the given hint to be shown
+	void setHint(HintState* pHintState, int ticksTime);
+	//render the map
 	void renderBelowPlayer(EntityState* camera, float playerWorldGroundY, char playerZ, int ticksTime);
-	//draw anything (rails, groups) that render above the player
-	//assumes render() has already been called to set the rails above the player
+	//render anything (rails, groups) that render above the player
+	//assumes renderBelowPlayer() has already been called to set the rails above the player
 	void renderAbovePlayer(EntityState* camera, bool showConnections, int ticksTime);
 	//render the groups for rails that are not in their default position that have a group that this reset switch also has
 	//return whether any groups were drawn
@@ -320,11 +325,12 @@ public:
 	//render the groups for rails that have the group of this switch
 	void renderGroupsForRailsFromSwitch(EntityState* camera, short switchId, int ticksTime);
 	//render any applicable tutorials
-	void renderTutorials(bool showConnections);
+	void renderTutorials(bool showConnections, bool shouldSuggestUndoReset);
 	//draw a graphic to represent this rail/switch group
 	static void renderGroupRect(char group, GLint leftX, GLint topY, GLint rightX, GLint bottomY);
 	//render a controls tutorial message
-	static void renderControlsTutorial(const char* text, vector<SDL_Scancode> keys);
+	//returns the x position after the text
+	static float renderControlsTutorial(const char* text, vector<SDL_Scancode> keys);
 private:
 	//get the corresponding waveform value based on which waveform it is, converted to 0 at the top and 1 at the bottom
 	//assumes 0 <= periodX < 1

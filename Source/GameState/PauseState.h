@@ -20,6 +20,7 @@ public:
 		Reset = 1 << 1,
 		Exit = 1 << 2,
 		Load = 1 << 3,
+		RequestHint = 1 << 4,
 	};
 private:
 	class PauseMenu onlyInDebug(: public ObjCounter) {

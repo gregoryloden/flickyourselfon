@@ -101,7 +101,7 @@ void PlayerState::copyPlayerState(PlayerState* other) {
 	lastGoalY = other->lastGoalY;
 	setUndoState(undoState, other->undoState.get());
 	setUndoState(redoState, other->redoState.get());
-	tryCollectCompletedHint(other);
+	hintState.set(other->hintState.get());
 }
 pooledReferenceCounterDefineRelease(PlayerState)
 void PlayerState::prepareReturnToPool() {
@@ -835,6 +835,9 @@ void PlayerState::tryCollectCompletedHint(PlayerState* other) {
 	hintSearchThread = nullptr;
 	hintState.set(hintSearchStorage.get());
 	hintSearchStorage.set(nullptr);
+}
+bool PlayerState::shouldSuggestUndoReset() {
+	return hintState.get() != nullptr && hintState.get()->type == HintStateTypes::Type::UndoReset;
 }
 void PlayerState::beginKicking(int ticksTime) {
 	if (entityAnimation.get() != nullptr)

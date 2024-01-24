@@ -4,9 +4,6 @@
 
 class PauseState;
 class PlayerState;
-namespace EntityAnimationTypes {
-	class Component;
-}
 
 class GameState onlyInDebug(: public ObjCounter) {
 private:

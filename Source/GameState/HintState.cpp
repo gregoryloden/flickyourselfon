@@ -1,5 +1,7 @@
 #include "HintState.h"
 #include "GameState/MapState/Level.h"
+#include "GameState/MapState/Rail.h"
+#include "GameState/MapState/Switch.h"
 
 //////////////////////////////// HintStateTypes::PotentialLevelState ////////////////////////////////
 newInPlaceWithoutArgs(HintStateTypes::PotentialLevelState, HintStateTypes::PotentialLevelState::draftState);
@@ -78,7 +80,7 @@ HintState::HintState(objCounterParameters())
 : PooledReferenceCounter(objCounterArguments())
 , type(Type::None)
 , data()
-, animationEndTicksTime() {
+, animationEndTicksTime(0) {
 }
 HintState::~HintState() {}
 HintState* HintState::produce(objCounterParametersComma() Type pType, Data pData) {
@@ -90,3 +92,24 @@ HintState* HintState::produce(objCounterParametersComma() Type pType, Data pData
 	return h;
 }
 pooledReferenceCounterDefineRelease(HintState)
+void HintState::render(int screenLeftWorldX, int screenTopWorldY, int ticksTime) {
+	int progressTicks = ticksTime + totalDisplayTicks - animationEndTicksTime;
+	bool isOn = (progressTicks % flashOnOffTotalTicks) < flashOnOffTicks;
+	if (!isOn)
+		return;
+	float progress = (float)progressTicks / totalDisplayTicks;
+	float alpha = 0.5f - (progress + progress * progress) * 0.25f;
+	switch (type) {
+		case HintStateTypes::Type::Plane:
+			data.plane->renderHint(screenLeftWorldX, screenTopWorldY, alpha);
+			break;
+		case HintStateTypes::Type::Rail:
+			data.rail->renderHint(screenLeftWorldX, screenTopWorldY, alpha);
+			break;
+		case HintStateTypes::Type::Switch:
+			data.switch0->renderHint(screenLeftWorldX, screenTopWorldY, alpha);
+			break;
+		default:
+			break;
+	}
+}

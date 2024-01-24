@@ -324,6 +324,14 @@ void PauseState::loadMenus() {
 		{
 			newNavigationOption("resume", nullptr) COMMA
 			newEndPauseOption("save + resume", (int)EndPauseDecision::Save) COMMA
+			newNavigationOption(
+				"request hint",
+				newPauseMenu(
+					"Request Hint?",
+					{
+						newNavigationOption("cancel", nullptr) COMMA
+						newEndPauseOption("request hint", (int)EndPauseDecision::RequestHint) COMMA
+					})) COMMA
 			newControlsNavigationOption(
 				"player controls",
 				newPauseMenu(

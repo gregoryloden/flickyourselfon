@@ -72,6 +72,15 @@ void Switch::renderGroup(int screenLeftWorldX, int screenTopWorldY) {
 	GLint drawTopY = (GLint)(topY * MapState::tileSize - screenTopWorldY);
 	MapState::renderGroupRect(group, drawLeftX + 4, drawTopY + 4, drawLeftX + 8, drawTopY + 8);
 }
+void Switch::renderHint(int screenLeftWorldX, int screenTopWorldY, float alpha) {
+	glEnable(GL_BLEND);
+	glColor4f(1.0f, 1.0f, 1.0f, alpha);
+	GLint drawLeftX = (GLint)(leftX * MapState::tileSize - screenLeftWorldX);
+	GLint drawTopY = (GLint)(topY * MapState::tileSize - screenTopWorldY);
+	SpriteSheet::renderPreColoredRectangle(
+		drawLeftX, drawTopY, drawLeftX + (GLint)MapState::tileSize * 2, drawTopY + (GLint)MapState::tileSize * 2);
+	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+}
 void Switch::editorMoveTo(int newLeftX, int newTopY) {
 	leftX = newLeftX;
 	topY = newTopY;

@@ -1,22 +1,25 @@
 #include "Level.h"
 #include "GameState/HintState.h"
+#include "GameState/MapState/MapState.h"
 #include "GameState/MapState/Rail.h"
+#include "GameState/MapState/Switch.h"
+#include "Sprites/SpriteSheet.h"
 
 #define newPlane(owningLevel, indexInOwningLevel) newWithArgs(Plane, owningLevel, indexInOwningLevel)
 
 //////////////////////////////// LevelTypes::Plane::ConnectionSwitch ////////////////////////////////
-LevelTypes::Plane::ConnectionSwitch::ConnectionSwitch(short pSwitchId)
+LevelTypes::Plane::ConnectionSwitch::ConnectionSwitch(Switch* pSwitch)
 : affectedRailByteMaskData()
-, switchId(pSwitchId) {
+, switch0(pSwitch) {
 }
 LevelTypes::Plane::ConnectionSwitch::~ConnectionSwitch() {}
 
 //////////////////////////////// LevelTypes::Plane::Connection ////////////////////////////////
-LevelTypes::Plane::Connection::Connection(Plane* pToPlane, int pRailByteIndex, int pRailTileOffsetByteMask, short pRailId)
+LevelTypes::Plane::Connection::Connection(Plane* pToPlane, int pRailByteIndex, int pRailTileOffsetByteMask, Rail* pRail)
 : toPlane(pToPlane)
 , railByteIndex(pRailByteIndex)
 , railTileOffsetByteMask(pRailTileOffsetByteMask)
-, railId(pRailId) {
+, rail(pRail) {
 }
 LevelTypes::Plane::Connection::~Connection() {
 	//don't delete the plane, it's owned by a Level
@@ -41,11 +44,11 @@ owningLevel(pOwningLevel)
 LevelTypes::Plane::~Plane() {
 	//don't delete owningLevel, it owns and deletes this
 }
-int LevelTypes::Plane::addConnectionSwitch(short switchId) {
-	connectionSwitches.push_back(ConnectionSwitch(switchId));
+int LevelTypes::Plane::addConnectionSwitch(Switch* switch0) {
+	connectionSwitches.push_back(ConnectionSwitch(switch0));
 	return (int)connectionSwitches.size() - 1;
 }
-bool LevelTypes::Plane::addConnection(Plane* toPlane, bool isRail, short railId) {
+bool LevelTypes::Plane::addConnection(Plane* toPlane, bool isRail) {
 	//don't connect to a plane twice
 	for (Connection& connection : connections) {
 		if (connection.toPlane == toPlane)
@@ -53,25 +56,26 @@ bool LevelTypes::Plane::addConnection(Plane* toPlane, bool isRail, short railId)
 	}
 	//add a climb/fall connection
 	if (!isRail) {
-		connections.push_back(Connection(toPlane, Level::absentRailByteIndex, 0, railId));
+		connections.push_back(Connection(toPlane, Level::absentRailByteIndex, 0, nullptr));
 		return true;
 	}
 	//add a rail connection to a plane that is already connected to this plane
 	for (Connection& connection : toPlane->connections) {
 		if (connection.toPlane != this)
 			continue;
-		connections.push_back(Connection(toPlane, connection.railByteIndex, connection.railTileOffsetByteMask, railId));
+		connections.push_back(
+			Connection(toPlane, connection.railByteIndex, connection.railTileOffsetByteMask, connection.rail));
 		return true;
 	}
 	return false;
 }
-void LevelTypes::Plane::addRailConnection(Plane* toPlane, RailByteMaskData* railByteMaskData, short railId) {
+void LevelTypes::Plane::addRailConnection(Plane* toPlane, RailByteMaskData* railByteMaskData, Rail* rail) {
 	connections.push_back(
 		Connection(
 			toPlane,
 			railByteMaskData->railByteIndex,
 			Level::baseRailTileOffsetByteMask << railByteMaskData->railBitShift,
-			railId));
+			rail));
 }
 void LevelTypes::Plane::writeVictoryPlaneIndex(Plane* victoryPlane, int pIndexInOwningLevel) {
 	indexInOwningLevel = 0;
@@ -103,7 +107,7 @@ HintState* LevelTypes::Plane::pursueSolution(HintStateTypes::PotentialLevelState
 			nextPotentialLevelState->data.plane = connection.toPlane;
 		} else {
 			nextPotentialLevelState->type = HintStateTypes::Type::Rail;
-			nextPotentialLevelState->data.railId = connection.railId;
+			nextPotentialLevelState->data.rail = connection.rail;
 		}
 		#ifdef DEBUG
 			Level::hintSearchUniqueStates++;
@@ -157,7 +161,7 @@ HintState* LevelTypes::Plane::pursueSolution(HintStateTypes::PotentialLevelState
 		HintStateTypes::PotentialLevelState* nextPotentialLevelState =
 			newHintStatePotentialLevelState(currentState, this, &HintStateTypes::PotentialLevelState::draftState);
 		nextPotentialLevelState->type = HintStateTypes::Type::Switch;
-		nextPotentialLevelState->data.switchId = connectionSwitch.switchId;
+		nextPotentialLevelState->data.switch0 = connectionSwitch.switch0;
 		#ifdef DEBUG
 			Level::hintSearchUniqueStates++;
 		#endif
@@ -166,6 +170,17 @@ HintState* LevelTypes::Plane::pursueSolution(HintStateTypes::PotentialLevelState
 	}
 
 	return nullptr;
+}
+void LevelTypes::Plane::renderHint(int screenLeftWorldX, int screenTopWorldY, float alpha) {
+	glEnable(GL_BLEND);
+	glColor4f(1.0f, 1.0f, 1.0f, alpha);
+	for (Tile& tile : tiles) {
+		GLint leftX = (GLint)(tile.x * MapState::tileSize - screenLeftWorldX);
+		GLint topY = (GLint)(tile.y * MapState::tileSize - screenTopWorldY);
+		SpriteSheet::renderPreColoredRectangle(
+			leftX, topY, leftX + (GLint)MapState::tileSize, topY + (GLint)MapState::tileSize);
+	}
+	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 }
 
 //////////////////////////////// LevelTypes::RailByteMaskData ////////////////////////////////
@@ -202,7 +217,7 @@ planes()
 , railByteMaskBitsTracked(0)
 , victoryPlane(nullptr)
 , minimumRailColor(0)
-, radioTowerSwitchId(0) {
+, radioTowerSwitch(nullptr) {
 }
 Level::~Level() {
 	for (Plane* plane : planes)
@@ -260,7 +275,7 @@ HintState* Level::generateHint(
 {
 	if (lastActivatedSwitchColor < minimumRailColor) {
 		HintStateTypes::Data data;
-		data.switchId = radioTowerSwitchId;
+		data.switch0 = radioTowerSwitch;
 		return newHintState(HintStateTypes::Type::Switch, data);
 	} else if (victoryPlane == nullptr)
 		return newHintState(HintStateTypes::Type::None, {});
@@ -340,5 +355,5 @@ HintState* Level::generateHint(
 		Logger::debugLogger.logString(hintSearchPerformanceMessage.str());
 	#endif
 
-	return result != nullptr ? result : newHintState(HintStateTypes::Type::None, {});
+	return result != nullptr ? result : newHintState(HintStateTypes::Type::UndoReset, {});
 }

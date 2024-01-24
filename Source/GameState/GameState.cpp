@@ -89,6 +89,8 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 				Logger::gameplayLogger.log("  load state");
 				loadCachedSavedState(ticksTime - gameTimeOffsetTicksDuration);
 			}
+			if ((endPauseDecision & (int)PauseState::EndPauseDecision::RequestHint) != 0 && !Editor::isActive)
+				mapState.get()->setHint(playerState.get()->getHint(), ticksTime - gameTimeOffsetTicksDuration);
 			//don't reset the game in editor mode
 			if ((endPauseDecision & (int)PauseState::EndPauseDecision::Reset) != 0 && !Editor::isActive) {
 				Logger::gameplayLogger.log("  reset game");
@@ -302,7 +304,7 @@ void GameState::render(int ticksTime) {
 	mapState.get()->renderAbovePlayer(camera, showConnections, gameTicksTime);
 	if (sawIntroAnimation && !camera->hasAnimation()) {
 		playerState.get()->renderTutorials();
-		mapState.get()->renderTutorials(showConnections);
+		mapState.get()->renderTutorials(showConnections, playerState.get()->shouldSuggestUndoReset());
 	}
 
 	short contextualGroupsRailSwitchId;

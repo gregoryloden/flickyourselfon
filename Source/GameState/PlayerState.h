@@ -97,6 +97,7 @@ public:
 	char getZ() { return z; }
 	bool getFinishedMoveTutorial() { return finishedMoveTutorial; }
 	bool getFinishedKickTutorial() { return finishedKickTutorial; }
+	HintState* getHint() { return hintState.get(); }
 	void obtainBoot() { hasBoot = true; }
 	//initialize and return a PlayerState
 	static PlayerState* produce(objCounterParametersComma() MapState* mapState);
@@ -191,6 +192,8 @@ private:
 	//collect the completed hint if applicable
 	void tryCollectCompletedHint(PlayerState* other);
 public:
+	//returns true if the player has an UndoReset hint
+	bool shouldSuggestUndoReset();
 	//if we don't have a kicking animation, start one
 	//this should be called after the player has been updated
 	void beginKicking(int ticksTime);

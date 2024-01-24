@@ -34,6 +34,8 @@ public:
 		bool isOn);
 	//render the group without rendering the switch
 	void renderGroup(int screenLeftWorldX, int screenTopWorldY);
+	//render boxes over the tiles of this switch
+	void renderHint(int screenLeftWorldX, int screenTopWorldY, float alpha);
 	//update the position of this switch
 	void editorMoveTo(int newLeftX, int newTopY);
 	//we're saving this switch to the floor file, get the data we need at this tile

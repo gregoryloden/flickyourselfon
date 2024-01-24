@@ -73,7 +73,8 @@ MapState::MapState(objCounterParameters())
 , particles()
 , radioWavesColor(-1)
 , waveformStartTicksTime(0)
-, waveformEndTicksTime(0) {
+, waveformEndTicksTime(0)
+, hintState(nullptr) {
 	for (int i = 0; i < (int)rails.size(); i++)
 		railStates.push_back(newRailState(rails[i]));
 	for (Switch* switch0 : switches)
@@ -113,6 +114,7 @@ MapState* MapState::produce(objCounterParameters()) {
 pooledReferenceCounterDefineRelease(MapState)
 void MapState::prepareReturnToPool() {
 	particles.clear();
+	hintState.set(nullptr);
 }
 void MapState::buildMap() {
 	SDL_Surface* floor = FileUtils::loadImage(floorFileName);
@@ -322,11 +324,10 @@ void MapState::buildLevels() {
 		if (planeId == 0)
 			continue;
 		LevelTypes::Plane* plane = planes[planeId - 1];
-		short switchId = railSwitchIds[tile];
 		if (switch0->getGroup() == 0)
-			plane->getOwningLevel()->assignRadioTowerSwitchId(switchId);
+			plane->getOwningLevel()->assignRadioTowerSwitch(switch0);
 		else
-			planeConnectionSwitches.push_back(PlaneConnectionSwitch(switch0, plane, plane->addConnectionSwitch(switchId)));
+			planeConnectionSwitches.push_back(PlaneConnectionSwitch(switch0, plane, plane->addConnectionSwitch(switch0)));
 	}
 
 	//organize switch/plane combinations so that we can refer to them when adding rail connections
@@ -343,15 +344,14 @@ void MapState::buildLevels() {
 	//add connections between planes
 	for (PlaneConnection& planeConnection : planeConnections) {
 		LevelTypes::Plane* toPlane = planes[planeIds[planeConnection.toTile] - 1];
-		if (planeConnection.fromPlane->addConnection(
-				toPlane, planeConnection.railId != absentRailSwitchId, planeConnection.railId))
+		if (planeConnection.fromPlane->addConnection(toPlane, planeConnection.railId != absentRailSwitchId))
 			continue;
 
 		//we have a new rail - add a connection to it and add the data to all applicable switches
 		LevelTypes::RailByteMaskData* railByteMaskData =
 			planeConnection.fromPlane->getOwningLevel()->getRailByteMaskData(planeConnection.levelRailByteMaskDataIndex);
-		planeConnection.fromPlane->addRailConnection(toPlane, railByteMaskData, planeConnection.railId);
 		Rail* rail = rails[planeConnection.railId & railSwitchIndexBitmask];
+		planeConnection.fromPlane->addRailConnection(toPlane, railByteMaskData, rail);
 		vector<PlaneConnectionSwitch*>& planeConnectionSwitchesByGroup =
 			planeConnectionSwitchesByGroupByColor[rail->getColor()];
 		for (char group : rail->getGroups()) {
@@ -625,6 +625,7 @@ void MapState::updateWithPreviousMapState(MapState* prev, int ticksTime) {
 	radioWavesColor = prev->radioWavesColor;
 	waveformStartTicksTime = prev->waveformStartTicksTime;
 	waveformEndTicksTime = prev->waveformEndTicksTime;
+	hintState.set(prev->hintState.get());
 
 	if (Editor::isActive) {
 		//since the editor can add switches and rails, make sure we update our list to track them
@@ -792,6 +793,11 @@ HintState* MapState::generateHint(float playerX, float playerY) {
 		},
 		lastActivatedSwitchColor);
 }
+void MapState::setHint(HintState* pHintState, int ticksTime) {
+	hintState.set(pHintState);
+	if (pHintState != nullptr)
+		pHintState->animationEndTicksTime = ticksTime + HintState::totalDisplayTicks;
+}
 void MapState::renderBelowPlayer(EntityState* camera, float playerWorldGroundY, char playerZ, int ticksTime) {
 	glDisable(GL_BLEND);
 	//render the map
@@ -822,6 +828,13 @@ void MapState::renderBelowPlayer(EntityState* camera, float playerWorldGroundY, 
 
 	if (Editor::isActive && editorHideNonTiles)
 		return;
+
+	//draw plane hints below rails, if applicable
+	HintStateTypes::Type hintType = hintState.get() != nullptr && hintState.get()->animationEndTicksTime >= ticksTime
+		? hintState.get()->type
+		: HintStateTypes::Type::None;
+	if (hintType == HintStateTypes::Type::Plane)
+		hintState.get()->render(screenLeftWorldX, screenTopWorldY, ticksTime);
 
 	//draw rail shadows, rails (that are below the player), and switches
 	for (RailState* railState : railStates)
@@ -856,6 +869,10 @@ void MapState::renderBelowPlayer(EntityState* camera, float playerWorldGroundY, 
 		if (!particle.get()->getIsAbovePlayer())
 			particle.get()->render(camera, ticksTime);
 	}
+
+	//draw rail and switch hints, if applicable
+	if (hintType == HintStateTypes::Type::Rail || hintType == HintStateTypes::Type::Switch)
+		hintState.get()->render(screenLeftWorldX, screenTopWorldY, ticksTime);
 }
 void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int ticksTime) {
 	if (Editor::isActive && editorHideNonTiles)
@@ -979,13 +996,19 @@ void MapState::renderGroupsForRailsFromSwitch(EntityState* camera, short switchI
 	}
 	switch0->renderGroup(screenLeftWorldX, screenTopWorldY);
 }
-void MapState::renderTutorials(bool showConnections) {
+void MapState::renderTutorials(bool showConnections, bool shouldSuggestUndoReset) {
 	if (lastActivatedSwitchColor < 0)
 		return;
 	if (!finishedMapCameraTutorial)
 		renderControlsTutorial(mapCameraTutorialText, { Config::mapCameraKeyBinding.value });
 	else if (showConnections && !finishedConnectionsTutorial)
 		renderControlsTutorial(showConnectionsTutorialText, { Config::showConnectionsKeyBinding.value });
+	else if (shouldSuggestUndoReset) {
+		glColor4f(1.0f, 1.0f, 1.0f, 0.75f);
+		float afterUndoX = renderControlsTutorial(undoTutorialText, { Config::undoKeyBinding.value });
+		Text::render(slashResetTutorialText, afterUndoX, tutorialBaselineY, 1.0f);
+		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+	}
 }
 void MapState::renderGroupRect(char group, GLint leftX, GLint topY, GLint rightX, GLint bottomY) {
 	GLint midX = (leftX + rightX) / 2;
@@ -996,7 +1019,7 @@ void MapState::renderGroupRect(char group, GLint leftX, GLint topY, GLint rightX
 	SpriteSheet::renderFilledRectangle(
 		(float)((group >> 3) & 1), (float)((group >> 4) & 1), (float)((group >> 5) & 1), 1.0f, midX, topY, rightX, bottomY);
 }
-void MapState::renderControlsTutorial(const char* text, vector<SDL_Scancode> keys) {
+float MapState::renderControlsTutorial(const char* text, vector<SDL_Scancode> keys) {
 	Text::render(text, tutorialLeftX, tutorialBaselineY, 1.0f);
 	float leftX = tutorialLeftX + Text::getMetrics(text, 1.0f).charactersWidth;
 	for (SDL_Scancode keyCode : keys) {
@@ -1006,6 +1029,7 @@ void MapState::renderControlsTutorial(const char* text, vector<SDL_Scancode> key
 		Text::renderWithKeyBackground(key, leftX, tutorialBaselineY, 1.0f);
 		leftX += keyBackgroundMetrics.charactersWidth + 1;
 	}
+	return leftX;
 }
 float MapState::waveformY(char color, float periodX) {
 	switch (color) {

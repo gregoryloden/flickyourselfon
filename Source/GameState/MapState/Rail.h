@@ -91,6 +91,8 @@ public:
 	void renderShadow(int screenLeftWorldX, int screenTopWorldY);
 	//render groups where the rail would be at 0 offset
 	void renderGroups(int screenLeftWorldX, int screenTopWorldY);
+	//render boxes over the tiles of this rail
+	void renderHint(int screenLeftWorldX, int screenTopWorldY, float alpha);
 	//remove this group from the rail if it contains it
 	//returns whether we removed a group
 	bool editorRemoveGroup(char group);
