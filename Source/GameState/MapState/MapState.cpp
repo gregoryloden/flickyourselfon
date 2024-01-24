@@ -930,8 +930,10 @@ void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int 
 				railState->renderMovementDirections(screenLeftWorldX, screenTopWorldY);
 			rail->renderGroups(screenLeftWorldX, screenTopWorldY);
 		}
-		for (Switch* switch0 : switches)
-			switch0->renderGroup(screenLeftWorldX, screenTopWorldY);
+		for (Switch* switch0 : switches) {
+			if (switch0->getGroup() != 0)
+				switch0->renderGroup(screenLeftWorldX, screenTopWorldY);
+		}
 		for (ResetSwitch* resetSwitch : resetSwitches)
 			resetSwitch->renderGroups(screenLeftWorldX, screenTopWorldY);
 	}
