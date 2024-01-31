@@ -61,8 +61,15 @@ void KickAction::render(float centerX, float bottomY, bool hasRailsToReset) {
 		case KickActionType::ResetSwitch: {
 			if (!Config::resetSwitchKickIndicator.isOn())
 				return;
-			const char* text = hasRailsToReset ? "Reset" : u8"❌";
-			Text::render(text, centerX - Text::getMetrics(text, 1.0f).charactersWidth * 0.5f, bottomY - 2.0f, 1.0f);
+			if (!hasRailsToReset)
+				glColor4f(1.0f, 1.0f, 1.0f, 0.5f);
+			const char* resetText = "Reset";
+			Text::render(resetText, centerX - Text::getMetrics(resetText, 1.0f).charactersWidth * 0.5f, bottomY - 2.0f, 1.0f);
+			if (!hasRailsToReset) {
+				glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+				const char* xText = u8"❌";
+				Text::render(xText, centerX - Text::getMetrics(xText, 1.0f).charactersWidth * 0.5f, bottomY - 2.0f, 1.0f);
+			}
 			return;
 		}
 		default:
