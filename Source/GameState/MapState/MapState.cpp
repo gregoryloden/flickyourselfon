@@ -1100,9 +1100,10 @@ void MapState::logGroup(char group, stringstream* message) {
 }
 void MapState::logSwitchKick(short switchId) {
 	short switchIndex = switchId & railSwitchIndexBitmask;
+	Switch* switch0 = switches[switchIndex];
 	stringstream message;
-	message << "  switch " << switchIndex << " (";
-	logGroup(switches[switchIndex]->getGroup(), &message);
+	message << "  switch " << switchIndex << " (" << (int)switch0->getColor() << " ";
+	logGroup(switch0->getGroup(), &message);
 	message << ")";
 	Logger::gameplayLogger.logString(message.str());
 }
@@ -1114,17 +1115,18 @@ void MapState::logResetSwitchKick(short resetSwitchId) {
 }
 void MapState::logRailRide(short railId, int playerX, int playerY) {
 	short railIndex = railId & railSwitchIndexBitmask;
+	Rail* rail = rails[railIndex];
 	stringstream message;
-	message << "  rail " << railIndex << " (";
+	message << "  rail " << railIndex << " (" << (int)rail->getColor() << " ";
 	bool skipComma = true;
-	for (char group : rails[railIndex]->getGroups()) {
+	for (char group : rail->getGroups()) {
 		if (skipComma)
 			skipComma = false;
 		else
 			message << ", ";
 		logGroup(group, &message);
 	}
-	message << ")" << " " << playerX << " " << playerY;
+	message << ") " << playerX << " " << playerY;
 	Logger::gameplayLogger.logString(message.str());
 }
 void MapState::saveState(ofstream& file) {
