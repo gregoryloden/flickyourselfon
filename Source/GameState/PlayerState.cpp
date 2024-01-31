@@ -246,10 +246,11 @@ void PlayerState::updateWithPreviousPlayerState(PlayerState* prev, bool hasKeybo
 	hasBoot = true;
 
 	//update this player state normally by reading from the last state
-	updatePositionWithPreviousPlayerState(prev, hasKeyboardControl, ticksTime);
+	const Uint8* keyboardState = hasKeyboardControl ? SDL_GetKeyboardState(nullptr) : nullptr;
+	updatePositionWithPreviousPlayerState(prev, keyboardState, ticksTime);
 	if (!Editor::isActive)
 		collideWithEnvironmentWithPreviousPlayerState(prev);
-	updateSpriteWithPreviousPlayerState(prev, ticksTime, !previousStateHadEntityAnimation);
+	updateSpriteWithPreviousPlayerState(prev, keyboardState, ticksTime, previousStateHadEntityAnimation);
 	if (!Editor::isActive) {
 		setKickAction();
 		tryAutoKick(prev, ticksTime);
@@ -261,9 +262,8 @@ void PlayerState::updateWithPreviousPlayerState(PlayerState* prev, bool hasKeybo
 	lastControlledX = x.get()->getValue(0);
 	lastControlledY = y.get()->getValue(0);
 }
-void PlayerState::updatePositionWithPreviousPlayerState(PlayerState* prev, bool hasKeyboardControl, int ticksTime) {
-	const Uint8* keyboardState = SDL_GetKeyboardState(nullptr);
-	if (hasKeyboardControl) {
+void PlayerState::updatePositionWithPreviousPlayerState(PlayerState* prev, const Uint8* keyboardState, int ticksTime) {
+	if (keyboardState != nullptr) {
 		xDirection = (char)(keyboardState[Config::rightKeyBinding.value] - keyboardState[Config::leftKeyBinding.value]);
 		yDirection = (char)(keyboardState[Config::downKeyBinding.value] - keyboardState[Config::upKeyBinding.value]);
 	} else {
@@ -271,8 +271,12 @@ void PlayerState::updatePositionWithPreviousPlayerState(PlayerState* prev, bool 
 		yDirection = 0;
 	}
 	float speedPerTick = (xDirection & yDirection) != 0 ? diagonalSpeedPerTick : baseSpeedPerTick;
-	if (Editor::isActive)
-		speedPerTick *= keyboardState[Config::kickKeyBinding.value] == 0 ? 2.5f : 8.0f;
+	if (keyboardState == nullptr)
+		; //no adjustments to speedPerTick if we're not controlling the player
+	else if (Editor::isActive)
+		speedPerTick *= keyboardState[Config::sprintKeyBinding.value] == 0 ? 2.5f : 8.0f;
+	else if (keyboardState[Config::sprintKeyBinding.value] != 0)
+		speedPerTick *= sprintModifier;
 
 	int ticksSinceLastUpdate = ticksTime - prev->lastUpdateTicksTime;
 	DynamicValue* prevX = prev->x.get();
@@ -422,7 +426,9 @@ float PlayerState::yCollisionDuration(CollisionRect* other) {
 		? (collisionRect->top - other->bottom) / lastYMovedDelta
 		: (collisionRect->bottom - other->top) / lastYMovedDelta;
 }
-void PlayerState::updateSpriteWithPreviousPlayerState(PlayerState* prev, int ticksTime, bool usePreviousStateSpriteAnimation) {
+void PlayerState::updateSpriteWithPreviousPlayerState(
+	PlayerState* prev, const Uint8* keyboardState, int ticksTime, bool restartSpriteAnimation)
+{
 	bool moving = (xDirection | yDirection) != 0;
 	//update the sprite direction
 	//if the player did not change direction or is not moving, use the last direction
@@ -446,12 +452,13 @@ void PlayerState::updateSpriteWithPreviousPlayerState(PlayerState* prev, int tic
 	//update the animation
 	if (!moving)
 		spriteAnimation = nullptr;
-	else if (prev->spriteAnimation != nullptr && usePreviousStateSpriteAnimation) {
-		spriteAnimation = prev->spriteAnimation;
-		spriteAnimationStartTicksTime = prev->spriteAnimationStartTicksTime;
-	} else {
-		spriteAnimation = hasBoot ? SpriteRegistry::playerBootWalkingAnimation : SpriteRegistry::playerWalkingAnimation;
-		spriteAnimationStartTicksTime = ticksTime;
+	else {
+		spriteAnimation = hasBoot
+			? (keyboardState != nullptr && keyboardState[Config::sprintKeyBinding.value] != 0)
+				? SpriteRegistry::playerBootSprintingAnimation
+				: SpriteRegistry::playerBootWalkingAnimation
+			: SpriteRegistry::playerWalkingAnimation;
+		spriteAnimationStartTicksTime = restartSpriteAnimation ? ticksTime : prev->spriteAnimationStartTicksTime;
 	}
 }
 void PlayerState::setKickAction() {

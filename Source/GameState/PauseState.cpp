@@ -342,6 +342,7 @@ void PauseState::loadMenus() {
 						newKeyBindingOption(&Config::downKeyBinding, "down") COMMA
 						newKeyBindingOption(&Config::leftKeyBinding, "left") COMMA
 						newKeyBindingOption(&Config::kickKeyBinding, "kick/climb/fall") COMMA
+						newKeyBindingOption(&Config::sprintKeyBinding, "sprint") COMMA
 						newDefaultKeyBindingsOption() COMMA
 						newAcceptKeyBindingsOption() COMMA
 						newNavigationOption("back", nullptr)

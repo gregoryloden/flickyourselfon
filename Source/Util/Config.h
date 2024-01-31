@@ -77,6 +77,7 @@ public:
 	static ConfigTypes::KeyBindingSetting downKeyBinding;
 	static ConfigTypes::KeyBindingSetting leftKeyBinding;
 	static ConfigTypes::KeyBindingSetting kickKeyBinding;
+	static ConfigTypes::KeyBindingSetting sprintKeyBinding;
 	static ConfigTypes::KeyBindingSetting undoKeyBinding;
 	static ConfigTypes::KeyBindingSetting redoKeyBinding;
 	static ConfigTypes::KeyBindingSetting showConnectionsKeyBinding;

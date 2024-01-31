@@ -19,6 +19,7 @@ SpriteSheet* SpriteRegistry::borderArrows = nullptr;
 SpriteAnimation* SpriteRegistry::playerWalkingAnimation = nullptr;
 SpriteAnimation* SpriteRegistry::playerLegLiftAnimation = nullptr;
 SpriteAnimation* SpriteRegistry::playerBootWalkingAnimation = nullptr;
+SpriteAnimation* SpriteRegistry::playerBootSprintingAnimation = nullptr;
 SpriteAnimation* SpriteRegistry::playerFastBootWalkingAnimation = nullptr;
 SpriteAnimation* SpriteRegistry::playerKickingAnimation = nullptr;
 SpriteAnimation* SpriteRegistry::playerFastKickingAnimation = nullptr;
@@ -66,6 +67,14 @@ void SpriteRegistry::loadAll() {
 			newSpriteAnimationFrame(5, SpriteAnimation::absentSpriteIndex, playerWalkingAnimationTicksPerFrame) COMMA
 			newSpriteAnimationFrame(4, SpriteAnimation::absentSpriteIndex, playerWalkingAnimationTicksPerFrame) COMMA
 			newSpriteAnimationFrame(6, SpriteAnimation::absentSpriteIndex, playerWalkingAnimationTicksPerFrame)
+		});
+	playerBootSprintingAnimation = newSpriteAnimation(
+		player,
+		{
+			newSpriteAnimationFrame(4, SpriteAnimation::absentSpriteIndex, playerSprintingAnimationTicksPerFrame) COMMA
+			newSpriteAnimationFrame(5, SpriteAnimation::absentSpriteIndex, playerSprintingAnimationTicksPerFrame) COMMA
+			newSpriteAnimationFrame(4, SpriteAnimation::absentSpriteIndex, playerSprintingAnimationTicksPerFrame) COMMA
+			newSpriteAnimationFrame(6, SpriteAnimation::absentSpriteIndex, playerSprintingAnimationTicksPerFrame) COMMA
 		});
 	playerFastBootWalkingAnimation = newSpriteAnimation(
 		player,
@@ -169,6 +178,7 @@ void SpriteRegistry::unloadAll() {
 	delete playerWalkingAnimation;
 	delete playerLegLiftAnimation;
 	delete playerBootWalkingAnimation;
+	delete playerBootSprintingAnimation;
 	delete playerFastBootWalkingAnimation;
 	delete playerKickingAnimation;
 	delete playerFastKickingAnimation;

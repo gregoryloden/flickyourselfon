@@ -6,6 +6,7 @@ class SpriteSheet;
 class SpriteRegistry {
 public:
 	static const int playerWalkingAnimationTicksPerFrame = 250;
+	static const int playerSprintingAnimationTicksPerFrame = playerWalkingAnimationTicksPerFrame / 2;
 	static const int playerFastWalkingAnimationTicksPerFrame = playerWalkingAnimationTicksPerFrame / 4;
 	static const int playerKickingAnimationTicksPerFrame = 300;
 	static const int playerFastKickingAnimationTicksPerFrame = 250;
@@ -40,6 +41,7 @@ public:
 	static SpriteAnimation* playerWalkingAnimation;
 	static SpriteAnimation* playerLegLiftAnimation;
 	static SpriteAnimation* playerBootWalkingAnimation;
+	static SpriteAnimation* playerBootSprintingAnimation;
 	static SpriteAnimation* playerFastBootWalkingAnimation;
 	static SpriteAnimation* playerKickingAnimation;
 	static SpriteAnimation* playerFastKickingAnimation;

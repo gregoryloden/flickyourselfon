@@ -40,6 +40,7 @@ public:
 	static constexpr float introAnimationPlayerCenterY = 106.5f + (float)(MapState::firstLevelTileOffsetY * MapState::tileSize);
 	static constexpr float baseSpeedPerTick = 40.0f / Config::ticksPerSecond;
 	static constexpr float diagonalSpeedPerTick = baseSpeedPerTick * MathUtils::sqrtConst(0.5f);
+	static constexpr float sprintModifier = 2.0f;
 private:
 	static const int minUndoTicksDuration = 250;
 	static constexpr float undoSpeedPerTick = baseSpeedPerTick * 4;
@@ -139,7 +140,7 @@ public:
 	void updateWithPreviousPlayerState(PlayerState* prev, bool hasKeyboardControl, int ticksTime);
 private:
 	//update the position of this PlayerState by reading from the previous state
-	void updatePositionWithPreviousPlayerState(PlayerState* prev, bool hasKeyboardControl, int ticksTime);
+	void updatePositionWithPreviousPlayerState(PlayerState* prev, const Uint8* keyboardState, int ticksTime);
 	//set the new value and update the left and right
 	void setXAndUpdateCollisionRect(DynamicValue* newX);
 	//set the new value and update the top and bottom
@@ -158,7 +159,8 @@ private:
 	//returns the fraction of the update spent within the y bounds of the given rect, based on the velocity this frame
 	float yCollisionDuration(CollisionRect* other);
 	//update the sprite (and possibly the animation) of this PlayerState by reading from the previous state
-	void updateSpriteWithPreviousPlayerState(PlayerState* prev, int ticksTime, bool usePreviousStateSpriteAnimation);
+	void updateSpriteWithPreviousPlayerState(
+		PlayerState* prev, const Uint8* keyboardState, int ticksTime, bool restartSpriteAnimation);
 	//set the kick action if one is available
 	void setKickAction();
 	//set a rail kick action if there is a raised rail we can ride across
