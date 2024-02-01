@@ -63,6 +63,8 @@ PlayerState::PlayerState(objCounterParameters())
 }
 PlayerState::~PlayerState() {
 	delete collisionRect;
+	//only one PlayerState needs to do this, but this is the right place to do it
+	waitForHintThreadToFinish();
 }
 PlayerState* PlayerState::produce(objCounterParametersComma() MapState* mapState) {
 	initializeWithNewFromPool(p, PlayerState)
@@ -186,17 +188,21 @@ void PlayerState::generateHint(HintState* useHint, int ticksTime) {
 		float hintY = y.get()->getValue(timeDiff) + boundingBoxCenterYOffset;
 		ReferenceCounterHolder<MapState> mapStateCapture (mapState.get());
 		//if another hint is being generated, force-wait for it to finish, even if it delays the update
-		if (hintSearchThread != nullptr) {
-			hintSearchThread->join();
-			delete hintSearchThread;
-			hintSearchStorage.set(nullptr);
-		}
+		waitForHintThreadToFinish();
 		hintSearchThread = new thread([hintX, hintY, mapStateCapture]() {
 			Logger::setupLogQueue("H");
 			hintSearchStorage.set(mapStateCapture.get()->generateHint(hintX, hintY));
 			Logger::markLogQueueUnused();
 		});
 	}
+}
+void PlayerState::waitForHintThreadToFinish() {
+	if (hintSearchThread == nullptr)
+		return;
+	hintSearchThread->join();
+	delete hintSearchThread;
+	hintSearchThread = nullptr;
+	hintSearchStorage.set(nullptr);
 }
 bool PlayerState::showTutorialConnectionsForKickAction() {
 	KickAction* kickAction = availableKickAction.get();

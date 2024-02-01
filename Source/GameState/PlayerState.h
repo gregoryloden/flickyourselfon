@@ -132,6 +132,8 @@ public:
 		float pX, float pY, SpriteAnimation* pAnimation, SpriteDirection pDirection, int particleStartTicksTime);
 	//generate a hint based on our current state, or use the given state if present
 	virtual void generateHint(HintState* useHint, int ticksTime);
+	//wait for the hint thread to finish, and clear it
+	void waitForHintThreadToFinish();
 	//return whether we have a kick action where we can show connections
 	bool showTutorialConnectionsForKickAction();
 	//if we have a kick action matching the given type, write its railSwitchId out and return true, otherwise return false
