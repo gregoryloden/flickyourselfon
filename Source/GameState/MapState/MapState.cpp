@@ -596,17 +596,21 @@ KickActionType MapState::getSwitchKickActionType(short switchId) {
 		return KickActionType::Switch;
 }
 char MapState::horizontalTilesHeight(int lowMapX, int highMapX, int mapY) {
+	if (tileHasResetSwitchBody(lowMapX, mapY) || tileHasSwitch(lowMapX, mapY))
+		return invalidHeight;
 	char foundHeight = getHeight(lowMapX, mapY);
 	for (int mapX = lowMapX + 1; mapX <= highMapX; mapX++) {
-		if (getHeight(mapX, mapY) != foundHeight)
+		if (getHeight(mapX, mapY) != foundHeight || tileHasResetSwitchBody(mapX, mapY) || tileHasSwitch(mapX, mapY))
 			return invalidHeight;
 	}
 	return foundHeight;
 }
 char MapState::verticalTilesHeight(int mapX, int lowMapY, int highMapY) {
+	if (tileHasResetSwitchBody(mapX, lowMapY) || tileHasSwitch(mapX, lowMapY))
+		return invalidHeight;
 	char foundHeight = getHeight(mapX, lowMapY);
 	for (int mapY = lowMapY + 1; mapY <= lowMapY; lowMapY++) {
-		if (getHeight(mapX, mapY) != foundHeight)
+		if (getHeight(mapX, mapY) != foundHeight || tileHasResetSwitchBody(mapX, mapY) || tileHasSwitch(mapX, mapY))
 			return invalidHeight;
 	}
 	return foundHeight;
