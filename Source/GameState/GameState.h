@@ -79,10 +79,12 @@ private:
 	#endif
 	static constexpr char* savedGameFileName = "kyo.sav";
 	static constexpr char* sawIntroAnimationFileValue = "sawIntroAnimation";
+	static constexpr char* perpetualHintsFileValue = "perpetualHints";
 
 	static vector<string> saveFile;
 
 	bool sawIntroAnimation;
+	bool perpetualHints;
 	TextDisplayType textDisplayType;
 	int titleAnimationStartTicksTime;
 	ReferenceCounterHolder<PlayerState> playerState;

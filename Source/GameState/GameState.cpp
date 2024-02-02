@@ -32,6 +32,7 @@ vector<string> GameState::saveFile;
 GameState::GameState(objCounterParameters())
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
 sawIntroAnimation(false)
+, perpetualHints(false)
 , textDisplayType(TextDisplayType::None)
 , titleAnimationStartTicksTime(0)
 , playerState(nullptr)
@@ -63,6 +64,7 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 
 	//copy values that don't usually change from state to state
 	sawIntroAnimation = prev->sawIntroAnimation;
+	perpetualHints = prev->perpetualHints;
 	textDisplayType = prev->textDisplayType;
 	titleAnimationStartTicksTime = prev->titleAnimationStartTicksTime;
 
@@ -127,6 +129,9 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 	//otherwise set our next camera anchor
 	} else
 		prev->camera->setNextCamera(this, gameTicksTime);
+
+	if (perpetualHints)
+		mapState.get()->setHint(playerState.get()->getHint(), gameTicksTime);
 
 	//handle events after states have been updated
 	SDL_Event gameEvent;
@@ -481,6 +486,8 @@ void GameState::loadCachedSavedState(int ticksTime) {
 	for (string& line : saveFile) {
 		if (StringUtils::startsWith(line, sawIntroAnimationFileValue))
 			sawIntroAnimation = true;
+		else if (StringUtils::startsWith(line, perpetualHintsFileValue))
+			perpetualHints = true;
 		else
 			playerState.get()->loadState(line) || mapState.get()->loadState(line);
 	}
@@ -794,6 +801,7 @@ void GameState::beginIntroAnimation(int ticksTime) {
 }
 void GameState::resetGame(int ticksTime) {
 	sawIntroAnimation = false;
+	perpetualHints = false;
 	gameTimeOffsetTicksDuration = 0;
 	pauseState.set(nullptr);
 	mapState.set(newMapState());
