@@ -68,6 +68,8 @@ void Switch::render(
 	}
 }
 void Switch::renderGroup(int screenLeftWorldX, int screenTopWorldY) {
+	if (Editor::isActive && editorIsDeleted)
+		return;
 	GLint drawLeftX = (GLint)(leftX * MapState::tileSize - screenLeftWorldX);
 	GLint drawTopY = (GLint)(topY * MapState::tileSize - screenTopWorldY);
 	MapState::renderGroupRect(group, drawLeftX + 4, drawTopY + 4, drawLeftX + 8, drawTopY + 8);
