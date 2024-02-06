@@ -88,6 +88,7 @@ class DynamicCameraAnchor: public EntityState {
 private:
 	static constexpr float speedPerSecond = 120.0f;
 	static constexpr float diagonalSpeedPerSecond = speedPerSecond * MathUtils::sqrtConst(0.5f);
+	static constexpr float sprintModifier = 2.0f;
 
 	ReferenceCounterHolder<DynamicValue> screenOverlayR;
 	ReferenceCounterHolder<DynamicValue> screenOverlayG;

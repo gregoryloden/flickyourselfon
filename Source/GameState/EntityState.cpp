@@ -133,6 +133,8 @@ void DynamicCameraAnchor::updateWithPreviousDynamicCameraAnchor(
 		char yDirection = (char)(keyboardState[Config::downKeyBinding.value] - keyboardState[Config::upKeyBinding.value]);
 		float speedPerTick =
 			((xDirection & yDirection) != 0 ? diagonalSpeedPerSecond : speedPerSecond) / (float)Config::ticksPerSecond;
+		if (keyboardState[Config::sprintKeyBinding.value] != 0)
+			speedPerTick *= sprintModifier;
 		int ticksSinceLastUpdate = ticksTime - lastUpdateTicksTime;
 		float newX = x.get()->getValue(ticksSinceLastUpdate);
 		float newY = y.get()->getValue(ticksSinceLastUpdate);

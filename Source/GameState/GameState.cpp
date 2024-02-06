@@ -473,6 +473,9 @@ void GameState::loadInitialState(int ticksTime) {
 			mapState.get()->toggleShowConnections();
 			mapState.get()->toggleShowConnections();
 		}
+		//start map mode
+		camera = dynamicCameraAnchor.get();
+		camera->copyEntityState(playerState.get());
 	//otherwise, start the game at the home screen
 	} else {
 		if (saveFile.empty())
