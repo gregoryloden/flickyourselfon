@@ -1,6 +1,9 @@
 #include "General/General.h"
 
 #define newLevel() newWithoutArgs(Level)
+#ifdef DEBUG
+	#define TRACK_HINT_SEARCH_STATS
+#endif
 
 class HintState;
 class Level;
@@ -116,7 +119,7 @@ public:
 	static vector<PotentialLevelStatesByBucket> potentialLevelStatesByBucketByPlane;
 	static deque<HintStateTypes::PotentialLevelState*> nextPotentialLevelStates;
 	static LevelTypes::Plane* cachedHintSearchVictoryPlane;
-	#ifdef DEBUG
+	#ifdef TRACK_HINT_SEARCH_STATS
 		static int hintSearchActionsChecked;
 		static int hintSearchUniqueStates;
 		static int hintSearchComparisonsPerformed;

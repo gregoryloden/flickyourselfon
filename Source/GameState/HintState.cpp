@@ -41,7 +41,7 @@ void HintStateTypes::PotentialLevelState::setHash() {
 bool HintStateTypes::PotentialLevelState::isNewState(vector<PotentialLevelState*>& potentialLevelStates) {
 	//look through every other state, and see if it matches this one
 	for (PotentialLevelState* potentialLevelState : potentialLevelStates) {
-		#ifdef DEBUG
+		#ifdef TRACK_HINT_SEARCH_STATS
 			Level::hintSearchComparisonsPerformed++;
 		#endif
 		//they can't be the same if their hashes don't match
@@ -62,12 +62,12 @@ bool HintStateTypes::PotentialLevelState::isNewState(vector<PotentialLevelState*
 }
 HintState* HintStateTypes::PotentialLevelState::getHint() {
 	PotentialLevelState* hintLevelState = this;
-	#ifdef DEBUG
+	#ifdef TRACK_HINT_SEARCH_STATS
 		Level::foundHintSearchTotalSteps = 1;
 	#endif
 	while (hintLevelState->priorState->priorState != nullptr) {
 		hintLevelState = hintLevelState->priorState;
-		#ifdef DEBUG
+		#ifdef TRACK_HINT_SEARCH_STATS
 			Level::foundHintSearchTotalSteps++;
 		#endif
 	}

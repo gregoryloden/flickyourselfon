@@ -4,6 +4,9 @@
 #include "GameState/MapState/Rail.h"
 #include "GameState/MapState/Switch.h"
 #include "Sprites/SpriteSheet.h"
+#ifdef TRACK_HINT_SEARCH_STATS
+	#include "Util/Logger.h"
+#endif
 
 #define newPlane(owningLevel, indexInOwningLevel) newWithArgs(Plane, owningLevel, indexInOwningLevel)
 
@@ -85,7 +88,7 @@ HintState* LevelTypes::Plane::pursueSolution(HintStateTypes::PotentialLevelState
 	unsigned int bucket = currentState->railByteMasksHash % Level::PotentialLevelStatesByBucket::bucketSize;
 	//check connections
 	for (Connection& connection : connections) {
-		#ifdef DEBUG
+		#ifdef TRACK_HINT_SEARCH_STATS
 			Level::hintSearchActionsChecked++;
 		#endif
 		//make sure that this is a climb/fall, or that the rail is raised
@@ -109,7 +112,7 @@ HintState* LevelTypes::Plane::pursueSolution(HintStateTypes::PotentialLevelState
 			nextPotentialLevelState->type = HintStateTypes::Type::Rail;
 			nextPotentialLevelState->data.rail = connection.rail;
 		}
-		#ifdef DEBUG
+		#ifdef TRACK_HINT_SEARCH_STATS
 			Level::hintSearchUniqueStates++;
 		#endif
 
@@ -126,7 +129,7 @@ HintState* LevelTypes::Plane::pursueSolution(HintStateTypes::PotentialLevelState
 
 	//check switches
 	for (ConnectionSwitch& connectionSwitch : connectionSwitches) {
-		#ifdef DEBUG
+		#ifdef TRACK_HINT_SEARCH_STATS
 			Level::hintSearchActionsChecked++;
 		#endif
 		//first, reset the draft rail byte masks
@@ -162,7 +165,7 @@ HintState* LevelTypes::Plane::pursueSolution(HintStateTypes::PotentialLevelState
 			newHintStatePotentialLevelState(currentState, this, &HintStateTypes::PotentialLevelState::draftState);
 		nextPotentialLevelState->type = HintStateTypes::Type::Switch;
 		nextPotentialLevelState->data.switch0 = connectionSwitch.switch0;
-		#ifdef DEBUG
+		#ifdef TRACK_HINT_SEARCH_STATS
 			Level::hintSearchUniqueStates++;
 		#endif
 		potentialLevelStates.push_back(nextPotentialLevelState);
@@ -204,7 +207,7 @@ Level::PotentialLevelStatesByBucket::~PotentialLevelStatesByBucket() {}
 vector<Level::PotentialLevelStatesByBucket> Level::potentialLevelStatesByBucketByPlane;
 deque<HintStateTypes::PotentialLevelState*> Level::nextPotentialLevelStates;
 Plane* Level::cachedHintSearchVictoryPlane = nullptr;
-#ifdef DEBUG
+#ifdef TRACK_HINT_SEARCH_STATS
 	int Level::hintSearchActionsChecked = 0;
 	int Level::hintSearchUniqueStates = 0;
 	int Level::hintSearchComparisonsPerformed = 0;
@@ -307,7 +310,7 @@ HintState* Level::generateHint(
 
 	//go through all states and see if there's anything we could do to get closer to the victory plane
 	HintState* result = nullptr;
-	#ifdef DEBUG
+	#ifdef TRACK_HINT_SEARCH_STATS
 		hintSearchActionsChecked = 0;
 		hintSearchUniqueStates = 0;
 		hintSearchComparisonsPerformed = 0;
@@ -323,7 +326,7 @@ HintState* Level::generateHint(
 	}
 
 	//cleanup
-	#ifdef DEBUG
+	#ifdef TRACK_HINT_SEARCH_STATS
 		int timeAfterSearchBeforeCleanup = SDL_GetTicks();
 	#endif
 	nextPotentialLevelStates.clear();
@@ -340,7 +343,7 @@ HintState* Level::generateHint(
 		}
 	}
 
-	#ifdef DEBUG
+	#ifdef TRACK_HINT_SEARCH_STATS
 		int timeAfterCleanup = SDL_GetTicks();
 		stringstream hintSearchPerformanceMessage;
 		hintSearchPerformanceMessage
