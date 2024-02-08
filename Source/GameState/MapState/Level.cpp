@@ -10,6 +10,13 @@
 
 #define newPlane(owningLevel, indexInOwningLevel) newWithArgs(Plane, owningLevel, indexInOwningLevel)
 
+//////////////////////////////// LevelTypes::Plane::Tile ////////////////////////////////
+LevelTypes::Plane::Tile::Tile(int pX, int pY)
+: x(pX)
+, y(pY) {
+}
+LevelTypes::Plane::Tile::~Tile() {}
+
 //////////////////////////////// LevelTypes::Plane::ConnectionSwitch ////////////////////////////////
 LevelTypes::Plane::ConnectionSwitch::ConnectionSwitch(Switch* pSwitch)
 : affectedRailByteMaskData()
@@ -27,13 +34,6 @@ LevelTypes::Plane::Connection::Connection(Plane* pToPlane, int pRailByteIndex, i
 LevelTypes::Plane::Connection::~Connection() {
 	//don't delete the plane, it's owned by a Level
 }
-
-//////////////////////////////// LevelTypes::Plane::Tile ////////////////////////////////
-LevelTypes::Plane::Tile::Tile(int pX, int pY)
-: x(pX)
-, y(pY) {
-}
-LevelTypes::Plane::Tile::~Tile() {}
 
 //////////////////////////////// LevelTypes::Plane ////////////////////////////////
 LevelTypes::Plane::Plane(objCounterParametersComma() Level* pOwningLevel, int pIndexInOwningLevel)
