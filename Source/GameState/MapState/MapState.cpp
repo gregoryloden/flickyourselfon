@@ -360,8 +360,6 @@ void MapState::buildLevels() {
 				railByteMaskData, planeConnectionSwitch->planeConnectionSwitchIndex);
 		}
 	}
-	for (LevelTypes::Plane* plane : planes)
-		plane->addExtendedConnections();
 
 	//initialize utilities for hints
 	Level::setupPotentialLevelStateHelpers(levels);
