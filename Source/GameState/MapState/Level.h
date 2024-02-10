@@ -137,6 +137,7 @@ public:
 	void assignVictoryPlane(LevelTypes::Plane* pVictoryPlane) { victoryPlane = pVictoryPlane; }
 	void assignRadioTowerSwitch(Switch* radioTowerSwitch) { radioTowerHint.data.switch0 = radioTowerSwitch; }
 	LevelTypes::RailByteMaskData* getRailByteMaskData(int i) { return &allRailByteMaskData[i]; }
+	int getRailByteMaskCount() { return (railByteMaskBitsTracked + 31) / 32; }
 	//add a new plane to this level
 	LevelTypes::Plane* addNewPlane();
 	//create a byte mask for a new rail

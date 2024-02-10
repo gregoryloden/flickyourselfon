@@ -43,7 +43,8 @@ public:
 	class PotentialLevelState: public PooledReferenceCounter {
 	public:
 		static PotentialLevelState draftState;
-		static int railByteMaskCount;
+		static int maxRailByteMaskCount;
+		static int currentRailByteMaskCount;
 
 		PotentialLevelState* priorState;
 		LevelTypes::Plane* plane;

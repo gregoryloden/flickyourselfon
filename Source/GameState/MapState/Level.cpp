@@ -133,7 +133,7 @@ HintState* LevelTypes::Plane::pursueSolution(HintState::PotentialLevelState* cur
 			Level::hintSearchActionsChecked++;
 		#endif
 		//first, reset the draft rail byte masks
-		for (int i = currentState->railByteMaskCount - 1; i >= 0; i--)
+		for (int i = HintState::PotentialLevelState::currentRailByteMaskCount - 1; i >= 0; i--)
 			HintState::PotentialLevelState::draftState.railByteMasks[i] = currentState->railByteMasks[i];
 		//then, go through and modify the byte mask for each affected rail
 		for (RailByteMaskData* railByteMaskData : connectionSwitch.affectedRailByteMaskData) {
@@ -244,19 +244,17 @@ int Level::trackNextRail(short railId, Rail* rail) {
 	return (int)allRailByteMaskData.size() - 1;
 }
 void Level::setupPotentialLevelStateHelpers(vector<Level*>& allLevels) {
-	int maxPlaneCount = 0;
-	int maxRailByteCount = 0;
 	for (Level* level : allLevels) {
-		maxPlaneCount = MathUtils::max(maxPlaneCount, (int)level->planes.size());
-		maxRailByteCount = MathUtils::max(maxRailByteCount, (level->railByteMaskBitsTracked + 31) / 32);
+		//add one PotentialLevelStatesByBucket per plane, plus one extra for the victory plane
+		while (potentialLevelStatesByBucketByPlane.size() <= level->planes.size())
+			potentialLevelStatesByBucketByPlane.push_back(PotentialLevelStatesByBucket());
+		HintState::PotentialLevelState::maxRailByteMaskCount =
+			MathUtils::max(HintState::PotentialLevelState::maxRailByteMaskCount, level->getRailByteMaskCount());
 	}
-	//add one PotentialLevelStatesByBucket per plane, plus one extra for the victory plane
-	for (int i = 0; i <= maxPlaneCount; i++)
-		potentialLevelStatesByBucketByPlane.push_back(PotentialLevelStatesByBucket());
-	HintState::PotentialLevelState::railByteMaskCount = maxRailByteCount;
 	//just once, fix the draft state byte list
 	delete[] HintState::PotentialLevelState::draftState.railByteMasks;
-	HintState::PotentialLevelState::draftState.railByteMasks = new unsigned int[maxRailByteCount];
+	HintState::PotentialLevelState::draftState.railByteMasks =
+		new unsigned int[HintState::PotentialLevelState::maxRailByteMaskCount];
 }
 void Level::preAllocatePotentialLevelStates() {
 	ReferenceCounterHolder<HintState> hintHolder (
@@ -284,7 +282,8 @@ HintState* Level::generateHint(
 	planes[0]->writeVictoryPlaneIndex(victoryPlane, (int)planes.size());
 
 	//setup the base potential level state
-	for (int i = 0; i < HintState::PotentialLevelState::railByteMaskCount; i++)
+	HintState::PotentialLevelState::currentRailByteMaskCount = getRailByteMaskCount();
+	for (int i = 0; i < HintState::PotentialLevelState::currentRailByteMaskCount; i++)
 		HintState::PotentialLevelState::draftState.railByteMasks[i] = 0;
 	for (LevelTypes::RailByteMaskData& railByteMaskData : allRailByteMaskData) {
 		char movementDirection, tileOffset;

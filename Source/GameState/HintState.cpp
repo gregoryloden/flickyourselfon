@@ -16,12 +16,13 @@ Hint::~Hint() {
 
 //////////////////////////////// HintState::PotentialLevelState ////////////////////////////////
 newInPlaceWithoutArgs(HintState::PotentialLevelState, HintState::PotentialLevelState::draftState);
-int HintState::PotentialLevelState::railByteMaskCount = 0;
+int HintState::PotentialLevelState::maxRailByteMaskCount = 0;
+int HintState::PotentialLevelState::currentRailByteMaskCount = 0;
 HintState::PotentialLevelState::PotentialLevelState(objCounterParameters())
 : PooledReferenceCounter(objCounterArguments())
 , priorState(nullptr)
 , plane(nullptr)
-, railByteMasks(new unsigned int[railByteMaskCount])
+, railByteMasks(new unsigned int[maxRailByteMaskCount])
 , railByteMasksHash(0)
 , hint(nullptr) {
 }
@@ -40,7 +41,7 @@ HintState::PotentialLevelState* HintState::PotentialLevelState::produce(
 	initializeWithNewFromPool(p, PotentialLevelState)
 	p->priorState = pPriorState;
 	p->plane = pPlane;
-	for (int i = railByteMaskCount - 1; i >= 0; i--)
+	for (int i = currentRailByteMaskCount - 1; i >= 0; i--)
 		p->railByteMasks[i] = draftState->railByteMasks[i];
 	p->railByteMasksHash = draftState->railByteMasksHash;
 	p->hint = pHint;
@@ -49,7 +50,7 @@ HintState::PotentialLevelState* HintState::PotentialLevelState::produce(
 pooledReferenceCounterDefineRelease(HintState::PotentialLevelState)
 void HintState::PotentialLevelState::setHash() {
 	unsigned int val = 0;
-	for (int i = railByteMaskCount - 1; i >= 0; i--)
+	for (int i = currentRailByteMaskCount - 1; i >= 0; i--)
 		val = val ^ railByteMasks[i];
 	railByteMasksHash = val;
 }
@@ -62,7 +63,7 @@ bool HintState::PotentialLevelState::isNewState(vector<PotentialLevelState*>& po
 		//they can't be the same if their hashes don't match
 		if (railByteMasksHash != potentialLevelState->railByteMasksHash)
 			continue;
-		for (int i = railByteMaskCount - 1; true; i--) {
+		for (int i = currentRailByteMaskCount - 1; true; i--) {
 			//the bytes are not the same, so the states are not the same, move on to check the next PotentialLevelState
 			if (railByteMasks[i] != potentialLevelState->railByteMasks[i])
 				break;
