@@ -864,7 +864,7 @@ void PlayerState::tryCollectCompletedHint(PlayerState* other) {
 	hintSearchStorage.set(nullptr);
 }
 bool PlayerState::shouldSuggestUndoReset() {
-	return hintState.get() != nullptr && hintState.get()->type == HintStateTypes::Type::UndoReset;
+	return hintState.get() != nullptr && hintState.get()->hint->type == Hint::Type::UndoReset;
 }
 void PlayerState::beginKicking(int ticksTime) {
 	if (entityAnimation.get() != nullptr)

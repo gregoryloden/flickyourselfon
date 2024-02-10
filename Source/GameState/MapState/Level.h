@@ -1,17 +1,13 @@
-#include "General/General.h"
+#include "GameState/HintState.h"
 
 #define newLevel() newWithoutArgs(Level)
 #ifdef DEBUG
 	#define TRACK_HINT_SEARCH_STATS
 #endif
 
-class HintState;
 class Level;
 class Rail;
 class Switch;
-namespace HintStateTypes {
-	class PotentialLevelState;
-}
 namespace LevelTypes {
 	class RailByteMaskData;
 }
@@ -32,9 +28,9 @@ namespace LevelTypes {
 		class ConnectionSwitch {
 		public:
 			vector<RailByteMaskData*> affectedRailByteMaskData;
-			Switch* switch0;
+			Hint hint;
 
-			ConnectionSwitch(Switch* pSwitch);
+			ConnectionSwitch(Switch* switch0);
 			virtual ~ConnectionSwitch();
 		};
 		//Should only be allocated within an object, on the stack, or as a static object
@@ -43,9 +39,9 @@ namespace LevelTypes {
 			Plane* toPlane;
 			int railByteIndex;
 			unsigned int railTileOffsetByteMask;
-			Rail* rail;
+			Hint hint;
 
-			Connection(Plane* pToPlane, int pRailByteIndex, int pRailTileOffsetByteMask, Rail* pRail);
+			Connection(Plane* pToPlane, int pRailByteIndex, int pRailTileOffsetByteMask, Rail* rail);
 			virtual ~Connection();
 		};
 
@@ -77,7 +73,7 @@ namespace LevelTypes {
 		//assumes this plane is a victory plane for a previous level, meaning its true indexInOwningLevel will always be 0
 		void writeVictoryPlaneIndex(Plane* victoryPlane, int pIndexInOwningLevel);
 		//follow all possible actions, and see if any of them lead to reaching the victory plane
-		HintState* pursueSolution(HintStateTypes::PotentialLevelState* currentState);
+		HintState* pursueSolution(HintState::PotentialLevelState* currentState);
 		//render boxes over every tile in this plane
 		void renderHint(int screenLeftWorldX, int screenTopWorldY, float alpha);
 	};
@@ -101,7 +97,7 @@ public:
 	public:
 		static const int bucketSize = 257;
 
-		vector<HintStateTypes::PotentialLevelState*> buckets[bucketSize];
+		vector<HintState::PotentialLevelState*> buckets[bucketSize];
 
 		PotentialLevelStatesByBucket();
 		virtual ~PotentialLevelStatesByBucket();
@@ -117,7 +113,7 @@ public:
 	static const unsigned int baseRailByteMask = (1 << railByteMaskBitCount) - 1;
 
 	static vector<PotentialLevelStatesByBucket> potentialLevelStatesByBucketByPlane;
-	static deque<HintStateTypes::PotentialLevelState*> nextPotentialLevelStates;
+	static deque<HintState::PotentialLevelState*> nextPotentialLevelStates;
 	static LevelTypes::Plane* cachedHintSearchVictoryPlane;
 	#ifdef TRACK_HINT_SEARCH_STATS
 		static int hintSearchActionsChecked;
@@ -132,14 +128,14 @@ private:
 	int railByteMaskBitsTracked;
 	LevelTypes::Plane* victoryPlane;
 	char minimumRailColor;
-	Switch* radioTowerSwitch;
+	Hint radioTowerHint;
 
 public:
 	Level(objCounterParameters());
 	virtual ~Level();
 
 	void assignVictoryPlane(LevelTypes::Plane* pVictoryPlane) { victoryPlane = pVictoryPlane; }
-	void assignRadioTowerSwitch(Switch* pRadioTowerSwitch) { radioTowerSwitch = pRadioTowerSwitch; }
+	void assignRadioTowerSwitch(Switch* radioTowerSwitch) { radioTowerHint.data.switch0 = radioTowerSwitch; }
 	LevelTypes::RailByteMaskData* getRailByteMaskData(int i) { return &allRailByteMaskData[i]; }
 	//add a new plane to this level
 	LevelTypes::Plane* addNewPlane();

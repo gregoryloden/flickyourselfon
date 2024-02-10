@@ -871,10 +871,10 @@ void MapState::renderBelowPlayer(EntityState* camera, float playerWorldGroundY, 
 	}
 
 	//draw plane hints below rails, if applicable
-	HintStateTypes::Type hintType = hintState.get() != nullptr && hintState.get()->animationEndTicksTime >= ticksTime
-		? hintState.get()->type
-		: HintStateTypes::Type::None;
-	if (hintType == HintStateTypes::Type::Plane)
+	Hint::Type hintType = hintState.get() != nullptr && hintState.get()->animationEndTicksTime >= ticksTime
+		? hintState.get()->hint->type
+		: Hint::Type::None;
+	if (hintType == Hint::Type::Plane)
 		hintState.get()->render(screenLeftWorldX, screenTopWorldY, ticksTime);
 
 	//draw rail shadows, rails (that are below the player), and switches
@@ -912,7 +912,7 @@ void MapState::renderBelowPlayer(EntityState* camera, float playerWorldGroundY, 
 	}
 
 	//draw rail and switch hints, if applicable
-	if (hintType == HintStateTypes::Type::Rail || hintType == HintStateTypes::Type::Switch)
+	if (hintType == Hint::Type::Rail || hintType == Hint::Type::Switch)
 		hintState.get()->render(screenLeftWorldX, screenTopWorldY, ticksTime);
 }
 void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int ticksTime) {
