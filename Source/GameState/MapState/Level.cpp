@@ -17,15 +17,23 @@ LevelTypes::Plane::Tile::Tile(int pX, int pY)
 LevelTypes::Plane::Tile::~Tile() {}
 
 //////////////////////////////// LevelTypes::Plane::ConnectionSwitch ////////////////////////////////
-LevelTypes::Plane::ConnectionSwitch::ConnectionSwitch(Switch* switch0)
+LevelTypes::Plane::ConnectionSwitch::ConnectionSwitch(Switch* switch0, Plane* hintPlane, Plane* pOwningPlane)
 : affectedRailByteMaskData()
-, hint(Hint::Type::Switch) {
-	hint.data.switch0 = switch0;
+, hint(Hint::Type::None)
+, owningPlane(pOwningPlane) {
+	if (switch0 != nullptr) {
+		hint.type = Hint::Type::Switch;
+		hint.data.switch0 = switch0;
+	} else {
+		hint.type = Hint::Type::Plane;
+		hint.data.plane = hintPlane;
+	}
 }
 LevelTypes::Plane::ConnectionSwitch::~ConnectionSwitch() {}
 
-//////////////////////////////// LevelTypes::Plane::Connection ////////////////////////////////
-LevelTypes::Plane::Connection::Connection(Plane* pToPlane, int pRailByteIndex, int pRailTileOffsetByteMask, Rail* rail)
+//////////////////////////////// LevelTypes::Plane::RailConnection ////////////////////////////////
+LevelTypes::Plane::RailConnection::RailConnection(
+	Plane* pToPlane, int pRailByteIndex, int pRailTileOffsetByteMask, Rail* rail, Plane* hintPlane)
 : toPlane(pToPlane)
 , railByteIndex(pRailByteIndex)
 , railTileOffsetByteMask(pRailTileOffsetByteMask)
@@ -35,11 +43,21 @@ LevelTypes::Plane::Connection::Connection(Plane* pToPlane, int pRailByteIndex, i
 		hint.data.rail = rail;
 	} else {
 		hint.type = Hint::Type::Plane;
-		hint.data.plane = pToPlane;
+		hint.data.plane = hintPlane;
 	}
 }
-LevelTypes::Plane::Connection::~Connection() {
+LevelTypes::Plane::RailConnection::~RailConnection() {
 	//don't delete toPlane, it's owned by a Level
+}
+
+//////////////////////////////// LevelTypes::Plane::ExtendedConnectionPlanes ////////////////////////////////
+LevelTypes::Plane::ExtendedConnectionPlanes::ExtendedConnectionPlanes(Plane* pPlane, Plane* pHintPlane)
+: plane(pPlane)
+, hintPlane(pHintPlane) {
+}
+LevelTypes::Plane::ExtendedConnectionPlanes::~ExtendedConnectionPlanes() {
+	//don't delete plane, it's owned by a Level
+	//don't delete hintPlane, it's owned by a Level
 }
 
 //////////////////////////////// LevelTypes::Plane ////////////////////////////////
@@ -49,43 +67,95 @@ owningLevel(pOwningLevel)
 , indexInOwningLevel(pIndexInOwningLevel)
 , tiles()
 , connectionSwitches()
-, connections() {
+, connections()
+, simplePlaneConnections() {
 }
 LevelTypes::Plane::~Plane() {
 	//don't delete owningLevel, it owns and deletes this
+	//don't delete any of the planes in simplePlaneConnections, they're owned by a Level
 }
 int LevelTypes::Plane::addConnectionSwitch(Switch* switch0) {
-	connectionSwitches.push_back(ConnectionSwitch(switch0));
+	connectionSwitches.push_back(ConnectionSwitch(switch0, nullptr, this));
 	return (int)connectionSwitches.size() - 1;
 }
 bool LevelTypes::Plane::addConnection(Plane* toPlane, bool isRail) {
+	//add a climb/fall connection
+	if (!isRail) {
+		for (Plane* plane : simplePlaneConnections) {
+			if (plane == toPlane)
+				return true;
+		}
+		simplePlaneConnections.push_back(toPlane);
+		return true;
+	}
+
 	//don't connect to a plane twice
-	for (Connection& connection : connections) {
+	for (RailConnection& connection : connections) {
 		if (connection.toPlane == toPlane)
 			return true;
 	}
-	//add a climb/fall connection
-	if (!isRail) {
-		connections.push_back(Connection(toPlane, Level::absentRailByteIndex, 0, nullptr));
-		return true;
-	}
 	//add a rail connection to a plane that is already connected to this plane
-	for (Connection& connection : toPlane->connections) {
+	for (RailConnection& connection : toPlane->connections) {
 		if (connection.toPlane != this)
 			continue;
 		connections.push_back(
-			Connection(toPlane, connection.railByteIndex, connection.railTileOffsetByteMask, connection.hint.data.rail));
+			RailConnection(
+				toPlane, connection.railByteIndex, connection.railTileOffsetByteMask, connection.hint.data.rail, nullptr));
 		return true;
 	}
 	return false;
 }
 void LevelTypes::Plane::addRailConnection(Plane* toPlane, RailByteMaskData* railByteMaskData, Rail* rail) {
 	connections.push_back(
-		Connection(
+		RailConnection(
 			toPlane,
 			railByteMaskData->railByteIndex,
 			Level::baseRailTileOffsetByteMask << railByteMaskData->railBitShift,
-			rail));
+			rail,
+			nullptr));
+}
+void LevelTypes::Plane::addExtendedConnections() {
+	vector<ExtendedConnectionPlanes> extendedConnectionPlanes;
+	//include this plane so that we skip any connections back to this plane
+	extendedConnectionPlanes.push_back(ExtendedConnectionPlanes(this, nullptr));
+	for (Plane* plane : simplePlaneConnections)
+		extendedConnectionPlanes.push_back(ExtendedConnectionPlanes(plane, plane));
+	for (int i = 1; i < (int)extendedConnectionPlanes.size(); i++) {
+		ExtendedConnectionPlanes& nextExtendedConnectionPlane = extendedConnectionPlanes[i];
+		Plane* plane = nextExtendedConnectionPlane.plane;
+		Plane* hintPlane = nextExtendedConnectionPlane.hintPlane;
+		//add direct rail connections from this plane
+		for (RailConnection& railConnection : plane->connections) {
+			if (railConnection.hint.type != Hint::Type::Rail)
+				continue;
+			connections.push_back(
+				RailConnection(
+					railConnection.toPlane,
+					railConnection.railByteIndex,
+					railConnection.railTileOffsetByteMask,
+					nullptr,
+					hintPlane));
+		}
+		//add direct connection switches for this plane
+		for (ConnectionSwitch& connectionSwitch : plane->connectionSwitches) {
+			if (connectionSwitch.hint.type != Hint::Type::Switch)
+				continue;
+			connectionSwitches.push_back(ConnectionSwitch(nullptr, hintPlane, plane));
+			connectionSwitches.back().affectedRailByteMaskData = connectionSwitch.affectedRailByteMaskData;
+		}
+		//add other planes to check
+		for (Plane* otherPlane : plane->simplePlaneConnections) {
+			bool already = false;
+			for (ExtendedConnectionPlanes& checkExtendedConnectionPlane : extendedConnectionPlanes) {
+				if (checkExtendedConnectionPlane.plane == otherPlane) {
+					already = true;
+					break;
+				}
+			}
+			if (!already)
+				extendedConnectionPlanes.push_back(ExtendedConnectionPlanes(otherPlane, hintPlane));
+		}
+	}
 }
 void LevelTypes::Plane::writeVictoryPlaneIndex(Plane* victoryPlane, int pIndexInOwningLevel) {
 	indexInOwningLevel = 0;
@@ -94,13 +164,12 @@ void LevelTypes::Plane::writeVictoryPlaneIndex(Plane* victoryPlane, int pIndexIn
 HintState* LevelTypes::Plane::pursueSolution(HintState::PotentialLevelState* currentState) {
 	unsigned int bucket = currentState->railByteMasksHash % Level::PotentialLevelStatesByBucket::bucketSize;
 	//check connections
-	for (Connection& connection : connections) {
+	for (RailConnection& connection : connections) {
 		#ifdef TRACK_HINT_SEARCH_STATS
 			Level::hintSearchActionsChecked++;
 		#endif
 		//skip any connections with rails that are lowered
-		if (connection.railByteIndex >= 0
-				&& (currentState->railByteMasks[connection.railByteIndex] & connection.railTileOffsetByteMask) != 0)
+		if ((currentState->railByteMasks[connection.railByteIndex] & connection.railTileOffsetByteMask) != 0)
 			continue;
 
 		//make sure we haven't seen this state before
@@ -155,13 +224,13 @@ HintState* LevelTypes::Plane::pursueSolution(HintState::PotentialLevelState* cur
 
 		//make sure we haven't seen this state before
 		vector<HintState::PotentialLevelState*>& potentialLevelStates =
-			Level::potentialLevelStatesByBucketByPlane[indexInOwningLevel].buckets[bucket];
+			Level::potentialLevelStatesByBucketByPlane[connectionSwitch.owningPlane->indexInOwningLevel].buckets[bucket];
 		if (!HintState::PotentialLevelState::draftState.isNewState(potentialLevelStates))
 			continue;
 
 		//build out the new PotentialLevelState and track it
 		HintState::PotentialLevelState* nextPotentialLevelState = newHintStatePotentialLevelState(
-			currentState, this, &HintState::PotentialLevelState::draftState, &connectionSwitch.hint);
+			currentState, connectionSwitch.owningPlane, &HintState::PotentialLevelState::draftState, &connectionSwitch.hint);
 		#ifdef TRACK_HINT_SEARCH_STATS
 			Level::hintSearchUniqueStates++;
 		#endif

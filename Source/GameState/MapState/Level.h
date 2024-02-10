@@ -29,27 +29,38 @@ namespace LevelTypes {
 		public:
 			vector<RailByteMaskData*> affectedRailByteMaskData;
 			Hint hint;
+			Plane* owningPlane;
 
-			ConnectionSwitch(Switch* switch0);
+			ConnectionSwitch(Switch* switch0, Plane* hintPlane, Plane* pOwningPlane);
 			virtual ~ConnectionSwitch();
 		};
 		//Should only be allocated within an object, on the stack, or as a static object
-		class Connection {
+		class RailConnection {
 		public:
 			Plane* toPlane;
 			int railByteIndex;
 			unsigned int railTileOffsetByteMask;
 			Hint hint;
 
-			Connection(Plane* pToPlane, int pRailByteIndex, int pRailTileOffsetByteMask, Rail* rail);
-			virtual ~Connection();
+			RailConnection(Plane* pToPlane, int pRailByteIndex, int pRailTileOffsetByteMask, Rail* pRail, Plane* hintPlane);
+			virtual ~RailConnection();
+		};
+		//Should only be allocated within an object, on the stack, or as a static object
+		class ExtendedConnectionPlanes {
+		public:
+			Plane* plane;
+			Plane* hintPlane;
+
+			ExtendedConnectionPlanes(Plane* pPlane, Plane* pHintPlane);
+			virtual ~ExtendedConnectionPlanes();
 		};
 
 		Level* owningLevel;
 		int indexInOwningLevel;
 		vector<Tile> tiles;
 		vector<ConnectionSwitch> connectionSwitches;
-		vector<Connection> connections;
+		vector<RailConnection> connections;
+		vector<Plane*> simplePlaneConnections;
 
 	public:
 		Plane(objCounterParametersComma() Level* pOwningLevel, int pIndexInOwningLevel);
@@ -69,6 +80,8 @@ namespace LevelTypes {
 		bool addConnection(Plane* toPlane, bool isRail);
 		//add a rail connection to another plane
 		void addRailConnection(Plane* toPlane, LevelTypes::RailByteMaskData* railByteMaskData, Rail* rail);
+		//find every path to a rail or switch connection through simple plane connections, and add them as extended connections
+		void addExtendedConnections();
 		//reset the indexInOwningLevel to 0 for this plane, and set it to the given value on the given plane
 		//assumes this plane is a victory plane for a previous level, meaning its true indexInOwningLevel will always be 0
 		void writeVictoryPlaneIndex(Plane* victoryPlane, int pIndexInOwningLevel);
@@ -103,7 +116,6 @@ public:
 		virtual ~PotentialLevelStatesByBucket();
 	};
 
-	static const int absentRailByteIndex = -1;
 	static const int railTileOffsetByteMaskBitCount = 3;
 	static const int railMovementDirectionByteMaskBitCount = 1;
 	static const int railByteMaskBitCount = railTileOffsetByteMaskBitCount + railMovementDirectionByteMaskBitCount;
