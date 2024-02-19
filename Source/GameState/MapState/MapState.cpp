@@ -1390,7 +1390,7 @@ void MapState::editorSetRail(int x, int y, char color, char group) {
 		//create a new rail
 		} else {
 			editorSetRailSwitchId(x, y, (short)rails.size() | railIdValue);
-			editingRail = newRail(x, y, getHeight(x, y), color, 0, 1, 1);
+			editingRail = newRail(x, y, getHeight(x, y), color, 0, color == sawColor ? -1 : 1, 1);
 			editingRail->addGroup(group);
 			rails.push_back(editingRail);
 		}

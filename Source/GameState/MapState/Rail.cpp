@@ -219,13 +219,24 @@ bool Rail::triggerMovement(char movementDirection, char* inOutTileOffset) {
 		case MapState::squareColor:
 			*inOutTileOffset = *inOutTileOffset == 0 ? maxTileOffset : 0;
 			return false;
-		//triangle wave switch: move the rail movementMagnitude tiles in its current movement direction
+		//triangle wave rail: move the rail movementMagnitude tiles in its current movement direction, possibly bouncing and
+		//	reversing direction
 		case MapState::triangleColor:
 			*inOutTileOffset += movementMagnitude * movementDirection;
 			if (*inOutTileOffset < 0)
 				*inOutTileOffset = -*inOutTileOffset;
 			else if (*inOutTileOffset > maxTileOffset)
 				*inOutTileOffset = maxTileOffset * 2 - *inOutTileOffset;
+			else
+				return false;
+			return true;
+		//saw wave rail: move the rail movementMagnitude tiles up, possibly sending it to the bottom
+		case MapState::sawColor:
+			*inOutTileOffset += movementMagnitude * movementDirection;
+			if (*inOutTileOffset < 0)
+				*inOutTileOffset += maxTileOffset;
+			else if (*inOutTileOffset >= maxTileOffset)
+				*inOutTileOffset -= maxTileOffset;
 			else
 				return false;
 			return true;
@@ -351,7 +362,8 @@ void Rail::editorAdjustMovementMagnitude(int x, int y, char magnitudeAdd) {
 		movementMagnitude = MathUtils::max(1, MathUtils::min(maxTileOffset, movementMagnitude + magnitudeAdd));
 }
 void Rail::editorToggleMovementDirection() {
-	initialMovementDirection = -initialMovementDirection;
+	if (color != MapState::sawColor)
+		initialMovementDirection = -initialMovementDirection;
 }
 void Rail::editorAdjustInitialTileOffset(int x, int y, char tileOffset) {
 	Segment& start = segments->front();
@@ -411,13 +423,27 @@ void RailState::updateWithPreviousRailState(RailState* prev, int ticksTime) {
 	if (bouncesRemaining != 0) {
 		tileOffset =
 			prev->tileOffset + tileOffsetDiff * (bouncesRemaining > 0 ? currentMovementDirection : -currentMovementDirection);
-		if (tileOffset < 0)
-			tileOffset = MathUtils::fmin(-tileOffset, targetTileOffset);
-		else if (tileOffset > rail->getMaxTileOffset())
-			tileOffset = MathUtils::fmax(rail->getMaxTileOffset() * 2 - tileOffset, targetTileOffset);
-		else
-			return;
-		currentMovementDirection = -currentMovementDirection;
+		switch (rail->getColor()) {
+			case MapState::triangleColor:
+				if (tileOffset < 0)
+					tileOffset = MathUtils::fmin(-tileOffset, targetTileOffset);
+				else if (tileOffset > rail->getMaxTileOffset())
+					tileOffset = MathUtils::fmax(rail->getMaxTileOffset() * 2 - tileOffset, targetTileOffset);
+				else
+					return;
+				currentMovementDirection = -currentMovementDirection;
+				break;
+			case MapState::sawColor:
+				if (tileOffset < 0)
+					tileOffset += rail->getMaxTileOffset();
+				else if (tileOffset >= rail->getMaxTileOffset())
+					tileOffset -= rail->getMaxTileOffset();
+				else
+					return;
+				break;
+			default:
+				return;
+		}
 		bouncesRemaining -= (bouncesRemaining > 0 ? 1 : -1);
 	} else if (prev->tileOffset != targetTileOffset)
 		tileOffset = prev->tileOffset > targetTileOffset
@@ -428,7 +454,8 @@ void RailState::updateWithPreviousRailState(RailState* prev, int ticksTime) {
 }
 void RailState::triggerMovement(bool moveForward) {
 	if (rail->triggerMovement(moveForward ? nextMovementDirection : -nextMovementDirection, &targetTileOffset)) {
-		nextMovementDirection = -nextMovementDirection;
+		if (rail->getColor() != MapState::sawColor)
+			nextMovementDirection = -nextMovementDirection;
 		bouncesRemaining += (moveForward ? 1 : -1);
 	}
 }
