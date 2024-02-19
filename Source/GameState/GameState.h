@@ -53,8 +53,8 @@ private:
 	static constexpr float squareSwitchesAnimationCenterWorldY = MapState::firstLevelTileOffsetY * MapState::tileSize + 80;
 	static constexpr float triangleSwitchesAnimationCenterWorldX = MapState::firstLevelTileOffsetX * MapState::tileSize + 180;
 	static constexpr float triangleSwitchesAnimationCenterWorldY = MapState::firstLevelTileOffsetY * MapState::tileSize - 103;
-	static constexpr float sawSwitchesAnimationCenterWorldX = 100.0f; //todo: pick a position
-	static constexpr float sawSwitchesAnimationCenterWorldY = 100.0f; //todo: pick a position
+	static constexpr float sawSwitchesAnimationCenterWorldX = MapState::firstLevelTileOffsetX * MapState::tileSize + 600;
+	static constexpr float sawSwitchesAnimationCenterWorldY = MapState::firstLevelTileOffsetY * MapState::tileSize - 60;
 	static constexpr float sineSwitchesAnimationCenterWorldX = 100.0f; //todo: pick a position
 	static constexpr float sineSwitchesAnimationCenterWorldY = 100.0f; //todo: pick a position
 	//title screen and intro explanation text
