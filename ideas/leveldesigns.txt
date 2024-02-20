@@ -2,4 +2,4 @@ Level 1: (see otherideas.txt)
 Level 2: based on solution: 1 2 3 1 2 4 1 3 2 1, 4 triggers a rail that enables 2->1, otherwise it's one-way 1->2
 Level 3: based on level sketch with rails and hills
 Level 4: build a hilly scenery and stick rails and switches on it
-Level 5: switch solution 1 2 3 4 3 2 1
+Level 5: switch solution 1 2 3 4 3 2 1, require a reset if the player jumps off after kicking the first switch
