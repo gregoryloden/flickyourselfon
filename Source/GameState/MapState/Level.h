@@ -3,6 +3,7 @@
 #define newLevel() newWithoutArgs(Level)
 #ifdef DEBUG
 	#define TRACK_HINT_SEARCH_STATS
+	#define LOG_FOUND_HINT_STEPS
 #endif
 
 class Level;
@@ -76,6 +77,14 @@ namespace LevelTypes {
 		HintState* pursueSolution(HintState::PotentialLevelState* currentState);
 		//render boxes over every tile in this plane
 		void renderHint(int screenLeftWorldX, int screenTopWorldY, float alpha);
+		#ifdef LOG_FOUND_HINT_STEPS
+			//log all the steps of a hint state
+			void logSteps(HintState::PotentialLevelState* hintState);
+			//log a single hint step
+			void logHint(stringstream& stepsMessage, Hint* hint, unsigned int* railByteMasks);
+			//log the rail byte masks
+			void logRailByteMasks(stringstream& stepsMessage, unsigned int* railByteMasks);
+		#endif
 	};
 	//Should only be allocated within an object, on the stack, or as a static object
 	class RailByteMaskData {
