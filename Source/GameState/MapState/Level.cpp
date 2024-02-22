@@ -143,9 +143,11 @@ HintState* LevelTypes::Plane::pursueSolution(HintState::PotentialLevelState* cur
 			char movementDirectionBit = shiftedRailState & (char)Level::baseRailMovementDirectionByteMask;
 			char tileOffset = shiftedRailState & (char)Level::baseRailTileOffsetByteMask;
 			char movementDirection = (movementDirectionBit >> Level::railTileOffsetByteMaskBitCount) * 2 - 1;
-			char resultRailState = railByteMaskData->rail->triggerMovement(movementDirection, &tileOffset)
-				? tileOffset | (movementDirectionBit ^ Level::baseRailMovementDirectionByteMask)
-				: tileOffset | movementDirectionBit;
+			char resultRailState =
+				railByteMaskData->rail->triggerMovement(movementDirection, &tileOffset)
+						&& railByteMaskData->rail->getColor() != MapState::sawColor
+					? tileOffset | (movementDirectionBit ^ Level::baseRailMovementDirectionByteMask)
+					: tileOffset | movementDirectionBit;
 			*railByteMask =
 				(*railByteMask & railByteMaskData->inverseRailByteMask)
 					| ((unsigned int)resultRailState << railByteMaskData->railBitShift);
