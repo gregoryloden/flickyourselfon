@@ -25,6 +25,96 @@ SDL_GLContext glContext = nullptr;
 bool renderThreadReadyForUpdates = false;
 
 int gameMain(int argc, char* argv[]) {
+//string details = "";
+//bool u1Current = false;
+//bool u2Current = false;
+//int iters = 0;
+//bool s11 = false;
+//bool s21 = false;
+//bool s31 = false;
+//bool s41 = false;
+//bool s12 = false;
+//bool s22 = false;
+//bool s32 = false;
+//bool s42 = false;
+//for (int ud1 = 0; ud1 < 2; ud1++) {
+//bool u1 = ud1 == 0;
+//for (int ud2 = 0; ud2 < 2; ud2++) {
+//bool u2 = ud2 == 0;
+//for (int s11I = 0; s11I < 2; s11I++) {
+//s11 = s11I == 0;
+//for (int s21I = 0; s21I < 2; s21I++) {
+//s21 = s21I == 0;
+//for (int s31I = 0; s31I < 2; s31I++) {
+//s31 = s31I == 0;
+//for (int s41I = 0; s41I < 2; s41I++) {
+//s41 = s41I == 0;
+//for (int s12I = 0; s12I < 2; s12I++) {
+//s12 = s12I == 0;
+//for (int s22I = 0; s22I < 2; s22I++) {
+//s22 = s22I == 0;
+//for (int s32I = 0; s32I < 2; s32I++) {
+//s32 = s32I == 0;
+//for (int s42I = 0; s42I < 2; s42I++) {
+//iters++;
+//s42 = s42I == 0;
+//if (!s11 && !s21 && !s31 && !s41) continue;
+//if (!s12 && !s22 && !s32 && !s42) continue;
+//if (u1 != u2 && s11 == s12 && s21 == s22 && s31 == s32 && s41 == s42) continue;
+//details = "";
+//if (s11) details += '1';
+//if (s21) details += '2';
+//if (s31) details += '3';
+//if (s41) details += '4';
+//details += u1 ? 'U' : 'D';
+//details += ' ';
+//if (s12) details += '1';
+//if (s22) details += '2';
+//if (s32) details += '3';
+//if (s42) details += '4';
+//details += u2 ? 'U' : 'D';
+//u1Current = u1;
+//u2Current = u2;
+//bool railsUp = u1Current && u2Current;
+//if (s11) u1Current = !u1Current; if (s12) u2Current = !u2Current;
+//railsUp = railsUp || (u1Current && u2Current);
+//if (s21) u1Current = !u1Current; if (s22) u2Current = !u2Current;
+//railsUp = railsUp || (u1Current && u2Current);
+//if (s31) u1Current = !u1Current; if (s32) u2Current = !u2Current;
+//railsUp = railsUp || (u1Current && u2Current);
+//if (s11) u1Current = !u1Current; if (s12) u2Current = !u2Current;
+//railsUp = railsUp || (u1Current && u2Current);
+//if (s21) u1Current = !u1Current; if (s22) u2Current = !u2Current;
+//railsUp = railsUp || (u1Current && u2Current);
+//if (s41) u1Current = !u1Current; if (s42) u2Current = !u2Current;
+//railsUp = railsUp || (u1Current && u2Current);
+//if (s11) u1Current = !u1Current; if (s12) u2Current = !u2Current;
+//railsUp = railsUp || (u1Current && u2Current);
+//if (s31) u1Current = !u1Current; if (s32) u2Current = !u2Current;
+//railsUp = railsUp || (u1Current && u2Current);
+//if (s21) u1Current = !u1Current; if (s22) u2Current = !u2Current;
+//railsUp = railsUp || (u1Current && u2Current);
+//if (!railsUp) {
+//details += ' ';
+//details += u1Current ? 'U' : 'D';
+//details += ' ';
+//details += u2Current ? 'U' : 'D';
+//if (s11) u1Current = !u1Current; if (s12) u2Current = !u2Current;
+//railsUp = railsUp || (u1Current && u2Current);
+//if (railsUp)
+//details = details + 'c';
+//}
+//}
+//}
+//}
+//}
+//}
+//}
+//}
+//}
+//}
+//}
+//details = details + 'c';
 	srand((unsigned int)time(nullptr));
 	//initialize SDL before we do anything else, we need it to log timestamps
 	int initResult = SDL_Init(SDL_INIT_EVERYTHING);
