@@ -227,7 +227,8 @@ void MapState::buildMap() {
 		}
 	}
 
-	buildLevels();
+	if (!Editor::isActive)
+		buildLevels();
 }
 vector<int> MapState::parseRail(int* pixels, int redShift, int segmentIndex, int railSwitchId) {
 	//cache shift values so that we can iterate the floor data quicker
@@ -787,6 +788,8 @@ void MapState::toggleShowConnections() {
 	}
 }
 HintState* MapState::generateHint(float playerX, float playerY) {
+	if (Editor::isActive)
+		return newHintState(&Hint::none);
 	LevelTypes::Plane* currentPlane = planes[planeIds[(int)playerY / tileSize * width + (int)playerX / tileSize] - 1];
 	return currentPlane->getOwningLevel()->generateHint(
 		currentPlane,
