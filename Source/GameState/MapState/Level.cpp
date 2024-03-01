@@ -58,23 +58,22 @@ int LevelTypes::Plane::addConnectionSwitch(Switch* switch0) {
 	connectionSwitches.push_back(ConnectionSwitch(switch0));
 	return (int)connectionSwitches.size() - 1;
 }
-bool LevelTypes::Plane::addConnection(Plane* toPlane, bool isRail) {
-	//don't connect to a plane twice
-	for (Connection& connection : connections) {
-		if (connection.toPlane == toPlane)
-			return true;
-	}
+bool LevelTypes::Plane::addConnection(Plane* toPlane, Rail* rail) {
 	//add a climb/fall connection
-	if (!isRail) {
+	if (rail == nullptr) {
+		//don't add climb/fall connections to a plane twice
+		for (Connection& connection : connections) {
+			if (connection.toPlane == toPlane)
+				return true;
+		}
 		connections.push_back(Connection(toPlane, Level::absentRailByteIndex, 0, nullptr));
 		return true;
 	}
 	//add a rail connection to a plane that is already connected to this plane
 	for (Connection& connection : toPlane->connections) {
-		if (connection.toPlane != this)
+		if (connection.toPlane != this || connection.hint.data.rail != rail)
 			continue;
-		connections.push_back(
-			Connection(toPlane, connection.railByteIndex, connection.railTileOffsetByteMask, connection.hint.data.rail));
+		connections.push_back(Connection(toPlane, connection.railByteIndex, connection.railTileOffsetByteMask, rail));
 		return true;
 	}
 	return false;

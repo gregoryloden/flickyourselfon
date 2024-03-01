@@ -66,8 +66,8 @@ namespace LevelTypes {
 		//returns the index of the switch in this plane
 		int addConnectionSwitch(Switch* switch0);
 		//add a connection to another plane, if we don't already have one
-		//returns true if the connection was redundant or added, and false if we need to add a rail connection instead
-		bool addConnection(Plane* toPlane, bool isRail);
+		//returns true if the connection was redundant or added, and false if we need to add a new rail connection
+		bool addConnection(Plane* toPlane, Rail* rail);
 		//add a rail connection to another plane
 		void addRailConnection(Plane* toPlane, LevelTypes::RailByteMaskData* railByteMaskData, Rail* rail);
 		//reset the indexInOwningLevel to 0 for this plane, and set it to the given value on the given plane
