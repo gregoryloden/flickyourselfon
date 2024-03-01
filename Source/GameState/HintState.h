@@ -60,7 +60,7 @@ public:
 			objCounterParametersComma()
 			PotentialLevelState* pPriorState,
 			LevelTypes::Plane* pPlane,
-			PotentialLevelState* draftState,
+			PotentialLevelState* pDraftState,
 			Hint* pHint);
 		//release a reference to this PotentialLevelState and return it to the pool if applicable
 		virtual void release();

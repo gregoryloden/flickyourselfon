@@ -35,15 +35,15 @@ HintState::PotentialLevelState* HintState::PotentialLevelState::produce(
 	objCounterParametersComma()
 	PotentialLevelState* pPriorState,
 	LevelTypes::Plane* pPlane,
-	PotentialLevelState* draftState,
+	PotentialLevelState* pDraftState,
 	Hint* pHint)
 {
 	initializeWithNewFromPool(p, PotentialLevelState)
 	p->priorState = pPriorState;
 	p->plane = pPlane;
 	for (int i = currentRailByteMaskCount - 1; i >= 0; i--)
-		p->railByteMasks[i] = draftState->railByteMasks[i];
-	p->railByteMasksHash = draftState->railByteMasksHash;
+		p->railByteMasks[i] = pDraftState->railByteMasks[i];
+	p->railByteMasksHash = pDraftState->railByteMasksHash;
 	p->hint = pHint;
 	return p;
 }
