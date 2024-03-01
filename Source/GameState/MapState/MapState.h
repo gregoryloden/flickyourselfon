@@ -340,10 +340,14 @@ private:
 public:
 	//log that the switch was kicked
 	static void logSwitchKick(short switchId);
+	//log the color and group of a switch
+	static void logSwitchDescriptor(Switch* switch0, stringstream* message);
 	//log that the reset switch was kicked
 	static void logResetSwitchKick(short resetSwitchId);
 	//log that the player rode on the rail
 	static void logRailRide(short railId, int playerX, int playerY);
+	//log the color and groups of a rail
+	static void logRailDescriptor(Rail* rail, stringstream* message);
 	//save the map state to the file
 	void saveState(ofstream& file);
 	//try to load state from the line of the file, return whether state was loaded

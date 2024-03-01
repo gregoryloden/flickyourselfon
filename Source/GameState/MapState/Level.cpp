@@ -206,10 +206,12 @@ void LevelTypes::Plane::renderHint(int screenLeftWorldX, int screenTopWorldY, fl
 		else if (hint->type == Hint::Type::Rail) {
 			Rail::Segment* segment = hint->data.rail->getSegment(0);
 			stepsMessage << "rail " << MapState::getRailSwitchId(segment->x, segment->y);
+			MapState::logRailDescriptor(hint->data.rail, &stepsMessage);
 		} else if (hint->type == Hint::Type::Switch) {
 			Switch* switch0 = hint->data.switch0;
 			stepsMessage << "switch " << MapState::getRailSwitchId(switch0->getLeftX(), switch0->getTopY());
 			logRailByteMasks(stepsMessage, railByteMasks);
+			MapState::logSwitchDescriptor(hint->data.switch0, &stepsMessage);
 		} else if (hint->type == Hint::Type::None)
 			stepsMessage << "none";
 		else if (hint->type == Hint::Type::UndoReset)

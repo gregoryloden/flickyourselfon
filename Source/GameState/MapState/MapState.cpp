@@ -1109,10 +1109,14 @@ void MapState::logSwitchKick(short switchId) {
 	short switchIndex = switchId & railSwitchIndexBitmask;
 	Switch* switch0 = switches[switchIndex];
 	stringstream message;
-	message << "  switch " << switchIndex << " (" << (int)switch0->getColor() << " ";
-	logGroup(switch0->getGroup(), &message);
-	message << ")";
+	message << "  switch " << switchIndex;
+	logSwitchDescriptor(switch0, &message);
 	Logger::gameplayLogger.logString(message.str());
+}
+void MapState::logSwitchDescriptor(Switch* switch0, stringstream* message) {
+	*message << " (" << (int)switch0->getColor() << " ";
+	logGroup(switch0->getGroup(), message);
+	*message << ")";
 }
 void MapState::logResetSwitchKick(short resetSwitchId) {
 	short resetSwitchIndex = resetSwitchId & railSwitchIndexBitmask;
@@ -1124,17 +1128,22 @@ void MapState::logRailRide(short railId, int playerX, int playerY) {
 	short railIndex = railId & railSwitchIndexBitmask;
 	Rail* rail = rails[railIndex];
 	stringstream message;
-	message << "  rail " << railIndex << " (" << (int)rail->getColor() << " ";
+	message << "  rail " << railIndex;
+	logRailDescriptor(rail, &message);
+	message << " " << playerX << " " << playerY;
+	Logger::gameplayLogger.logString(message.str());
+}
+void MapState::logRailDescriptor(Rail* rail, stringstream* message) {
+	*message << " (" << (int)rail->getColor() << " ";
 	bool skipComma = true;
 	for (char group : rail->getGroups()) {
 		if (skipComma)
 			skipComma = false;
 		else
-			message << ", ";
-		logGroup(group, &message);
+			*message << ", ";
+		logGroup(group, message);
 	}
-	message << ") " << playerX << " " << playerY;
-	Logger::gameplayLogger.logString(message.str());
+	*message << ")";
 }
 void MapState::saveState(ofstream& file) {
 	if (lastActivatedSwitchColor >= 0)
