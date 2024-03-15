@@ -1350,6 +1350,7 @@ void PlayerState::clearUndoRedoStates() {
 void PlayerState::undo(int ticksTime) {
 	if (hasAnimation() || undoState.get() == nullptr)
 		return;
+	Logger::gameplayLogger.log("  undo");
 	availableKickAction.set(
 		newKickAction(KickActionType::Undo, -1, -1, MapState::invalidHeight, MapState::absentRailSwitchId, -1));
 	bool doneProcessing;
@@ -1362,6 +1363,7 @@ void PlayerState::redo(int ticksTime) {
 	if (hasAnimation() || redoState.get() == nullptr)
 		return;
 	finishedUndoRedoTutorial = true;
+	Logger::gameplayLogger.log("  redo");
 	availableKickAction.set(
 		newKickAction(KickActionType::Redo, -1, -1, MapState::invalidHeight, MapState::absentRailSwitchId, -1));
 	bool doneProcessing;
