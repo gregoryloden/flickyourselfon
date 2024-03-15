@@ -401,7 +401,7 @@ void Editor::RaiseLowerTileButton::paintMap(int x, int y) {
 	if (lastMouseDragAction != MouseDragAction::None || height % 2 != 0)
 		return;
 
-	char newFloorY;
+	int newFloorY;
 	char newHeight;
 	char replacementHeight;
 	if (isRaiseTileButton) {
@@ -450,14 +450,14 @@ void Editor::RaiseLowerTileButton::paintMap(int x, int y) {
 	} else
 		setAppropriateDefaultFloorTile(x, y, replacementHeight);
 	setAppropriateDefaultFloorTile(x, newFloorY, newHeight);
-	//set the heights for the old adjacent tiles, whether they match the replacement height or the old height
+	//set the tiles for the old adjacent tiles, whether they match the replacement height or the old height
 	setAppropriateDefaultFloorTile(x - 1, y, height);
 	setAppropriateDefaultFloorTile(x + 1, y, height);
 	if (replacementHeight % 2 == 0) {
 		setAppropriateDefaultFloorTile(x - 1, y, replacementHeight);
 		setAppropriateDefaultFloorTile(x + 1, y, replacementHeight);
 	}
-	//set the heights for the new adjacent tiles, whether they match the new height or the old height
+	//set the tiles for the new adjacent tiles, whether they match the new height or the old height
 	setAppropriateDefaultFloorTile(x - 1, newFloorY, height);
 	setAppropriateDefaultFloorTile(x - 1, newFloorY, newHeight);
 	setAppropriateDefaultFloorTile(x + 1, newFloorY, height);
