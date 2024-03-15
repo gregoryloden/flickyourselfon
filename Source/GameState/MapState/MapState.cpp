@@ -55,8 +55,8 @@ vector<Switch*> MapState::switches;
 vector<ResetSwitch*> MapState::resetSwitches;
 vector<LevelTypes::Plane*> MapState::planes;
 vector<Level*> MapState::levels;
-int MapState::width = 1;
-int MapState::height = 1;
+int MapState::mapWidth = 1;
+int MapState::mapHeight = 1;
 bool MapState::editorHideNonTiles = false;
 MapState::MapState(objCounterParameters())
 : PooledReferenceCounter(objCounterArguments())
@@ -118,9 +118,9 @@ void MapState::prepareReturnToPool() {
 }
 void MapState::buildMap() {
 	SDL_Surface* floor = FileUtils::loadImage(floorFileName);
-	width = floor->w;
-	height = floor->h;
-	int totalTiles = width * height;
+	mapWidth = floor->w;
+	mapHeight = floor->h;
+	int totalTiles = mapWidth * mapHeight;
 	tiles = new char[totalTiles];
 	heights = new char[totalTiles];
 	railSwitchIds = new short[totalTiles];
@@ -147,8 +147,8 @@ void MapState::buildMap() {
 		//head bytes that start a rail/switch have bit 1 set, we only build rails/switches when we get to one of these
 		if ((railSwitchValue & floorIsRailSwitchAndHeadBitmask) != floorRailSwitchAndHeadValue)
 			continue;
-		int headX = i % width;
-		int headY = i / width;
+		int headX = i % mapWidth;
+		int headY = i / mapWidth;
 
 		//head byte 1:
 		//	bit 1: 1 (indicates head byte)
@@ -169,10 +169,10 @@ void MapState::buildMap() {
 			short newResetSwitchId = (short)resetSwitches.size() | resetSwitchIdValue;
 			ResetSwitch* resetSwitch = newResetSwitch(headX, headY);
 			resetSwitches.push_back(resetSwitch);
-			railSwitchIds[i - width] = newResetSwitchId;
+			railSwitchIds[i - mapWidth] = newResetSwitchId;
 			railSwitchIds[i] = newResetSwitchId;
 			addResetSwitchSegments(pixels, redShift, i - 1, newResetSwitchId, resetSwitch, -1);
-			addResetSwitchSegments(pixels, redShift, i + width, newResetSwitchId, resetSwitch, 0);
+			addResetSwitchSegments(pixels, redShift, i + mapWidth, newResetSwitchId, resetSwitch, 0);
 			addResetSwitchSegments(pixels, redShift, i + 1, newResetSwitchId, resetSwitch, 1);
 		//this is a regular switch
 		} else if (HAS_BITMASK(railSwitchValue, floorIsSwitchBitmask)) {
@@ -183,7 +183,7 @@ void MapState::buildMap() {
 			switches.push_back(newSwitch(headX, headY, color, group));
 			for (int yOffset = 0; yOffset <= 1; yOffset++) {
 				for (int xOffset = 0; xOffset <= 1; xOffset++) {
-					railSwitchIds[i + xOffset + yOffset * width] = newSwitchId;
+					railSwitchIds[i + xOffset + yOffset * mapWidth] = newSwitchId;
 				}
 			}
 		//this is a rail
@@ -202,11 +202,11 @@ void MapState::buildMap() {
 			char movementMagnitude = (railByte2PostShift >> 1) & floorRailMovementMagnitudePostShiftBitmask;
 			Rail* rail = newRail(headX, headY, heights[i], color, initialTileOffset, movementDirection, movementMagnitude);
 			rails.push_back(rail);
-			rail->addSegment(railByte2Index % width, railByte2Index / width);
+			rail->addSegment(railByte2Index % mapWidth, railByte2Index / mapWidth);
 			//add all the groups
 			int floorRailGroupShiftedShift = redShift + floorRailSwitchGroupDataShift;
 			for (int railIndex : railIndices) {
-				rail->addSegment(railIndex % width, railIndex / width);
+				rail->addSegment(railIndex % mapWidth, railIndex / mapWidth);
 				rail->addGroup((char)(pixels[railIndex] >> floorRailGroupShiftedShift) & floorRailSwitchGroupPostShiftBitmask);
 			}
 		}
@@ -243,12 +243,12 @@ vector<int> MapState::parseRail(int* pixels, int redShift, int segmentIndex, int
 		else if ((pixels[segmentIndex - 1] & floorIsRailSwitchAndHeadShiftedBitmask) == floorRailSwitchTailShiftedValue
 				&& railSwitchIds[segmentIndex - 1] == 0)
 			segmentIndex--;
-		else if ((pixels[segmentIndex + width] & floorIsRailSwitchAndHeadShiftedBitmask) == floorRailSwitchTailShiftedValue
-				&& railSwitchIds[segmentIndex + width] == 0)
-			segmentIndex += width;
-		else if ((pixels[segmentIndex - width] & floorIsRailSwitchAndHeadShiftedBitmask) == floorRailSwitchTailShiftedValue
-				&& railSwitchIds[segmentIndex - width] == 0)
-			segmentIndex -= width;
+		else if ((pixels[segmentIndex + mapWidth] & floorIsRailSwitchAndHeadShiftedBitmask) == floorRailSwitchTailShiftedValue
+				&& railSwitchIds[segmentIndex + mapWidth] == 0)
+			segmentIndex += mapWidth;
+		else if ((pixels[segmentIndex - mapWidth] & floorIsRailSwitchAndHeadShiftedBitmask) == floorRailSwitchTailShiftedValue
+				&& railSwitchIds[segmentIndex - mapWidth] == 0)
+			segmentIndex -= mapWidth;
 		else
 			return segmentIndices;
 		segmentIndices.push_back(segmentIndex);
@@ -269,15 +269,15 @@ void MapState::addResetSwitchSegments(
 	char color1 = (char)((resetSwitchValue >> floorRailSwitchGroupDataShift) & floorRailSwitchColorPostShiftBitmask);
 	char color2 = (char)((resetSwitchValue >> (floorRailSwitchGroupDataShift + 2)) & floorRailSwitchColorPostShiftBitmask);
 	railSwitchIds[firstSegmentIndex] = resetSwitchId;
-	int segmentX = firstSegmentIndex % width;
-	int segmentY = firstSegmentIndex / width;
+	int segmentX = firstSegmentIndex % mapWidth;
+	int segmentY = firstSegmentIndex / mapWidth;
 	resetSwitch->addSegment(segmentX, segmentY, color1, 0, segmentsSection);
 
 	char segmentColor = color1;
 	vector<int> railIndices = parseRail(pixels, redShift, firstSegmentIndex, resetSwitchId);
 	for (int segmentIndex : railIndices) {
-		segmentX = segmentIndex % width;
-		segmentY = segmentIndex / width;
+		segmentX = segmentIndex % mapWidth;
+		segmentY = segmentIndex / mapWidth;
 
 		char group = (char)((pixels[segmentIndex] >> floorRailSwitchGroupDataShift) & floorRailSwitchGroupPostShiftBitmask);
 		if (group == 0)
@@ -287,13 +287,13 @@ void MapState::addResetSwitchSegments(
 }
 void MapState::buildLevels() {
 	//initialize the base levels state
-	planeIds = new short[width * height] {};
+	planeIds = new short[mapWidth * mapHeight] {};
 	Level* activeLevel = newLevel();
 	levels.push_back(activeLevel);
 	vector<PlaneConnection> planeConnections;
 
 	//the first tile we'll check is the tile where the boot starts
-	deque<int> tileChecks ({ introAnimationBootTileY * width + introAnimationBootTileX });
+	deque<int> tileChecks ({ introAnimationBootTileY * mapWidth + introAnimationBootTileX });
 	while (!tileChecks.empty()) {
 		int nextTile = tileChecks.front();
 		tileChecks.pop_front();
@@ -318,7 +318,7 @@ void MapState::buildLevels() {
 	//add switches to planes
 	vector<PlaneConnectionSwitch> planeConnectionSwitches;
 	for (Switch* switch0 : switches) {
-		int tile = switch0->getTopY() * width + switch0->getLeftX();
+		int tile = switch0->getTopY() * mapWidth + switch0->getLeftX();
 		//TODO: don't validate the planeId, once the 4th group 0 switch is reachable
 		//during development, we might have switches which aren't on any plane accessible from the start, so skip those
 		short planeId = planeIds[tile];
@@ -381,10 +381,10 @@ LevelTypes::Plane* MapState::buildPlane(
 	while (!planeTileChecks.empty()) {
 		tile = planeTileChecks.front();
 		planeTileChecks.pop_front();
-		plane->addTile(tile % width, tile / width);
+		plane->addTile(tile % mapWidth, tile / mapWidth);
 		//planes never extend to the edge of the map, so we don't need to check whether we wrapped around the edge
-		int upNeighbor = tile - width;
-		int downNeighbor = tile + width;
+		int upNeighbor = tile - mapWidth;
+		int downNeighbor = tile + mapWidth;
 		int neighbors[] = { tile - 1, tile + 1, upNeighbor, downNeighbor };
 
 		//check neighboring tiles of interest to add to this plane or a climb/fall plane
@@ -403,7 +403,7 @@ LevelTypes::Plane* MapState::buildPlane(
 			if (neighborHeight > planeHeight && neighborHeight != emptySpaceHeight) {
 				//for all neighbors but the down neighbor, the tile to climb to is one tile up
 				if (neighbor != downNeighbor) {
-					neighbor -= width;
+					neighbor -= mapWidth;
 					neighborHeight = heights[neighbor];
 				}
 				if (neighborHeight != planeHeight + 2)
@@ -415,11 +415,11 @@ LevelTypes::Plane* MapState::buildPlane(
 					continue;
 				//for all neighbors but the up neighbor, the tile to climb to is further down
 				else if (neighbor != upNeighbor) {
-					int fallX = neighbor % width;
+					int fallX = neighbor % mapWidth;
 					int fallY;
-					if (!tileFalls(fallX, neighbor / width, planeHeight, &fallY, nullptr))
+					if (!tileFalls(fallX, neighbor / mapWidth, planeHeight, &fallY, nullptr))
 						continue;
-					neighbor = fallY * width + fallX;
+					neighbor = fallY * mapWidth + fallX;
 				} else if (neighborHeight % 2 != 0)
 					continue;
 			}
@@ -438,8 +438,8 @@ LevelTypes::Plane* MapState::buildPlane(
 			Rail* rail = rails[railId & railSwitchIndexBitmask];
 			Rail::Segment* startSegment = rail->getSegment(0);
 			Rail::Segment* endSegment = rail->getSegment(rail->getSegmentCount() - 1);
-			int startTile = startSegment->y * width + startSegment->x;
-			int endTile = endSegment->y * width + endSegment->x;
+			int startTile = startSegment->y * mapWidth + startSegment->x;
+			int endTile = endSegment->y * mapWidth + endSegment->x;
 			if (tile == startTile)
 				addRailPlaneConnection(
 					plane, endTile, railId, planeConnections, activeLevel, rail, rail->getSegmentCount() - 2, tileChecks);
@@ -462,7 +462,7 @@ void MapState::addRailPlaneConnection(
 	if (planeIds[toTile] == 0) {
 		planeConnections.push_back(PlaneConnection(plane, toTile, rail, activeLevel->trackNextRail(railId, rail)));
 		Rail::Segment* toAdjacentSegment = rail->getSegment(adjacentRailSegmentIndex);
-		int toAdjacentTile = toTile * 2 - toAdjacentSegment->y * width - toAdjacentSegment->x;
+		int toAdjacentTile = toTile * 2 - toAdjacentSegment->y * mapWidth - toAdjacentSegment->x;
 		if (tiles[toAdjacentTile] == tilePuzzleEnd)
 			tileChecks.push_back(toAdjacentTile);
 		else
@@ -503,8 +503,8 @@ int MapState::getScreenTopWorldY(EntityState* camera, int ticksTime) {
 #ifdef DEBUG
 	void MapState::getSwitchMapTopLeft(short switchIndex, int* outMapLeftX, int* outMapTopY) {
 		short targetSwitchId = switchIndex | switchIdValue;
-		for (int mapY = 0; mapY < height; mapY++) {
-			for (int mapX = 0; mapX < width; mapX++) {
+		for (int mapY = 0; mapY < mapHeight; mapY++) {
+			for (int mapX = 0; mapX < mapWidth; mapX++) {
 				if (getRailSwitchId(mapX, mapY) == targetSwitchId) {
 					*outMapLeftX = mapX;
 					*outMapTopY = mapY;
@@ -515,8 +515,8 @@ int MapState::getScreenTopWorldY(EntityState* camera, int ticksTime) {
 	}
 	void MapState::getResetSwitchMapTopCenter(short resetSwitchIndex, int* outMapCenterX, int* outMapTopY) {
 		short targetResetSwitchId = resetSwitchIndex | resetSwitchIdValue;
-		for (int mapY = 0; mapY < height; mapY++) {
-			for (int mapX = 0; mapX < width; mapX++) {
+		for (int mapY = 0; mapY < mapHeight; mapY++) {
+			for (int mapX = 0; mapX < mapWidth; mapX++) {
 				if (getRailSwitchId(mapX, mapY) == targetResetSwitchId) {
 					*outMapCenterX = mapX;
 					*outMapTopY = mapY;
@@ -617,7 +617,7 @@ char MapState::verticalTilesHeight(int mapX, int lowMapY, int highMapY) {
 }
 void MapState::setIntroAnimationBootTile(bool showBootTile) {
 	//if we're not showing the boot tile, just show a default tile instead of showing the tile from the floor file
-	tiles[introAnimationBootTileY * width + introAnimationBootTileX] = showBootTile ? tileBoot : tileFloorFirst;
+	tiles[introAnimationBootTileY * mapWidth + introAnimationBootTileX] = showBootTile ? tileBoot : tileFloorFirst;
 }
 void MapState::updateWithPreviousMapState(MapState* prev, int ticksTime) {
 	lastActivatedSwitchColor = prev->lastActivatedSwitchColor;
@@ -789,7 +789,7 @@ void MapState::toggleShowConnections() {
 HintState* MapState::generateHint(float playerX, float playerY) {
 	if (Editor::isActive)
 		return newHintState(&Hint::none);
-	LevelTypes::Plane* currentPlane = planes[planeIds[(int)playerY / tileSize * width + (int)playerX / tileSize] - 1];
+	LevelTypes::Plane* currentPlane = planes[planeIds[(int)playerY / tileSize * mapWidth + (int)playerX / tileSize] - 1];
 	return currentPlane->getOwningLevel()->generateHint(
 		currentPlane,
 		[this](short railId, Rail* rail, char* outMovementDirection, char* outTileOffset) {
@@ -812,12 +812,12 @@ void MapState::renderBelowPlayer(EntityState* camera, float playerWorldGroundY, 
 	int screenTopWorldY = getScreenTopWorldY(camera, ticksTime);
 	int tileMinX = MathUtils::max(screenLeftWorldX / tileSize, 0);
 	int tileMinY = MathUtils::max(screenTopWorldY / tileSize, 0);
-	int tileMaxX = MathUtils::min((Config::gameScreenWidth + screenLeftWorldX - 1) / tileSize + 1, width);
-	int tileMaxY = MathUtils::min((Config::gameScreenHeight + screenTopWorldY - 1) / tileSize + 1, height);
+	int tileMaxX = MathUtils::min((Config::gameScreenWidth + screenLeftWorldX - 1) / tileSize + 1, mapWidth);
+	int tileMaxY = MathUtils::min((Config::gameScreenHeight + screenTopWorldY - 1) / tileSize + 1, mapHeight);
 	for (int y = tileMinY; y < tileMaxY; y++) {
 		for (int x = tileMinX; x < tileMaxX; x++) {
 			//consider any tile at the max height to be filler
-			int mapIndex = y * width + x;
+			int mapIndex = y * mapWidth + x;
 			if (heights[mapIndex] == emptySpaceHeight)
 				continue;
 
@@ -834,7 +834,7 @@ void MapState::renderBelowPlayer(EntityState* camera, float playerWorldGroundY, 
 			for (int y = tileMinY; y < tileMaxY; y++) {
 				for (int x = tileMinX; x < tileMaxX; x++) {
 					//consider any tile at the max height to be filler
-					char mapHeight = heights[y * width + x];
+					char mapHeight = heights[y * mapWidth + x];
 					if (mapHeight == emptySpaceHeight || mapHeight == editorSelectedHeight)
 						continue;
 
@@ -856,7 +856,7 @@ void MapState::renderBelowPlayer(EntityState* camera, float playerWorldGroundY, 
 		for (int y = tileMinY; y < tileMaxY; y++) {
 			for (int x = tileMinX; x < tileMaxX; x++) {
 				//consider any tile at the max height to be filler
-				char mapHeight = heights[y * width + x];
+				char mapHeight = heights[y * mapWidth + x];
 				if (mapHeight == emptySpaceHeight || mapHeight == playerZ)
 					continue;
 
@@ -885,7 +885,7 @@ void MapState::renderBelowPlayer(EntityState* camera, float playerWorldGroundY, 
 	for (RailState* railState : railStates) {
 		//guarantee that the rail renders behind the player if it has a lower height than the player
 		float effectivePlayerWorldGroundY =
-			railState->getRail()->getBaseHeight() <= playerZ ? playerWorldGroundY + height : playerWorldGroundY;
+			railState->getRail()->getBaseHeight() <= playerZ ? playerWorldGroundY + mapHeight : playerWorldGroundY;
 		railState->renderBelowPlayer(screenLeftWorldX, screenTopWorldY, effectivePlayerWorldGroundY);
 	}
 	for (SwitchState* switchState : switchStates)
@@ -1256,7 +1256,7 @@ bool MapState::editorHasSwitch(char color, char group) {
 }
 void MapState::editorSetSwitch(int leftX, int topY, char color, char group) {
 	//a switch occupies a 2x2 square, and must be surrounded by a 1-tile ring of no-swich-or-rail tiles
-	if (leftX < 1 || topY < 1 || leftX + 2 >= width || topY + 2 >= height)
+	if (leftX < 1 || topY < 1 || leftX + 2 >= mapWidth || topY + 2 >= mapHeight)
 		return;
 
 	short newSwitchId = (short)switches.size() | switchIdValue;
@@ -1307,7 +1307,7 @@ void MapState::editorSetSwitch(int leftX, int topY, char color, char group) {
 	if (matchedSwitch != nullptr) {
 		for (int eraseY = matchedSwitchY; eraseY < matchedSwitchY + 2; eraseY++) {
 			for (int eraseX = matchedSwitchX; eraseX < matchedSwitchX + 2; eraseX++) {
-				railSwitchIds[eraseY * width + eraseX] = 0;
+				railSwitchIds[eraseY * mapWidth + eraseX] = 0;
 			}
 		}
 		matchedSwitch->editorMoveTo(leftX, topY);
@@ -1331,13 +1331,13 @@ void MapState::editorSetSwitch(int leftX, int topY, char color, char group) {
 	//go through and set the new switch ID, whether we're adding, moving, or removing a switch
 	for (int switchIdY = topY; switchIdY < topY + 2; switchIdY++) {
 		for (int switchIdX = leftX; switchIdX < leftX + 2; switchIdX++) {
-			railSwitchIds[switchIdY * width + switchIdX] = newSwitchId;
+			railSwitchIds[switchIdY * mapWidth + switchIdX] = newSwitchId;
 		}
 	}
 }
 void MapState::editorSetRail(int x, int y, char color, char group) {
 	//a rail can't go along the edge of the map
-	if (x < 1 || y < 1 || x + 1 >= width || y + 1 >= height)
+	if (x < 1 || y < 1 || x + 1 >= mapWidth || y + 1 >= mapHeight)
 		return;
 	//if there is no switch that matches the selected group, don't do anything
 	//even group 0 needs a switch, but we expect that switch to already exist
@@ -1410,7 +1410,7 @@ void MapState::editorSetRail(int x, int y, char color, char group) {
 }
 void MapState::editorSetResetSwitch(int x, int bottomY) {
 	//a reset switch occupies a 1x2 square, and must be surrounded by a 1-tile ring of no-swich-or-rail tiles
-	if (x < 1 || bottomY < 2 || x + 1 >= width || bottomY + 1 >= height)
+	if (x < 1 || bottomY < 2 || x + 1 >= mapWidth || bottomY + 1 >= mapHeight)
 		return;
 
 	short newResetSwitchId = (short)resetSwitches.size() | resetSwitchIdValue;
@@ -1442,8 +1442,8 @@ void MapState::editorSetResetSwitch(int x, int bottomY) {
 		}
 	}
 
-	railSwitchIds[bottomY * width + x] = newResetSwitchId;
-	railSwitchIds[(bottomY - 1) * width + x] = newResetSwitchId;
+	railSwitchIds[bottomY * mapWidth + x] = newResetSwitchId;
+	railSwitchIds[(bottomY - 1) * mapWidth + x] = newResetSwitchId;
 	if (newResetSwitchId != 0)
 		resetSwitches.push_back(newResetSwitch(x, bottomY));
 }

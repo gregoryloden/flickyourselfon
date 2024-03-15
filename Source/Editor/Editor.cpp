@@ -130,15 +130,15 @@ void Editor::SaveButton::onClick() {
 	if (saveButtonDisabled)
 		return;
 
-	int mapWidth = MapState::mapWidth();
-	int mapHeight = MapState::mapHeight();
+	int mapWidth = MapState::getMapWidth();
+	int mapHeight = MapState::getMapHeight();
 
 	int mapExtensionLeftX = 0;
 	int mapExtensionRightX = 0;
 	int mapExtensionTopY = 0;
 	int mapExtensionBottomY = 0;
-	int exportedMapWidth = mapExtensionLeftX + MapState::mapWidth() + mapExtensionRightX;
-	int exportedMapHeight = mapExtensionTopY + MapState::mapHeight() + mapExtensionBottomY;
+	int exportedMapWidth = mapExtensionLeftX + mapWidth + mapExtensionRightX;
+	int exportedMapHeight = mapExtensionTopY + mapHeight + mapExtensionBottomY;
 
 	SDL_Surface* floorSurface =
 		SDL_CreateRGBSurface(0, exportedMapWidth, exportedMapHeight, 32, 0xFF0000, 0xFF00, 0xFF, 0xFF000000);
@@ -194,8 +194,8 @@ void Editor::ExportMapButton::onClick() {
 	if (exportMapButtonDisabled)
 		return;
 
-	int mapWidth = MapState::mapWidth();
-	int mapHeight = MapState::mapHeight();
+	int mapWidth = MapState::getMapWidth();
+	int mapHeight = MapState::getMapHeight();
 
 	SDL_Surface* tilesSurface = FileUtils::loadImage(SpriteRegistry::tilesFileName);
 	SDL_Surface* mapSurface = SDL_CreateRGBSurface(
@@ -886,8 +886,8 @@ void Editor::handleClick(SDL_MouseButtonEvent& clickEvent, bool isDrag, EntitySt
 		selectedButton->expandPaintMapArea(&lowMapX, &lowMapY, &highMapX, &highMapY, true);
 		lowMapX = MathUtils::max(lowMapX, 0);
 		lowMapY = MathUtils::max(lowMapY, 0);
-		highMapX = MathUtils::min(highMapX, MapState::mapWidth() - 1);
-		highMapY = MathUtils::min(highMapY, MapState::mapHeight() - 1);
+		highMapX = MathUtils::min(highMapX, MapState::getMapWidth() - 1);
+		highMapY = MathUtils::min(highMapY, MapState::getMapHeight() - 1);
 
 		if (selectedButton == noiseButton) {
 			vector<double> tilesDistribution;
@@ -926,8 +926,8 @@ void Editor::render(EntityState* camera, int ticksTime) {
 	int screenTopWorldY = MapState::getScreenTopWorldY(camera, ticksTime);
 	GLint boxLeftX = (GLint)(-screenLeftWorldX);
 	GLint boxTopY = (GLint)(-screenTopWorldY);
-	GLint boxRightX = (GLint)(MapState::mapWidth() * MapState::tileSize - screenLeftWorldX);
-	GLint boxBottomY = (GLint)(MapState::mapHeight() * MapState::tileSize - screenTopWorldY);
+	GLint boxRightX = (GLint)(MapState::getMapWidth() * MapState::tileSize - screenLeftWorldX);
+	GLint boxBottomY = (GLint)(MapState::getMapHeight() * MapState::tileSize - screenTopWorldY);
 	SpriteSheet::renderRectangleOutline(1.0f, 1.0f, 1.0f, 1.0f, boxLeftX, boxTopY, boxRightX, boxBottomY);
 
 	//if we've selected something to paint, draw a box around the area we'll paint

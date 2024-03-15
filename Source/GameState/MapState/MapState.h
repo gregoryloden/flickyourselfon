@@ -166,8 +166,8 @@ private:
 	static vector<ResetSwitch*> resetSwitches;
 	static vector<LevelTypes::Plane*> planes;
 	static vector<Level*> levels;
-	static int width;
-	static int height;
+	static int mapWidth;
+	static int mapHeight;
 	static bool editorHideNonTiles;
 
 	vector<RailState*> railStates;
@@ -189,15 +189,15 @@ public:
 	MapState(objCounterParameters());
 	virtual ~MapState();
 
-	static char getTile(int x, int y) { return tiles[y * width + x]; }
-	static char getHeight(int x, int y) { return heights[y * width + x]; }
-	static short getRailSwitchId(int x, int y) { return railSwitchIds[y * width + x]; }
+	static char getTile(int x, int y) { return tiles[y * mapWidth + x]; }
+	static char getHeight(int x, int y) { return heights[y * mapWidth + x]; }
+	static short getRailSwitchId(int x, int y) { return railSwitchIds[y * mapWidth + x]; }
 	static Rail* getRailFromId(int railId) { return rails[railId & railSwitchIndexBitmask]; }
 	static short getIdFromRailIndex(short railIndex) { return railIndex | railIdValue; }
 	static short getIdFromSwitchIndex(short switchIndex) { return switchIndex | switchIdValue; }
 	static short getIdFromResetSwitchIndex(short resetSwitchIndex) { return resetSwitchIndex | switchIdValue; }
-	static int mapWidth() { return width; }
-	static int mapHeight() { return height; }
+	static int getMapWidth() { return mapWidth; }
+	static int getMapHeight() { return mapHeight; }
 	static bool tileHasRailOrSwitch(int x, int y) { return getRailSwitchId(x, y) != 0; }
 	static bool tileHasRail(int x, int y) { return (getRailSwitchId(x, y) & railSwitchIdBitmask) == railIdValue; }
 	static bool tileHasSwitch(int x, int y) { return (getRailSwitchId(x, y) & railSwitchIdBitmask) == switchIdValue; }
@@ -214,9 +214,9 @@ public:
 	}
 	bool getShouldPlayRadioTowerAnimation() { return shouldPlayRadioTowerAnimation; }
 	void finishMapCameraTutorial() { finishedMapCameraTutorial = true; }
-	static void editorSetTile(int x, int y, char tile) { tiles[y * width + x] = tile; }
-	static void editorSetHeight(int x, int y, char height) { heights[y * width + x] = height; }
-	static void editorSetRailSwitchId(int x, int y, short railSwitchId) { railSwitchIds[y * width + x] = railSwitchId; }
+	static void editorSetTile(int x, int y, char tile) { tiles[y * mapWidth + x] = tile; }
+	static void editorSetHeight(int x, int y, char height) { heights[y * mapWidth + x] = height; }
+	static void editorSetRailSwitchId(int x, int y, short railSwitchId) { railSwitchIds[y * mapWidth + x] = railSwitchId; }
 	//initialize and return a MapState
 	static MapState* produce(objCounterParameters());
 	//release a reference to this MapState and return it to the pool if applicable

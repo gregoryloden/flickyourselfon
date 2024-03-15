@@ -170,7 +170,7 @@ void Rail::addSegment(int x, int y) {
 	for (char segmentMaxTileOffset = 0; true; segmentMaxTileOffset++) {
 		//in the event we actually went past the bottom of the map, don't try to find the tile height,
 		//	this segment does not have an offset and we're done searching
-		if (y + segmentMaxTileOffset >= MapState::mapHeight())
+		if (y + segmentMaxTileOffset >= MapState::getMapHeight())
 			segmentMaxTileOffset = Segment::absentTileOffset;
 		else {
 			char railGroundHeight = baseHeight - (segmentMaxTileOffset * 2);
