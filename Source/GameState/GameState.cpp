@@ -309,8 +309,8 @@ void GameState::render(int ticksTime) {
 	playerState.get()->render(camera, gameTicksTime);
 	mapState.get()->renderAbovePlayer(camera, showConnections, gameTicksTime);
 	if (sawIntroAnimation && !camera->hasAnimation()) {
-		playerState.get()->renderTutorials();
-		mapState.get()->renderTutorials(showConnections, playerState.get()->shouldSuggestUndoReset());
+		if (!playerState.get()->renderTutorials())
+			mapState.get()->renderTutorials(showConnections, playerState.get()->shouldSuggestUndoReset());
 	}
 
 	short contextualGroupsRailSwitchId;

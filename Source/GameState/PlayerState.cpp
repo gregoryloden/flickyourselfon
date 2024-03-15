@@ -55,6 +55,7 @@ PlayerState::PlayerState(objCounterParameters())
 , worldGroundYOffset(0.0f)
 , finishedMoveTutorial(false)
 , finishedKickTutorial(false)
+, finishedUndoRedoTutorial(false)
 , lastGoalX(0)
 , lastGoalY(0)
 , undoState(nullptr)
@@ -101,6 +102,7 @@ void PlayerState::copyPlayerState(PlayerState* other) {
 	worldGroundYOffset = other->worldGroundYOffset;
 	finishedMoveTutorial = other->finishedMoveTutorial;
 	finishedKickTutorial = other->finishedKickTutorial;
+	finishedUndoRedoTutorial = other->finishedUndoRedoTutorial;
 	lastGoalX = other->lastGoalX;
 	lastGoalY = other->lastGoalY;
 	setUndoState(undoState, other->undoState.get());
@@ -243,6 +245,7 @@ void PlayerState::updateWithPreviousPlayerState(PlayerState* prev, bool hasKeybo
 	worldGroundYOffset = 0.0f;
 	finishedMoveTutorial = prev->finishedMoveTutorial;
 	finishedKickTutorial = prev->finishedKickTutorial;
+	finishedUndoRedoTutorial = prev->finishedUndoRedoTutorial;
 	lastGoalX = prev->lastGoalX;
 	lastGoalY = prev->lastGoalY;
 	setUndoState(undoState, prev->undoState.get());
@@ -1358,6 +1361,7 @@ void PlayerState::undo(int ticksTime) {
 void PlayerState::redo(int ticksTime) {
 	if (hasAnimation() || redoState.get() == nullptr)
 		return;
+	finishedUndoRedoTutorial = true;
 	availableKickAction.set(
 		newKickAction(KickActionType::Redo, -1, -1, MapState::invalidHeight, MapState::absentRailSwitchId, -1));
 	bool doneProcessing;
@@ -1493,7 +1497,7 @@ void PlayerState::renderKickAction(EntityState* camera, bool hasRailsToReset, in
 	float renderTopY = getRenderCenterScreenY(camera,  ticksTime) - (float)SpriteRegistry::player->getSpriteHeight() / 2.0f;
 	availableKickAction.get()->render(renderCenterX, renderTopY, hasRailsToReset);
 }
-void PlayerState::renderTutorials() {
+bool PlayerState::renderTutorials() {
 	if (!finishedMoveTutorial)
 		MapState::renderControlsTutorial(
 			moveTutorialText,
@@ -1505,6 +1509,16 @@ void PlayerState::renderTutorials() {
 			});
 	else if (!finishedKickTutorial)
 		MapState::renderControlsTutorial(kickTutorialText, { Config::kickKeyBinding.value });
+	else if (!finishedUndoRedoTutorial && redoState.get() != nullptr)
+		MapState::renderControlsTutorial(redoTutorialText, { Config::redoKeyBinding.value });
+	else if (!finishedUndoRedoTutorial
+			&& undoState.get() != nullptr
+			&& (undoState.get()->getTypeIdentifier() == KickSwitchUndoState::classTypeIdentifier
+				|| undoState.get()->getTypeIdentifier() == RideRailUndoState::classTypeIdentifier))
+		MapState::renderControlsTutorial(undoTutorialText, { Config::undoKeyBinding.value });
+	else
+		return false;
+	return true;
 }
 void PlayerState::setHomeScreenState() {
 	obtainBoot();
@@ -1519,6 +1533,8 @@ void PlayerState::saveState(ofstream& file) {
 		file << finishedMoveTutorialFileValue << "\n";
 	if (finishedKickTutorial)
 		file << finishedKickTutorialFileValue << "\n";
+	if (finishedUndoRedoTutorial)
+		file << finishedUndoRedoTutorialFileValue << "\n";
 	file << lastGoalFilePrefix << lastGoalX << " " << lastGoalY << "\n";
 }
 bool PlayerState::loadState(string& line) {
@@ -1536,6 +1552,8 @@ bool PlayerState::loadState(string& line) {
 		finishedMoveTutorial = true;
 	else if (StringUtils::startsWith(line, finishedKickTutorialFileValue))
 		finishedKickTutorial = true;
+	else if (StringUtils::startsWith(line, finishedUndoRedoTutorialFileValue))
+		finishedUndoRedoTutorial = true;
 	else if (StringUtils::startsWith(line, lastGoalFilePrefix))
 		StringUtils::parsePosition(line.c_str() + StringUtils::strlenConst(lastGoalFilePrefix), &lastGoalX, &lastGoalY);
 	else
@@ -1557,6 +1575,7 @@ void PlayerState::reset() {
 	canImmediatelyAutoKick = false;
 	finishedMoveTutorial = false;
 	finishedKickTutorial = false;
+	finishedUndoRedoTutorial = false;
 	lastGoalX = 0;
 	lastGoalY = 0;
 	clearUndoRedoStates();

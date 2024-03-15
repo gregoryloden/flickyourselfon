@@ -51,11 +51,14 @@ private:
 	static constexpr float downKickingDistanceLimit = 0.5f;
 	static constexpr char* moveTutorialText = "Move: ";
 	static constexpr char* kickTutorialText = "Kick: ";
+	static constexpr char* undoTutorialText = "Undo: ";
+	static constexpr char* redoTutorialText = "Redo: ";
 	static constexpr char* playerXFilePrefix = "playerX ";
 	static constexpr char* playerYFilePrefix = "playerY ";
 	static constexpr char* playerDirectionFilePrefix = "playerDirection ";
 	static constexpr char* finishedMoveTutorialFileValue = "finishedMoveTutorial";
 	static constexpr char* finishedKickTutorialFileValue = "finishedKickTutorial";
+	static constexpr char* finishedUndoRedoTutorialFileValue = "finishedUndoRedoTutorial";
 	static constexpr char* lastGoalFilePrefix = "lastGoal ";
 
 	static thread* hintSearchThread;
@@ -86,6 +89,7 @@ private:
 	float worldGroundYOffset;
 	bool finishedMoveTutorial;
 	bool finishedKickTutorial;
+	bool finishedUndoRedoTutorial;
 	int lastGoalX;
 	int lastGoalY;
 	ReferenceCounterHolder<UndoState> undoState;
@@ -96,8 +100,6 @@ public:
 	PlayerState(objCounterParameters());
 	virtual ~PlayerState();
 
-	bool getFinishedMoveTutorial() { return finishedMoveTutorial; }
-	bool getFinishedKickTutorial() { return finishedKickTutorial; }
 	HintState* getHint() { return hintState.get(); }
 	void obtainBoot() { hasBoot = true; }
 	//initialize and return a PlayerState
@@ -280,7 +282,8 @@ public:
 	//render the kick action for this player state if one is available
 	void renderKickAction(EntityState* camera, bool hasRailsToReset, int ticksTime);
 	//render any applicable tutorials
-	void renderTutorials();
+	//returns whether a tutorial was rendered
+	bool renderTutorials();
 	//set this player state with the initial state for the home screen
 	void setHomeScreenState();
 	//save this player state to the file
