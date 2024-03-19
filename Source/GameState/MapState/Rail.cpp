@@ -420,30 +420,30 @@ void RailState::updateWithPreviousRailState(RailState* prev, int ticksTime) {
 	bouncesRemaining = prev->bouncesRemaining;
 	nextMovementDirection = prev->nextMovementDirection;
 	float tileOffsetDiff = distancePerMovement * (ticksTime - prev->lastUpdateTicksTime) / fullMovementDurationTicks;
+	//adjust speed/distance depending on the rail
+	switch (rail->getColor()) {
+		case MapState::squareColor:
+			tileOffsetDiff *= squareSpeedMultiplier;
+			break;
+		case MapState::sawColor:
+			if ((bouncesRemaining & 1) == 1)
+				tileOffsetDiff *= sawReturnSpeedMultiplier;
+			break;
+		case MapState::triangleColor:
+		default:
+			break;
+	}
 	if (bouncesRemaining != 0) {
+		//advance the rail, bouncing it if applicable
 		tileOffset =
 			prev->tileOffset + tileOffsetDiff * (bouncesRemaining > 0 ? currentMovementDirection : -currentMovementDirection);
-		switch (rail->getColor()) {
-			case MapState::triangleColor:
-				if (tileOffset < 0)
-					tileOffset = MathUtils::fmin(-tileOffset, targetTileOffset);
-				else if (tileOffset > rail->getMaxTileOffset())
-					tileOffset = MathUtils::fmax(rail->getMaxTileOffset() * 2 - tileOffset, targetTileOffset);
-				else
-					return;
-				currentMovementDirection = -currentMovementDirection;
-				break;
-			case MapState::sawColor:
-				if (tileOffset < 0)
-					tileOffset += rail->getMaxTileOffset();
-				else if (tileOffset >= rail->getMaxTileOffset())
-					tileOffset -= rail->getMaxTileOffset();
-				else
-					return;
-				break;
-			default:
-				return;
-		}
+		if (tileOffset < 0)
+			tileOffset = MathUtils::fmin(-tileOffset, targetTileOffset);
+		else if (tileOffset > rail->getMaxTileOffset())
+			tileOffset = MathUtils::fmax(rail->getMaxTileOffset() * 2 - tileOffset, targetTileOffset);
+		else
+			return;
+		currentMovementDirection = -currentMovementDirection;
 		bouncesRemaining -= (bouncesRemaining > 0 ? 1 : -1);
 	} else if (prev->tileOffset != targetTileOffset)
 		tileOffset = prev->tileOffset > targetTileOffset
@@ -454,9 +454,12 @@ void RailState::updateWithPreviousRailState(RailState* prev, int ticksTime) {
 }
 void RailState::triggerMovement(bool moveForward) {
 	if (rail->triggerMovement(moveForward ? nextMovementDirection : -nextMovementDirection, &targetTileOffset)) {
-		if (rail->getColor() != MapState::sawColor)
+		if (rail->getColor() == MapState::sawColor)
+			bouncesRemaining += (moveForward ? 2 : -2);
+		else {
 			nextMovementDirection = -nextMovementDirection;
-		bouncesRemaining += (moveForward ? 1 : -1);
+			bouncesRemaining += (moveForward ? 1 : -1);
+		}
 	}
 }
 void RailState::renderBelowPlayer(int screenLeftWorldX, int screenTopWorldY, float playerWorldGroundY) {
