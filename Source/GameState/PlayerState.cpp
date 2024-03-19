@@ -1515,8 +1515,9 @@ bool PlayerState::renderTutorials() {
 		MapState::renderControlsTutorial(redoTutorialText, { Config::redoKeyBinding.value });
 	else if (!finishedUndoRedoTutorial
 			&& undoState.get() != nullptr
-			&& (undoState.get()->getTypeIdentifier() == KickSwitchUndoState::classTypeIdentifier
-				|| undoState.get()->getTypeIdentifier() == RideRailUndoState::classTypeIdentifier))
+			&& (undoState.get()->getTypeIdentifier() == RideRailUndoState::classTypeIdentifier
+				|| undoState.get()->getTypeIdentifier() == KickSwitchUndoState::classTypeIdentifier
+				|| undoState.get()->getTypeIdentifier() == KickResetSwitchUndoState::classTypeIdentifier))
 		MapState::renderControlsTutorial(undoTutorialText, { Config::undoKeyBinding.value });
 	else
 		return false;
