@@ -115,7 +115,7 @@ class RailState onlyInDebug(: public ObjCounter) {
 private:
 	static constexpr float fullMovementDurationTicks = 0.75f * Config::ticksPerSecond;
 	static constexpr float squareSpeedMultiplier = 2.0f;
-	static constexpr float sawReturnSpeedMultiplier = 8.0f;
+	static constexpr float sawReverseSpeedMultiplier = 8.0f;
 
 	Rail* rail;
 	float tileOffset;

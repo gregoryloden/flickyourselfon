@@ -427,7 +427,7 @@ void RailState::updateWithPreviousRailState(RailState* prev, int ticksTime) {
 			break;
 		case MapState::sawColor:
 			if ((bouncesRemaining & 1) == 1)
-				tileOffsetDiff *= sawReturnSpeedMultiplier;
+				tileOffsetDiff *= sawReverseSpeedMultiplier;
 			break;
 		case MapState::triangleColor:
 		default:
