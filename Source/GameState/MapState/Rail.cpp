@@ -94,6 +94,8 @@ baseHeight(pBaseHeight)
 , movementMagnitude(pMovementMagnitude)
 , editorIsDeleted(false) {
 	segments->push_back(Segment(x, y, 0));
+	if (pColor == MapState::sineColor)
+		maxTileOffset = 4;
 }
 Rail::~Rail() {
 	delete segments;
@@ -206,7 +208,8 @@ void Rail::addSegment(int x, int y) {
 		lastEnd->spriteHorizontalIndex =
 			middleSegmentSpriteHorizontalIndex(secondLastEnd->x, secondLastEnd->y, lastEnd->x, lastEnd->y, end->x, end->y);
 		if (lastEnd->maxTileOffset != Segment::absentTileOffset) {
-			maxTileOffset = MathUtils::min(lastEnd->maxTileOffset, maxTileOffset);
+			if (color != MapState::sineColor)
+				maxTileOffset = MathUtils::min(lastEnd->maxTileOffset, maxTileOffset);
 			initialTileOffset = MathUtils::min(maxTileOffset, initialTileOffset);
 		}
 	//we only have 2 segments so the other rail is just the end segment that complements this
@@ -240,6 +243,15 @@ bool Rail::triggerMovement(char movementDirection, char* inOutTileOffset) {
 			else
 				return false;
 			return true;
+		//sine wave rail: move the rail to the next of the 3 static sine wave positions for this movement direction
+		//higher movement magnitudes will move more than one position at a time
+		case MapState::sineColor:
+			*inOutTileOffset = sineWaveNextOffset[movementMagnitude - 1][(movementDirection + 1) / 2][*inOutTileOffset];
+			if (*inOutTileOffset < 0) {
+				*inOutTileOffset = -*inOutTileOffset;
+				return true;
+			}
+			return false;
 		default:
 			return false;
 	}
@@ -317,11 +329,13 @@ bool Rail::editorRemoveSegment(int x, int y, char pColor, char group) {
 	}
 	editorRemoveGroup(group);
 	//reset the max tile offset, find the smallest offset among the non-end segments
-	maxTileOffset = baseHeight / 2;
-	for (int i = 1; i < (int)segments->size() - 1; i++) {
-		Segment& segment = (*segments)[i];
-		if (segment.maxTileOffset != Segment::absentTileOffset)
-			maxTileOffset = MathUtils::min(segment.maxTileOffset, maxTileOffset);
+	if (color != MapState::sineColor) {
+		maxTileOffset = baseHeight / 2;
+		for (int i = 1; i < (int)segments->size() - 1; i++) {
+			Segment& segment = (*segments)[i];
+			if (segment.maxTileOffset != Segment::absentTileOffset)
+				maxTileOffset = MathUtils::min(segment.maxTileOffset, maxTileOffset);
+		}
 	}
 	if (segments->size() == 0)
 		editorIsDeleted = true;
@@ -360,6 +374,8 @@ void Rail::editorAdjustMovementMagnitude(int x, int y, char magnitudeAdd) {
 	Segment& end = segments->back();
 	if ((x == start.x && y == start.y) || (x == end.x && y == end.y))
 		movementMagnitude = MathUtils::max(1, MathUtils::min(maxTileOffset, movementMagnitude + magnitudeAdd));
+	if (color == MapState::sineColor)
+		movementMagnitude = MathUtils::min(3, movementMagnitude);
 }
 void Rail::editorToggleMovementDirection() {
 	if (color != MapState::sawColor)
@@ -429,6 +445,9 @@ void RailState::updateWithPreviousRailState(RailState* prev, int ticksTime) {
 			if ((bouncesRemaining & 1) == 1)
 				tileOffsetDiff *= sawReverseSpeedMultiplier;
 			break;
+		case MapState::sineColor:
+			updateSineRailTileOffset(prev, ticksTime);
+			return;
 		case MapState::triangleColor:
 		default:
 			break;
@@ -451,6 +470,45 @@ void RailState::updateWithPreviousRailState(RailState* prev, int ticksTime) {
 			: MathUtils::fmin(targetTileOffset, prev->tileOffset + tileOffsetDiff);
 	else
 		tileOffset = targetTileOffset;
+}
+void RailState::updateSineRailTileOffset(RailState* prev, int ticksTime) {
+	//find the current "angle" for the rail
+	float tileOffsetAngle = acosf(1.0f - prev->tileOffset / rail->getMaxTileOffset() * 2.0f);
+	if (currentMovementDirection < 0)
+		tileOffsetAngle = -tileOffsetAngle;
+	float tileOffsetAngleDiff =
+		distancePerMovement * MathUtils::piOver3 * (ticksTime - prev->lastUpdateTicksTime) / fullMovementDurationTicks;
+	//find the next "angle" for the rail
+	float nextTileOffsetAngle;
+	if (bouncesRemaining > 0) {
+		nextTileOffsetAngle = tileOffsetAngle + tileOffsetAngleDiff;
+		if (nextTileOffsetAngle > MathUtils::pi || (nextTileOffsetAngle > 0 && tileOffsetAngle <= 0)) {
+			currentMovementDirection = -currentMovementDirection;
+			bouncesRemaining--;
+		}
+	} else if (bouncesRemaining < 0) {
+		nextTileOffsetAngle = tileOffsetAngle - tileOffsetAngleDiff;
+		if (nextTileOffsetAngle < -MathUtils::pi || (nextTileOffsetAngle < 0 && tileOffsetAngle >= 0)) {
+			currentMovementDirection = -currentMovementDirection;
+			bouncesRemaining++;
+		}
+	} else if (prev->tileOffset != targetTileOffset) {
+		if (tileOffsetAngle < 0)
+			tileOffsetAngle = -tileOffsetAngle;
+		float targetTileOffsetAngle = acosf(1.0f - (float)targetTileOffset / rail->getMaxTileOffset() * 2.0f);
+		if (abs(tileOffsetAngle - targetTileOffsetAngle) <= tileOffsetAngleDiff) {
+			tileOffset = targetTileOffset;
+			return;
+		} else
+			nextTileOffsetAngle = tileOffsetAngle < targetTileOffsetAngle
+				? tileOffsetAngle + tileOffsetAngleDiff
+				: tileOffsetAngle - tileOffsetAngleDiff;
+	} else {
+		tileOffset = targetTileOffset;
+		return;
+	}
+	//convert the "angle" back to a tile offset
+	tileOffset = (1.0f - cosf(nextTileOffsetAngle)) / 2.0f * rail->getMaxTileOffset();
 }
 void RailState::triggerMovement(bool moveForward) {
 	if (rail->triggerMovement(moveForward ? nextMovementDirection : -nextMovementDirection, &targetTileOffset)) {

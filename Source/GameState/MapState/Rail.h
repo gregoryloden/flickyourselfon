@@ -35,6 +35,14 @@ public:
 	};
 
 private:
+	//pick the next offset for the rail, based on knowing [movement magnitude][movement direction][tile offset]
+	static constexpr char sineWaveNextOffset[3][2][5] = {
+		//certain tile offset inputs will be unused, but put values for them anyways to advance to the next valid tile offset
+		{ { -1, 0, 1, 1, 3 }, { 1, 3, 3, 4, -3 } },
+		{ { -3, 0, 0, 0, 3 }, { 3, 3, 3, -3, -3 } },
+		{ { -4, 0, 0, 0, 0 }, { 4, 4, 4, 4, 0 } },
+	};
+
 	char baseHeight;
 	char color;
 	vector<Segment>* segments;
@@ -140,6 +148,8 @@ public:
 	bool canRide() { return tileOffset == 0.0f; }
 	//check if we need to start/stop moving
 	void updateWithPreviousRailState(RailState* prev, int ticksTime);
+	//update the position of a sine wave rail
+	void updateSineRailTileOffset(RailState* prev, int ticksTime);
 	//the switch connected to this rail was kicked, move this rail accordingly
 	void triggerMovement(bool moveForward);
 	//render the rail behind the player by rendering each segment, and save which segments are above the player

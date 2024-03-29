@@ -1,3 +1,5 @@
 #include "General/General.h"
 
-const float MathUtils::twoPi = atan2f(0, -1) * 2;
+const float MathUtils::pi = acosf(-1);
+const float MathUtils::twoPi = pi * 2;
+const float MathUtils::piOver3 = pi / 3;
