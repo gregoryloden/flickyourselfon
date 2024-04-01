@@ -1012,6 +1012,7 @@ bool MapState::renderGroupsForRailsToReset(EntityState* camera, short resetSwitc
 		RailState* railState = railStates[railId & railSwitchIndexBitmask];
 		if (railState->isInDefaultState())
 			continue;
+		railState->renderMovementDirections(screenLeftWorldX, screenTopWorldY);
 		railState->getRail()->renderGroups(screenLeftWorldX, screenTopWorldY);
 		hasRailsToReset = true;
 	}
@@ -1029,11 +1030,13 @@ void MapState::renderGroupsForRailsFromSwitch(EntityState* camera, short switchI
 		return;
 	int screenLeftWorldX = getScreenLeftWorldX(camera, ticksTime);
 	int screenTopWorldY = getScreenTopWorldY(camera, ticksTime);
-	for (Rail* rail : rails) {
+	for (RailState* railState : railStates) {
+		Rail* rail = railState->getRail();
 		if (rail->getColor() != color)
 			continue;
 		for (char railGroup : rail->getGroups()) {
 			if (railGroup == group) {
+				railState->renderMovementDirections(screenLeftWorldX, screenTopWorldY);
 				rail->renderGroups(screenLeftWorldX, screenTopWorldY);
 				break;
 			}
