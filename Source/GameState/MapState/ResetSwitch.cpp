@@ -206,6 +206,15 @@ bool ResetSwitch::editorAddSegment(int x, int y, char color, char group) {
 	addSegment(x, y, color, group, segmentsToAddTo);
 	return true;
 }
+void ResetSwitch::editorRewriteGroup(char color, char oldGroup, char group) {
+	vector<Segment>* allSegments[3] { &leftSegments, &bottomSegments, &rightSegments };
+	for (vector<Segment>* segments : allSegments) {
+		for (Segment& segment : *segments) {
+			if (segment.color == color && segment.group == oldGroup)
+				segment.group = group;
+		}
+	}
+}
 char ResetSwitch::editorGetFloorSaveData(int x, int y) {
 	if (x == centerX && y == bottomY)
 		return MapState::floorResetSwitchHeadValue;

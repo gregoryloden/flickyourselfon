@@ -1266,6 +1266,7 @@ void MapState::editorSetSwitch(int leftX, int topY, char color, char group) {
 	Switch* moveSwitch = nullptr;
 	int moveSwitchX = -1;
 	int moveSwitchY = -1;
+	Switch* rewriteSwitch = nullptr;
 	for (int checkY = topY - 1; checkY <= topY + 2; checkY++) {
 		for (int checkX = leftX - 1; checkX <= leftX + 2; checkX++) {
 			//no rail or switch here, keep looking
@@ -1276,31 +1277,39 @@ void MapState::editorSetSwitch(int leftX, int topY, char color, char group) {
 			if (!tileHasSwitch(checkX, checkY))
 				return;
 
-			//there is a switch here but we won't delete it because it isn't exactly the same as the switch we're placing
+			//there is a switch here, check if it matches the color of the switch we're placing
 			short otherRailSwitchId = getRailSwitchId(checkX, checkY);
 			Switch* switch0 = switches[otherRailSwitchId & railSwitchIndexBitmask];
-			if (switch0->getColor() != color || switch0->getGroup() != group)
+			if (switch0->getColor() != color)
 				return;
 
 			int moveDist = abs(checkX - leftX) + abs(checkY - topY);
 			//we found this switch already, keep going
 			if (moveSwitch != nullptr)
 				continue;
-			//we clicked on a switch exactly the same as the one we're placing, mark it as deleted and set newSwitchId to 0 so
-			//	that we can use the regular switch-placing logic to clear the switch
+			//we clicked on a switch in exactly the same position as the one we're placing
 			else if (moveDist == 0) {
-				switch0->editorIsDeleted = true;
-				newSwitchId = 0;
+				//if it's also the same group, mark it as deleted and set newSwitchId to 0 so that we can use the regular
+				//	switch-placing logic to clear the switch
+				if (switch0->getGroup() == group) {
+					switch0->editorIsDeleted = true;
+					newSwitchId = 0;
+				//if it's a different group, we'll see if we can change its group to the selected group
+				} else
+					rewriteSwitch = switch0;
 				checkY = topY + 3;
 				break;
+			//different position and different group, the switches don't match so there's nothing to do here
+			} else if (switch0->getGroup() != group)
+				return;
 			//we clicked 1 square adjacent to a switch exactly the same as the one we're placing, save the position and keep
 			//	going, in case the new switch position is invalid
-			} else if (moveDist == 1) {
+			else if (moveDist == 1) {
 				moveSwitch = switch0;
 				newSwitchId = otherRailSwitchId;
 				moveSwitchX = checkX;
 				moveSwitchY = checkY;
-			//it's the same switch but it's too far, we can't move it or delete it
+			//it matches a switch but it's too far, we can't move it or delete it
 			} else
 				return;
 		}
@@ -1314,6 +1323,29 @@ void MapState::editorSetSwitch(int leftX, int topY, char color, char group) {
 			}
 		}
 		moveSwitch->editorMoveTo(leftX, topY);
+	//we found a switch to change the group of
+	} else if (rewriteSwitch != nullptr) {
+		//don't change to the group if it's already in use
+		if (editorHasSwitch(color, group))
+			return;
+		char oldGroup = rewriteSwitch->getGroup();
+		//rewrite the group on the switch
+		rewriteSwitch->editorSetGroup(group);
+		//rewrite the group in rails
+		for (Rail* rail : rails) {
+			if (rail->getColor() != color)
+				continue;
+			vector<char>& groups = rail->getGroups();
+			for (int i = 0; i < (int)groups.size(); i++) {
+				if (groups[i] == oldGroup)
+					groups[i] = group;
+			}
+		}
+		//rewrite the group in reset switches
+		for (ResetSwitch* resetSwitch : resetSwitches)
+			resetSwitch->editorRewriteGroup(color, oldGroup, group);
+		//don't write a switch ID, we're done
+		return;
 	//we're deleting a switch, remove this group from any matching rails and reset switches
 	} else if (newSwitchId == 0) {
 		for (Rail* rail : rails) {

@@ -60,6 +60,8 @@ public:
 	void editorRemoveSwitchSegment(char color, char group);
 	//add a segment to this reset switch if it's new and the space is valid
 	bool editorAddSegment(int x, int y, char color, char group);
+	//change the group for a segment matching the given color and old group
+	void editorRewriteGroup(char color, char oldGroup, char group);
 	//we're saving this switch to the floor file, get the data we need at this tile
 	char editorGetFloorSaveData(int x, int y);
 private:

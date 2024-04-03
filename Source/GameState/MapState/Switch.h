@@ -21,6 +21,7 @@ public:
 	int getTopY() { return topY; }
 	char getColor() { return color; }
 	char getGroup() { return group; }
+	void editorSetGroup(char pGroup) { group = pGroup; }
 	//get the map center x that radio waves should originate from
 	float getSwitchWavesCenterX();
 	//get the map center y that radio waves should originate from
