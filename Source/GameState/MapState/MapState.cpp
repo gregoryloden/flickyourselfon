@@ -1263,9 +1263,9 @@ void MapState::editorSetSwitch(int leftX, int topY, char color, char group) {
 		return;
 
 	short newSwitchId = (short)switches.size() | switchIdValue;
-	Switch* matchedSwitch = nullptr;
-	int matchedSwitchX = -1;
-	int matchedSwitchY = -1;
+	Switch* moveSwitch = nullptr;
+	int moveSwitchX = -1;
+	int moveSwitchY = -1;
 	for (int checkY = topY - 1; checkY <= topY + 2; checkY++) {
 		for (int checkX = leftX - 1; checkX <= leftX + 2; checkX++) {
 			//no rail or switch here, keep looking
@@ -1284,7 +1284,7 @@ void MapState::editorSetSwitch(int leftX, int topY, char color, char group) {
 
 			int moveDist = abs(checkX - leftX) + abs(checkY - topY);
 			//we found this switch already, keep going
-			if (matchedSwitch != nullptr)
+			if (moveSwitch != nullptr)
 				continue;
 			//we clicked on a switch exactly the same as the one we're placing, mark it as deleted and set newSwitchId to 0 so
 			//	that we can use the regular switch-placing logic to clear the switch
@@ -1294,12 +1294,12 @@ void MapState::editorSetSwitch(int leftX, int topY, char color, char group) {
 				checkY = topY + 3;
 				break;
 			//we clicked 1 square adjacent to a switch exactly the same as the one we're placing, save the position and keep
-			//	going
+			//	going, in case the new switch position is invalid
 			} else if (moveDist == 1) {
-				matchedSwitch = switch0;
+				moveSwitch = switch0;
 				newSwitchId = otherRailSwitchId;
-				matchedSwitchX = checkX;
-				matchedSwitchY = checkY;
+				moveSwitchX = checkX;
+				moveSwitchY = checkY;
 			//it's the same switch but it's too far, we can't move it or delete it
 			} else
 				return;
@@ -1307,13 +1307,13 @@ void MapState::editorSetSwitch(int leftX, int topY, char color, char group) {
 	}
 
 	//we've moving a switch, erase the ID from the old tiles and update the position on the switch
-	if (matchedSwitch != nullptr) {
-		for (int eraseY = matchedSwitchY; eraseY < matchedSwitchY + 2; eraseY++) {
-			for (int eraseX = matchedSwitchX; eraseX < matchedSwitchX + 2; eraseX++) {
+	if (moveSwitch != nullptr) {
+		for (int eraseY = moveSwitchY; eraseY < moveSwitchY + 2; eraseY++) {
+			for (int eraseX = moveSwitchX; eraseX < moveSwitchX + 2; eraseX++) {
 				railSwitchIds[eraseY * mapWidth + eraseX] = 0;
 			}
 		}
-		matchedSwitch->editorMoveTo(leftX, topY);
+		moveSwitch->editorMoveTo(leftX, topY);
 	//we're deleting a switch, remove this group from any matching rails and reset switches
 	} else if (newSwitchId == 0) {
 		for (Rail* rail : rails) {
