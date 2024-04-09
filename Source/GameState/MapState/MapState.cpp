@@ -1376,14 +1376,7 @@ void MapState::editorSetRail(int x, int y, char color, char group) {
 		return;
 	//if there is no switch that matches the selected group, don't do anything
 	//even group 0 needs a switch, but we expect that switch to already exist
-	bool foundMatchingSwitch = false;
-	for (Switch* switch0 : switches) {
-		if (switch0->getGroup() == group && switch0->getColor() == color && !switch0->editorIsDeleted) {
-			foundMatchingSwitch = true;
-			break;
-		}
-	}
-	if (!foundMatchingSwitch)
+	if (!editorHasSwitch(color, group))
 		return;
 
 	//delete a segment from a rail
