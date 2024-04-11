@@ -10,3 +10,4 @@ Level 5: switch solution 1 2 3 4 3 2 1, require a reset if the player jumps off 
 	maybe 4 is actually the closest switch to 1
 	actually @0 can only access 1
 Level 6: 4 x 4 pillars, rails between some, height 3 platforms between others, some pillars at height 5 and some at 7, floor at height 1
+	switches only affect rails that don't touch the same plane
