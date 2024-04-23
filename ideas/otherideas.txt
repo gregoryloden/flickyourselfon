@@ -3,8 +3,12 @@ square wave switches are just toggle
 sine waves go up and down on a timer
 -once you are on, it stays in position until you cross
 
+Sine wave or saw wave: switch alternates which rail it affects
+
 multiple levels/heights of bars?
 multiple levels/heights per bar?
+
+Jump rails that are one-way?
 
 first level:
 side left is down, left is down, right is down
