@@ -1,4 +1,11 @@
-Level 1: (see otherideas.txt)
+Level 1: three rails, two switches
+	side left is down, left is down, right is down
+	button 1 on bottom platform
+	button 2 on right platform
+	turning on square switch makes left go up
+	press button 1 to make left go down and right go up
+	press button 2 to make side left go up and right go down
+	press button 1 to make left go up and right go up (all 3 are up)
 Level 2: based on solution: 1 2 3 1 2 4 1 3 2 1, 4 triggers a rail that enables 2->1, otherwise it's one-way 1->2
 Level 3: based on level sketch with rails and hills (level3.jpg, puzzle A2)
 Level 4: build a hilly scenery and stick rails and switches on it
