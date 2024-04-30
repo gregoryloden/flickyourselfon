@@ -2,6 +2,8 @@
 
 class StringUtils {
 public:
+	//Prevent allocation
+	StringUtils() = delete;
 	static constexpr int strlenConst(const char* s) {
 		for (int i = 0; true; i++) {
 			if (s[i] == 0)

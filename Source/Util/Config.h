@@ -49,7 +49,6 @@ namespace ConfigTypes {
 }
 class Config {
 public:
-
 	static const int gameScreenWidth = 221;
 	static const int gameScreenHeight = 165;
 	static const int editorMarginRight = 150;
@@ -91,6 +90,8 @@ public:
 	static ConfigTypes::HoldToggleSetting showConnectionsMode;
 	static ConfigTypes::OnOffSetting heightBasedShading;
 
+	//Prevent allocation
+	Config() = delete;
 	//save the key bindings to the save file
 	static void saveSettings();
 	//load the key bindings from the save file, if it exists

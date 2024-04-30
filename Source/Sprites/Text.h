@@ -75,6 +75,8 @@ private:
 	static vector<GlyphRow*> glyphRows;
 
 public:
+	//Prevent allocation
+	Text() = delete;
 	//load the font sprite sheet and find which glyphs we have
 	static void loadFont();
 	//delete the font sprite sheet

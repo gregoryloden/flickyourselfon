@@ -52,6 +52,8 @@ private:
 	static vector<PooledObject*> pool;
 
 public:
+	//Prevent allocation
+	ObjectPool() = delete;
 	//if we have objects in the pool then remove one and return it, otherwise make a new object
 	static PooledObject* newFromPool(objCounterParameters());
 	//add this object back to the pool

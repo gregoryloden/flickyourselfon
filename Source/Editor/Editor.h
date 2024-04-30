@@ -461,6 +461,8 @@ private:
 public:
 	static bool needsGameStateSave;
 
+	//Prevent allocation
+	Editor() = delete;
 	//build all the editor buttons
 	static void loadButtons();
 	//delete all the editor buttons

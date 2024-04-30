@@ -56,6 +56,8 @@ public:
 	static SpriteAnimation* sparksSlowAnimationA;
 	static SpriteAnimation* sparksSlowAnimationB;
 
+	//Prevent allocation
+	SpriteRegistry() = delete;
 	//load all the sprite sheets
 	//this should only be called after the gl context has been created
 	static void loadAll();

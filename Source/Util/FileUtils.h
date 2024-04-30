@@ -8,6 +8,8 @@ private:
 	#endif
 
 public:
+	//Prevent allocation
+	FileUtils() = delete;
 	//load an image
 	static SDL_Surface* loadImage(const char* imagePath);
 	//save an image
