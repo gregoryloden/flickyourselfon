@@ -1,5 +1,6 @@
 #include "flickyourselfon.h"
 #include <time.h>
+#include "Audio/Audio.h"
 #include "Editor/Editor.h"
 #include "GameState/CollisionRect.h"
 #include "GameState/DynamicValue.h"
@@ -70,7 +71,8 @@ int gameMain(int argc, char* argv[]) {
 		Config::refreshRate = displayMode.refresh_rate;
 	Logger::debugLogger.log("Window set up /// Loading game state...");
 
-	//load the map, settings, and save file which don't depend on the render thread
+	//load audio, settings, the map, and save file which don't depend on the render thread
+	Audio::setUp();
 	Config::loadSettings();
 	MapState::buildMap();
 	GameState::cacheSaveFile();
@@ -144,6 +146,7 @@ int gameMain(int argc, char* argv[]) {
 		Text::unloadFont();
 		delete gameStateQueue;
 		MapState::deleteMap();
+		Audio::tearDown();
 		//the order that these object pools are cleared matters since some earlier classes in this list may have retained
 		//	objects from classes later in this list
 		ObjectPool<PlayerState>::clearPool();
