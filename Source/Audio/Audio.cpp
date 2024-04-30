@@ -1,5 +1,6 @@
 #include "Audio.h"
 
+//////////////////////////////// Audio ////////////////////////////////
 int Audio::sampleRate = 44100;
 Uint16 Audio::format = AUDIO_S16SYS;
 int Audio::channels = 1;
