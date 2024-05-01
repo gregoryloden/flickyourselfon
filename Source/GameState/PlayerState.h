@@ -39,7 +39,7 @@ public:
 	static constexpr float introAnimationPlayerCenterX = 50.5f + (float)(MapState::firstLevelTileOffsetX * MapState::tileSize);
 	static constexpr float introAnimationPlayerCenterY = 106.5f + (float)(MapState::firstLevelTileOffsetY * MapState::tileSize);
 	static constexpr float baseSpeedPerTick = 40.0f / Config::ticksPerSecond;
-	static constexpr float diagonalSpeedPerTick = baseSpeedPerTick * MathUtils::sqrtConst(0.5f);
+	static constexpr float diagonalSpeedPerTick = baseSpeedPerTick * (float)MathUtils::sqrtConst(0.5);
 	static constexpr float sprintModifier = 2.0f;
 private:
 	static const int minUndoTicksDuration = 250;

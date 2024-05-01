@@ -73,6 +73,7 @@ int gameMain(int argc, char* argv[]) {
 
 	//load audio, settings, the map, and save file which don't depend on the render thread
 	Audio::setUp();
+	Audio::loadMusic();
 	Config::loadSettings();
 	MapState::buildMap();
 	GameState::cacheSaveFile();
@@ -131,6 +132,7 @@ int gameMain(int argc, char* argv[]) {
 		updateDelay = Config::ticksPerSecond * updateNum / Config::updatesPerSecond - ((int)SDL_GetTicks() - startTime);
 	}
 
+	Audio::stopAudio();
 	//the render thread will quit once it reaches the game state that signalled that we should quit
 	renderLoopThread.join();
 	//stop the logging thread but keep the files open
@@ -146,6 +148,7 @@ int gameMain(int argc, char* argv[]) {
 		Text::unloadFont();
 		delete gameStateQueue;
 		MapState::deleteMap();
+		Audio::unloadMusic();
 		Audio::tearDown();
 		//the order that these object pools are cleared matters since some earlier classes in this list may have retained
 		//	objects from classes later in this list
