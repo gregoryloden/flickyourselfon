@@ -2,18 +2,36 @@
 
 class Audio {
 public:
-	enum class Waveform: unsigned char {
-		Square,
-		Triangle,
-		Saw,
-		Sine,
-	};
-	enum class VolumeEffect: unsigned char {
-		Full,
-		SquareDecay,
-	};
 	class Music onlyInDebug(: public ObjCounter) {
 	public:
+		enum class Waveform : unsigned char {
+			Square,
+			Triangle,
+			Saw,
+			Sine,
+		};
+		//Should only be allocated within an object, on the stack, or as a static object
+		class SoundEffectSpecs {
+		public:
+			enum class VolumeEffect : unsigned char {
+				Full,
+				SquareDecay,
+			};
+
+			float volume;
+			VolumeEffect volumeEffect;
+			int reverbRepetitions;
+			float reverbSingleDelay;
+			float reverbFalloff;
+
+			SoundEffectSpecs(
+				float pVolume,
+				VolumeEffect pVolumeEffect,
+				int pReverbRepetitions,
+				float pReverbSingleDelay,
+				float pReverbFalloff);
+			virtual ~SoundEffectSpecs();
+		};
 		//Should only be allocated within an object, on the stack, or as a static object
 		class Note {
 		public:
@@ -26,23 +44,14 @@ public:
 
 		const char* filename;
 		Waveform waveform;
-		float volume;
-		VolumeEffect volumeEffect;
-		int reverbRepetitions;
-		float reverbSingleDelay;
-		float reverbFalloff;
+		SoundEffectSpecs soundEffectSpecs;
 		Mix_Chunk chunk;
 
 		Music(
 			objCounterParametersComma()
 			const char* pFilename,
 			Waveform pWaveform,
-			float pVolume,
-			VolumeEffect pVolumeEffect,
-			int pReverbRepetitions,
-			float pReverbSingleDelay,
-			float pReverbFalloff);
-		Music(objCounterParametersComma() const char* pFilename, Waveform pWaveform, float pVolume);
+			SoundEffectSpecs& pSoundEffectSpecs);
 		virtual ~Music();
 	};
 
@@ -88,12 +97,8 @@ public:
 	//write a tone of the given waveform and frequency, for a certain number of samples at the given volume
 	//adds a short fade-in and fade-out to avoid pops
 	static void writeTone(
-		Waveform waveform,
-		float volume,
-		VolumeEffect volumeEffect,
-		int reverbRepetitions,
-		float reverbSingleDelay,
-		float reverbFalloff,
+		Music::Waveform waveform,
+		Music::SoundEffectSpecs soundEffectSpecs,
 		float frequency,
 		int sampleCount,
 		Uint8* outSamples);

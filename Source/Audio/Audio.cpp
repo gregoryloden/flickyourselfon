@@ -2,40 +2,37 @@
 #include "Util/FileUtils.h"
 #include "Util/StringUtils.h"
 
-#define newMusicWithReverb(filename, waveform, volume, volumeEffect, reverbRepetitions, reverbSingleDelay, reverbFalloff) \
-	newWithArgs(Music, filename, waveform, volume, volumeEffect, reverbRepetitions, reverbSingleDelay, reverbFalloff)
-#define newMusic(filename, waveform, volume) newWithArgs(Music, filename, waveform, volume)
+#define newMusic(filename, waveform, soundEffectSpecs) newWithArgs(Music, filename, waveform, soundEffectSpecs)
+
+//////////////////////////////// Audio::Music::SoundEffectSpecs ////////////////////////////////
+Audio::Music::SoundEffectSpecs::SoundEffectSpecs(
+	float pVolume, VolumeEffect pVolumeEffect, int pReverbRepetitions, float pReverbSingleDelay, float pReverbFalloff)
+: volume(pVolume)
+, volumeEffect(pVolumeEffect)
+, reverbRepetitions(pReverbRepetitions)
+, reverbSingleDelay(pReverbSingleDelay)
+, reverbFalloff(pReverbFalloff) {
+}
+Audio::Music::SoundEffectSpecs::~SoundEffectSpecs() {}
 
 //////////////////////////////// Audio::Music::Note ////////////////////////////////
 Audio::Music::Note::Note(float pFrequency, int pBeats)
 : frequency(pFrequency)
 , beats(pBeats) {
 }
-Audio::Music::Note::~Note() {
-}
+Audio::Music::Note::~Note() {}
 
 //////////////////////////////// Audio::Music ////////////////////////////////
 Audio::Music::Music(
 	objCounterParametersComma()
 	const char* pFilename,
 	Waveform pWaveform,
-	float pVolume,
-	VolumeEffect pVolumeEffect,
-	int pReverbRepetitions,
-	float pReverbSingleDelay,
-	float pReverbFalloff)
+	SoundEffectSpecs& pSoundEffectSpecs)
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
 filename(pFilename)
 , waveform(pWaveform)
-, volume(pVolume)
-, volumeEffect(pVolumeEffect)
-, reverbRepetitions(pReverbRepetitions)
-, reverbSingleDelay(pReverbSingleDelay)
-, reverbFalloff(pReverbFalloff)
+, soundEffectSpecs(pSoundEffectSpecs)
 , chunk() {
-}
-Audio::Music::Music(objCounterParametersComma() const char* pFilename, Waveform pWaveform, float pVolume)
-: Music(objCounterArgumentsComma() pFilename, pWaveform, pVolume, VolumeEffect::Full, 0, 0, 0) {
 }
 Audio::Music::~Music() {
 	delete[] chunk.abuf;
@@ -71,16 +68,16 @@ void Audio::loadMusic() {
 	};
 	int bytesPerSample = SDL_AUDIO_BITSIZE(format) / 8 * channels;
 
+	Music::SoundEffectSpecs musicSoundEffectSpecs (musicVolume, Music::SoundEffectSpecs::VolumeEffect::Full, 0, 0, 0);
+	Music::SoundEffectSpecs radioWavesSoundEffectSpecs (
+		radioWavesVolume,
+		Music::SoundEffectSpecs::VolumeEffect::SquareDecay,
+		radioWavesReverbRepetitions,
+		radioWavesReverbSingleDelay,
+		radioWavesReverbFalloff);
 	vector<Music*> musics ({
-		musicSquare = newMusic("square", Waveform::Square, musicVolume),
-		radioWavesSoundSquare = newMusicWithReverb(
-			"radiowaves",
-			Waveform::Square,
-			radioWavesVolume,
-			VolumeEffect::SquareDecay,
-			radioWavesReverbRepetitions,
-			radioWavesReverbSingleDelay,
-			radioWavesReverbFalloff),
+		musicSquare = newMusic("square", Music::Waveform::Square, musicSoundEffectSpecs),
+		radioWavesSoundSquare = newMusic("radiowaves", Music::Waveform::Square, radioWavesSoundEffectSpecs),
 	});
 
 	for (Music* music : musics) {
@@ -142,7 +139,8 @@ void Audio::loadMusic() {
 
 		//allocate the samples
 		int totalSampleCount = (int)(totalDuration * sampleRate);
-		int reverbExtraSamples = (int)(music->reverbRepetitions * music->reverbSingleDelay * sampleRate);
+		int reverbExtraSamples =
+			(int)(music->soundEffectSpecs.reverbRepetitions * music->soundEffectSpecs.reverbSingleDelay * sampleRate);
 		music->chunk.allocated = 1;
 		music->chunk.alen = (totalSampleCount + reverbExtraSamples) * bytesPerSample;
 		music->chunk.abuf = new Uint8[music->chunk.alen]();
@@ -160,16 +158,7 @@ void Audio::loadMusic() {
 
 			int sampleCount = samplesProcessed - sampleStart;
 			Uint8* samples = music->chunk.abuf + sampleStart * bytesPerSample;
-			writeTone(
-				music->waveform,
-				music->volume,
-				music->volumeEffect,
-				music->reverbRepetitions,
-				music->reverbSingleDelay,
-				music->reverbFalloff,
-				note.frequency,
-				sampleCount,
-				samples);
+			writeTone(music->waveform, music->soundEffectSpecs, note.frequency, sampleCount, samples);
 		}
 	}
 }
@@ -178,36 +167,28 @@ void Audio::unloadMusic() {
 	delete radioWavesSoundSquare;
 }
 void Audio::writeTone(
-	Waveform waveform,
-	float volume,
-	VolumeEffect volumeEffect,
-	int reverbRepetitions,
-	float reverbSingleDelay,
-	float reverbFalloff,
-	float frequency,
-	int sampleCount,
-	Uint8* outSamples)
+	Music::Waveform waveform, Music::SoundEffectSpecs soundEffectSpecs, float frequency, int sampleCount, Uint8* outSamples)
 {
 	float duration = (float)sampleCount / sampleRate;
 	char bitsize = (char)SDL_AUDIO_BITSIZE(format);
-	float valMax = volume * ((1 << bitsize) - 1);
+	float valMax = soundEffectSpecs.volume * ((1 << bitsize) - 1);
 	float fadeOutStart = duration - fadeInOutDuration;
 	for (int i = 0; i < sampleCount; i++) {
 		float moment = (float)i / sampleRate;
 		float waveSpot = fmodf(moment * frequency, 1.0f);
 		float val = 0;
 		switch (waveform) {
-			case Waveform::Square:
+			case Music::Waveform::Square:
 				val = waveSpot < 0.5f ? valMax : -valMax;
 				break;
-			case Waveform::Triangle:
-			case Waveform::Saw:
-			case Waveform::Sine:
+			case Music::Waveform::Triangle:
+			case Music::Waveform::Saw:
+			case Music::Waveform::Sine:
 			default:
 				break;
 		}
-		switch (volumeEffect) {
-			case VolumeEffect::SquareDecay: {
+		switch (soundEffectSpecs.volumeEffect) {
+			case Music::SoundEffectSpecs::VolumeEffect::SquareDecay: {
 				val *= MathUtils::fsqr((float)(sampleCount - i) / sampleCount);
 				break;
 			}
@@ -219,11 +200,11 @@ void Audio::writeTone(
 		else if (moment > fadeOutStart)
 			val *= (duration - moment) / fadeInOutDuration;
 		if (bitsize == 16) {
-			for (int reverb = 0; reverb <= reverbRepetitions; reverb++) {
-				int sampleOffset = i + (int)(reverb * reverbSingleDelay * sampleRate);
+			for (int reverb = 0; reverb <= soundEffectSpecs.reverbRepetitions; reverb++) {
+				int sampleOffset = i + (int)(reverb * soundEffectSpecs.reverbSingleDelay * sampleRate);
 				for (int j = 0; j < channels; j++)
 					((short*)outSamples)[sampleOffset * channels + j] += (short)val;
-				val *= reverbFalloff;
+				val *= soundEffectSpecs.reverbFalloff;
 			}
 		} else if (bitsize == 8) {
 			for (int j = 0; j < channels; j++)
