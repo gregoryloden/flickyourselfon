@@ -52,8 +52,9 @@ void Audio::loadMusic() {
 	};
 	int bytesPerSample = SDL_AUDIO_BITSIZE(format) / 8 * channels;
 
-	musicSquare = newMusic(Waveform::Square, "square");
-	vector<Music*> musics ({ musicSquare });
+	vector<Music*> musics ({
+		musicSquare = newMusic(Waveform::Square, "square"),
+	});
 
 	for (Music* music : musics) {
 		ifstream file;
