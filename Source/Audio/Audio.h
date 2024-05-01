@@ -8,6 +8,10 @@ public:
 		Saw,
 		Sine,
 	};
+	enum class VolumeEffect: unsigned char {
+		Full,
+		SquareDecay,
+	};
 	class Music onlyInDebug(: public ObjCounter) {
 	public:
 		//Should only be allocated within an object, on the stack, or as a static object
@@ -23,8 +27,21 @@ public:
 		const char* filename;
 		Waveform waveform;
 		float volume;
+		VolumeEffect volumeEffect;
+		int reverbRepetitions;
+		float reverbSingleDelay;
+		float reverbFalloff;
 		Mix_Chunk chunk;
 
+		Music(
+			objCounterParametersComma()
+			const char* pFilename,
+			Waveform pWaveform,
+			float pVolume,
+			VolumeEffect pVolumeEffect,
+			int pReverbRepetitions,
+			float pReverbSingleDelay,
+			float pReverbFalloff);
 		Music(objCounterParametersComma() const char* pFilename, Waveform pWaveform, float pVolume);
 		virtual ~Music();
 	};
@@ -44,11 +61,16 @@ private:
 	static constexpr float frequencyAS4 = frequencyA4 * (float)MathUtils::powConst(2.0, 1.0 / 12.0);
 	static constexpr float frequencyB4 = frequencyA4 * (float)MathUtils::powConst(2.0, 2.0 / 12.0);
 	static constexpr float musicVolume = 1.0f / 64.0f;
+	static constexpr float radioWavesVolume = 3.0f / 256.0f;
+	static constexpr int radioWavesReverbRepetitions = 32;
+	static constexpr float radioWavesReverbSingleDelay = 1.0f / 32.0f;
+	static constexpr float radioWavesReverbFalloff = 3.0f / 8.0f;
 
 	static int sampleRate;
 	static Uint16 format;
 	static int channels;
 	static Music* musicSquare;
+	static Music* radioWavesSoundSquare;
 
 public:
 	//Prevent allocation
@@ -65,5 +87,14 @@ public:
 	static void unloadMusic();
 	//write a tone of the given waveform and frequency, for a certain number of samples at the given volume
 	//adds a short fade-in and fade-out to avoid pops
-	static void writeTone(Waveform waveform, float frequency, int sampleCount, float volume, Uint8* outSamples);
+	static void writeTone(
+		Waveform waveform,
+		float volume,
+		VolumeEffect volumeEffect,
+		int reverbRepetitions,
+		float reverbSingleDelay,
+		float reverbFalloff,
+		float frequency,
+		int sampleCount,
+		Uint8* outSamples);
 };
