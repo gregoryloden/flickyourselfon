@@ -20,11 +20,12 @@ public:
 			virtual ~Note();
 		};
 
-		Mix_Chunk chunk;
-		Waveform waveform;
 		const char* filename;
+		Waveform waveform;
+		float volume;
+		Mix_Chunk chunk;
 
-		Music(objCounterParametersComma() Waveform pWaveform, const char* pFilename);
+		Music(objCounterParametersComma() const char* pFilename, Waveform pWaveform, float pVolume);
 		virtual ~Music();
 	};
 

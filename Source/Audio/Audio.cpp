@@ -2,7 +2,7 @@
 #include "Util/FileUtils.h"
 #include "Util/StringUtils.h"
 
-#define newMusic(waveform, filename) newWithArgs(Music, waveform, filename)
+#define newMusic(filename, waveform, volume) newWithArgs(Music, filename, waveform, volume)
 
 //////////////////////////////// Audio::Music::Note ////////////////////////////////
 Audio::Music::Note::Note(float pFrequency, int pBeats)
@@ -13,11 +13,12 @@ Audio::Music::Note::~Note() {
 }
 
 //////////////////////////////// Audio::Music ////////////////////////////////
-Audio::Music::Music(objCounterParametersComma() Waveform pWaveform, const char* pFilename)
+Audio::Music::Music(objCounterParametersComma() const char* pFilename, Waveform pWaveform, float pVolume)
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
-chunk()
+filename(pFilename)
 , waveform(pWaveform)
-, filename(pFilename) {
+, volume(pVolume)
+, chunk() {
 }
 Audio::Music::~Music() {
 	delete[] chunk.abuf;
@@ -53,7 +54,7 @@ void Audio::loadMusic() {
 	int bytesPerSample = SDL_AUDIO_BITSIZE(format) / 8 * channels;
 
 	vector<Music*> musics ({
-		musicSquare = newMusic(Waveform::Square, "square"),
+		musicSquare = newMusic("square", Waveform::Square, musicVolume),
 	});
 
 	for (Music* music : musics) {
@@ -131,7 +132,7 @@ void Audio::loadMusic() {
 			if (note.frequency == 0)
 				memset(samples, 0, sampleCount * bytesPerSample);
 			else
-				writeTone(music->waveform, note.frequency, sampleCount, musicVolume, samples);
+				writeTone(music->waveform, note.frequency, sampleCount, music->volume, samples);
 		}
 	}
 }
