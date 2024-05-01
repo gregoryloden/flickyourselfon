@@ -88,7 +88,7 @@ void Audio::loadMusic() {
 					notes.back().beats++;
 			} else if (c >= 'A' && c <= 'G') {
 				char noteIndex = c - 'A';
-				float frequency = noteFrequencies[noteIndex * 3];
+				float frequency;
 				nextNotes++;
 				c = *nextNotes;
 				if (c == '#') {
@@ -99,7 +99,8 @@ void Audio::loadMusic() {
 					frequency = noteFrequencies[noteIndex * 3 + 2];
 					nextNotes++;
 					c = *nextNotes;
-				}
+				} else
+					frequency = noteFrequencies[noteIndex * 3];
 				if (c != '4')
 					frequency *= pow(2.0f, c - '4');
 				notes.push_back(Music::Note(frequency, 1));
