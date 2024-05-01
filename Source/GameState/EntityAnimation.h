@@ -226,9 +226,10 @@ public:
 		virtual bool handle(EntityState* entityState, int ticksTime);
 	};
 	class GenerateHint: public EntityAnimationTypes::Component {
-	public:
+	private:
 		ReferenceCounterHolder<HintState> useHint;
 
+	public:
 		GenerateHint(objCounterParameters());
 		virtual ~GenerateHint();
 
