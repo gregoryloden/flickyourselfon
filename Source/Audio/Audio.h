@@ -53,6 +53,10 @@ public:
 			Waveform pWaveform,
 			SoundEffectSpecs& pSoundEffectSpecs);
 		virtual ~Music();
+
+		//write a tone of the given waveform and frequency, for a certain number of samples at the given volume
+		//adds a short fade-in and fade-out to avoid pops
+		void writeTone(float frequency, int sampleCount, Uint8* outSamples);
 	};
 
 private:
@@ -94,12 +98,4 @@ public:
 	static void loadMusic();
 	//clean up the music files
 	static void unloadMusic();
-	//write a tone of the given waveform and frequency, for a certain number of samples at the given volume
-	//adds a short fade-in and fade-out to avoid pops
-	static void writeTone(
-		Music::Waveform waveform,
-		Music::SoundEffectSpecs soundEffectSpecs,
-		float frequency,
-		int sampleCount,
-		Uint8* outSamples);
 };

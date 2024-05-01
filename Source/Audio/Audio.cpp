@@ -37,6 +37,53 @@ filename(pFilename)
 Audio::Music::~Music() {
 	delete[] chunk.abuf;
 }
+void Audio::Music::writeTone(float frequency, int sampleCount, Uint8* outSamples) {
+	float duration = (float)sampleCount / sampleRate;
+	char bitsize = (char)SDL_AUDIO_BITSIZE(format);
+	float valMax = soundEffectSpecs.volume * ((1 << bitsize) - 1);
+	float fadeOutStart = duration - fadeInOutDuration;
+	for (int i = 0; i < sampleCount; i++) {
+		float moment = (float)i / sampleRate;
+		float waveSpot = fmodf(moment * frequency, 1.0f);
+		float val = 0;
+		switch (waveform) {
+			case Waveform::Square:
+				val = waveSpot < 0.5f ? valMax : -valMax;
+				break;
+			case Waveform::Triangle:
+			case Waveform::Saw:
+			case Waveform::Sine:
+			default:
+				break;
+		}
+		switch (soundEffectSpecs.volumeEffect) {
+			case SoundEffectSpecs::VolumeEffect::SquareDecay: {
+				val *= MathUtils::fsqr((float)(sampleCount - i) / sampleCount);
+				break;
+			}
+			default:
+				break;
+		}
+		if (moment < fadeInOutDuration)
+			val *= moment / fadeInOutDuration;
+		else if (moment > fadeOutStart)
+			val *= (duration - moment) / fadeInOutDuration;
+		if (bitsize == 16) {
+			for (int reverb = 0; reverb <= soundEffectSpecs.reverbRepetitions; reverb++) {
+				int sampleOffset = i + (int)(reverb * soundEffectSpecs.reverbSingleDelay * sampleRate);
+				for (int j = 0; j < channels; j++)
+					((short*)outSamples)[sampleOffset * channels + j] += (short)val;
+				val *= soundEffectSpecs.reverbFalloff;
+			}
+		} else if (bitsize == 8) {
+			for (int j = 0; j < channels; j++)
+				((char*)outSamples)[i * channels + j] = (char)val;
+		} else {
+			for (int j = 0; j < channels; j++)
+				((int*)outSamples)[i * channels + j] = (int)val;
+		}
+	}
+}
 
 //////////////////////////////// Audio ////////////////////////////////
 int Audio::sampleRate = 44100;
@@ -158,60 +205,11 @@ void Audio::loadMusic() {
 
 			int sampleCount = samplesProcessed - sampleStart;
 			Uint8* samples = music->chunk.abuf + sampleStart * bytesPerSample;
-			writeTone(music->waveform, music->soundEffectSpecs, note.frequency, sampleCount, samples);
+			music->writeTone(note.frequency, sampleCount, samples);
 		}
 	}
 }
 void Audio::unloadMusic() {
 	delete musicSquare;
 	delete radioWavesSoundSquare;
-}
-void Audio::writeTone(
-	Music::Waveform waveform, Music::SoundEffectSpecs soundEffectSpecs, float frequency, int sampleCount, Uint8* outSamples)
-{
-	float duration = (float)sampleCount / sampleRate;
-	char bitsize = (char)SDL_AUDIO_BITSIZE(format);
-	float valMax = soundEffectSpecs.volume * ((1 << bitsize) - 1);
-	float fadeOutStart = duration - fadeInOutDuration;
-	for (int i = 0; i < sampleCount; i++) {
-		float moment = (float)i / sampleRate;
-		float waveSpot = fmodf(moment * frequency, 1.0f);
-		float val = 0;
-		switch (waveform) {
-			case Music::Waveform::Square:
-				val = waveSpot < 0.5f ? valMax : -valMax;
-				break;
-			case Music::Waveform::Triangle:
-			case Music::Waveform::Saw:
-			case Music::Waveform::Sine:
-			default:
-				break;
-		}
-		switch (soundEffectSpecs.volumeEffect) {
-			case Music::SoundEffectSpecs::VolumeEffect::SquareDecay: {
-				val *= MathUtils::fsqr((float)(sampleCount - i) / sampleCount);
-				break;
-			}
-			default:
-				break;
-		}
-		if (moment < fadeInOutDuration)
-			val *= moment / fadeInOutDuration;
-		else if (moment > fadeOutStart)
-			val *= (duration - moment) / fadeInOutDuration;
-		if (bitsize == 16) {
-			for (int reverb = 0; reverb <= soundEffectSpecs.reverbRepetitions; reverb++) {
-				int sampleOffset = i + (int)(reverb * soundEffectSpecs.reverbSingleDelay * sampleRate);
-				for (int j = 0; j < channels; j++)
-					((short*)outSamples)[sampleOffset * channels + j] += (short)val;
-				val *= soundEffectSpecs.reverbFalloff;
-			}
-		} else if (bitsize == 8) {
-			for (int j = 0; j < channels; j++)
-				((char*)outSamples)[i * channels + j] = (char)val;
-		} else {
-			for (int j = 0; j < channels; j++)
-				((int*)outSamples)[i * channels + j] = (int)val;
-		}
-	}
 }
