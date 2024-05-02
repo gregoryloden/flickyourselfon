@@ -205,8 +205,8 @@ void AudioTypes::Music::overlay(Music* other) {
 			((int*)chunk.abuf)[i] += ((int*)other->chunk.abuf)[i];
 	}
 }
-void AudioTypes::Music::play() {
-	Mix_PlayChannel(-1, &chunk, 0);
+void AudioTypes::Music::play(int loops) {
+	Mix_PlayChannel(-1, &chunk, loops);
 }
 using namespace AudioTypes;
 

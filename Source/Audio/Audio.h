@@ -79,8 +79,8 @@ namespace AudioTypes {
 		void writeTone(float frequency, int sampleCount, Uint8* outSamples);
 		//overlay the given music onto this music
 		void overlay(Music* other);
-		//play this sound
-		void play();
+		//play this sound, looping the given amount of additional loops
+		void play(int loops);
 	};
 }
 class Audio {

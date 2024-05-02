@@ -17,7 +17,7 @@
 	produceWithArgs(EntityAnimation::SpawnParticle, x, y, animation, direction)
 #define newEntityAnimationSwitchToPlayerCamera() produceWithoutArgs(EntityAnimation::SwitchToPlayerCamera)
 #define newEntityAnimationGenerateHint(useHint) produceWithArgs(EntityAnimation::GenerateHint, useHint)
-#define newEntityAnimationPlayMusic(music) produceWithArgs(EntityAnimation::PlayMusic, music)
+#define newEntityAnimationPlayMusic(music, loops) produceWithArgs(EntityAnimation::PlayMusic, music, loops)
 
 class DynamicValue;
 class EntityState;
@@ -264,13 +264,14 @@ public:
 	class PlayMusic: public EntityAnimationTypes::Component {
 	private:
 		AudioTypes::Music* music;
+		int loops;
 
 	public:
 		PlayMusic(objCounterParameters());
 		virtual ~PlayMusic();
 
 		//initialize and return a PlayMusic
-		static PlayMusic* produce(objCounterParametersComma() AudioTypes::Music* pMusic);
+		static PlayMusic* produce(objCounterParametersComma() AudioTypes::Music* pMusic, int pLoops);
 		//release a reference to this PlayMusic and return it to the pool if applicable
 		virtual void release();
 		//return that the animation should continue updating after playing the music

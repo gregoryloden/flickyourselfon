@@ -297,14 +297,17 @@ EntityAnimation::PlayMusic::PlayMusic(objCounterParameters())
 , music(nullptr) {
 }
 EntityAnimation::PlayMusic::~PlayMusic() {}
-EntityAnimation::PlayMusic* EntityAnimation::PlayMusic::produce(objCounterParametersComma() AudioTypes::Music* pMusic) {
+EntityAnimation::PlayMusic* EntityAnimation::PlayMusic::produce(
+	objCounterParametersComma() AudioTypes::Music* pMusic, int pLoops)
+{
 	initializeWithNewFromPool(p, EntityAnimation::PlayMusic)
 	p->music = pMusic;
+	p->loops = pLoops;
 	return p;
 }
 pooledReferenceCounterDefineRelease(EntityAnimation::PlayMusic)
 bool EntityAnimation::PlayMusic::handle(EntityState* entityState, int ticksTime) {
-	music->play();
+	music->play(loops);
 	return true;
 }
 
