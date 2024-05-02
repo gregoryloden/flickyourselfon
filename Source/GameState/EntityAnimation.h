@@ -15,8 +15,8 @@
 	produceWithArgs(EntityAnimation::MapKickResetSwitch, resetSwitchId, kickResetSwitchUndoState)
 #define newEntityAnimationSpawnParticle(x, y, animation, direction) \
 	produceWithArgs(EntityAnimation::SpawnParticle, x, y, animation, direction)
-#define newEntityAnimationGenerateHint(useHint) produceWithArgs(EntityAnimation::GenerateHint, useHint)
 #define newEntityAnimationSwitchToPlayerCamera() produceWithoutArgs(EntityAnimation::SwitchToPlayerCamera)
+#define newEntityAnimationGenerateHint(useHint) produceWithArgs(EntityAnimation::GenerateHint, useHint)
 
 class DynamicValue;
 class EntityState;
