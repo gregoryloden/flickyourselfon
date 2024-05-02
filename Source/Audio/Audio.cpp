@@ -4,8 +4,8 @@
 
 #define newMusic(filename, waveform, soundEffectSpecs) newWithArgs(Music, filename, waveform, soundEffectSpecs)
 
-//////////////////////////////// Audio::Music::SoundEffectSpecs ////////////////////////////////
-Audio::Music::SoundEffectSpecs::SoundEffectSpecs(
+//////////////////////////////// AudioTypes::Music::SoundEffectSpecs ////////////////////////////////
+AudioTypes::Music::SoundEffectSpecs::SoundEffectSpecs(
 	float pVolume, VolumeEffect pVolumeEffect, int pReverbRepetitions, float pReverbSingleDelay, float pReverbFalloff)
 : volume(pVolume)
 , volumeEffect(pVolumeEffect)
@@ -13,17 +13,17 @@ Audio::Music::SoundEffectSpecs::SoundEffectSpecs(
 , reverbSingleDelay(pReverbSingleDelay)
 , reverbFalloff(pReverbFalloff) {
 }
-Audio::Music::SoundEffectSpecs::~SoundEffectSpecs() {}
+AudioTypes::Music::SoundEffectSpecs::~SoundEffectSpecs() {}
 
-//////////////////////////////// Audio::Music::Note ////////////////////////////////
-Audio::Music::Note::Note(float pFrequency, int pBeats)
+//////////////////////////////// AudioTypes::Music::Note ////////////////////////////////
+AudioTypes::Music::Note::Note(float pFrequency, int pBeats)
 : frequency(pFrequency)
 , beats(pBeats) {
 }
-Audio::Music::Note::~Note() {}
+AudioTypes::Music::Note::~Note() {}
 
-//////////////////////////////// Audio::Music ////////////////////////////////
-Audio::Music::Music(
+//////////////////////////////// AudioTypes::Music ////////////////////////////////
+AudioTypes::Music::Music(
 	objCounterParametersComma()
 	const char* pFilename,
 	Waveform pWaveform,
@@ -34,10 +34,10 @@ filename(pFilename)
 , soundEffectSpecs(pSoundEffectSpecs)
 , chunk() {
 }
-Audio::Music::~Music() {
+AudioTypes::Music::~Music() {
 	delete[] chunk.abuf;
 }
-void Audio::Music::load() {
+void AudioTypes::Music::load() {
 	//these are ordered by note name, rather than absolute frequency; they loop around at C
 	static constexpr float noteFrequencies[] = {
 		frequencyA4, frequencyAS4, frequencyGS4,
@@ -48,7 +48,7 @@ void Audio::Music::load() {
 		frequencyF4, frequencyFS4, frequencyE4,
 		frequencyG4, frequencyGS4, frequencyFS4,
 	};
-	int bytesPerSample = SDL_AUDIO_BITSIZE(format) / 8 * channels;
+	int bytesPerSample = SDL_AUDIO_BITSIZE(Audio::format) / 8 * Audio::channels;
 
 	ifstream file;
 	string path = string("audio/") + filename + ".smus";
@@ -107,8 +107,8 @@ void Audio::Music::load() {
 	float totalDuration = (float)totalBeats * 60 / bpm;
 
 	//allocate the samples
-	int totalSampleCount = (int)(totalDuration * sampleRate);
-	int reverbExtraSamples = (int)(soundEffectSpecs.reverbRepetitions * soundEffectSpecs.reverbSingleDelay * sampleRate);
+	int totalSampleCount = (int)(totalDuration * Audio::sampleRate);
+	int reverbExtraSamples = (int)(soundEffectSpecs.reverbRepetitions * soundEffectSpecs.reverbSingleDelay * Audio::sampleRate);
 	chunk.allocated = 1;
 	chunk.alen = (totalSampleCount + reverbExtraSamples) * bytesPerSample;
 	chunk.abuf = new Uint8[chunk.alen]();
@@ -120,7 +120,7 @@ void Audio::Music::load() {
 	for (Music::Note& note : notes) {
 		int sampleStart = samplesProcessed;
 		beatsProcessed += note.beats;
-		samplesProcessed = (int)((float)beatsProcessed * 60 / bpm * sampleRate);
+		samplesProcessed = (int)((float)beatsProcessed * 60 / bpm * Audio::sampleRate);
 		if (note.frequency == 0)
 			continue;
 
@@ -129,13 +129,13 @@ void Audio::Music::load() {
 		writeTone(note.frequency, sampleCount, samples);
 	}
 }
-void Audio::Music::writeTone(float frequency, int sampleCount, Uint8* outSamples) {
-	float duration = (float)sampleCount / sampleRate;
-	char bitsize = (char)SDL_AUDIO_BITSIZE(format);
+void AudioTypes::Music::writeTone(float frequency, int sampleCount, Uint8* outSamples) {
+	float duration = (float)sampleCount / Audio::sampleRate;
+	char bitsize = (char)SDL_AUDIO_BITSIZE(Audio::format);
 	float valMax = soundEffectSpecs.volume * ((1 << bitsize) - 1);
 	float fadeOutStart = duration - fadeInOutDuration;
 	for (int i = 0; i < sampleCount; i++) {
-		float moment = (float)i / sampleRate;
+		float moment = (float)i / Audio::sampleRate;
 		float waveSpot = fmodf(moment * frequency, 1.0f);
 		float val = 0;
 		switch (waveform) {
@@ -162,27 +162,28 @@ void Audio::Music::writeTone(float frequency, int sampleCount, Uint8* outSamples
 			val *= (duration - moment) / fadeInOutDuration;
 		if (bitsize == 16) {
 			for (int reverb = 0; reverb <= soundEffectSpecs.reverbRepetitions; reverb++) {
-				int sampleOffset = i + (int)(reverb * soundEffectSpecs.reverbSingleDelay * sampleRate);
-				for (int j = 0; j < channels; j++)
-					((short*)outSamples)[sampleOffset * channels + j] += (short)val;
+				int sampleOffset = i + (int)(reverb * soundEffectSpecs.reverbSingleDelay * Audio::sampleRate);
+				for (int j = 0; j < Audio::channels; j++)
+					((short*)outSamples)[sampleOffset * Audio::channels + j] += (short)val;
 				val *= soundEffectSpecs.reverbFalloff;
 			}
 		} else if (bitsize == 8) {
-			for (int j = 0; j < channels; j++)
-				((char*)outSamples)[i * channels + j] = (char)val;
+			for (int j = 0; j < Audio::channels; j++)
+				((char*)outSamples)[i * Audio::channels + j] = (char)val;
 		} else {
-			for (int j = 0; j < channels; j++)
-				((int*)outSamples)[i * channels + j] = (int)val;
+			for (int j = 0; j < Audio::channels; j++)
+				((int*)outSamples)[i * Audio::channels + j] = (int)val;
 		}
 	}
 }
+using namespace AudioTypes;
 
 //////////////////////////////// Audio ////////////////////////////////
 int Audio::sampleRate = 44100;
 Uint16 Audio::format = AUDIO_S16SYS;
 int Audio::channels = 1;
-Audio::Music* Audio::musicSquare = nullptr;
-Audio::Music* Audio::radioWavesSoundSquare = nullptr;
+Music* Audio::musicSquare = nullptr;
+Music* Audio::radioWavesSoundSquare = nullptr;
 void Audio::setUp() {
 	Mix_Init(0);
 	Mix_OpenAudio(sampleRate, format, channels, 2048);
