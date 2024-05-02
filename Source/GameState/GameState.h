@@ -55,8 +55,8 @@ private:
 	static constexpr float triangleSwitchesAnimationCenterWorldY = MapState::firstLevelTileOffsetY * MapState::tileSize - 103;
 	static constexpr float sawSwitchesAnimationCenterWorldX = MapState::firstLevelTileOffsetX * MapState::tileSize + 780;
 	static constexpr float sawSwitchesAnimationCenterWorldY = MapState::firstLevelTileOffsetY * MapState::tileSize - 150;
-	static constexpr float sineSwitchesAnimationCenterWorldX = 100.0f; //todo: pick a position
-	static constexpr float sineSwitchesAnimationCenterWorldY = 100.0f; //todo: pick a position
+	static constexpr float sineSwitchesAnimationCenterWorldX = MapState::firstLevelTileOffsetX * MapState::tileSize + 524;
+	static constexpr float sineSwitchesAnimationCenterWorldY = MapState::firstLevelTileOffsetY * MapState::tileSize + 130;
 	//title screen and intro explanation text
 public:
 	static constexpr char* titleGameName = "Kick Yourself On";
