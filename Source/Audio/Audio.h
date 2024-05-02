@@ -30,6 +30,9 @@ namespace AudioTypes {
 				float pReverbSingleDelay,
 				float pReverbFalloff);
 			virtual ~SoundEffectSpecs();
+
+			//copy this SoundEffectSpecs with the given volume
+			SoundEffectSpecs withVolume(float pVolume);
 		};
 	private:
 		//Should only be allocated within an object, on the stack, or as a static object
@@ -81,8 +84,11 @@ namespace AudioTypes {
 class Audio {
 private:
 	static constexpr float musicVolume = 1.0f / 64.0f;
-	static constexpr float radioWavesVolume = 3.0f / 256.0f;
-	static constexpr int radioWavesReverbRepetitions = 32;
+	static constexpr float radioWavesSoundSquareVolume = 3.0f / 256.0f;
+	static constexpr float radioWavesSoundTriangleVolume = 12.0f / 256.0f;
+	static constexpr float radioWavesSoundSawVolume = 3.5f / 256.0f;
+	static constexpr float radioWavesSoundSineVolume = 21.0f / 256.0f;
+	static constexpr int radioWavesReverbRepetitions = 8;
 	static constexpr float radioWavesReverbSingleDelay = 1.0f / 32.0f;
 	static constexpr float radioWavesReverbFalloff = 3.0f / 8.0f;
 
@@ -92,6 +98,9 @@ public:
 	static int channels;
 	static AudioTypes::Music* musicSquare;
 	static AudioTypes::Music* radioWavesSoundSquare;
+	static AudioTypes::Music* radioWavesSoundTriangle;
+	static AudioTypes::Music* radioWavesSoundSaw;
+	static AudioTypes::Music* radioWavesSoundSine;
 
 	//Prevent allocation
 	Audio() = delete;

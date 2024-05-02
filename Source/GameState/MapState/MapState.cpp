@@ -735,13 +735,19 @@ void MapState::writeCurrentRailStates(short resetSwitchId, KickResetSwitchUndoSt
 }
 int MapState::startRadioWavesAnimation(int initialTicksDelay, int ticksTime) {
 	radioWavesColor = lastActivatedSwitchColor;
+	AudioTypes::Music* musics[] = {
+		Audio::radioWavesSoundSquare,
+		Audio::radioWavesSoundTriangle,
+		Audio::radioWavesSoundSaw,
+		Audio::radioWavesSoundSine,
+	};
 	Particle* particle = queueParticle(
 		antennaCenterWorldX(),
 		antennaCenterWorldY(),
 		true,
 		{
 			newEntityAnimationDelay(initialTicksDelay),
-			newEntityAnimationPlayMusic(Audio::radioWavesSoundSquare),
+			newEntityAnimationPlayMusic(musics[radioWavesColor]),
 			entityAnimationSpriteAnimationWithDelay(SpriteRegistry::radioWavesAnimation),
 			newEntityAnimationSetSpriteAnimation(nullptr),
 			newEntityAnimationDelay(interRadioWavesAnimationTicks),
