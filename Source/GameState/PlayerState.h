@@ -60,6 +60,7 @@ private:
 	static constexpr char* finishedKickTutorialFileValue = "finishedKickTutorial";
 	static constexpr char* finishedUndoRedoTutorialFileValue = "finishedUndoRedoTutorial";
 	static constexpr char* lastGoalFilePrefix = "lastGoal ";
+	static constexpr char* noClipFileValue = "noClip";
 
 	static thread* hintSearchThread;
 	static ReferenceCounterHolder<HintState> hintSearchStorage;
@@ -95,6 +96,7 @@ private:
 	ReferenceCounterHolder<UndoState> undoState;
 	ReferenceCounterHolder<UndoState> redoState;
 	ReferenceCounterHolder<HintState> hintState;
+	bool noClip;
 
 public:
 	PlayerState(objCounterParameters());

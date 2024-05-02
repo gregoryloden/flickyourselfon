@@ -60,7 +60,8 @@ PlayerState::PlayerState(objCounterParameters())
 , lastGoalY(0)
 , undoState(nullptr)
 , redoState(nullptr)
-, hintState(nullptr) {
+, hintState(nullptr)
+, noClip(false) {
 }
 PlayerState::~PlayerState() {
 	delete collisionRect;
@@ -108,6 +109,7 @@ void PlayerState::copyPlayerState(PlayerState* other) {
 	setUndoState(undoState, other->undoState.get());
 	setUndoState(redoState, other->redoState.get());
 	hintState.set(other->hintState.get());
+	noClip = other->noClip;
 }
 pooledReferenceCounterDefineRelease(PlayerState)
 void PlayerState::prepareReturnToPool() {
@@ -250,6 +252,7 @@ void PlayerState::updateWithPreviousPlayerState(PlayerState* prev, bool hasKeybo
 	lastGoalY = prev->lastGoalY;
 	setUndoState(undoState, prev->undoState.get());
 	setUndoState(redoState, prev->redoState.get());
+	noClip = prev->noClip;
 
 	//if we can control the player then that must mean the player has the boot
 	hasBoot = true;
@@ -257,8 +260,16 @@ void PlayerState::updateWithPreviousPlayerState(PlayerState* prev, bool hasKeybo
 	//update this player state normally by reading from the last state
 	const Uint8* keyboardState = hasKeyboardControl ? SDL_GetKeyboardState(nullptr) : nullptr;
 	updatePositionWithPreviousPlayerState(prev, keyboardState, ticksTime);
-	if (!Editor::isActive)
-		collideWithEnvironmentWithPreviousPlayerState(prev);
+	if (!Editor::isActive) {
+		if (noClip) {
+			char footHeight = MapState::getHeight(
+				(int)x.get()->getValue(0) / MapState::tileSize,
+				(int)(y.get()->getValue(0) + boundingBoxCenterYOffset) / MapState::tileSize);
+			if (footHeight % 2 == 0)
+				z = footHeight;
+		} else
+			collideWithEnvironmentWithPreviousPlayerState(prev);
+	}
 	updateSpriteWithPreviousPlayerState(prev, keyboardState, ticksTime, previousStateHadEntityAnimation);
 	if (!Editor::isActive) {
 		setKickAction();
@@ -1559,6 +1570,8 @@ bool PlayerState::loadState(string& line) {
 		finishedUndoRedoTutorial = true;
 	else if (StringUtils::startsWith(line, lastGoalFilePrefix))
 		StringUtils::parsePosition(line.c_str() + StringUtils::strlenConst(lastGoalFilePrefix), &lastGoalX, &lastGoalY);
+	else if (StringUtils::startsWith(line, noClipFileValue))
+		noClip = true;
 	else
 		return false;
 	return true;
