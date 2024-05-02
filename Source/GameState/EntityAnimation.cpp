@@ -1,4 +1,5 @@
 #include "EntityAnimation.h"
+#include "Audio/Audio.h"
 #include "GameState/DynamicValue.h"
 #include "GameState/EntityState.h"
 #include "GameState/UndoState.h"
@@ -287,6 +288,23 @@ void EntityAnimation::GenerateHint::prepareReturnToPool() {
 }
 bool EntityAnimation::GenerateHint::handle(EntityState* entityState, int ticksTime) {
 	entityState->generateHint(useHint.get(), ticksTime);
+	return true;
+}
+
+//////////////////////////////// EntityAnimation::PlayMusic ////////////////////////////////
+EntityAnimation::PlayMusic::PlayMusic(objCounterParameters())
+: Component(objCounterArguments())
+, music(nullptr) {
+}
+EntityAnimation::PlayMusic::~PlayMusic() {}
+EntityAnimation::PlayMusic* EntityAnimation::PlayMusic::produce(objCounterParametersComma() AudioTypes::Music* pMusic) {
+	initializeWithNewFromPool(p, EntityAnimation::PlayMusic)
+	p->music = pMusic;
+	return p;
+}
+pooledReferenceCounterDefineRelease(EntityAnimation::PlayMusic)
+bool EntityAnimation::PlayMusic::handle(EntityState* entityState, int ticksTime) {
+	music->play();
 	return true;
 }
 

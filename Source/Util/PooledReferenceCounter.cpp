@@ -95,6 +95,7 @@ template class ObjectPool<EntityAnimation::Delay>;
 template class ObjectPool<EntityAnimation::GenerateHint>;
 template class ObjectPool<EntityAnimation::MapKickResetSwitch>;
 template class ObjectPool<EntityAnimation::MapKickSwitch>;
+template class ObjectPool<EntityAnimation::PlayMusic>;
 template class ObjectPool<EntityAnimation::SetGhostSprite>;
 template class ObjectPool<EntityAnimation::SetPosition>;
 template class ObjectPool<EntityAnimation::SetScreenOverlayColor>;

@@ -173,6 +173,7 @@ int gameMain(int argc, char* argv[]) {
 		ObjectPool<EntityAnimation::MapKickResetSwitch>::clearPool();
 		ObjectPool<EntityAnimation::SpawnParticle>::clearPool();
 		ObjectPool<EntityAnimation::GenerateHint>::clearPool();
+		ObjectPool<EntityAnimation::PlayMusic>::clearPool();
 		ObjectPool<CollisionRect>::clearPool();
 		ObjectPool<KickAction>::clearPool();
 		ObjectPool<NoOpUndoState>::clearPool();

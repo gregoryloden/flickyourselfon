@@ -1,4 +1,5 @@
 #include "MapState.h"
+#include "Audio/Audio.h"
 #include "Editor/Editor.h"
 #include "GameState/DynamicValue.h"
 #include "GameState/EntityAnimation.h"
@@ -740,6 +741,7 @@ int MapState::startRadioWavesAnimation(int initialTicksDelay, int ticksTime) {
 		true,
 		{
 			newEntityAnimationDelay(initialTicksDelay),
+			newEntityAnimationPlayMusic(Audio::radioWavesSoundSquare),
 			entityAnimationSpriteAnimationWithDelay(SpriteRegistry::radioWavesAnimation),
 			newEntityAnimationSetSpriteAnimation(nullptr),
 			newEntityAnimationDelay(interRadioWavesAnimationTicks),

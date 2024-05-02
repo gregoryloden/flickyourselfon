@@ -176,6 +176,9 @@ void AudioTypes::Music::writeTone(float frequency, int sampleCount, Uint8* outSa
 		}
 	}
 }
+void AudioTypes::Music::play() {
+	Mix_PlayChannel(-1, &chunk, 0);
+}
 using namespace AudioTypes;
 
 //////////////////////////////// Audio ////////////////////////////////

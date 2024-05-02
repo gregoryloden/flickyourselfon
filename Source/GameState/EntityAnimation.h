@@ -17,6 +17,7 @@
 	produceWithArgs(EntityAnimation::SpawnParticle, x, y, animation, direction)
 #define newEntityAnimationSwitchToPlayerCamera() produceWithoutArgs(EntityAnimation::SwitchToPlayerCamera)
 #define newEntityAnimationGenerateHint(useHint) produceWithArgs(EntityAnimation::GenerateHint, useHint)
+#define newEntityAnimationPlayMusic(music) produceWithArgs(EntityAnimation::PlayMusic, music)
 
 class DynamicValue;
 class EntityState;
@@ -24,6 +25,9 @@ class HintState;
 class KickResetSwitchUndoState;
 class SpriteAnimation;
 enum class SpriteDirection: int;
+namespace AudioTypes {
+	class Music;
+}
 
 namespace EntityAnimationTypes {
 	//components are exclusively held by EntityAnimations
@@ -255,6 +259,21 @@ public:
 		virtual void prepareReturnToPool();
 	public:
 		//return that the animation should continue updating after requesting the entity state to generate a hint
+		virtual bool handle(EntityState* entityState, int ticksTime);
+	};
+	class PlayMusic: public EntityAnimationTypes::Component {
+	private:
+		AudioTypes::Music* music;
+
+	public:
+		PlayMusic(objCounterParameters());
+		virtual ~PlayMusic();
+
+		//initialize and return a PlayMusic
+		static PlayMusic* produce(objCounterParametersComma() AudioTypes::Music* pMusic);
+		//release a reference to this PlayMusic and return it to the pool if applicable
+		virtual void release();
+		//return that the animation should continue updating after playing the music
 		virtual bool handle(EntityState* entityState, int ticksTime);
 	};
 

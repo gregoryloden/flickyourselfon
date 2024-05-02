@@ -74,6 +74,8 @@ namespace AudioTypes {
 		//write a tone of the given waveform and frequency, for a certain number of samples at the given volume
 		//adds a short fade-in and fade-out to avoid pops
 		void writeTone(float frequency, int sampleCount, Uint8* outSamples);
+		//play this sound
+		void play();
 	};
 }
 class Audio {
