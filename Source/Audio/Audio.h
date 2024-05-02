@@ -77,13 +77,18 @@ namespace AudioTypes {
 		//write a tone of the given waveform and frequency, for a certain number of samples at the given volume
 		//adds a short fade-in and fade-out to avoid pops
 		void writeTone(float frequency, int sampleCount, Uint8* outSamples);
+		//overlay the given music onto this music
+		void overlay(Music* other);
 		//play this sound
 		void play();
 	};
 }
 class Audio {
 private:
-	static constexpr float musicVolume = 1.0f / 64.0f;
+	static constexpr float musicSquareVolume = 3.0f / 256.0f;
+	static constexpr float musicTriangleVolume = 13.5f / 256.0f;
+	static constexpr float musicSawVolume = 3.0f / 256.0f;
+	static constexpr float musicSineVolume = 13.5f / 256.0f;
 	static constexpr float radioWavesSoundSquareVolume = 3.0f / 256.0f;
 	static constexpr float radioWavesSoundTriangleVolume = 12.0f / 256.0f;
 	static constexpr float radioWavesSoundSawVolume = 3.5f / 256.0f;
@@ -97,6 +102,9 @@ public:
 	static Uint16 format;
 	static int channels;
 	static AudioTypes::Music* musicSquare;
+	static AudioTypes::Music* musicTriangle;
+	static AudioTypes::Music* musicSaw;
+	static AudioTypes::Music* musicSine;
 	static AudioTypes::Music* radioWavesSoundSquare;
 	static AudioTypes::Music* radioWavesSoundTriangle;
 	static AudioTypes::Music* radioWavesSoundSaw;

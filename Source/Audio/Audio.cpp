@@ -189,6 +189,22 @@ void AudioTypes::Music::writeTone(float frequency, int sampleCount, Uint8* outSa
 		}
 	}
 }
+void AudioTypes::Music::overlay(Music* other) {
+	char bitsize = (char)SDL_AUDIO_BITSIZE(Audio::format);
+	if (bitsize == 16) {
+		int count = MathUtils::min(chunk.alen, other->chunk.alen) / 2;
+		for (int i = 0; i < count; i++)
+			((short*)chunk.abuf)[i] += ((short*)other->chunk.abuf)[i];
+	} else if (bitsize == 8) {
+		int count = MathUtils::min(chunk.alen, other->chunk.alen);
+		for (int i = 0; i < count; i++)
+			((char*)chunk.abuf)[i] += ((char*)other->chunk.abuf)[i];
+	} else {
+		int count = MathUtils::min(chunk.alen, other->chunk.alen) / 4;
+		for (int i = 0; i < count; i++)
+			((int*)chunk.abuf)[i] += ((int*)other->chunk.abuf)[i];
+	}
+}
 void AudioTypes::Music::play() {
 	Mix_PlayChannel(-1, &chunk, 0);
 }
@@ -199,6 +215,9 @@ int Audio::sampleRate = 44100;
 Uint16 Audio::format = AUDIO_S16SYS;
 int Audio::channels = 1;
 Music* Audio::musicSquare = nullptr;
+Music* Audio::musicTriangle = nullptr;
+Music* Audio::musicSaw = nullptr;
+Music* Audio::musicSine = nullptr;
 Music* Audio::radioWavesSoundSquare = nullptr;
 Music* Audio::radioWavesSoundTriangle = nullptr;
 Music* Audio::radioWavesSoundSaw = nullptr;
@@ -215,7 +234,7 @@ void Audio::tearDown() {
 	Mix_Quit();
 }
 void Audio::loadMusic() {
-	Music::SoundEffectSpecs musicSoundEffectSpecs (musicVolume, Music::SoundEffectSpecs::VolumeEffect::Full, 0, 0, 0);
+	Music::SoundEffectSpecs musicSoundEffectSpecs (1, Music::SoundEffectSpecs::VolumeEffect::Full, 0, 0, 0);
 	Music::SoundEffectSpecs radioWavesSoundEffectSpecs (
 		1,
 		Music::SoundEffectSpecs::VolumeEffect::SquareDecay,
@@ -223,7 +242,10 @@ void Audio::loadMusic() {
 		radioWavesReverbSingleDelay,
 		radioWavesReverbFalloff);
 	vector<Music*> musics ({
-		musicSquare = newMusic("square", Music::Waveform::Square, musicSoundEffectSpecs),
+		musicSquare = newMusic("square", Music::Waveform::Square, musicSoundEffectSpecs.withVolume(musicSquareVolume)),
+		musicTriangle = newMusic("triangle", Music::Waveform::Triangle, musicSoundEffectSpecs.withVolume(musicTriangleVolume)),
+		musicSaw = newMusic("saw", Music::Waveform::Saw, musicSoundEffectSpecs.withVolume(musicSawVolume)),
+		musicSine = newMusic("sine", Music::Waveform::Sine, musicSoundEffectSpecs.withVolume(musicSineVolume)),
 		radioWavesSoundSquare =
 			newMusic("radiowaves", Music::Waveform::Square, radioWavesSoundEffectSpecs.withVolume(radioWavesSoundSquareVolume)),
 		radioWavesSoundTriangle = newMusic(
@@ -236,9 +258,16 @@ void Audio::loadMusic() {
 
 	for (Music* music : musics)
 		music->load();
+
+	musicTriangle->overlay(musicSquare);
+	musicSaw->overlay(musicTriangle);
+	musicSine->overlay(musicSaw);
 }
 void Audio::unloadMusic() {
 	delete musicSquare;
+	delete musicTriangle;
+	delete musicSaw;
+	delete musicSine;
 	delete radioWavesSoundSquare;
 	delete radioWavesSoundTriangle;
 	delete radioWavesSoundSaw;
