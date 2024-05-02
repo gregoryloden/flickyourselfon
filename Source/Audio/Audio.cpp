@@ -37,6 +37,98 @@ filename(pFilename)
 Audio::Music::~Music() {
 	delete[] chunk.abuf;
 }
+void Audio::Music::load() {
+	//these are ordered by note name, rather than absolute frequency; they loop around at C
+	static constexpr float noteFrequencies[] = {
+		frequencyA4, frequencyAS4, frequencyGS4,
+		frequencyB4, frequencyC4, frequencyAS4,
+		frequencyC4, frequencyCS4, frequencyB4,
+		frequencyD4, frequencyDS4, frequencyCS4,
+		frequencyE4, frequencyF4, frequencyDS4,
+		frequencyF4, frequencyFS4, frequencyE4,
+		frequencyG4, frequencyGS4, frequencyFS4,
+	};
+	int bytesPerSample = SDL_AUDIO_BITSIZE(format) / 8 * channels;
+
+	ifstream file;
+	string path = string("audio/") + filename + ".smus";
+	FileUtils::openFileForRead(&file, path.c_str());
+	string line;
+
+	//get the bpm
+	getline(file, line);
+	int bpm;
+	StringUtils::parseNextInt(line.c_str(), &bpm);
+
+	//collect all the notes into one string
+	string notesString;
+	while (getline(file, line))
+		notesString += line;
+	file.close();
+
+	//go through all the note strings and convert them into Notes
+	vector<Music::Note> notes;
+	const char* nextNotes = notesString.c_str();
+	for (char c = *nextNotes; c != 0; c = *nextNotes) {
+		if (c == '-') {
+			if (notes.size() == 0 || notes.back().frequency != 0)
+				notes.push_back(Music::Note(0, 1));
+			else
+				notes.back().beats++;
+		} else if (c == '_') {
+			if (notes.size() > 0)
+				notes.back().beats++;
+		} else if (c >= 'A' && c <= 'G') {
+			char noteIndex = c - 'A';
+			float frequency;
+			nextNotes++;
+			c = *nextNotes;
+			if (c == '#') {
+				frequency = noteFrequencies[noteIndex * 3 + 1];
+				nextNotes++;
+				c = *nextNotes;
+			} else if (c == 'b') {
+				frequency = noteFrequencies[noteIndex * 3 + 2];
+				nextNotes++;
+				c = *nextNotes;
+			} else
+				frequency = noteFrequencies[noteIndex * 3];
+			if (c != '4')
+				frequency *= pow(2.0f, c - '4');
+			notes.push_back(Music::Note(frequency, 1));
+		}
+		nextNotes++;
+	}
+
+	//calculate the duration of the track
+	int totalBeats = 0;
+	for (Music::Note& note : notes)
+		totalBeats += note.beats;
+	float totalDuration = (float)totalBeats * 60 / bpm;
+
+	//allocate the samples
+	int totalSampleCount = (int)(totalDuration * sampleRate);
+	int reverbExtraSamples = (int)(soundEffectSpecs.reverbRepetitions * soundEffectSpecs.reverbSingleDelay * sampleRate);
+	chunk.allocated = 1;
+	chunk.alen = (totalSampleCount + reverbExtraSamples) * bytesPerSample;
+	chunk.abuf = new Uint8[chunk.alen]();
+	chunk.volume = MIX_MAX_VOLUME;
+
+	//finally, go through all the notes and write their samples
+	int beatsProcessed = 0;
+	int samplesProcessed = 0;
+	for (Music::Note& note : notes) {
+		int sampleStart = samplesProcessed;
+		beatsProcessed += note.beats;
+		samplesProcessed = (int)((float)beatsProcessed * 60 / bpm * sampleRate);
+		if (note.frequency == 0)
+			continue;
+
+		int sampleCount = samplesProcessed - sampleStart;
+		Uint8* samples = chunk.abuf + sampleStart * bytesPerSample;
+		writeTone(note.frequency, sampleCount, samples);
+	}
+}
 void Audio::Music::writeTone(float frequency, int sampleCount, Uint8* outSamples) {
 	float duration = (float)sampleCount / sampleRate;
 	char bitsize = (char)SDL_AUDIO_BITSIZE(format);
@@ -103,18 +195,6 @@ void Audio::tearDown() {
 	Mix_Quit();
 }
 void Audio::loadMusic() {
-	//these are ordered by note name, rather than absolute frequency; they loop around at C
-	constexpr float noteFrequencies[] = {
-		frequencyA4, frequencyAS4, frequencyGS4,
-		frequencyB4, frequencyC4, frequencyAS4,
-		frequencyC4, frequencyCS4, frequencyB4,
-		frequencyD4, frequencyDS4, frequencyCS4,
-		frequencyE4, frequencyF4, frequencyDS4,
-		frequencyF4, frequencyFS4, frequencyE4,
-		frequencyG4, frequencyGS4, frequencyFS4,
-	};
-	int bytesPerSample = SDL_AUDIO_BITSIZE(format) / 8 * channels;
-
 	Music::SoundEffectSpecs musicSoundEffectSpecs (musicVolume, Music::SoundEffectSpecs::VolumeEffect::Full, 0, 0, 0);
 	Music::SoundEffectSpecs radioWavesSoundEffectSpecs (
 		radioWavesVolume,
@@ -127,87 +207,8 @@ void Audio::loadMusic() {
 		radioWavesSoundSquare = newMusic("radiowaves", Music::Waveform::Square, radioWavesSoundEffectSpecs),
 	});
 
-	for (Music* music : musics) {
-		ifstream file;
-		string path = string("audio/") + music->filename + ".smus";
-		FileUtils::openFileForRead(&file, path.c_str());
-		string line;
-
-		//get the bpm
-		getline(file, line);
-		int bpm;
-		StringUtils::parseNextInt(line.c_str(), &bpm);
-
-		//collect all the notes into one string
-		string notesString;
-		while (getline(file, line))
-			notesString += line;
-		file.close();
-
-		//go through all the note strings and convert them into Notes
-		vector<Music::Note> notes;
-		const char* nextNotes = notesString.c_str();
-		for (char c = *nextNotes; c != 0; c = *nextNotes) {
-			if (c == '-') {
-				if (notes.size() == 0 || notes.back().frequency != 0)
-					notes.push_back(Music::Note(0, 1));
-				else
-					notes.back().beats++;
-			} else if (c == '_') {
-				if (notes.size() > 0)
-					notes.back().beats++;
-			} else if (c >= 'A' && c <= 'G') {
-				char noteIndex = c - 'A';
-				float frequency;
-				nextNotes++;
-				c = *nextNotes;
-				if (c == '#') {
-					frequency = noteFrequencies[noteIndex * 3 + 1];
-					nextNotes++;
-					c = *nextNotes;
-				} else if (c == 'b') {
-					frequency = noteFrequencies[noteIndex * 3 + 2];
-					nextNotes++;
-					c = *nextNotes;
-				} else
-					frequency = noteFrequencies[noteIndex * 3];
-				if (c != '4')
-					frequency *= pow(2.0f, c - '4');
-				notes.push_back(Music::Note(frequency, 1));
-			}
-			nextNotes++;
-		}
-
-		//calculate the duration of the track
-		int totalBeats = 0;
-		for (Music::Note& note : notes)
-			totalBeats += note.beats;
-		float totalDuration = (float)totalBeats * 60 / bpm;
-
-		//allocate the samples
-		int totalSampleCount = (int)(totalDuration * sampleRate);
-		int reverbExtraSamples =
-			(int)(music->soundEffectSpecs.reverbRepetitions * music->soundEffectSpecs.reverbSingleDelay * sampleRate);
-		music->chunk.allocated = 1;
-		music->chunk.alen = (totalSampleCount + reverbExtraSamples) * bytesPerSample;
-		music->chunk.abuf = new Uint8[music->chunk.alen]();
-		music->chunk.volume = MIX_MAX_VOLUME;
-
-		//finally, go through all the notes and write their samples
-		int beatsProcessed = 0;
-		int samplesProcessed = 0;
-		for (Music::Note& note : notes) {
-			int sampleStart = samplesProcessed;
-			beatsProcessed += note.beats;
-			samplesProcessed = (int)((float)beatsProcessed * 60 / bpm * sampleRate);
-			if (note.frequency == 0)
-				continue;
-
-			int sampleCount = samplesProcessed - sampleStart;
-			Uint8* samples = music->chunk.abuf + sampleStart * bytesPerSample;
-			music->writeTone(note.frequency, sampleCount, samples);
-		}
-	}
+	for (Music* music : musics)
+		music->load();
 }
 void Audio::unloadMusic() {
 	delete musicSquare;

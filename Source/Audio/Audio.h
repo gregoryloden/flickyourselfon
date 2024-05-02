@@ -32,6 +32,7 @@ public:
 				float pReverbFalloff);
 			virtual ~SoundEffectSpecs();
 		};
+	private:
 		//Should only be allocated within an object, on the stack, or as a static object
 		class Note {
 		public:
@@ -47,6 +48,7 @@ public:
 		SoundEffectSpecs soundEffectSpecs;
 		Mix_Chunk chunk;
 
+	public:
 		Music(
 			objCounterParametersComma()
 			const char* pFilename,
@@ -54,6 +56,8 @@ public:
 			SoundEffectSpecs& pSoundEffectSpecs);
 		virtual ~Music();
 
+		//load the music file
+		void load();
 		//write a tone of the given waveform and frequency, for a certain number of samples at the given volume
 		//adds a short fade-in and fade-out to avoid pops
 		void writeTone(float frequency, int sampleCount, Uint8* outSamples);
