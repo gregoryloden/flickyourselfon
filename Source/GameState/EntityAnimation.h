@@ -225,6 +225,19 @@ public:
 		//return that the animation should continue updating after spawning the particle
 		virtual bool handle(EntityState* entityState, int ticksTime);
 	};
+	class SwitchToPlayerCamera: public EntityAnimationTypes::Component {
+	public:
+		SwitchToPlayerCamera(objCounterParameters());
+		virtual ~SwitchToPlayerCamera();
+
+		//initialize and return a SwitchToPlayerCamera
+		static SwitchToPlayerCamera* produce(objCounterParameters());
+		//release a reference to this SwitchToPlayerCamera and return it to the pool if applicable
+		virtual void release();
+		//return that the animation should continue updating after setting that the entity state should switch to the player
+		//	camera
+		virtual bool handle(EntityState* entityState, int ticksTime);
+	};
 	class GenerateHint: public EntityAnimationTypes::Component {
 	private:
 		ReferenceCounterHolder<HintState> useHint;
@@ -242,19 +255,6 @@ public:
 		virtual void prepareReturnToPool();
 	public:
 		//return that the animation should continue updating after requesting the entity state to generate a hint
-		virtual bool handle(EntityState* entityState, int ticksTime);
-	};
-	class SwitchToPlayerCamera: public EntityAnimationTypes::Component {
-	public:
-		SwitchToPlayerCamera(objCounterParameters());
-		virtual ~SwitchToPlayerCamera();
-
-		//initialize and return a SwitchToPlayerCamera
-		static SwitchToPlayerCamera* produce(objCounterParameters());
-		//release a reference to this SwitchToPlayerCamera and return it to the pool if applicable
-		virtual void release();
-		//return that the animation should continue updating after setting that the entity state should switch to the player
-		//	camera
 		virtual bool handle(EntityState* entityState, int ticksTime);
 	};
 
