@@ -244,3 +244,12 @@ void Audio::unloadMusic() {
 	delete radioWavesSoundSaw;
 	delete radioWavesSoundSine;
 }
+void Audio::pauseAll() {
+	Mix_Pause(-1);
+}
+void Audio::resumeAll() {
+	Mix_Resume(-1);
+}
+void Audio::stopAll() {
+	Mix_HaltChannel(-1);
+}

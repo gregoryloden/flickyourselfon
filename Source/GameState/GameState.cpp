@@ -1,4 +1,5 @@
 #include "GameState.h"
+#include "Audio/Audio.h"
 #include "Editor/Editor.h"
 #include "GameState/DynamicValue.h"
 #include "GameState/EntityAnimation.h"
@@ -105,6 +106,8 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 			else if (endPauseDecision != 0)
 				pauseState.set(nullptr);
 		}
+		if (pauseState.get() == nullptr)
+			Audio::resumeAll();
 		return;
 	}
 
@@ -144,6 +147,7 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 				if (gameEvent.key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
 					pauseState.set(PauseState::produceBasePauseScreen());
 					pauseStartTicksTime = ticksTime;
+					Audio::pauseAll();
 				} else if (gameEvent.key.keysym.scancode == Config::kickKeyBinding.value) {
 					if (playerHasKeyboardControl && !Editor::isActive)
 						playerState.get()->beginKicking(gameTicksTime);
@@ -804,6 +808,7 @@ void GameState::beginIntroAnimation(int ticksTime) {
 	dynamicCameraAnchor.get()->beginEntityAnimation(&cameraAnimationComponents, ticksTime);
 }
 void GameState::resetGame(int ticksTime) {
+	Audio::stopAll();
 	sawIntroAnimation = false;
 	perpetualHints = false;
 	gameTimeOffsetTicksDuration = 0;

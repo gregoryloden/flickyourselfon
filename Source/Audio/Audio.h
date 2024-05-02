@@ -114,4 +114,10 @@ public:
 	static void loadMusic();
 	//clean up the music files
 	static void unloadMusic();
+	//pause all audio tracks
+	static void pauseAll();
+	//resume all audio tracks
+	static void resumeAll();
+	//clear all currently playing audio tracks
+	static void stopAll();
 };
