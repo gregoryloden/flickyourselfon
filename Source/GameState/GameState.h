@@ -40,6 +40,7 @@ private:
 	static const int goalExplanationDisplayTicksDuration = 2500;
 	static const int goalExplanationFadeOutTicksDuration = 500;
 	//switches color activation timing
+	static const int radioTowerMusicFadeOutMsDuration = 3000;
 	static const int radioTowerInitialPauseAnimationTicks = 1500;
 	static const int playerToRadioTowerAnimationTicks = 2000;
 	static const int preRadioWavesAnimationTicks = 2000;

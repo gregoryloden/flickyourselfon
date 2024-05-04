@@ -279,6 +279,9 @@ void Audio::pauseAll() {
 void Audio::resumeAll() {
 	Mix_Resume(-1);
 }
+void Audio::fadeOutAll(int ms) {
+	Mix_FadeOutChannel(-1, ms);
+}
 void Audio::stopAll() {
 	Mix_HaltChannel(-1);
 }

@@ -126,6 +126,8 @@ public:
 	static void pauseAll();
 	//resume all audio tracks
 	static void resumeAll();
+	//fade out all audio tracks
+	static void fadeOutAll(int ms);
 	//clear all currently playing audio tracks
 	static void stopAll();
 };

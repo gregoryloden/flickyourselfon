@@ -735,7 +735,7 @@ void MapState::writeCurrentRailStates(short resetSwitchId, KickResetSwitchUndoSt
 }
 int MapState::startRadioWavesAnimation(int initialTicksDelay, int ticksTime) {
 	radioWavesColor = lastActivatedSwitchColor;
-	AudioTypes::Music* musics[] = {
+	AudioTypes::Music* radioWavesSounds[] = {
 		Audio::radioWavesSoundSquare,
 		Audio::radioWavesSoundTriangle,
 		Audio::radioWavesSoundSaw,
@@ -747,7 +747,7 @@ int MapState::startRadioWavesAnimation(int initialTicksDelay, int ticksTime) {
 		true,
 		{
 			newEntityAnimationDelay(initialTicksDelay),
-			newEntityAnimationPlayMusic(musics[radioWavesColor], 0),
+			newEntityAnimationPlayMusic(radioWavesSounds[radioWavesColor], 0),
 			entityAnimationSpriteAnimationWithDelay(SpriteRegistry::radioWavesAnimation),
 			newEntityAnimationSetSpriteAnimation(nullptr),
 			newEntityAnimationDelay(interRadioWavesAnimationTicks),

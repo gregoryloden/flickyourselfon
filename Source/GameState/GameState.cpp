@@ -275,6 +275,12 @@ void GameState::startRadioTowerAnimation(int ticksTime) {
 		EntityAnimation::getComponentTotalTicksDuration(dynamicCameraAnchorAnimationComponents), ticksTime);
 
 	//finish the animation by returning to the player
+	AudioTypes::Music* musics[] = {
+		Audio::musicSquare,
+		Audio::musicTriangle,
+		Audio::musicSaw,
+		Audio::musicSine,
+	};
 	dynamicCameraAnchorAnimationComponents.insert(
 		dynamicCameraAnchorAnimationComponents.end(),
 		{
@@ -285,7 +291,8 @@ void GameState::startRadioTowerAnimation(int ticksTime) {
 				(float)switchesToPlayerAnimationTicks),
 			newEntityAnimationDelay(switchesToPlayerAnimationTicks),
 			stopMoving,
-			newEntityAnimationSwitchToPlayerCamera()
+			newEntityAnimationSwitchToPlayerCamera(),
+			newEntityAnimationPlayMusic(musics[mapState.get()->getLastActivatedSwitchColor()], -1),
 	});
 	dynamicCameraAnchor.get()->beginEntityAnimation(&dynamicCameraAnchorAnimationComponents, ticksTime);
 
@@ -302,6 +309,8 @@ void GameState::startRadioTowerAnimation(int ticksTime) {
 	});
 	playerState.get()->beginEntityAnimation(&playerAnimationComponents, ticksTime);
 	playerState.get()->clearUndoRedoStates();
+
+	Audio::fadeOutAll(radioTowerMusicFadeOutMsDuration);
 }
 void GameState::render(int ticksTime) {
 	Editor::EditingMutexLocker editingMutexLocker;
