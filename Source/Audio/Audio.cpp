@@ -179,8 +179,12 @@ void AudioTypes::Music::writeTone(float frequency, int sampleCount, Uint8* outSa
 				break;
 		}
 		switch (soundEffectSpecs.volumeEffect) {
-			case SoundEffectSpecs::VolumeEffect::SquareDecay: {
+			case SoundEffectSpecs::VolumeEffect::SquareDecay:
 				val *= MathUtils::fsqr((float)(sampleCount - i) / sampleCount);
+				break;
+			case SoundEffectSpecs::VolumeEffect::SquareInSquareOut: {
+				float toneSpot = (float)(sampleCount - i) / sampleCount;
+				val *= 4.0f * MathUtils::fsqr(toneSpot < 0.5f ? toneSpot : 1.0f - toneSpot);
 				break;
 			}
 			default:
@@ -238,6 +242,10 @@ Music* Audio::radioWavesSoundSquare = nullptr;
 Music* Audio::radioWavesSoundTriangle = nullptr;
 Music* Audio::radioWavesSoundSaw = nullptr;
 Music* Audio::radioWavesSoundSine = nullptr;
+Music* Audio::switchesFadeInSoundSquare = nullptr;
+Music* Audio::switchesFadeInSoundTriangle = nullptr;
+Music* Audio::switchesFadeInSoundSaw = nullptr;
+Music* Audio::switchesFadeInSoundSine = nullptr;
 void Audio::setUp() {
 	Mix_Init(0);
 	Mix_OpenAudio(sampleRate, format, channels, 2048);
@@ -257,6 +265,8 @@ void Audio::loadSounds() {
 		radioWavesReverbRepetitions,
 		radioWavesReverbSingleDelay,
 		radioWavesReverbFalloff);
+	Music::SoundEffectSpecs switchesFadeInSoundEffectSpecs (
+		1, Music::SoundEffectSpecs::VolumeEffect::SquareInSquareOut, 0, 0, 0);
 	vector<Sound*> sounds ({
 		musicSquare = newMusic("square", Music::Waveform::Square, musicSoundEffectSpecs.withVolume(musicSquareVolume)),
 		musicTriangle = newMusic("triangle", Music::Waveform::Triangle, musicSoundEffectSpecs.withVolume(musicTriangleVolume)),
@@ -270,6 +280,14 @@ void Audio::loadSounds() {
 			newMusic("radiowaves", Music::Waveform::Saw, radioWavesSoundEffectSpecs.withVolume(radioWavesSoundSawVolume)),
 		radioWavesSoundSine =
 			newMusic("radiowaves", Music::Waveform::Sine, radioWavesSoundEffectSpecs.withVolume(radioWavesSoundSineVolume)),
+		switchesFadeInSoundSquare = newMusic(
+			"switchesfadein", Music::Waveform::Square, switchesFadeInSoundEffectSpecs.withVolume(radioWavesSoundSquareVolume)),
+		switchesFadeInSoundTriangle = newMusic(
+			"switchesfadein", Music::Waveform::Triangle, switchesFadeInSoundEffectSpecs.withVolume(radioWavesSoundTriangleVolume)),
+		switchesFadeInSoundSaw = newMusic(
+			"switchesfadein", Music::Waveform::Saw, switchesFadeInSoundEffectSpecs.withVolume(radioWavesSoundSawVolume)),
+		switchesFadeInSoundSine = newMusic(
+			"switchesfadein", Music::Waveform::Sine, switchesFadeInSoundEffectSpecs.withVolume(radioWavesSoundSineVolume)),
 	});
 
 	for (Sound* sound : sounds)
@@ -288,6 +306,10 @@ void Audio::unloadSounds() {
 	delete radioWavesSoundTriangle;
 	delete radioWavesSoundSaw;
 	delete radioWavesSoundSine;
+	delete switchesFadeInSoundSquare;
+	delete switchesFadeInSoundTriangle;
+	delete switchesFadeInSoundSaw;
+	delete switchesFadeInSoundSine;
 }
 void Audio::pauseAll() {
 	Mix_Pause(-1);

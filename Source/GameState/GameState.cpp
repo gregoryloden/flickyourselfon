@@ -223,7 +223,8 @@ void GameState::startRadioTowerAnimation(int ticksTime) {
 	EntityAnimation::SetVelocity* stopMoving = newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f));
 	float switchesAnimationCenterWorldX = squareSwitchesAnimationCenterWorldX;
 	float switchesAnimationCenterWorldY = squareSwitchesAnimationCenterWorldY;
-	switch (mapState.get()->getLastActivatedSwitchColor()) {
+	char lastActivatedSwitchColor = mapState.get()->getLastActivatedSwitchColor();
+	switch (lastActivatedSwitchColor) {
 		case MapState::triangleColor:
 			switchesAnimationCenterWorldX = triangleSwitchesAnimationCenterWorldX;
 			switchesAnimationCenterWorldY = triangleSwitchesAnimationCenterWorldY;
@@ -275,6 +276,12 @@ void GameState::startRadioTowerAnimation(int ticksTime) {
 		EntityAnimation::getComponentTotalTicksDuration(dynamicCameraAnchorAnimationComponents), ticksTime);
 
 	//finish the animation by returning to the player
+	AudioTypes::Music* switchesFadeInSounds[] = {
+		Audio::switchesFadeInSoundSquare,
+		Audio::switchesFadeInSoundTriangle,
+		Audio::switchesFadeInSoundSaw,
+		Audio::switchesFadeInSoundSine,
+	};
 	AudioTypes::Music* musics[] = {
 		Audio::musicSquare,
 		Audio::musicTriangle,
@@ -284,6 +291,7 @@ void GameState::startRadioTowerAnimation(int ticksTime) {
 	dynamicCameraAnchorAnimationComponents.insert(
 		dynamicCameraAnchorAnimationComponents.end(),
 		{
+			newEntityAnimationPlaySound(switchesFadeInSounds[lastActivatedSwitchColor], 0),
 			newEntityAnimationDelay(MapState::switchesFadeInDuration + postSwitchesFadeInAnimationTicks),
 			EntityAnimation::SetVelocity::cubicInterpolation(
 				playerX - switchesAnimationCenterWorldX,
@@ -292,7 +300,7 @@ void GameState::startRadioTowerAnimation(int ticksTime) {
 			newEntityAnimationDelay(switchesToPlayerAnimationTicks),
 			stopMoving,
 			newEntityAnimationSwitchToPlayerCamera(),
-			newEntityAnimationPlaySound(musics[mapState.get()->getLastActivatedSwitchColor()], -1),
+			newEntityAnimationPlaySound(musics[lastActivatedSwitchColor], -1),
 	});
 	dynamicCameraAnchor.get()->beginEntityAnimation(&dynamicCameraAnchorAnimationComponents, ticksTime);
 

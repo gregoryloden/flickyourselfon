@@ -29,6 +29,7 @@ namespace AudioTypes {
 			enum class VolumeEffect : unsigned char {
 				Full,
 				SquareDecay,
+				SquareInSquareOut,
 			};
 
 			float volume;
@@ -119,6 +120,10 @@ public:
 	static AudioTypes::Music* radioWavesSoundTriangle;
 	static AudioTypes::Music* radioWavesSoundSaw;
 	static AudioTypes::Music* radioWavesSoundSine;
+	static AudioTypes::Music* switchesFadeInSoundSquare;
+	static AudioTypes::Music* switchesFadeInSoundTriangle;
+	static AudioTypes::Music* switchesFadeInSoundSaw;
+	static AudioTypes::Music* switchesFadeInSoundSine;
 
 	//Prevent allocation
 	Audio() = delete;
