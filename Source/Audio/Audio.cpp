@@ -191,16 +191,16 @@ void AudioTypes::Music::writeTone(float frequency, int sampleCount, Uint8* outSa
 }
 void AudioTypes::Music::overlay(Music* other) {
 	char bitsize = (char)SDL_AUDIO_BITSIZE(Audio::format);
+	int count = MathUtils::min(chunk.alen, other->chunk.alen);
 	if (bitsize == 16) {
-		int count = MathUtils::min(chunk.alen, other->chunk.alen) / 2;
+		count /= 2;
 		for (int i = 0; i < count; i++)
 			((short*)chunk.abuf)[i] += ((short*)other->chunk.abuf)[i];
 	} else if (bitsize == 8) {
-		int count = MathUtils::min(chunk.alen, other->chunk.alen);
 		for (int i = 0; i < count; i++)
 			((char*)chunk.abuf)[i] += ((char*)other->chunk.abuf)[i];
 	} else {
-		int count = MathUtils::min(chunk.alen, other->chunk.alen) / 4;
+		count /= 4;
 		for (int i = 0; i < count; i++)
 			((int*)chunk.abuf)[i] += ((int*)other->chunk.abuf)[i];
 	}
