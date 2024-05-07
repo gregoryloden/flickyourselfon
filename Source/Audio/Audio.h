@@ -1,7 +1,21 @@
 #include "General/General.h"
 
 namespace AudioTypes {
-	class Music onlyInDebug(: public ObjCounter) {
+	class Sound onlyInDebug(: public ObjCounter) {
+	protected:
+		string filepath;
+		Mix_Chunk* chunk;
+
+	public:
+		Sound(objCounterParametersComma() string pFilename);
+		virtual ~Sound();
+
+		//load the sound
+		virtual void load();
+		//play this sound, looping the given amount of additional loops
+		void play(int loops);
+	};
+	class Music: public Sound {
 	public:
 		enum class Waveform : unsigned char {
 			Square,
@@ -59,28 +73,24 @@ namespace AudioTypes {
 		static constexpr float frequencyAS4 = frequencyA4 * (float)MathUtils::powConst(2.0, 1.0 / 12.0);
 		static constexpr float frequencyB4 = frequencyA4 * (float)MathUtils::powConst(2.0, 2.0 / 12.0);
 
-		const char* filename;
 		Waveform waveform;
 		SoundEffectSpecs soundEffectSpecs;
-		Mix_Chunk chunk;
 
 	public:
 		Music(
 			objCounterParametersComma()
-			const char* pFilename,
+			string pFilename,
 			Waveform pWaveform,
 			SoundEffectSpecs& pSoundEffectSpecs);
 		virtual ~Music();
 
 		//load the music file
-		void load();
+		virtual void load();
 		//write a tone of the given waveform and frequency, for a certain number of samples at the given volume
 		//adds a short fade-in and fade-out to avoid pops
 		void writeTone(float frequency, int sampleCount, Uint8* outSamples);
 		//overlay the given music onto this music
 		void overlay(Music* other);
-		//play this sound, looping the given amount of additional loops
-		void play(int loops);
 	};
 }
 class Audio {
@@ -118,10 +128,10 @@ public:
 	static void stopAudio();
 	//completely clean up all audio handling
 	static void tearDown();
-	//load the music files
-	static void loadMusic();
-	//clean up the music files
-	static void unloadMusic();
+	//load the sound files
+	static void loadSounds();
+	//clean up the sound files
+	static void unloadSounds();
 	//pause all audio tracks
 	static void pauseAll();
 	//resume all audio tracks

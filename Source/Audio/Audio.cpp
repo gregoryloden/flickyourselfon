@@ -2,7 +2,24 @@
 #include "Util/FileUtils.h"
 #include "Util/StringUtils.h"
 
+#define newSound(filename) newWithArgs(Sound, filename)
 #define newMusic(filename, waveform, soundEffectSpecs) newWithArgs(Music, filename, waveform, soundEffectSpecs)
+
+//////////////////////////////// AudioTypes::Sound ////////////////////////////////
+AudioTypes::Sound::Sound(objCounterParametersComma() string pFilename)
+: onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
+filepath(string("audio/") + pFilename)
+, chunk(nullptr) {
+}
+AudioTypes::Sound::~Sound() {
+	Mix_FreeChunk(chunk);
+}
+void AudioTypes::Sound::load() {
+	chunk = Mix_LoadWAV(filepath.c_str());
+}
+void AudioTypes::Sound::play(int loops) {
+	Mix_PlayChannel(-1, chunk, loops);
+}
 
 //////////////////////////////// AudioTypes::Music::SoundEffectSpecs ////////////////////////////////
 AudioTypes::Music::SoundEffectSpecs::SoundEffectSpecs(
@@ -28,17 +45,17 @@ AudioTypes::Music::Note::~Note() {}
 //////////////////////////////// AudioTypes::Music ////////////////////////////////
 AudioTypes::Music::Music(
 	objCounterParametersComma()
-	const char* pFilename,
+	string pFilename,
 	Waveform pWaveform,
 	SoundEffectSpecs& pSoundEffectSpecs)
-: onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
-filename(pFilename)
+: Sound(objCounterArgumentsComma() pFilename + ".smus")
 , waveform(pWaveform)
-, soundEffectSpecs(pSoundEffectSpecs)
-, chunk() {
+, soundEffectSpecs(pSoundEffectSpecs) {
 }
 AudioTypes::Music::~Music() {
-	delete[] chunk.abuf;
+	delete[] chunk->abuf;
+	delete chunk;
+	chunk = nullptr;
 }
 void AudioTypes::Music::load() {
 	//these are ordered by note name, rather than absolute frequency; they loop around at C
@@ -54,8 +71,7 @@ void AudioTypes::Music::load() {
 	int bytesPerSample = SDL_AUDIO_BITSIZE(Audio::format) / 8 * Audio::channels;
 
 	ifstream file;
-	string path = string("audio/") + filename + ".smus";
-	FileUtils::openFileForRead(&file, path.c_str());
+	FileUtils::openFileForRead(&file, filepath.c_str());
 	string line;
 
 	//get the bpm
@@ -112,10 +128,11 @@ void AudioTypes::Music::load() {
 	//allocate the samples
 	int totalSampleCount = (int)(totalDuration * Audio::sampleRate);
 	int reverbExtraSamples = (int)(soundEffectSpecs.reverbRepetitions * soundEffectSpecs.reverbSingleDelay * Audio::sampleRate);
-	chunk.allocated = 1;
-	chunk.alen = (totalSampleCount + reverbExtraSamples) * bytesPerSample;
-	chunk.abuf = new Uint8[chunk.alen]();
-	chunk.volume = MIX_MAX_VOLUME;
+	chunk = new Mix_Chunk();
+	chunk->allocated = 1;
+	chunk->alen = (totalSampleCount + reverbExtraSamples) * bytesPerSample;
+	chunk->abuf = new Uint8[chunk->alen]();
+	chunk->volume = MIX_MAX_VOLUME;
 
 	//finally, go through all the notes and write their samples
 	int beatsProcessed = 0;
@@ -128,7 +145,7 @@ void AudioTypes::Music::load() {
 			continue;
 
 		int sampleCount = samplesProcessed - sampleStart;
-		Uint8* samples = chunk.abuf + sampleStart * bytesPerSample;
+		Uint8* samples = chunk->abuf + sampleStart * bytesPerSample;
 		writeTone(note.frequency, sampleCount, samples);
 	}
 }
@@ -191,22 +208,21 @@ void AudioTypes::Music::writeTone(float frequency, int sampleCount, Uint8* outSa
 }
 void AudioTypes::Music::overlay(Music* other) {
 	char bitsize = (char)SDL_AUDIO_BITSIZE(Audio::format);
-	int count = MathUtils::min(chunk.alen, other->chunk.alen);
+	int count = MathUtils::min(chunk->alen, other->chunk->alen);
+	Uint8* dst = chunk->abuf;
+	Uint8* src = other->chunk->abuf;
 	if (bitsize == 16) {
 		count /= 2;
 		for (int i = 0; i < count; i++)
-			((short*)chunk.abuf)[i] += ((short*)other->chunk.abuf)[i];
+			((short*)dst)[i] += ((short*)src)[i];
 	} else if (bitsize == 8) {
 		for (int i = 0; i < count; i++)
-			((char*)chunk.abuf)[i] += ((char*)other->chunk.abuf)[i];
+			((char*)dst)[i] += ((char*)src)[i];
 	} else {
 		count /= 4;
 		for (int i = 0; i < count; i++)
-			((int*)chunk.abuf)[i] += ((int*)other->chunk.abuf)[i];
+			((int*)dst)[i] += ((int*)src)[i];
 	}
-}
-void AudioTypes::Music::play(int loops) {
-	Mix_PlayChannel(-1, &chunk, loops);
 }
 using namespace AudioTypes;
 
@@ -233,7 +249,7 @@ void Audio::stopAudio() {
 void Audio::tearDown() {
 	Mix_Quit();
 }
-void Audio::loadMusic() {
+void Audio::loadSounds() {
 	Music::SoundEffectSpecs musicSoundEffectSpecs (1, Music::SoundEffectSpecs::VolumeEffect::Full, 0, 0, 0);
 	Music::SoundEffectSpecs radioWavesSoundEffectSpecs (
 		1,
@@ -241,7 +257,7 @@ void Audio::loadMusic() {
 		radioWavesReverbRepetitions,
 		radioWavesReverbSingleDelay,
 		radioWavesReverbFalloff);
-	vector<Music*> musics ({
+	vector<Sound*> sounds ({
 		musicSquare = newMusic("square", Music::Waveform::Square, musicSoundEffectSpecs.withVolume(musicSquareVolume)),
 		musicTriangle = newMusic("triangle", Music::Waveform::Triangle, musicSoundEffectSpecs.withVolume(musicTriangleVolume)),
 		musicSaw = newMusic("saw", Music::Waveform::Saw, musicSoundEffectSpecs.withVolume(musicSawVolume)),
@@ -256,14 +272,14 @@ void Audio::loadMusic() {
 			newMusic("radiowaves", Music::Waveform::Sine, radioWavesSoundEffectSpecs.withVolume(radioWavesSoundSineVolume)),
 	});
 
-	for (Music* music : musics)
-		music->load();
+	for (Sound* sound : sounds)
+		sound->load();
 
 	musicTriangle->overlay(musicSquare);
 	musicSaw->overlay(musicTriangle);
 	musicSine->overlay(musicSaw);
 }
-void Audio::unloadMusic() {
+void Audio::unloadSounds() {
 	delete musicSquare;
 	delete musicTriangle;
 	delete musicSaw;

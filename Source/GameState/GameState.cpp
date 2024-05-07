@@ -292,7 +292,7 @@ void GameState::startRadioTowerAnimation(int ticksTime) {
 			newEntityAnimationDelay(switchesToPlayerAnimationTicks),
 			stopMoving,
 			newEntityAnimationSwitchToPlayerCamera(),
-			newEntityAnimationPlayMusic(musics[mapState.get()->getLastActivatedSwitchColor()], -1),
+			newEntityAnimationPlaySound(musics[mapState.get()->getLastActivatedSwitchColor()], -1),
 	});
 	dynamicCameraAnchor.get()->beginEntityAnimation(&dynamicCameraAnchorAnimationComponents, ticksTime);
 

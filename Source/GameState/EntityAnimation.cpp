@@ -291,23 +291,23 @@ bool EntityAnimation::GenerateHint::handle(EntityState* entityState, int ticksTi
 	return true;
 }
 
-//////////////////////////////// EntityAnimation::PlayMusic ////////////////////////////////
-EntityAnimation::PlayMusic::PlayMusic(objCounterParameters())
+//////////////////////////////// EntityAnimation::PlaySound ////////////////////////////////
+EntityAnimation::PlaySound::PlaySound(objCounterParameters())
 : Component(objCounterArguments())
-, music(nullptr) {
+, sound(nullptr) {
 }
-EntityAnimation::PlayMusic::~PlayMusic() {}
-EntityAnimation::PlayMusic* EntityAnimation::PlayMusic::produce(
-	objCounterParametersComma() AudioTypes::Music* pMusic, int pLoops)
+EntityAnimation::PlaySound::~PlaySound() {}
+EntityAnimation::PlaySound* EntityAnimation::PlaySound::produce(
+	objCounterParametersComma() AudioTypes::Sound* pSound, int pLoops)
 {
-	initializeWithNewFromPool(p, EntityAnimation::PlayMusic)
-	p->music = pMusic;
+	initializeWithNewFromPool(p, EntityAnimation::PlaySound)
+	p->sound = pSound;
 	p->loops = pLoops;
 	return p;
 }
-pooledReferenceCounterDefineRelease(EntityAnimation::PlayMusic)
-bool EntityAnimation::PlayMusic::handle(EntityState* entityState, int ticksTime) {
-	music->play(loops);
+pooledReferenceCounterDefineRelease(EntityAnimation::PlaySound)
+bool EntityAnimation::PlaySound::handle(EntityState* entityState, int ticksTime) {
+	sound->play(loops);
 	return true;
 }
 

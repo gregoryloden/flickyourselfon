@@ -747,7 +747,7 @@ int MapState::startRadioWavesAnimation(int initialTicksDelay, int ticksTime) {
 		true,
 		{
 			newEntityAnimationDelay(initialTicksDelay),
-			newEntityAnimationPlayMusic(radioWavesSounds[radioWavesColor], 0),
+			newEntityAnimationPlaySound(radioWavesSounds[radioWavesColor], 0),
 			entityAnimationSpriteAnimationWithDelay(SpriteRegistry::radioWavesAnimation),
 			newEntityAnimationSetSpriteAnimation(nullptr),
 			newEntityAnimationDelay(interRadioWavesAnimationTicks),

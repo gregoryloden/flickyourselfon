@@ -73,7 +73,7 @@ int gameMain(int argc, char* argv[]) {
 
 	//load audio, settings, the map, and save file which don't depend on the render thread
 	Audio::setUp();
-	Audio::loadMusic();
+	Audio::loadSounds();
 	Config::loadSettings();
 	MapState::buildMap();
 	GameState::cacheSaveFile();
@@ -148,7 +148,7 @@ int gameMain(int argc, char* argv[]) {
 		Text::unloadFont();
 		delete gameStateQueue;
 		MapState::deleteMap();
-		Audio::unloadMusic();
+		Audio::unloadSounds();
 		Audio::tearDown();
 		//the order that these object pools are cleared matters since some earlier classes in this list may have retained
 		//	objects from classes later in this list
@@ -173,7 +173,7 @@ int gameMain(int argc, char* argv[]) {
 		ObjectPool<EntityAnimation::MapKickResetSwitch>::clearPool();
 		ObjectPool<EntityAnimation::SpawnParticle>::clearPool();
 		ObjectPool<EntityAnimation::GenerateHint>::clearPool();
-		ObjectPool<EntityAnimation::PlayMusic>::clearPool();
+		ObjectPool<EntityAnimation::PlaySound>::clearPool();
 		ObjectPool<CollisionRect>::clearPool();
 		ObjectPool<KickAction>::clearPool();
 		ObjectPool<NoOpUndoState>::clearPool();
