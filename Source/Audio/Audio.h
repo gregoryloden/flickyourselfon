@@ -12,7 +12,7 @@ namespace AudioTypes {
 
 		//load the sound
 		virtual void load();
-		//play this sound, looping the given amount of additional loops
+		//play this sound, looping the given amount of additional loops (or -1 for infinite)
 		void play(int loops);
 	};
 	class Music: public Sound {

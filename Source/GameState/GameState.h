@@ -4,6 +4,9 @@
 
 class PauseState;
 class PlayerState;
+namespace AudioTypes {
+	class Music;
+}
 
 class GameState onlyInDebug(: public ObjCounter) {
 private:
@@ -113,6 +116,8 @@ public:
 	void setDynamicCamera();
 	//begin a radio tower animation for the various states
 	void startRadioTowerAnimation(int ticksTime);
+	//get the music for the given switch color
+	AudioTypes::Music* getMusic(int lastActivatedSwitchColor);
 	//render this state, which was deemed to be the last state to need rendering
 	void render(int ticksTime);
 	//render the title animation at the given time
