@@ -107,6 +107,10 @@ private:
 	static constexpr int radioWavesReverbRepetitions = 8;
 	static constexpr float radioWavesReverbSingleDelay = 1.0f / 32.0f;
 	static constexpr float radioWavesReverbFalloff = 3.0f / 8.0f;
+	static constexpr float victorySoundSquareVolume = 2.5f / 256.0f;
+	static constexpr float victorySoundTriangleVolume = 12.0f / 256.0f;
+	static constexpr float victorySoundSawVolume = 3.5f / 256.0f;
+	static constexpr float victorySoundSineVolume = 13.5f / 256.0f;
 
 public:
 	static int sampleRate;
@@ -124,6 +128,7 @@ public:
 	static AudioTypes::Music* switchesFadeInSoundTriangle;
 	static AudioTypes::Music* switchesFadeInSoundSaw;
 	static AudioTypes::Music* switchesFadeInSoundSine;
+	static AudioTypes::Music* victorySound;
 
 	//Prevent allocation
 	Audio() = delete;

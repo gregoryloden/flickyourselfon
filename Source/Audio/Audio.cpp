@@ -246,6 +246,7 @@ Music* Audio::switchesFadeInSoundSquare = nullptr;
 Music* Audio::switchesFadeInSoundTriangle = nullptr;
 Music* Audio::switchesFadeInSoundSaw = nullptr;
 Music* Audio::switchesFadeInSoundSine = nullptr;
+Music* Audio::victorySound = nullptr;
 void Audio::setUp() {
 	Mix_Init(0);
 	Mix_OpenAudio(sampleRate, format, channels, 2048);
@@ -267,6 +268,7 @@ void Audio::loadSounds() {
 		radioWavesReverbFalloff);
 	Music::SoundEffectSpecs switchesFadeInSoundEffectSpecs (
 		1, Music::SoundEffectSpecs::VolumeEffect::SquareInSquareOut, 0, 0, 0);
+	Music *victorySoundTriangle, *victorySoundSaw, *victorySoundSine;
 	vector<Sound*> sounds ({
 		musicSquare = newMusic("musicsquare", Music::Waveform::Square, musicSoundEffectSpecs.withVolume(musicSquareVolume)),
 		musicTriangle =
@@ -289,6 +291,13 @@ void Audio::loadSounds() {
 			"switchesfadein", Music::Waveform::Saw, switchesFadeInSoundEffectSpecs.withVolume(musicSawVolume)),
 		switchesFadeInSoundSine = newMusic(
 			"switchesfadein", Music::Waveform::Sine, switchesFadeInSoundEffectSpecs.withVolume(musicSineVolume)),
+		victorySound =
+			newMusic("victorysquare", Music::Waveform::Square, musicSoundEffectSpecs.withVolume(victorySoundSquareVolume)),
+		victorySoundTriangle = newMusic(
+			"victorytriangle", Music::Waveform::Triangle, musicSoundEffectSpecs.withVolume(victorySoundTriangleVolume)),
+		victorySoundSaw = newMusic("victorysaw", Music::Waveform::Saw, musicSoundEffectSpecs.withVolume(victorySoundSawVolume)),
+		victorySoundSine =
+			newMusic("victorysine", Music::Waveform::Sine, musicSoundEffectSpecs.withVolume(victorySoundSineVolume)),
 	});
 
 	for (Sound* sound : sounds)
@@ -297,6 +306,12 @@ void Audio::loadSounds() {
 	musicTriangle->overlay(musicSquare);
 	musicSaw->overlay(musicTriangle);
 	musicSine->overlay(musicSaw);
+	victorySound->overlay(victorySoundTriangle);
+	victorySound->overlay(victorySoundSaw);
+	victorySound->overlay(victorySoundSine);
+	delete victorySoundTriangle;
+	delete victorySoundSaw;
+	delete victorySoundSine;
 }
 void Audio::unloadSounds() {
 	delete musicSquare;
@@ -311,6 +326,7 @@ void Audio::unloadSounds() {
 	delete switchesFadeInSoundTriangle;
 	delete switchesFadeInSoundSaw;
 	delete switchesFadeInSoundSine;
+	delete victorySound;
 }
 void Audio::pauseAll() {
 	Mix_Pause(-1);

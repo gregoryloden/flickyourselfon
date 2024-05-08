@@ -1,4 +1,5 @@
 #include "PlayerState.h"
+#include "Audio/Audio.h"
 #include "Editor/Editor.h"
 #include "GameState/CollisionRect.h"
 #include "GameState/DynamicValue.h"
@@ -865,6 +866,7 @@ void PlayerState::trySpawnGoalSparks(int ticksTime) {
 				ticksTime);
 		}
 	}
+	Audio::victorySound->play(0);
 }
 void PlayerState::tryCollectCompletedHint(PlayerState* other) {
 	if (hintSearchThread == nullptr || hintSearchStorage.get() == nullptr) {
