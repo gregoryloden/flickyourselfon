@@ -281,13 +281,13 @@ void Audio::loadSounds() {
 		radioWavesSoundSine =
 			newMusic("radiowaves", Music::Waveform::Sine, radioWavesSoundEffectSpecs.withVolume(radioWavesSoundSineVolume)),
 		switchesFadeInSoundSquare = newMusic(
-			"switchesfadein", Music::Waveform::Square, switchesFadeInSoundEffectSpecs.withVolume(radioWavesSoundSquareVolume)),
+			"switchesfadein", Music::Waveform::Square, switchesFadeInSoundEffectSpecs.withVolume(musicSquareVolume)),
 		switchesFadeInSoundTriangle = newMusic(
-			"switchesfadein", Music::Waveform::Triangle, switchesFadeInSoundEffectSpecs.withVolume(radioWavesSoundTriangleVolume)),
+			"switchesfadein", Music::Waveform::Triangle, switchesFadeInSoundEffectSpecs.withVolume(musicTriangleVolume)),
 		switchesFadeInSoundSaw = newMusic(
-			"switchesfadein", Music::Waveform::Saw, switchesFadeInSoundEffectSpecs.withVolume(radioWavesSoundSawVolume)),
+			"switchesfadein", Music::Waveform::Saw, switchesFadeInSoundEffectSpecs.withVolume(musicSawVolume)),
 		switchesFadeInSoundSine = newMusic(
-			"switchesfadein", Music::Waveform::Sine, switchesFadeInSoundEffectSpecs.withVolume(radioWavesSoundSineVolume)),
+			"switchesfadein", Music::Waveform::Sine, switchesFadeInSoundEffectSpecs.withVolume(musicSineVolume)),
 	});
 
 	for (Sound* sound : sounds)
