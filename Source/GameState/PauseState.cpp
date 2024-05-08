@@ -345,7 +345,7 @@ void PauseState::loadMenus() {
 						newKeyBindingOption(&Config::sprintKeyBinding, "sprint") COMMA
 						newDefaultKeyBindingsOption() COMMA
 						newAcceptKeyBindingsOption() COMMA
-						newNavigationOption("back", nullptr)
+						newNavigationOption("back", nullptr) COMMA
 					})) COMMA
 			newControlsNavigationOption(
 				"map controls",
@@ -358,7 +358,7 @@ void PauseState::loadMenus() {
 						newKeyBindingOption(&Config::mapCameraKeyBinding, "map camera") COMMA
 						newDefaultKeyBindingsOption() COMMA
 						newAcceptKeyBindingsOption() COMMA
-						newNavigationOption("back", nullptr)
+						newNavigationOption("back", nullptr) COMMA
 					})) COMMA
 			newNavigationOption(
 				"game options",
@@ -372,11 +372,18 @@ void PauseState::loadMenus() {
 						newMultiStateOption(&Config::resetSwitchKickIndicator, "reset switch indicator") COMMA
 						newMultiStateOption(&Config::showConnectionsMode, "show-connections mode") COMMA
 						newMultiStateOption(&Config::heightBasedShading, "height-based shading") COMMA
-						newNavigationOption("back", nullptr)
+						newNavigationOption("back", nullptr) COMMA
 					})) COMMA
-			newEndPauseOption("reset game", (int)EndPauseDecision::Reset) COMMA
+			newNavigationOption(
+				"reset game",
+				newPauseMenu(
+					"Reset Game?",
+					{
+						newNavigationOption("cancel", nullptr) COMMA
+						newEndPauseOption("reset game", (int)EndPauseDecision::Reset) COMMA
+					})) COMMA
 			newEndPauseOption("save + exit", (int)EndPauseDecision::Save | (int)EndPauseDecision::Exit) COMMA
-			newEndPauseOption("exit", (int)EndPauseDecision::Exit)
+			newEndPauseOption("exit", (int)EndPauseDecision::Exit) COMMA
 		});
 	homeMenu = newPauseMenu(
 		GameState::titleGameName,
