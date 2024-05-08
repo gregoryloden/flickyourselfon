@@ -268,10 +268,11 @@ void Audio::loadSounds() {
 	Music::SoundEffectSpecs switchesFadeInSoundEffectSpecs (
 		1, Music::SoundEffectSpecs::VolumeEffect::SquareInSquareOut, 0, 0, 0);
 	vector<Sound*> sounds ({
-		musicSquare = newMusic("square", Music::Waveform::Square, musicSoundEffectSpecs.withVolume(musicSquareVolume)),
-		musicTriangle = newMusic("triangle", Music::Waveform::Triangle, musicSoundEffectSpecs.withVolume(musicTriangleVolume)),
-		musicSaw = newMusic("saw", Music::Waveform::Saw, musicSoundEffectSpecs.withVolume(musicSawVolume)),
-		musicSine = newMusic("sine", Music::Waveform::Sine, musicSoundEffectSpecs.withVolume(musicSineVolume)),
+		musicSquare = newMusic("musicsquare", Music::Waveform::Square, musicSoundEffectSpecs.withVolume(musicSquareVolume)),
+		musicTriangle =
+			newMusic("musictriangle", Music::Waveform::Triangle, musicSoundEffectSpecs.withVolume(musicTriangleVolume)),
+		musicSaw = newMusic("musicsaw", Music::Waveform::Saw, musicSoundEffectSpecs.withVolume(musicSawVolume)),
+		musicSine = newMusic("musicsine", Music::Waveform::Sine, musicSoundEffectSpecs.withVolume(musicSineVolume)),
 		radioWavesSoundSquare =
 			newMusic("radiowaves", Music::Waveform::Square, radioWavesSoundEffectSpecs.withVolume(radioWavesSoundSquareVolume)),
 		radioWavesSoundTriangle = newMusic(
