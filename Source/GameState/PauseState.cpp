@@ -40,9 +40,9 @@ void PauseState::PauseMenu::getTotalHeightAndMetrics(
 	}
 	*outTotalHeight = totalHeight - titleMetrics.topPadding - outOptionsMetrics->back().bottomPadding;
 }
-int PauseState::PauseMenu::findHighlightedOption(SDL_MouseButtonEvent& clickEvent) {
-	float screenX = clickEvent.x / Config::currentPixelWidth;
-	float screenY = clickEvent.y / Config::currentPixelHeight;
+int PauseState::PauseMenu::findHighlightedOption(int mouseX, int mouseY) {
+	float screenX = mouseX / Config::currentPixelWidth;
+	float screenY = mouseY / Config::currentPixelHeight;
 	float totalHeight;
 	vector<Text::Metrics> optionsMetrics;
 	getTotalHeightAndMetrics(nullptr, &totalHeight, &optionsMetrics);
@@ -412,7 +412,7 @@ PauseState* PauseState::getNextPauseState() {
 		else if (gameEvent.type == SDL_KEYDOWN)
 			nextPauseState = nextPauseState->handleKeyPress(gameEvent.key.keysym.scancode);
 		else if (gameEvent.type == SDL_MOUSEMOTION)
-			nextPauseState = nextPauseState->handleMouseMotion(gameEvent.button);
+			nextPauseState = nextPauseState->handleMouseMotion(gameEvent.motion);
 		else if (gameEvent.type == SDL_MOUSEBUTTONDOWN)
 			nextPauseState = nextPauseState->handleMouseClick(gameEvent.button);
 
@@ -452,20 +452,20 @@ PauseState* PauseState::handleKeyPress(SDL_Scancode keyScancode) {
 			return this;
 	}
 }
-PauseState* PauseState::handleMouseMotion(SDL_MouseButtonEvent motionEvent) {
+PauseState* PauseState::handleMouseMotion(SDL_MouseMotionEvent motionEvent) {
 	//can't change selection while selecting a key binding
 	if (selectingKeyBindingOption != nullptr)
 		return this;
-	int newPauseOption = pauseMenu->findHighlightedOption(motionEvent);
+	int newPauseOption = pauseMenu->findHighlightedOption((int)motionEvent.x, (int)motionEvent.y);
 	if (newPauseOption < 0)
 		return this;
 	return newPauseState(parentState.get(), pauseMenu, newPauseOption, nullptr, 0);
 }
-PauseState* PauseState::handleMouseClick(SDL_MouseButtonEvent motionEvent) {
+PauseState* PauseState::handleMouseClick(SDL_MouseButtonEvent clickEvent) {
 	//can't change selection while selecting a key binding
 	if (selectingKeyBindingOption != nullptr)
 		return this;
-	int clickPauseOption = pauseMenu->findHighlightedOption(motionEvent);
+	int clickPauseOption = pauseMenu->findHighlightedOption((int)clickEvent.x, (int)clickEvent.y);
 	if (clickPauseOption < 0)
 		return this;
 	PauseOption* pauseOptionVal = pauseMenu->getOption(clickPauseOption);

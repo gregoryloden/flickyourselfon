@@ -44,7 +44,7 @@ private:
 			KeyBindingOption* selectingKeyBindingOption, float* outTotalHeight, vector<Text::Metrics>* optionsMetrics);
 	public:
 		//find the option that the mouse is hovering over
-		int findHighlightedOption(SDL_MouseButtonEvent& motionEvent);
+		int findHighlightedOption(int mouseX, int mouseY);
 		//load all key binding settings from this menu's options
 		void loadAffectedKeyBindingSettings(vector<ConfigTypes::KeyBindingSetting*>* affectedSettings);
 		//render this menu
@@ -227,7 +227,7 @@ private:
 	//handle the keypress and return the resulting new pause state
 	PauseState* handleKeyPress(SDL_Scancode keyScancode);
 	//handle the mouse motion and return the resulting new pause state
-	PauseState* handleMouseMotion(SDL_MouseButtonEvent motionEvent);
+	PauseState* handleMouseMotion(SDL_MouseMotionEvent motionEvent);
 	//handle the mouse click and return the resulting new pause state
 	PauseState* handleMouseClick(SDL_MouseButtonEvent clickEvent);
 public:
