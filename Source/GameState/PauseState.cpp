@@ -10,10 +10,10 @@
 #define newNavigationOption(displayText, subMenu) newWithArgs(PauseState::NavigationOption, displayText, subMenu)
 #define newControlsNavigationOption(displayText, subMenu) \
 	newWithArgs(PauseState::ControlsNavigationOption, displayText, subMenu)
-#define newKeyBindingOption(setting, displayText) newWithArgs(PauseState::KeyBindingOption, setting, displayText)
+#define newKeyBindingOption(setting, displayPrefix) newWithArgs(PauseState::KeyBindingOption, setting, displayPrefix)
 #define newDefaultKeyBindingsOption() newWithoutArgs(PauseState::DefaultKeyBindingsOption)
 #define newAcceptKeyBindingsOption() newWithoutArgs(PauseState::AcceptKeyBindingsOption)
-#define newMultiStateOption(setting, displayText) newWithArgs(PauseState::MultiStateOption, setting, displayText)
+#define newMultiStateOption(setting, displayPrefix) newWithArgs(PauseState::MultiStateOption, setting, displayPrefix)
 #define newEndPauseOption(displayText, endPauseDecision) newWithArgs(PauseState::EndPauseOption, displayText, endPauseDecision)
 
 //////////////////////////////// PauseState::PauseMenu ////////////////////////////////
