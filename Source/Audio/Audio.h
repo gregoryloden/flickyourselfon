@@ -5,9 +5,10 @@ namespace AudioTypes {
 	protected:
 		string filepath;
 		Mix_Chunk* chunk;
+		int channel;
 
 	public:
-		Sound(objCounterParametersComma() string pFilename);
+		Sound(objCounterParametersComma() string pFilename, int pChannel);
 		virtual ~Sound();
 
 		//load the sound
@@ -81,6 +82,7 @@ namespace AudioTypes {
 		Music(
 			objCounterParametersComma()
 			string pFilename,
+			int pChannel,
 			Waveform pWaveform,
 			SoundEffectSpecs& pSoundEffectSpecs);
 		virtual ~Music();
@@ -96,21 +98,21 @@ namespace AudioTypes {
 }
 class Audio {
 private:
-	static constexpr float musicSquareVolume = 3.0f / 256.0f;
-	static constexpr float musicTriangleVolume = 13.5f / 256.0f;
-	static constexpr float musicSawVolume = 3.0f / 256.0f;
-	static constexpr float musicSineVolume = 13.5f / 256.0f;
-	static constexpr float radioWavesSoundSquareVolume = 3.0f / 256.0f;
-	static constexpr float radioWavesSoundTriangleVolume = 12.0f / 256.0f;
-	static constexpr float radioWavesSoundSawVolume = 3.5f / 256.0f;
-	static constexpr float radioWavesSoundSineVolume = 21.0f / 256.0f;
+	static constexpr float musicSquareVolume = 3.0f / 64.0f;
+	static constexpr float musicTriangleVolume = 13.5f / 64.0f;
+	static constexpr float musicSawVolume = 3.0f / 64.0f;
+	static constexpr float musicSineVolume = 13.5f / 64.0f;
+	static constexpr float radioWavesSoundSquareVolume = 3.0f / 64.0f;
+	static constexpr float radioWavesSoundTriangleVolume = 12.0f / 64.0f;
+	static constexpr float radioWavesSoundSawVolume = 3.5f / 64.0f;
+	static constexpr float radioWavesSoundSineVolume = 21.0f / 64.0f;
 	static constexpr int radioWavesReverbRepetitions = 8;
 	static constexpr float radioWavesReverbSingleDelay = 1.0f / 32.0f;
 	static constexpr float radioWavesReverbFalloff = 3.0f / 8.0f;
-	static constexpr float victorySoundSquareVolume = 2.5f / 256.0f;
-	static constexpr float victorySoundTriangleVolume = 12.0f / 256.0f;
-	static constexpr float victorySoundSawVolume = 3.5f / 256.0f;
-	static constexpr float victorySoundSineVolume = 13.5f / 256.0f;
+	static constexpr float victorySoundSquareVolume = 2.5f / 64.0f;
+	static constexpr float victorySoundTriangleVolume = 12.0f / 64.0f;
+	static constexpr float victorySoundSawVolume = 3.5f / 64.0f;
+	static constexpr float victorySoundSineVolume = 13.5f / 64.0f;
 
 public:
 	static int sampleRate;
@@ -142,6 +144,10 @@ public:
 	static void loadSounds();
 	//clean up the sound files
 	static void unloadSounds();
+	//apply audio volume settings for all channels
+	static void applyVolume();
+	//apply audio volume settings for a single channel
+	static void applyChannelVolume(int channel);
 	//pause all audio tracks
 	static void pauseAll();
 	//resume all audio tracks

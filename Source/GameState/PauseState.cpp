@@ -1,4 +1,5 @@
 #include "PauseState.h"
+#include "Audio/Audio.h"
 #include "GameState/GameState.h"
 #include "GameState/KickAction.h"
 #include "Sprites/SpriteSheet.h"
@@ -294,6 +295,7 @@ string PauseState::VolumeSettingOption::getVolume(ConfigTypes::VolumeSetting* pS
 PauseState* PauseState::VolumeSettingOption::handleSide(PauseState* currentState, int direction) {
 	setting->volume = MathUtils::min(ConfigTypes::VolumeSetting::maxVolume, MathUtils::max(0, setting->volume + direction));
 	updateDisplayText(displayPrefix + ": " + getVolume(setting));
+	Audio::applyVolume();
 	Config::saveSettings();
 	return currentState;
 }

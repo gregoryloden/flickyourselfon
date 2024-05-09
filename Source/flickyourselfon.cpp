@@ -75,6 +75,7 @@ int gameMain(int argc, char* argv[]) {
 	Audio::setUp();
 	Audio::loadSounds();
 	Config::loadSettings();
+	Audio::applyVolume();
 	MapState::buildMap();
 	GameState::cacheSaveFile();
 

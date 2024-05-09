@@ -1,15 +1,18 @@
 #include "Audio.h"
+#include "Util/Config.h"
 #include "Util/FileUtils.h"
 #include "Util/StringUtils.h"
 
-#define newSound(filename) newWithArgs(Sound, filename)
-#define newMusic(filename, waveform, soundEffectSpecs) newWithArgs(Music, filename, waveform, soundEffectSpecs)
+#define newSound(filename, channel) newWithArgs(Sound, filename, channel)
+#define newMusic(filename, channel, waveform, soundEffectSpecs) \
+	newWithArgs(Music, filename, channel, waveform, soundEffectSpecs)
 
 //////////////////////////////// AudioTypes::Sound ////////////////////////////////
-AudioTypes::Sound::Sound(objCounterParametersComma() string pFilename)
+AudioTypes::Sound::Sound(objCounterParametersComma() string pFilename, int pChannel)
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
 filepath(string("audio/") + pFilename)
-, chunk(nullptr) {
+, chunk(nullptr)
+, channel(pChannel) {
 }
 AudioTypes::Sound::~Sound() {
 	Mix_FreeChunk(chunk);
@@ -18,7 +21,7 @@ void AudioTypes::Sound::load() {
 	chunk = Mix_LoadWAV(filepath.c_str());
 }
 void AudioTypes::Sound::play(int loops) {
-	Mix_PlayChannel(-1, chunk, loops);
+	Audio::applyChannelVolume(Mix_PlayChannel(channel, chunk, loops));
 }
 
 //////////////////////////////// AudioTypes::Music::SoundEffectSpecs ////////////////////////////////
@@ -44,11 +47,8 @@ AudioTypes::Music::Note::~Note() {}
 
 //////////////////////////////// AudioTypes::Music ////////////////////////////////
 AudioTypes::Music::Music(
-	objCounterParametersComma()
-	string pFilename,
-	Waveform pWaveform,
-	SoundEffectSpecs& pSoundEffectSpecs)
-: Sound(objCounterArgumentsComma() pFilename + ".smus")
+	objCounterParametersComma() string pFilename, int pChannel, Waveform pWaveform, SoundEffectSpecs& pSoundEffectSpecs)
+: Sound(objCounterArgumentsComma() pFilename + ".smus", pChannel)
 , waveform(pWaveform)
 , soundEffectSpecs(pSoundEffectSpecs) {
 }
@@ -251,6 +251,7 @@ void Audio::setUp() {
 	Mix_Init(0);
 	Mix_OpenAudio(sampleRate, format, channels, 2048);
 	Mix_QuerySpec(&sampleRate, &format, &channels);
+	Mix_ReserveChannels(1);
 }
 void Audio::stopAudio() {
 	Mix_CloseAudio();
@@ -270,34 +271,35 @@ void Audio::loadSounds() {
 		1, Music::SoundEffectSpecs::VolumeEffect::SquareInSquareOut, 0, 0, 0);
 	Music *victorySoundTriangle, *victorySoundSaw, *victorySoundSine;
 	vector<Sound*> sounds ({
-		musicSquare = newMusic("musicsquare", Music::Waveform::Square, musicSoundEffectSpecs.withVolume(musicSquareVolume)),
+		musicSquare = newMusic("musicsquare", 0, Music::Waveform::Square, musicSoundEffectSpecs.withVolume(musicSquareVolume)),
 		musicTriangle =
-			newMusic("musictriangle", Music::Waveform::Triangle, musicSoundEffectSpecs.withVolume(musicTriangleVolume)),
-		musicSaw = newMusic("musicsaw", Music::Waveform::Saw, musicSoundEffectSpecs.withVolume(musicSawVolume)),
-		musicSine = newMusic("musicsine", Music::Waveform::Sine, musicSoundEffectSpecs.withVolume(musicSineVolume)),
-		radioWavesSoundSquare =
-			newMusic("radiowaves", Music::Waveform::Square, radioWavesSoundEffectSpecs.withVolume(radioWavesSoundSquareVolume)),
+			newMusic("musictriangle", 0, Music::Waveform::Triangle, musicSoundEffectSpecs.withVolume(musicTriangleVolume)),
+		musicSaw = newMusic("musicsaw", 0, Music::Waveform::Saw, musicSoundEffectSpecs.withVolume(musicSawVolume)),
+		musicSine = newMusic("musicsine", 0, Music::Waveform::Sine, musicSoundEffectSpecs.withVolume(musicSineVolume)),
+		radioWavesSoundSquare = newMusic(
+			"radiowaves", -1, Music::Waveform::Square, radioWavesSoundEffectSpecs.withVolume(radioWavesSoundSquareVolume)),
 		radioWavesSoundTriangle = newMusic(
-			"radiowaves", Music::Waveform::Triangle, radioWavesSoundEffectSpecs.withVolume(radioWavesSoundTriangleVolume)),
+			"radiowaves", -1, Music::Waveform::Triangle, radioWavesSoundEffectSpecs.withVolume(radioWavesSoundTriangleVolume)),
 		radioWavesSoundSaw =
-			newMusic("radiowaves", Music::Waveform::Saw, radioWavesSoundEffectSpecs.withVolume(radioWavesSoundSawVolume)),
+			newMusic("radiowaves", -1, Music::Waveform::Saw, radioWavesSoundEffectSpecs.withVolume(radioWavesSoundSawVolume)),
 		radioWavesSoundSine =
-			newMusic("radiowaves", Music::Waveform::Sine, radioWavesSoundEffectSpecs.withVolume(radioWavesSoundSineVolume)),
+			newMusic("radiowaves", -1, Music::Waveform::Sine, radioWavesSoundEffectSpecs.withVolume(radioWavesSoundSineVolume)),
 		switchesFadeInSoundSquare = newMusic(
-			"switchesfadein", Music::Waveform::Square, switchesFadeInSoundEffectSpecs.withVolume(musicSquareVolume)),
+			"switchesfadein", -1, Music::Waveform::Square, switchesFadeInSoundEffectSpecs.withVolume(musicSquareVolume)),
 		switchesFadeInSoundTriangle = newMusic(
-			"switchesfadein", Music::Waveform::Triangle, switchesFadeInSoundEffectSpecs.withVolume(musicTriangleVolume)),
+			"switchesfadein", -1, Music::Waveform::Triangle, switchesFadeInSoundEffectSpecs.withVolume(musicTriangleVolume)),
 		switchesFadeInSoundSaw = newMusic(
-			"switchesfadein", Music::Waveform::Saw, switchesFadeInSoundEffectSpecs.withVolume(musicSawVolume)),
+			"switchesfadein", -1, Music::Waveform::Saw, switchesFadeInSoundEffectSpecs.withVolume(musicSawVolume)),
 		switchesFadeInSoundSine = newMusic(
-			"switchesfadein", Music::Waveform::Sine, switchesFadeInSoundEffectSpecs.withVolume(musicSineVolume)),
+			"switchesfadein", -1, Music::Waveform::Sine, switchesFadeInSoundEffectSpecs.withVolume(musicSineVolume)),
 		victorySound =
-			newMusic("victorysquare", Music::Waveform::Square, musicSoundEffectSpecs.withVolume(victorySoundSquareVolume)),
+			newMusic("victorysquare", -1, Music::Waveform::Square, musicSoundEffectSpecs.withVolume(victorySoundSquareVolume)),
 		victorySoundTriangle = newMusic(
-			"victorytriangle", Music::Waveform::Triangle, musicSoundEffectSpecs.withVolume(victorySoundTriangleVolume)),
-		victorySoundSaw = newMusic("victorysaw", Music::Waveform::Saw, musicSoundEffectSpecs.withVolume(victorySoundSawVolume)),
+			"victorytriangle", -1, Music::Waveform::Triangle, musicSoundEffectSpecs.withVolume(victorySoundTriangleVolume)),
+		victorySoundSaw =
+			newMusic("victorysaw", -1, Music::Waveform::Saw, musicSoundEffectSpecs.withVolume(victorySoundSawVolume)),
 		victorySoundSine =
-			newMusic("victorysine", Music::Waveform::Sine, musicSoundEffectSpecs.withVolume(victorySoundSineVolume)),
+			newMusic("victorysine", -1, Music::Waveform::Sine, musicSoundEffectSpecs.withVolume(victorySoundSineVolume)),
 	});
 
 	for (Sound* sound : sounds)
@@ -327,6 +329,16 @@ void Audio::unloadSounds() {
 	delete switchesFadeInSoundSaw;
 	delete switchesFadeInSoundSine;
 	delete victorySound;
+}
+void Audio::applyVolume() {
+	applyChannelVolume(-1);
+	applyChannelVolume(0);
+}
+void Audio::applyChannelVolume(int channel) {
+	float masterVolume = (float)Config::masterVolume.volume / ConfigTypes::VolumeSetting::maxVolume;
+	float channelVolume =
+		(float)(channel == 0 ? Config::musicVolume : Config::soundsVolume).volume / ConfigTypes::VolumeSetting::maxVolume;
+	Mix_Volume(channel, (int)(masterVolume * channelVolume * MIX_MAX_VOLUME));
 }
 void Audio::pauseAll() {
 	Mix_Pause(-1);

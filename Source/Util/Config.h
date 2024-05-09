@@ -49,7 +49,7 @@ namespace ConfigTypes {
 	//Should only be allocated within an object, on the stack, or as a static object
 	class VolumeSetting {
 	public:
-		static const int maxVolume = 16;
+		static const int maxVolume = 32;
 		static const int defaultVolume = maxVolume / 2;
 
 		int volume;
