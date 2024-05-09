@@ -14,6 +14,7 @@
 #define newDefaultKeyBindingsOption() newWithoutArgs(PauseState::DefaultKeyBindingsOption)
 #define newAcceptKeyBindingsOption() newWithoutArgs(PauseState::AcceptKeyBindingsOption)
 #define newMultiStateOption(setting, displayPrefix) newWithArgs(PauseState::MultiStateOption, setting, displayPrefix)
+#define newVolumeSettingOption(setting, displayPrefix) newWithArgs(PauseState::VolumeSettingOption, setting, displayPrefix)
 #define newEndPauseOption(displayText, endPauseDecision) newWithArgs(PauseState::EndPauseOption, displayText, endPauseDecision)
 
 //////////////////////////////// PauseState::PauseMenu ////////////////////////////////
@@ -264,8 +265,35 @@ PauseState::MultiStateOption::MultiStateOption(
 }
 PauseState::MultiStateOption::~MultiStateOption() {}
 PauseState* PauseState::MultiStateOption::handle(PauseState* currentState) {
-	setting->cycleState();
+	return handleSide(currentState, 1);
+}
+PauseState* PauseState::MultiStateOption::handleSide(PauseState* currentState, int direction) {
+	setting->cycleState(direction);
 	updateDisplayText(displayPrefix + ": " + setting->getSelectedOption());
+	Config::saveSettings();
+	return currentState;
+}
+
+//////////////////////////////// PauseState::VolumeSettingOption ////////////////////////////////
+PauseState::VolumeSettingOption::VolumeSettingOption(
+	objCounterParametersComma() ConfigTypes::VolumeSetting* pSetting, string pDisplayPrefix)
+: PauseOption(objCounterArgumentsComma() pDisplayPrefix + ": " + getVolume(pSetting))
+, setting(pSetting)
+, displayPrefix(pDisplayPrefix) {
+}
+PauseState::VolumeSettingOption::~VolumeSettingOption() {}
+string PauseState::VolumeSettingOption::getVolume(ConfigTypes::VolumeSetting* pSetting) {
+	string result = "";
+	int i = 0;
+	for (; i < pSetting->volume; i++)
+		result += '|';
+	for (; i < ConfigTypes::VolumeSetting::maxVolume; i++)
+		result += '.';
+	return result;
+}
+PauseState* PauseState::VolumeSettingOption::handleSide(PauseState* currentState, int direction) {
+	setting->volume = MathUtils::min(ConfigTypes::VolumeSetting::maxVolume, MathUtils::max(0, setting->volume + direction));
+	updateDisplayText(displayPrefix + ": " + getVolume(setting));
 	Config::saveSettings();
 	return currentState;
 }
@@ -375,6 +403,16 @@ void PauseState::loadMenus() {
 						newNavigationOption("back", nullptr) COMMA
 					})) COMMA
 			newNavigationOption(
+				"audio settings",
+				newPauseMenu(
+					"Audio Settings",
+					{
+						newVolumeSettingOption(&Config::masterVolume, "master") COMMA
+						newVolumeSettingOption(&Config::musicVolume, "music") COMMA
+						newVolumeSettingOption(&Config::soundsVolume, "sounds") COMMA
+						newNavigationOption("back", nullptr) COMMA
+					})) COMMA
+			newNavigationOption(
 				"reset game",
 				newPauseMenu(
 					"Reset Game?",
@@ -441,9 +479,19 @@ PauseState* PauseState::handleKeyPress(SDL_Scancode keyScancode) {
 			return newPauseState(parentState.get(), pauseMenu, (pauseOption + optionsCount - 1) % optionsCount, nullptr, 0);
 		case SDL_SCANCODE_DOWN:
 			return newPauseState(parentState.get(), pauseMenu, (pauseOption + 1) % optionsCount, nullptr, 0);
-		case SDL_SCANCODE_RETURN: {
+		case SDL_SCANCODE_LEFT:
+		case SDL_SCANCODE_RIGHT:
+		case SDL_SCANCODE_RETURN:
+		{
 			PauseOption* pauseOptionVal = pauseMenu->getOption(pauseOption);
-			return pauseOptionVal->enabled ? pauseOptionVal->handle(this) : this;
+			if (!pauseOptionVal->enabled)
+				return this;
+			else if (keyScancode == SDL_SCANCODE_LEFT)
+				return pauseOptionVal->handleSide(this, -1);
+			else if (keyScancode == SDL_SCANCODE_RIGHT)
+				return pauseOptionVal->handleSide(this, 1);
+			else
+				return pauseOptionVal->handle(this);
 		}
 		default:
 			//allow the kick button to confirm menu options, as long as the button isn't already in use

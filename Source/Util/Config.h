@@ -28,7 +28,7 @@ namespace ConfigTypes {
 		virtual ~MultiStateSetting();
 
 		string getSelectedOption() { return options[state]; }
-		void cycleState() { state = (state + 1) % options.size(); }
+		void cycleState(int increment) { state = (state + options.size() + increment) % options.size(); }
 	};
 	//Should only be allocated within an object, on the stack, or as a static object
 	class OnOffSetting: public MultiStateSetting {
@@ -45,6 +45,18 @@ namespace ConfigTypes {
 		virtual ~HoldToggleSetting();
 
 		bool isHold() { return state == 0; }
+	};
+	//Should only be allocated within an object, on the stack, or as a static object
+	class VolumeSetting {
+	public:
+		static const int maxVolume = 16;
+		static const int defaultVolume = maxVolume / 2;
+
+		int volume;
+		const string filePrefix;
+
+		VolumeSetting(string pFilePrefix, vector<VolumeSetting*>& containingList);
+		virtual ~VolumeSetting();
 	};
 }
 class Config {
@@ -89,6 +101,10 @@ public:
 	static ConfigTypes::OnOffSetting resetSwitchKickIndicator;
 	static ConfigTypes::HoldToggleSetting showConnectionsMode;
 	static ConfigTypes::OnOffSetting heightBasedShading;
+	static vector<ConfigTypes::VolumeSetting*> allVolumeSettings;
+	static ConfigTypes::VolumeSetting masterVolume;
+	static ConfigTypes::VolumeSetting musicVolume;
+	static ConfigTypes::VolumeSetting soundsVolume;
 
 	//Prevent allocation
 	Config() = delete;
@@ -101,5 +117,7 @@ private:
 	static bool loadKeyBindingSetting(string& line);
 	//load a multi-state setting, if applicable
 	static bool loadMultiStateSetting(string& line);
+	//load a volume setting, if applicable
+	static bool loadVolumeSetting(string& line);
 };
 #endif

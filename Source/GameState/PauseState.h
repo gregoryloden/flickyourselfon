@@ -5,6 +5,7 @@ enum class KickActionType: int;
 namespace ConfigTypes {
 	class KeyBindingSetting;
 	class MultiStateSetting;
+	class VolumeSetting;
 }
 
 //a single instance of a PauseState is immutable and shared between states
@@ -68,6 +69,9 @@ private:
 		virtual Text::Metrics getDisplayTextMetrics() { return displayTextMetrics; }
 		//load a key binding setting into the list, if applicable
 		virtual void loadAffectedKeyBindingSetting(vector<ConfigTypes::KeyBindingSetting*>* affectedSettings) {}
+		//handle a side direction input, return the pause state to use as a result
+		//by default, return the given state, as most pause options do not handle side direction input
+		virtual PauseState* handleSide(PauseState* currentState, int direction) { return currentState; }
 		//render the PauseOption
 		virtual void render(float leftX, float baselineY);
 		//update the display text and its metrics
@@ -165,6 +169,24 @@ private:
 
 		//cycle the state for this option
 		virtual PauseState* handle(PauseState* currentState);
+		//cycle the state for this option in either direction
+		virtual PauseState* handleSide(PauseState* currentState, int direction);
+	};
+	class VolumeSettingOption: public PauseOption {
+	private:
+		ConfigTypes::VolumeSetting* setting;
+		string displayPrefix;
+
+	public:
+		VolumeSettingOption(objCounterParametersComma() ConfigTypes::VolumeSetting* pSetting, string pDisplayPrefix);
+		virtual ~VolumeSettingOption();
+
+		//selecting a volume setting doesn't do anything
+		virtual PauseState* handle(PauseState* currentState) { return currentState; }
+		//get the string to represent the volume
+		static string getVolume(ConfigTypes::VolumeSetting* pSetting);
+		//increase or decrease the volume
+		virtual PauseState* handleSide(PauseState* currentState, int direction);
 	};
 	class EndPauseOption: public PauseOption {
 	private:

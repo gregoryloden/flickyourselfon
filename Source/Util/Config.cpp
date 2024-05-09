@@ -43,6 +43,14 @@ ConfigTypes::HoldToggleSetting::HoldToggleSetting(string pFilePrefix, vector<Mul
 : MultiStateSetting({ "hold", "toggle" }, pFilePrefix, containingList) {
 }
 ConfigTypes::HoldToggleSetting::~HoldToggleSetting() {}
+
+//////////////////////////////// Config::VolumeSetting ////////////////////////////////
+ConfigTypes::VolumeSetting::VolumeSetting(string pFilePrefix, vector<VolumeSetting*>& containingList)
+: volume(defaultVolume)
+, filePrefix(pFilePrefix) {
+	containingList.push_back(this);
+}
+ConfigTypes::VolumeSetting::~VolumeSetting() {}
 using namespace ConfigTypes;
 
 //////////////////////////////// Config ////////////////////////////////
@@ -70,6 +78,10 @@ OnOffSetting Config::switchKickIndicator ("switch ", Config::allMultiStateSettin
 OnOffSetting Config::resetSwitchKickIndicator ("resetSwitch ", Config::allMultiStateSettings);
 HoldToggleSetting Config::showConnectionsMode ("showConnectionsMode ", Config::allMultiStateSettings);
 OnOffSetting Config::heightBasedShading ("heightBasedShading ", Config::allMultiStateSettings);
+vector<VolumeSetting*> Config::allVolumeSettings;
+VolumeSetting Config::masterVolume ("masterVolume ", Config::allVolumeSettings);
+VolumeSetting Config::musicVolume ("musicVolume ", Config::allVolumeSettings);
+VolumeSetting Config::soundsVolume ("soundsVolume ", Config::allVolumeSettings);
 void Config::saveSettings() {
 	ofstream file;
 	FileUtils::openFileForWrite(&file, optionsFileName, ios::out | ios::trunc);
@@ -81,6 +93,10 @@ void Config::saveSettings() {
 		if (multiStateSetting->state != 0)
 			file << multiStateSetting->filePrefix << multiStateSetting->state << "\n";
 	}
+	for (VolumeSetting* volumeSetting : allVolumeSettings) {
+		if (volumeSetting->volume != VolumeSetting::defaultVolume)
+			file << volumeSetting->filePrefix << volumeSetting->volume << "\n";
+	}
 	file.close();
 }
 void Config::loadSettings() {
@@ -88,7 +104,7 @@ void Config::loadSettings() {
 	FileUtils::openFileForRead(&file, optionsFileName);
 	string line;
 	while (getline(file, line))
-		loadKeyBindingSetting(line) || loadMultiStateSetting(line);
+		loadKeyBindingSetting(line) || loadMultiStateSetting(line) || loadVolumeSetting(line);
 	file.close();
 }
 bool Config::loadKeyBindingSetting(string& line) {
@@ -104,6 +120,15 @@ bool Config::loadMultiStateSetting(string& line) {
 	for (MultiStateSetting* multiStateSetting : allMultiStateSettings) {
 		if (StringUtils::startsWith(line, multiStateSetting->filePrefix)) {
 			multiStateSetting->state = atoi(line.c_str() + multiStateSetting->filePrefix.size());
+			return true;
+		}
+	}
+	return false;
+}
+bool Config::loadVolumeSetting(string& line) {
+	for (VolumeSetting* volumeSetting : allVolumeSettings) {
+		if (StringUtils::startsWith(line, volumeSetting->filePrefix)) {
+			volumeSetting->volume = atoi(line.c_str() + volumeSetting->filePrefix.size());
 			return true;
 		}
 	}
