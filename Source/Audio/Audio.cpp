@@ -23,6 +23,58 @@ void AudioTypes::Sound::load() {
 void AudioTypes::Sound::play(int loops) {
 	Audio::applyChannelVolume(Mix_PlayChannel(channel, chunk, loops));
 }
+#ifdef WRITE_WAV_FILES
+	void AudioTypes::Sound::writeWavFile() {
+		ofstream out;
+		out.open(string(filepath) + ".wav", ios::out | ios::trunc | ios::binary);
+
+		int bitSize = SDL_AUDIO_BITSIZE(Audio::format);
+		int bytesPerSample = Audio::channels * bitSize / 8;
+		int byteRate = Audio::sampleRate * bytesPerSample;
+		char chunk1Header[] = {
+			//constant
+			'f', 'm', 't', ' ',
+			//chunk 1 size, 16 bytes
+			16, 0, 0, 0,
+		};
+		char chunk1[] = {
+			//format: PCM == 1
+			1, 0,
+			//channels
+			(char)Audio::channels, 0,
+			//sample rate
+			(char)Audio::sampleRate, (char)(Audio::sampleRate >> 8),
+			(char)(Audio::sampleRate >> 16), (char)(Audio::sampleRate >> 24),
+			//byte rate
+			(char)byteRate, (char)(byteRate >> 8), (char)(byteRate >> 16), (char)(byteRate >> 24),
+			//bytes per sample
+			(char)bytesPerSample, 0,
+			//bits per sample per channel
+			(char)bitSize, (char)(bitSize >> 8),
+		};
+		char chunk2Header[] = {
+			//constant
+			'd', 'a', 't', 'a',
+			//chunk 2 size
+			(char)chunk->alen, (char)(chunk->alen >> 8), (char)(chunk->alen >> 16), (char)(chunk->alen >> 24),
+		};
+		int chunkSizes = sizeof(chunk1Header) + sizeof(chunk1) + sizeof(chunk2Header) + chunk->alen;
+		char header[] = {
+			//constant
+			'R', 'I', 'F', 'F',
+			//chunk sizes
+			(char)chunkSizes, (char)(chunkSizes >> 8), (char)(chunkSizes >> 16), (char)(chunkSizes >> 24),
+			//constant
+			'W', 'A', 'V', 'E',
+		};
+		out.write(header, sizeof(header));
+		out.write(chunk1Header, sizeof(chunk1Header));
+		out.write(chunk1, sizeof(chunk1));
+		out.write(chunk2Header, sizeof(chunk2Header));
+		out.write((char*)chunk->abuf, chunk->alen);
+		out.close();
+	}
+#endif
 
 //////////////////////////////// AudioTypes::Music::SoundEffectSpecs ////////////////////////////////
 AudioTypes::Music::SoundEffectSpecs::SoundEffectSpecs(

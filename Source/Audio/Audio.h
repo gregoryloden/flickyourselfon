@@ -1,5 +1,9 @@
 #include "General/General.h"
 
+#ifdef DEBUG
+	#define WRITE_WAV_FILES
+#endif
+
 namespace AudioTypes {
 	class Sound onlyInDebug(: public ObjCounter) {
 	protected:
@@ -15,6 +19,10 @@ namespace AudioTypes {
 		virtual void load();
 		//play this sound, looping the given amount of additional loops (or -1 for infinite)
 		void play(int loops);
+		#ifdef WRITE_WAV_FILES
+			//write this sound to a .wav file
+			void writeWavFile();
+		#endif
 	};
 	class Music: public Sound {
 	public:
