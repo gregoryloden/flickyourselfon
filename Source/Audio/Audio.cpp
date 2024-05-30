@@ -1,4 +1,7 @@
 #include "Audio.h"
+#ifdef ENABLE_SKIP_BEATS
+	#include <algorithm>
+#endif
 #include "Util/Config.h"
 #include "Util/FileUtils.h"
 #include "Util/StringUtils.h"
@@ -129,7 +132,13 @@ void AudioTypes::Music::load() {
 	//get the bpm
 	getline(file, line);
 	int bpm;
-	StringUtils::parseNextInt(line.c_str(), &bpm);
+	const char* firstLine = StringUtils::parseNextInt(line.c_str(), &bpm);
+	#ifdef ENABLE_SKIP_BEATS
+		int blockBeatsCount, skipBeatBlocksCount;
+		firstLine = StringUtils::parseNextInt(firstLine, &blockBeatsCount);
+		firstLine = StringUtils::parseNextInt(firstLine, &skipBeatBlocksCount);
+		skipBeatsDuration = (float)skipBeatBlocksCount * blockBeatsCount * 60 / bpm;
+	#endif
 
 	//collect all the notes into one string
 	string notesString;
@@ -280,6 +289,13 @@ void AudioTypes::Music::overlay(Music* other) {
 			((int*)dst)[i] += ((int*)src)[i];
 	}
 }
+#ifdef ENABLE_SKIP_BEATS
+	void AudioTypes::Music::skipBeats() {
+		char bitsize = (char)SDL_AUDIO_BITSIZE(Audio::format);
+		int skipSamples = (int)(skipBeatsDuration * Audio::sampleRate);
+		rotate(chunk->abuf, chunk->abuf + (bitsize / 8 * Audio::channels * skipSamples), chunk->abuf + chunk->alen);
+	}
+#endif
 using namespace AudioTypes;
 
 //////////////////////////////// Audio ////////////////////////////////
@@ -366,6 +382,12 @@ void Audio::loadSounds() {
 	delete victorySoundTriangle;
 	delete victorySoundSaw;
 	delete victorySoundSine;
+	#ifdef ENABLE_SKIP_BEATS
+		musicSquare->skipBeats();
+		musicTriangle->skipBeats();
+		musicSaw->skipBeats();
+		musicSine->skipBeats();
+	#endif
 }
 void Audio::unloadSounds() {
 	delete musicSquare;

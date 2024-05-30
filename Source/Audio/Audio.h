@@ -2,6 +2,7 @@
 
 #ifdef DEBUG
 	#define WRITE_WAV_FILES
+	#define ENABLE_SKIP_BEATS
 #endif
 
 namespace AudioTypes {
@@ -85,6 +86,9 @@ namespace AudioTypes {
 
 		Waveform waveform;
 		SoundEffectSpecs soundEffectSpecs;
+		#ifdef ENABLE_SKIP_BEATS
+			float skipBeatsDuration;
+		#endif
 
 	public:
 		Music(
@@ -102,6 +106,10 @@ namespace AudioTypes {
 		void writeTone(float frequency, int sampleCount, Uint8* outSamples);
 		//overlay the given music onto this music
 		void overlay(Music* other);
+		#ifdef ENABLE_SKIP_BEATS
+			//start the music at a later sample
+			void skipBeats();
+		#endif
 	};
 }
 class Audio {
