@@ -71,7 +71,6 @@ public:
 	static constexpr float defaultPixelHeight = 4.0f;
 	static constexpr float editorDefaultPixelWidth = 3.0f;
 	static constexpr float editorDefaultPixelHeight = 3.0f;
-	//TODO: settle on final background color
 	static constexpr float backgroundColorRed = 3.0f / 16.0f;
 	static constexpr float backgroundColorGreen = 0.0f;
 	static constexpr float backgroundColorBlue = 3.0f / 16.0f;
