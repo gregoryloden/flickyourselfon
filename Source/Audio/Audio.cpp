@@ -339,11 +339,13 @@ void Audio::loadSounds() {
 		1, Music::SoundEffectSpecs::VolumeEffect::SquareInSquareOut, 0, 0, 0);
 	Music *victorySoundTriangle, *victorySoundSaw, *victorySoundSine;
 	vector<Sound*> sounds ({
-		musicSquare = newMusic("musicsquare", 0, Music::Waveform::Square, musicSoundEffectSpecs.withVolume(musicSquareVolume)),
-		musicTriangle =
-			newMusic("musictriangle", 0, Music::Waveform::Triangle, musicSoundEffectSpecs.withVolume(musicTriangleVolume)),
-		musicSaw = newMusic("musicsaw", 0, Music::Waveform::Saw, musicSoundEffectSpecs.withVolume(musicSawVolume)),
-		musicSine = newMusic("musicsine", 0, Music::Waveform::Sine, musicSoundEffectSpecs.withVolume(musicSineVolume)),
+		musicSquare =
+			newMusic("musicsquare", musicChannel, Music::Waveform::Square, musicSoundEffectSpecs.withVolume(musicSquareVolume)),
+		musicTriangle = newMusic(
+			"musictriangle", musicChannel, Music::Waveform::Triangle, musicSoundEffectSpecs.withVolume(musicTriangleVolume)),
+		musicSaw = newMusic("musicsaw", musicChannel, Music::Waveform::Saw, musicSoundEffectSpecs.withVolume(musicSawVolume)),
+		musicSine =
+			newMusic("musicsine", musicChannel, Music::Waveform::Sine, musicSoundEffectSpecs.withVolume(musicSineVolume)),
 		radioWavesSoundSquare = newMusic(
 			"radiowaves", -1, Music::Waveform::Square, radioWavesSoundEffectSpecs.withVolume(radioWavesSoundSquareVolume)),
 		radioWavesSoundTriangle = newMusic(
@@ -406,12 +408,13 @@ void Audio::unloadSounds() {
 }
 void Audio::applyVolume() {
 	applyChannelVolume(-1);
-	applyChannelVolume(0);
+	applyChannelVolume(musicChannel);
 }
 void Audio::applyChannelVolume(int channel) {
 	float masterVolume = (float)Config::masterVolume.volume / ConfigTypes::VolumeSetting::maxVolume;
 	float channelVolume =
-		(float)(channel == 0 ? Config::musicVolume : Config::soundsVolume).volume / ConfigTypes::VolumeSetting::maxVolume;
+		(float)(channel == musicChannel ? Config::musicVolume : Config::soundsVolume).volume
+			/ ConfigTypes::VolumeSetting::maxVolume;
 	Mix_Volume(channel, (int)(masterVolume * channelVolume * MIX_MAX_VOLUME));
 }
 void Audio::pauseAll() {

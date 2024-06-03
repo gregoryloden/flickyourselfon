@@ -114,6 +114,7 @@ namespace AudioTypes {
 }
 class Audio {
 private:
+	static const int musicChannel = 0;
 	static constexpr float musicSquareVolume = 3.0f / 64.0f;
 	static constexpr float musicTriangleVolume = 13.5f / 64.0f;
 	static constexpr float musicSawVolume = 3.0f / 64.0f;
