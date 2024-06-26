@@ -89,6 +89,7 @@ namespace AudioTypes {
 		#ifdef ENABLE_SKIP_BEATS
 			float skipBeatsDuration;
 		#endif
+		vector<Note> notes;
 
 	public:
 		Music(

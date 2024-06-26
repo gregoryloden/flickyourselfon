@@ -105,7 +105,8 @@ AudioTypes::Music::Music(
 	objCounterParametersComma() string pFilename, int pChannel, Waveform pWaveform, SoundEffectSpecs& pSoundEffectSpecs)
 : Sound(objCounterArgumentsComma() pFilename + ".smus", pChannel)
 , waveform(pWaveform)
-, soundEffectSpecs(pSoundEffectSpecs) {
+, soundEffectSpecs(pSoundEffectSpecs)
+, notes() {
 }
 AudioTypes::Music::~Music() {
 	delete[] chunk->abuf;
@@ -147,7 +148,6 @@ void AudioTypes::Music::load() {
 	file.close();
 
 	//go through all the note strings and convert them into Notes
-	vector<Music::Note> notes;
 	const char* nextNotes = notesString.c_str();
 	for (char c = *nextNotes; c != 0; c = *nextNotes) {
 		if (c == '-') {
