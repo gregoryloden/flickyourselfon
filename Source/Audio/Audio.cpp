@@ -358,10 +358,10 @@ void Audio::loadSounds() {
 			"switchesfadein", -1, Music::Waveform::Square, switchesFadeInSoundEffectSpecs.withVolume(musicSquareVolume)),
 		switchesFadeInSoundTriangle = newMusic(
 			"switchesfadein", -1, Music::Waveform::Triangle, switchesFadeInSoundEffectSpecs.withVolume(musicTriangleVolume)),
-		switchesFadeInSoundSaw = newMusic(
-			"switchesfadein", -1, Music::Waveform::Saw, switchesFadeInSoundEffectSpecs.withVolume(musicSawVolume)),
-		switchesFadeInSoundSine = newMusic(
-			"switchesfadein", -1, Music::Waveform::Sine, switchesFadeInSoundEffectSpecs.withVolume(musicSineVolume)),
+		switchesFadeInSoundSaw =
+			newMusic("switchesfadein", -1, Music::Waveform::Saw, switchesFadeInSoundEffectSpecs.withVolume(musicSawVolume)),
+		switchesFadeInSoundSine =
+			newMusic("switchesfadein", -1, Music::Waveform::Sine, switchesFadeInSoundEffectSpecs.withVolume(musicSineVolume)),
 		victorySound =
 			newMusic("victorysquare", -1, Music::Waveform::Square, musicSoundEffectSpecs.withVolume(victorySoundSquareVolume)),
 		victorySoundTriangle = newMusic(
