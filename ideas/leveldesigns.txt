@@ -19,3 +19,5 @@ Level 5: switch solution 1 2 3 4 3 2 1, require a reset if the player jumps off 
 Level 6: 4 x 4 pillars, rails between some, height 3 platforms between others, some pillars at height 5 and some at 7, floor at height 1
 	switches only affect rails that don't touch the same plane
 	end result has two distinct solutions
+Level 7:
+	general layout based on the colors and terrain of the past 6 levels (or maybe not, the rest of the 4th area is a reverse-L shape)
