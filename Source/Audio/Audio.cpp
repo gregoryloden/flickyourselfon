@@ -135,10 +135,11 @@ void AudioTypes::Music::load() {
 	int bpm;
 	const char* firstLine = StringUtils::parseNextInt(line.c_str(), &bpm);
 	#ifdef ENABLE_SKIP_BEATS
-		int blockBeatsCount, skipBeatBlocksCount;
+		int blockBeatsCount, skipBeatBlocksCount, skipBeatsCount;
 		firstLine = StringUtils::parseNextInt(firstLine, &blockBeatsCount);
 		firstLine = StringUtils::parseNextInt(firstLine, &skipBeatBlocksCount);
-		skipBeatsDuration = (float)skipBeatBlocksCount * blockBeatsCount * 60 / bpm;
+		firstLine = StringUtils::parseNextInt(firstLine, &skipBeatsCount);
+		skipBeatsDuration = (float)(skipBeatBlocksCount * blockBeatsCount + skipBeatsCount) * 60 / bpm;
 	#endif
 
 	//collect all the notes into one string
