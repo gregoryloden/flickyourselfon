@@ -27,7 +27,7 @@ namespace AudioTypes {
 	};
 	class Music: public Sound {
 	public:
-		enum class Waveform : unsigned char {
+		enum class Waveform: unsigned char {
 			Square,
 			Triangle,
 			Saw,
@@ -36,7 +36,7 @@ namespace AudioTypes {
 		//Should only be allocated within an object, on the stack, or as a static object
 		class SoundEffectSpecs {
 		public:
-			enum class VolumeEffect : unsigned char {
+			enum class VolumeEffect: unsigned char {
 				Full,
 				SquareDecay,
 				SquareInSquareOut,
