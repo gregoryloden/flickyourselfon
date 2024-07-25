@@ -50,7 +50,7 @@ GameState::~GameState() {
 }
 void GameState::cacheSaveFile() {
 	ifstream file;
-	FileUtils::openFileForRead(&file, savedGameFileName);
+	FileUtils::openFileForRead(&file, savedGameFileName, FileUtils::FileReadLocation::ApplicationData);
 	string line;
 	while (getline(file, line))
 		saveFile.push_back(line);
@@ -533,7 +533,7 @@ void GameState::loadCachedSavedState(int ticksTime) {
 #ifdef DEBUG
 	bool GameState::loadReplay() {
 		ifstream file;
-		FileUtils::openFileForRead(&file, replayFileName);
+		FileUtils::openFileForRead(&file, replayFileName, FileUtils::FileReadLocation::ApplicationData);
 		string line;
 		bool beganGameplay = false;
 		int lastTimestamp = 0;

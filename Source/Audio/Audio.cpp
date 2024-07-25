@@ -127,7 +127,7 @@ void AudioTypes::Music::load() {
 	int bytesPerSample = SDL_AUDIO_BITSIZE(Audio::format) / 8 * Audio::channels;
 
 	ifstream file;
-	FileUtils::openFileForRead(&file, filepath.c_str());
+	FileUtils::openFileForRead(&file, filepath.c_str(), FileUtils::FileReadLocation::Installation);
 	string line;
 
 	//get the bpm

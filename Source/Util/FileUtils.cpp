@@ -6,6 +6,15 @@
 	#include <unistd.h>
 #endif
 
+#ifdef WIN32
+	const string FileUtils::localAppDataDir = []() {
+		size_t bufferSize = MAX_PATH;
+		char buffer [MAX_PATH] = {};
+		char* bufferAsPointer = buffer;
+		_dupenv_s(&bufferAsPointer, &bufferSize, "LOCALAPPDATA");
+		return string(bufferAsPointer) + "\\KickYourselfOn";
+	}();
+#endif
 const string FileUtils::imagesFolder = "images/";
 #ifdef __APPLE__
 	const char* FileUtils::fileIoIntermediatePath = "/Library/Application Support/kickyourselfon";
@@ -32,23 +41,28 @@ void FileUtils::saveImage(SDL_Surface* image, const char* imagePath) {
 	string fullPath = imagesFolder + imagePath;
 	IMG_SavePNG(image, fullPath.c_str());
 }
-void FileUtils::openFileForRead(ifstream* file, const char* filePath) {
+void FileUtils::openFileForRead(ifstream* file, const char* filePath, FileReadLocation fileReadLocation) {
 	#ifdef WIN32
-		file->open(filePath);
+		string fullPath;
+		if (fileReadLocation == FileReadLocation::Installation)
+			fullPath = filePath;
+		else if (fileReadLocation == FileReadLocation::ApplicationData)
+			fullPath = string(localAppDataDir) + '\\' + filePath;
 	#else
+		//TODO read from the installation directory
 		string fullPath = getExpandedFileIoPrefix() + "/" + filePath;
-		file->open(fullPath.c_str());
 	#endif
+	file->open(fullPath.c_str());
 }
 void FileUtils::openFileForWrite(ofstream* file, const char* filePath, ios_base::openmode fileFlags) {
 	#ifdef WIN32
-		file->open(filePath, fileFlags);
+		string fullPath = string(localAppDataDir) + '\\' + filePath;
 	#else
 		string expandedPath = getExpandedFileIoPrefix();
 		mkdir(expandedPath.c_str(), 0x1FF);
 		string fullPath = expandedPath + "/" + filePath;
-		file->open(fullPath.c_str(), fileFlags);
 	#endif
+	file->open(fullPath.c_str(), fileFlags);
 }
 #ifdef __APPLE__
 	string FileUtils::getExpandedFileIoPrefix() {

@@ -101,7 +101,7 @@ void Config::saveSettings() {
 }
 void Config::loadSettings() {
 	ifstream file;
-	FileUtils::openFileForRead(&file, optionsFileName);
+	FileUtils::openFileForRead(&file, optionsFileName, FileUtils::FileReadLocation::ApplicationData);
 	string line;
 	while (getline(file, line))
 		loadKeyBindingSetting(line) || loadMultiStateSetting(line) || loadVolumeSetting(line);

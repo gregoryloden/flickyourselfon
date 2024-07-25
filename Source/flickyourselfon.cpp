@@ -14,6 +14,7 @@
 #include "GameState/MapState/MapState.h"
 #include "Util/CircularStateQueue.h"
 #include "Util/Config.h"
+#include "Util/FileUtils.h"
 #include "Util/Logger.h"
 #include "Util/TimeUtils.h"
 #include "Sprites/SpriteRegistry.h"
@@ -42,6 +43,11 @@ int gameMain(int argc, char* argv[]) {
 			Logger::debugLogger.enableInEditor();
 		}
 	}
+
+	//some things need to happen before logging can begin
+	#ifdef WIN32
+		CreateDirectoryA(FileUtils::localAppDataDir.c_str(), nullptr);
+	#endif
 
 	#ifdef DEBUG
 		ObjCounter::start();
