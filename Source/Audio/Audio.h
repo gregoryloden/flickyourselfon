@@ -131,8 +131,9 @@ private:
 	static constexpr float victorySoundTriangleVolume = 12.0f / 64.0f;
 	static constexpr float victorySoundSawVolume = 3.5f / 64.0f;
 	static constexpr float victorySoundSineVolume = 13.5f / 64.0f;
-
 public:
+	static const int soundStepCount = 6;
+
 	static int sampleRate;
 	static Uint16 format;
 	static int channels;
@@ -149,6 +150,7 @@ public:
 	static AudioTypes::Music* switchesFadeInSoundSaw;
 	static AudioTypes::Music* switchesFadeInSoundSine;
 	static AudioTypes::Music* victorySound;
+	static AudioTypes::Sound* soundStep [soundStepCount];
 
 	//Prevent allocation
 	Audio() = delete;

@@ -74,6 +74,7 @@ private:
 	SpriteAnimation* spriteAnimation;
 	int spriteAnimationStartTicksTime;
 	SpriteDirection spriteDirection;
+	int lastStepSound;
 	bool hasBoot;
 	ReferenceCounterHolder<DynamicValue> ghostSpriteX;
 	ReferenceCounterHolder<DynamicValue> ghostSpriteY;

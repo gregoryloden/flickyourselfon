@@ -316,6 +316,7 @@ Music* Audio::switchesFadeInSoundTriangle = nullptr;
 Music* Audio::switchesFadeInSoundSaw = nullptr;
 Music* Audio::switchesFadeInSoundSine = nullptr;
 Music* Audio::victorySound = nullptr;
+Sound* Audio::soundStep[Audio::soundStepCount] = {};
 void Audio::setUp() {
 	Mix_Init(0);
 	Mix_OpenAudio(sampleRate, format, channels, 2048);
@@ -372,6 +373,11 @@ void Audio::loadSounds() {
 		victorySoundSine =
 			newMusic("victorysine", -1, Music::Waveform::Sine, musicSoundEffectSpecs.withVolume(victorySoundSineVolume)),
 	});
+	for (int i = 0; i < soundStepCount; i++) {
+		stringstream s;
+		s << "step" << (i + 1) << ".wav";
+		sounds.push_back(soundStep[i] = newSound(s.str().c_str(), -1));
+	}
 
 	for (Sound* sound : sounds)
 		sound->load();
@@ -406,6 +412,8 @@ void Audio::unloadSounds() {
 	delete switchesFadeInSoundSaw;
 	delete switchesFadeInSoundSine;
 	delete victorySound;
+	for (int i = 0; i < soundStepCount; i++)
+		delete soundStep[i];
 }
 void Audio::applyVolume() {
 	applyChannelVolume(-1);

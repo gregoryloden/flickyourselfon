@@ -40,6 +40,7 @@ PlayerState::PlayerState(objCounterParameters())
 , spriteAnimation(nullptr)
 , spriteAnimationStartTicksTime(-1)
 , spriteDirection(SpriteDirection::Down)
+, lastStepSound(-1)
 , hasBoot(false)
 , ghostSpriteX(nullptr)
 , ghostSpriteY(nullptr)
@@ -88,6 +89,7 @@ void PlayerState::copyPlayerState(PlayerState* other) {
 	spriteAnimation = other->spriteAnimation;
 	spriteAnimationStartTicksTime = other->spriteAnimationStartTicksTime;
 	spriteDirection = other->spriteDirection;
+	lastStepSound = other->lastStepSound;
 	hasBoot = other->hasBoot;
 	ghostSpriteX.set(other->ghostSpriteX.get());
 	ghostSpriteY.set(other->ghostSpriteY.get());
@@ -242,6 +244,7 @@ void PlayerState::updateWithPreviousPlayerState(PlayerState* prev, bool hasKeybo
 	//if the previous play state had an animation, we copied it already so clear it
 	//if not, we might have a leftover entity animation from a previous state
 	entityAnimation.set(nullptr);
+	lastStepSound = prev->lastStepSound;
 	ghostSpriteX.set(prev->ghostSpriteX.get());
 	ghostSpriteY.set(prev->ghostSpriteY.get());
 	worldGroundY.set(nullptr);
@@ -482,6 +485,20 @@ void PlayerState::updateSpriteWithPreviousPlayerState(
 		spriteAnimationStartTicksTime = (restartSpriteAnimation || prev->spriteAnimation == nullptr)
 			? ticksTime
 			: prev->spriteAnimationStartTicksTime;
+
+		//play a sound if applicable
+		int stepInterval = SpriteRegistry::playerWalkingAnimationTicksPerFrame * 2;
+		int soundNum =
+			(ticksTime + SpriteRegistry::playerWalkingAnimationTicksPerFrame - spriteAnimationStartTicksTime) / stepInterval;
+		int prevSoundNum =
+			(prev->lastUpdateTicksTime + SpriteRegistry::playerWalkingAnimationTicksPerFrame - spriteAnimationStartTicksTime)
+				/ stepInterval;
+		if (soundNum != prevSoundNum) {
+			lastStepSound = rand() % (Audio::soundStepCount - 1);
+			if (lastStepSound >= prev->lastStepSound)
+				lastStepSound++;
+			Audio::soundStep[lastStepSound]->play(0);
+		}
 	}
 }
 void PlayerState::setKickAction() {
