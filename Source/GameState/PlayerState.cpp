@@ -479,7 +479,9 @@ void PlayerState::updateSpriteWithPreviousPlayerState(
 				? SpriteRegistry::playerBootSprintingAnimation
 				: SpriteRegistry::playerBootWalkingAnimation
 			: SpriteRegistry::playerWalkingAnimation;
-		spriteAnimationStartTicksTime = restartSpriteAnimation ? ticksTime : prev->spriteAnimationStartTicksTime;
+		spriteAnimationStartTicksTime = (restartSpriteAnimation || prev->spriteAnimation == nullptr)
+			? ticksTime
+			: prev->spriteAnimationStartTicksTime;
 	}
 }
 void PlayerState::setKickAction() {
