@@ -477,8 +477,9 @@ void PlayerState::updateSpriteWithPreviousPlayerState(
 	if (!moving)
 		spriteAnimation = nullptr;
 	else {
+		bool isSprinting = keyboardState != nullptr && keyboardState[Config::sprintKeyBinding.value] != 0;
 		spriteAnimation = hasBoot
-			? (keyboardState != nullptr && keyboardState[Config::sprintKeyBinding.value] != 0)
+			? isSprinting
 				? SpriteRegistry::playerBootSprintingAnimation
 				: SpriteRegistry::playerBootWalkingAnimation
 			: SpriteRegistry::playerWalkingAnimation;
@@ -487,12 +488,12 @@ void PlayerState::updateSpriteWithPreviousPlayerState(
 			: prev->spriteAnimationStartTicksTime;
 
 		//play a sound if applicable
-		int stepInterval = SpriteRegistry::playerWalkingAnimationTicksPerFrame * 2;
-		int soundNum =
-			(ticksTime + SpriteRegistry::playerWalkingAnimationTicksPerFrame - spriteAnimationStartTicksTime) / stepInterval;
-		int prevSoundNum =
-			(prev->lastUpdateTicksTime + SpriteRegistry::playerWalkingAnimationTicksPerFrame - spriteAnimationStartTicksTime)
-				/ stepInterval;
+		int soundTicksPerFrame = isSprinting
+			? SpriteRegistry::playerSprintingAnimationTicksPerFrame
+			: SpriteRegistry::playerWalkingAnimationTicksPerFrame;
+		int stepInterval = soundTicksPerFrame * 2;
+		int soundNum = (ticksTime - spriteAnimationStartTicksTime + soundTicksPerFrame) / stepInterval;
+		int prevSoundNum = (prev->lastUpdateTicksTime - spriteAnimationStartTicksTime + soundTicksPerFrame) / stepInterval;
 		if (soundNum != prevSoundNum) {
 			lastStepSound = rand() % (Audio::soundStepCount - 1);
 			if (lastStepSound >= prev->lastStepSound)
