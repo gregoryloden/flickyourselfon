@@ -351,7 +351,7 @@ void GameState::render(int ticksTime) {
 		renderTextDisplay(gameTicksTime);
 
 	//TODO: real win condition
-	int winTileX = 162;
+	int winTileX = 160;
 	int winTileY = 124;
 	float px = playerState.get()->getRenderCenterWorldX(gameTicksTime);
 	float py = playerState.get()->getRenderCenterWorldY(gameTicksTime);
