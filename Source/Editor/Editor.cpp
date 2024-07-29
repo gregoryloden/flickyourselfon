@@ -145,9 +145,9 @@ void Editor::SaveButton::onClick() {
 	SDL_Renderer* floorRenderer = SDL_CreateSoftwareRenderer(floorSurface);
 
 	for (int exportedMapY = 0; exportedMapY < exportedMapHeight; exportedMapY++) {
+		int mapY = exportedMapY - mapExtensionTopY;
 		for (int exportedMapX = 0; exportedMapX < exportedMapWidth; exportedMapX++) {
 			int mapX = exportedMapX - mapExtensionLeftX;
-			int mapY = exportedMapY - mapExtensionTopY;
 			if (mapX < 0 || mapX >= mapWidth || mapY < 0 || mapY >= mapHeight)
 				//we're extending the map, write an empty tile
 				SDL_SetRenderDrawColor(floorRenderer, 254, 255, 255, 255);
