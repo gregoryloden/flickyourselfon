@@ -317,6 +317,7 @@ Music* Audio::switchesFadeInSoundSaw = nullptr;
 Music* Audio::switchesFadeInSoundSine = nullptr;
 Music* Audio::victorySound = nullptr;
 Sound* Audio::soundStep[Audio::soundStepCount] = {};
+Sound* Audio::soundClimb = nullptr;
 void Audio::setUp() {
 	Mix_Init(0);
 	Mix_OpenAudio(sampleRate, format, channels, 2048);
@@ -372,6 +373,7 @@ void Audio::loadSounds() {
 			newMusic("victorysaw", -1, Music::Waveform::Saw, musicSoundEffectSpecs.withVolume(victorySoundSawVolume)),
 		victorySoundSine =
 			newMusic("victorysine", -1, Music::Waveform::Sine, musicSoundEffectSpecs.withVolume(victorySoundSineVolume)),
+		soundClimb = newSound("climb.wav", -1),
 	});
 	for (int i = 0; i < soundStepCount; i++) {
 		stringstream s;
@@ -414,6 +416,7 @@ void Audio::unloadSounds() {
 	delete victorySound;
 	for (int i = 0; i < soundStepCount; i++)
 		delete soundStep[i];
+	delete soundClimb;
 }
 void Audio::applyVolume() {
 	applyChannelVolume(-1);

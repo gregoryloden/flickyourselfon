@@ -993,6 +993,7 @@ void PlayerState::kickClimb(float currentX, float currentY, float targetX, float
 				newCompositeQuarticValue(0.0f, 0.0f, xMoveDistance / moveDurationSquared, 0.0f, 0.0f),
 				newCompositeQuarticValue(
 					0.0f, 2.0f * yMoveDistance / floatMoveDuration, -yMoveDistance / moveDurationSquared, 0.0f, 0.0f)),
+		newEntityAnimationPlaySound(Audio::soundClimb, 0),
 		//then delay for the rest of the animation and stop the player
 		newEntityAnimationDelay(moveDuration),
 		newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f)),
