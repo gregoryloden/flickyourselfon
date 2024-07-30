@@ -11,3 +11,5 @@ set ffmpeg=C:\path\to\ffmpeg.exe
 del "slow walking sped up.wav"
 
 "%ffmpeg%" -i "stomp dragging.m4a" -filter_complex "[0:a]volume=0.6,atrim=start=5.62:end=5.77[a0];[a0]asetrate=29400[a0a];[a0a]aresample=44100[a0b];[0:a]volume=0.25,atrim=start=10.9:end=11.3[a1];[a0b][a1]concat=n=2:v=0:a=1[outa]" -map "[outa]" ..\climb.wav -y
+
+"%ffmpeg%" -i kicking.m4a -filter_complex "[0:a]volume=1,atrim=start=1.98:end=2.13[a0];[0:a]volume=1,atrim=start=3.18:end=3.33[a1];[a0][a1]amix=inputs=2[a2];[a2]asetrate=74167[outa]" -map "[outa]" ..\kick.wav -y

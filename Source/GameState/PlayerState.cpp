@@ -1328,6 +1328,7 @@ void PlayerState::addKickSwitchComponents(
 			newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f)),
 			newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerKickingAnimation),
 			newEntityAnimationDelay(SpriteRegistry::playerKickingAnimationTicksPerFrame),
+			newEntityAnimationPlaySound(Audio::soundKick, 0),
 			newEntityAnimationMapKickSwitch(switchId, moveRailsForward, allowRadioTowerAnimation),
 			newEntityAnimationGenerateHint(useHint),
 			newEntityAnimationDelay(
