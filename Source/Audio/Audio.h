@@ -154,6 +154,7 @@ public:
 	static AudioTypes::Sound* soundClimb;
 	static AudioTypes::Sound* soundLand;
 	static AudioTypes::Sound* soundKick;
+	static AudioTypes::Sound* soundSwitchOn;
 
 	//Prevent allocation
 	Audio() = delete;

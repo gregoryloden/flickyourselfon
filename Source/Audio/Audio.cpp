@@ -320,6 +320,7 @@ Sound* Audio::soundStep[Audio::soundStepCount] = {};
 Sound* Audio::soundClimb = nullptr;
 Sound* Audio::soundLand = nullptr;
 Sound* Audio::soundKick = nullptr;
+Sound* Audio::soundSwitchOn = nullptr;
 void Audio::setUp() {
 	Mix_Init(0);
 	Mix_OpenAudio(sampleRate, format, channels, 2048);
@@ -378,6 +379,7 @@ void Audio::loadSounds() {
 		soundClimb = newSound("climb.wav", -1),
 		soundLand = newSound("land.wav", -1),
 		soundKick = newSound("kick.wav", -1),
+		soundSwitchOn = newSound("switch on.wav", -1),
 	});
 	for (int i = 0; i < soundStepCount; i++) {
 		stringstream s;
@@ -423,6 +425,7 @@ void Audio::unloadSounds() {
 	delete soundClimb;
 	delete soundLand;
 	delete soundKick;
+	delete soundSwitchOn;
 }
 void Audio::applyVolume() {
 	applyChannelVolume(-1);
