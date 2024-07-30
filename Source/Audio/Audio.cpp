@@ -318,6 +318,7 @@ Music* Audio::switchesFadeInSoundSine = nullptr;
 Music* Audio::victorySound = nullptr;
 Sound* Audio::soundStep[Audio::soundStepCount] = {};
 Sound* Audio::soundClimb = nullptr;
+Sound* Audio::soundLand = nullptr;
 Sound* Audio::soundKick = nullptr;
 void Audio::setUp() {
 	Mix_Init(0);
@@ -375,6 +376,7 @@ void Audio::loadSounds() {
 		victorySoundSine =
 			newMusic("victorysine", -1, Music::Waveform::Sine, musicSoundEffectSpecs.withVolume(victorySoundSineVolume)),
 		soundClimb = newSound("climb.wav", -1),
+		soundLand = newSound("land.wav", -1),
 		soundKick = newSound("kick.wav", -1),
 	});
 	for (int i = 0; i < soundStepCount; i++) {
@@ -419,6 +421,7 @@ void Audio::unloadSounds() {
 	for (int i = 0; i < soundStepCount; i++)
 		delete soundStep[i];
 	delete soundClimb;
+	delete soundLand;
 	delete soundKick;
 }
 void Audio::applyVolume() {

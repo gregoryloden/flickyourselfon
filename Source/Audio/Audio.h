@@ -152,6 +152,7 @@ public:
 	static AudioTypes::Music* victorySound;
 	static AudioTypes::Sound* soundStep [soundStepCount];
 	static AudioTypes::Sound* soundClimb;
+	static AudioTypes::Sound* soundLand;
 	static AudioTypes::Sound* soundKick;
 
 	//Prevent allocation

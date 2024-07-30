@@ -1086,6 +1086,7 @@ void PlayerState::kickFall(float currentX, float currentY, float targetX, float 
 		newEntityAnimationSetVelocity(xVelocity, yVelocity),
 		//then delay for the rest of the animation and stop the player
 		newEntityAnimationDelay(moveDuration),
+		newEntityAnimationPlaySound(Audio::soundLand, 0),
 		newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f)),
 		newEntityAnimationGenerateHint(nullptr),
 	});
