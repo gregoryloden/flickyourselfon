@@ -150,7 +150,7 @@ public:
 	static AudioTypes::Music* switchesFadeInSoundSaw;
 	static AudioTypes::Music* switchesFadeInSoundSine;
 	static AudioTypes::Music* victorySound;
-	static AudioTypes::Sound* soundStep [soundStepCount];
+	static AudioTypes::Sound* soundStep[soundStepCount];
 	static AudioTypes::Sound* soundClimb;
 	static AudioTypes::Sound* soundLand;
 	static AudioTypes::Sound* soundKick;

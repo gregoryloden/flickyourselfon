@@ -9,7 +9,7 @@
 #ifdef WIN32
 	const string FileUtils::localAppDataDir = []() {
 		size_t bufferSize = MAX_PATH;
-		char buffer [MAX_PATH] = {};
+		char buffer[MAX_PATH] = {};
 		char* bufferAsPointer = buffer;
 		_dupenv_s(&bufferAsPointer, &bufferSize, "LOCALAPPDATA");
 		return string(bufferAsPointer) + "\\KickYourselfOn";
