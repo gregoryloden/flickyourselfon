@@ -133,6 +133,7 @@ private:
 	static constexpr float victorySoundSineVolume = 13.5f / 64.0f;
 public:
 	static const int soundStepCount = 6;
+	static const int soundRideRailCount = 6;
 
 	static int sampleRate;
 	static Uint16 format;
@@ -155,6 +156,8 @@ public:
 	static AudioTypes::Sound* soundLand;
 	static AudioTypes::Sound* soundKick;
 	static AudioTypes::Sound* soundSwitchOn;
+	static AudioTypes::Sound* soundRideRail[soundRideRailCount];
+	static AudioTypes::Sound* soundRideRailOut[3];
 
 	//Prevent allocation
 	Audio() = delete;
@@ -166,8 +169,16 @@ public:
 	static void tearDown();
 	//load the sound files
 	static void loadSounds();
+private:
+	//load multiple sound files with the same name prefix
+	static void loadSoundSet(const char* prefix, int count, AudioTypes::Sound** soundSet);
+public:
 	//clean up the sound files
 	static void unloadSounds();
+private:
+	//clean up sound files from a sound set
+	static void unloadSoundSet(int count, AudioTypes::Sound** soundSet);
+public:
 	//apply audio volume settings for all channels
 	static void applyVolume();
 	//apply audio volume settings for a single channel

@@ -321,6 +321,8 @@ Sound* Audio::soundClimb = nullptr;
 Sound* Audio::soundLand = nullptr;
 Sound* Audio::soundKick = nullptr;
 Sound* Audio::soundSwitchOn = nullptr;
+Sound* Audio::soundRideRail[Audio::soundRideRailCount] = {};
+Sound* Audio::soundRideRailOut[3] = {};
 void Audio::setUp() {
 	Mix_Init(0);
 	Mix_OpenAudio(sampleRate, format, channels, 2048);
@@ -381,14 +383,13 @@ void Audio::loadSounds() {
 		soundKick = newSound("kick.wav", -1),
 		soundSwitchOn = newSound("switch on.wav", -1),
 	});
-	for (int i = 0; i < soundStepCount; i++) {
-		stringstream s;
-		s << "step" << (i + 1) << ".wav";
-		sounds.push_back(soundStep[i] = newSound(s.str().c_str(), -1));
-	}
 
 	for (Sound* sound : sounds)
 		sound->load();
+
+	loadSoundSet("step", soundStepCount, soundStep);
+	loadSoundSet("ride rail", soundRideRailCount, soundRideRail);
+	loadSoundSet("ride rail out", 3, soundRideRailOut);
 
 	musicTriangle->overlay(musicSquare);
 	musicSaw->overlay(musicTriangle);
@@ -406,6 +407,14 @@ void Audio::loadSounds() {
 		musicSine->skipBeats();
 	#endif
 }
+void Audio::loadSoundSet(const char* prefix, int count, AudioTypes::Sound** soundSet) {
+	for (int i = 0; i < count; i++) {
+		stringstream s;
+		s << prefix << (i + 1) << ".wav";
+		soundSet[i] = newSound(s.str().c_str(), -1);
+		soundSet[i]->load();
+	}
+}
 void Audio::unloadSounds() {
 	delete musicSquare;
 	delete musicTriangle;
@@ -420,12 +429,17 @@ void Audio::unloadSounds() {
 	delete switchesFadeInSoundSaw;
 	delete switchesFadeInSoundSine;
 	delete victorySound;
-	for (int i = 0; i < soundStepCount; i++)
-		delete soundStep[i];
+	unloadSoundSet(soundStepCount, soundStep);
 	delete soundClimb;
 	delete soundLand;
 	delete soundKick;
 	delete soundSwitchOn;
+	unloadSoundSet(soundRideRailCount, soundRideRail);
+	unloadSoundSet(3, soundRideRailOut);
+}
+void Audio::unloadSoundSet(int count, AudioTypes::Sound** soundSet) {
+	for (int i = 0; i < count; i++)
+		delete soundSet[i];
 }
 void Audio::applyVolume() {
 	applyChannelVolume(-1);

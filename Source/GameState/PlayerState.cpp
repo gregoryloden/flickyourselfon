@@ -1171,6 +1171,7 @@ void PlayerState::addRailRideComponents(
 	float targetXPosition = xPosition;
 	float targetYPosition = yPosition;
 	SpriteDirection nextSpriteDirection = SpriteDirection::Down;
+	int lastRideRailSound = -1;
 	for (int segmentNum = 0; segmentNum < endSegmentIndex; segmentNum++) {
 		float lastXPosition = targetXPosition;
 		float lastYPosition = targetYPosition;
@@ -1204,6 +1205,19 @@ void PlayerState::addRailRideComponents(
 		}
 		if (rideRailSpeed == RideRailSpeed::FastBackward)
 			nextSpriteDirection = getOppositeDirection(nextSpriteDirection);
+
+		//play a sound before moving if applicable
+		if (rideRailSpeed == RideRailSpeed::Forward && segmentNum % 3 == 1) {
+			int segmentsRemaining = endSegmentIndex - segmentNum;
+			if (segmentsRemaining > 3) {
+				int rideRailSound = rand() % (Audio::soundRideRailCount - 1);
+				if (rideRailSound >= lastRideRailSound)
+					rideRailSound++;
+				components->push_back(newEntityAnimationPlaySound(Audio::soundRideRail[rideRailSound], 0));
+				lastRideRailSound = rideRailSound;
+			} else
+				components->push_back(newEntityAnimationPlaySound(Audio::soundRideRailOut[segmentsRemaining - 1], 0));
+		}
 
 		float xMoveDistance = targetXPosition - lastXPosition;
 		float yMoveDistance = targetYPosition - lastYPosition;
