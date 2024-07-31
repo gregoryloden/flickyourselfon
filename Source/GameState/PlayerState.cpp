@@ -1146,14 +1146,12 @@ void PlayerState::addRailRideComponents(
 	float endDist = abs(xPosition - endSegment->tileCenterX()) + abs(feetYPosition - endSegment->tileCenterY());
 
 	int endSegmentIndex = rail->getSegmentCount() - 1;
-	int firstSegmentIndex = 0;
-	int lastSegmentIndex = 0;
-	int segmentIndexIncrement;
+	int nextSegmentIndex, segmentIndexIncrement;
 	if (startDist <= endDist) {
-		lastSegmentIndex = endSegmentIndex;
+		nextSegmentIndex = 0;
 		segmentIndexIncrement = 1;
 	} else {
-		firstSegmentIndex = endSegmentIndex;
+		nextSegmentIndex = endSegmentIndex;
 		segmentIndexIncrement = -1;
 	}
 
@@ -1168,13 +1166,12 @@ void PlayerState::addRailRideComponents(
 
 	components->push_back(newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerBootLiftAnimation));
 
-	Rail::Segment* nextSegment = rail->getSegment(firstSegmentIndex);
-	int nextSegmentIndex = firstSegmentIndex;
+	Rail::Segment* nextSegment = rail->getSegment(nextSegmentIndex);
 	bool firstMove = true;
 	float targetXPosition = xPosition;
 	float targetYPosition = yPosition;
 	SpriteDirection nextSpriteDirection = SpriteDirection::Down;
-	while (nextSegmentIndex != lastSegmentIndex) {
+	for (int segmentNum = 0; segmentNum < endSegmentIndex; segmentNum++) {
 		float lastXPosition = targetXPosition;
 		float lastYPosition = targetYPosition;
 		nextSegmentIndex += segmentIndexIncrement;
