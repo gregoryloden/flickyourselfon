@@ -696,6 +696,7 @@ void GameState::loadCachedSavedState(int ticksTime) {
 				lastY = moveY;
 				lastTimestamp = EntityAnimation::getComponentTotalTicksDuration(replayComponents);
 			}
+			//TODO: perform undo/redo
 		}
 		file.close();
 
