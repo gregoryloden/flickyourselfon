@@ -1084,6 +1084,7 @@ void PlayerState::kickFall(float currentX, float currentY, float targetX, float 
 		newEntityAnimationDelay(fallAnimationFirstFrameTicks),
 		//set the fall velocity
 		newEntityAnimationSetVelocity(xVelocity, yVelocity),
+		newEntityAnimationPlaySound(Audio::soundJump, 0),
 		//then delay for the rest of the animation and stop the player
 		newEntityAnimationDelay(moveDuration),
 		newEntityAnimationPlaySound(Audio::soundLand, 0),
