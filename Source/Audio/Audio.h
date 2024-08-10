@@ -134,6 +134,7 @@ private:
 public:
 	static const int soundStepCount = 6;
 	static const int soundRideRailCount = 6;
+	static const int soundRideRailOutCount = 3;
 
 	static int sampleRate;
 	static Uint16 format;
@@ -158,7 +159,7 @@ public:
 	static AudioTypes::Sound* soundKick;
 	static AudioTypes::Sound* soundSwitchOn;
 	static AudioTypes::Sound* soundRideRail[soundRideRailCount];
-	static AudioTypes::Sound* soundRideRailOut[3];
+	static AudioTypes::Sound* soundRideRailOut[soundRideRailOutCount];
 
 	//Prevent allocation
 	Audio() = delete;

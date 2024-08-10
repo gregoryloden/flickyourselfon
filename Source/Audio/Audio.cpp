@@ -323,7 +323,7 @@ Sound* Audio::soundLand = nullptr;
 Sound* Audio::soundKick = nullptr;
 Sound* Audio::soundSwitchOn = nullptr;
 Sound* Audio::soundRideRail[Audio::soundRideRailCount] = {};
-Sound* Audio::soundRideRailOut[3] = {};
+Sound* Audio::soundRideRailOut[Audio::soundRideRailOutCount] = {};
 void Audio::setUp() {
 	Mix_Init(0);
 	Mix_OpenAudio(sampleRate, format, channels, 2048);
@@ -391,7 +391,7 @@ void Audio::loadSounds() {
 
 	loadSoundSet("step", soundStepCount, soundStep);
 	loadSoundSet("ride rail", soundRideRailCount, soundRideRail);
-	loadSoundSet("ride rail out", 3, soundRideRailOut);
+	loadSoundSet("ride rail out", soundRideRailOutCount, soundRideRailOut);
 
 	musicTriangle->overlay(musicSquare);
 	musicSaw->overlay(musicTriangle);
@@ -438,7 +438,7 @@ void Audio::unloadSounds() {
 	delete soundKick;
 	delete soundSwitchOn;
 	unloadSoundSet(soundRideRailCount, soundRideRail);
-	unloadSoundSet(3, soundRideRailOut);
+	unloadSoundSet(soundRideRailOutCount, soundRideRailOut);
 }
 void Audio::unloadSoundSet(int count, AudioTypes::Sound** soundSet) {
 	for (int i = 0; i < count; i++)

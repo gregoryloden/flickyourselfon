@@ -1208,9 +1208,9 @@ void PlayerState::addRailRideComponents(
 			nextSpriteDirection = getOppositeDirection(nextSpriteDirection);
 
 		//play a sound before moving if applicable
-		if (rideRailSpeed == RideRailSpeed::Forward && segmentNum % 3 == 1) {
+		if (rideRailSpeed == RideRailSpeed::Forward && segmentNum % Audio::soundRideRailOutCount == 1) {
 			int segmentsRemaining = endSegmentIndex - segmentNum;
-			if (segmentsRemaining > 3) {
+			if (segmentsRemaining > Audio::soundRideRailOutCount) {
 				int rideRailSound = rand() % (Audio::soundRideRailCount - 1);
 				if (rideRailSound >= lastRideRailSound)
 					rideRailSound++;
