@@ -157,6 +157,7 @@ public:
 	static AudioTypes::Sound* soundJump;
 	static AudioTypes::Sound* soundLand;
 	static AudioTypes::Sound* soundKick;
+	static AudioTypes::Sound* soundKickAir;
 	static AudioTypes::Sound* soundSwitchOn;
 	static AudioTypes::Sound* soundRideRail[soundRideRailCount];
 	static AudioTypes::Sound* soundRideRailOut[soundRideRailOutCount];

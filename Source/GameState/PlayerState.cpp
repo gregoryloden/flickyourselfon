@@ -951,14 +951,28 @@ void PlayerState::beginKicking(int ticksTime) {
 	availableKickAction.set(nullptr);
 }
 void PlayerState::kickAir(int ticksTime) {
-	SpriteAnimation* kickingSpriteAnimation = hasBoot
-		? SpriteRegistry::playerKickingAnimation
-		: SpriteRegistry::playerLegLiftAnimation;
 	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> kickAnimationComponents ({
 		newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f)),
-		newEntityAnimationSetSpriteAnimation(kickingSpriteAnimation),
-		newEntityAnimationDelay(kickingSpriteAnimation->getTotalTicksDuration())
 	});
+	if (hasBoot) {
+		kickAnimationComponents.insert(
+			kickAnimationComponents.end(),
+			{
+				newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerKickingAnimation),
+				newEntityAnimationDelay(SpriteRegistry::playerKickingAnimationTicksPerFrame),
+				newEntityAnimationPlaySound(Audio::soundKickAir, 0),
+				newEntityAnimationDelay(
+					SpriteRegistry::playerKickingAnimation->getTotalTicksDuration()
+						- SpriteRegistry::playerKickingAnimationTicksPerFrame),
+			});
+	} else {
+		kickAnimationComponents.insert(
+			kickAnimationComponents.end(),
+			{
+				newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerLegLiftAnimation),
+				newEntityAnimationDelay(SpriteRegistry::playerLegLiftAnimation->getTotalTicksDuration()),
+			});
+	}
 	beginEntityAnimation(&kickAnimationComponents, ticksTime);
 }
 void PlayerState::kickClimb(float currentX, float currentY, float targetX, float targetY, int ticksTime) {

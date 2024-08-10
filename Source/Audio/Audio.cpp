@@ -321,6 +321,7 @@ Sound* Audio::soundClimb = nullptr;
 Sound* Audio::soundJump = nullptr;
 Sound* Audio::soundLand = nullptr;
 Sound* Audio::soundKick = nullptr;
+Sound* Audio::soundKickAir = nullptr;
 Sound* Audio::soundSwitchOn = nullptr;
 Sound* Audio::soundRideRail[Audio::soundRideRailCount] = {};
 Sound* Audio::soundRideRailOut[Audio::soundRideRailOutCount] = {};
@@ -385,6 +386,7 @@ void Audio::loadSounds() {
 		soundJump = newSound("jump.wav", -1),
 		soundLand = newSound("land.wav", -1),
 		soundKick = newSound("kick.wav", -1),
+		soundKickAir = newSound("kick air.wav", -1),
 		soundSwitchOn = newSound("switch on.wav", -1),
 		soundRailSlide = newSound("rail slide.wav", -1),
 		soundRailSlideSquare = newSound("rail slide square.wav", -1),
@@ -440,6 +442,7 @@ void Audio::unloadSounds() {
 	delete soundJump;
 	delete soundLand;
 	delete soundKick;
+	delete soundKickAir;
 	delete soundSwitchOn;
 	unloadSoundSet(soundRideRailCount, soundRideRail);
 	unloadSoundSet(soundRideRailOutCount, soundRideRailOut);

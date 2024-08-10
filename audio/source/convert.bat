@@ -15,6 +15,8 @@ del "slow walking sped up.wav"
 
 "%ffmpeg%" -i whoo.m4a -i walking.m4a -filter_complex "[0:a]atrim=start=11.68:end=12.10,volume=3,asetrate=52444[a0];[a0]aresample=44100[a0a];[1:a]atrim=start=35.72:end=35.97,volume=4[a1];[a0a][a1]amix=inputs=2[outa]" -map "[outa]" ..\jump.wav -y
 "%ffmpeg%" -i ..\jump.wav -t 0.25 ..\jump.wav -y
+"%ffmpeg%" -i whoo.m4a -filter_complex "[0:a]atrim=start=5.55:end=5.8,volume=4[a0];[0:a]atrim=start=14.69:end=14.94,volume=6[a1];[a0][a1]amix=inputs=2,asetrate=33038[outa]" -map "[outa]" "..\kick air.wav" -y
+"%ffmpeg%" -i "..\kick air.wav" -t 0.25 "..\kick air.wav" -y
 
 "%ffmpeg%" -i kicking.m4a -filter_complex "[0:a]atrim=start=1.98:end=2.13[a0];[0:a]atrim=start=3.18:end=3.33[a1];[a0][a1]amix=inputs=2[a2];[a2]asetrate=55563,volume=2[outa]" -map "[outa]" ..\kick.wav -y
 
