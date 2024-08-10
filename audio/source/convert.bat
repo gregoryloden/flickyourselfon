@@ -16,7 +16,7 @@ del "slow walking sped up.wav"
 "%ffmpeg%" -i whoo.m4a -i walking.m4a -filter_complex "[0:a]atrim=start=11.68:end=12.10,volume=3,asetrate=52444[a0];[a0]aresample=44100[a0a];[1:a]atrim=start=35.72:end=35.97,volume=4[a1];[a0a][a1]amix=inputs=2[outa]" -map "[outa]" ..\jump.wav -y
 "%ffmpeg%" -i ..\jump.wav -t 0.25 ..\jump.wav -y
 
-"%ffmpeg%" -i kicking.m4a -filter_complex "[0:a]atrim=start=1.98:end=2.13[a0];[0:a]atrim=start=3.18:end=3.33[a1];[a0][a1]amix=inputs=2[a2];[a2]asetrate=74167,volume=2[outa]" -map "[outa]" ..\kick.wav -y
+"%ffmpeg%" -i kicking.m4a -filter_complex "[0:a]atrim=start=1.98:end=2.13[a0];[0:a]atrim=start=3.18:end=3.33[a1];[a0][a1]amix=inputs=2[a2];[a2]asetrate=55563,volume=2[outa]" -map "[outa]" ..\kick.wav -y
 
 "%ffmpeg%" -i "grind metal.m4a" -ss 5.15 -t 0.75 -af volume=0.35 "..\rail slide.wav" -y
 "%ffmpeg%" -i "grind metal.m4a" -filter_complex "[0:a]volume=0.35,atrim=start=5.15:end=5.9[a0];[a0]asetrate=58866[outa]" -map "[outa]" "..\rail slide square.wav" -y
