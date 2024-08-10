@@ -160,6 +160,8 @@ public:
 	static AudioTypes::Sound* soundSwitchOn;
 	static AudioTypes::Sound* soundRideRail[soundRideRailCount];
 	static AudioTypes::Sound* soundRideRailOut[soundRideRailOutCount];
+	static AudioTypes::Sound* soundRailSlide;
+	static AudioTypes::Sound* soundRailSlideSquare;
 
 	//Prevent allocation
 	Audio() = delete;

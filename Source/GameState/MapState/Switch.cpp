@@ -1,4 +1,5 @@
 #include "Switch.h"
+#include "Audio/Audio.h"
 #include "Editor/Editor.h"
 #include "GameState/MapState/MapState.h"
 #include "GameState/MapState/Rail.h"
@@ -116,6 +117,7 @@ void SwitchState::flip(bool moveRailsForward, int flipOffTicksTime) {
 	for (RailState* railState : connectedRailStates)
 		railState->triggerMovement(moveRailsForward);
 	flipOnTicksTime = flipOffTicksTime + MapState::switchFlipDuration;
+	(switch0->getColor() == MapState::squareColor ? Audio::soundRailSlideSquare : Audio::soundRailSlide)->play(0);
 }
 void SwitchState::updateWithPreviousSwitchState(SwitchState* prev) {
 	flipOnTicksTime = prev->flipOnTicksTime;
