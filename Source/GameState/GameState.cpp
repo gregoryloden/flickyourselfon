@@ -269,7 +269,7 @@ void GameState::startRadioTowerAnimation(int ticksTime) {
 			newEntityAnimationDelay(radioTowerToSwitchesAnimationTicks),
 			stopMoving,
 			newEntityAnimationDelay(preSwitchesFadeInAnimationTicks),
-			newEntityAnimationPlaySound(Audio::soundSwitchOn, 0),
+			newEntityAnimationPlaySound(Audio::switchOnSound, 0),
 	});
 
 	//add the switches animation

@@ -495,10 +495,10 @@ void PlayerState::updateSpriteWithPreviousPlayerState(
 		int soundNum = (ticksTime - spriteAnimationStartTicksTime + soundTicksPerFrame) / stepInterval;
 		int prevSoundNum = (prev->lastUpdateTicksTime - spriteAnimationStartTicksTime + soundTicksPerFrame) / stepInterval;
 		if (soundNum != prevSoundNum) {
-			lastStepSound = rand() % (Audio::soundStepCount - 1);
+			lastStepSound = rand() % (Audio::stepSoundsCount - 1);
 			if (lastStepSound >= prev->lastStepSound)
 				lastStepSound++;
-			Audio::soundStep[lastStepSound]->play(0);
+			Audio::stepSounds[lastStepSound]->play(0);
 		}
 	}
 }
@@ -960,7 +960,7 @@ void PlayerState::kickAir(int ticksTime) {
 			{
 				newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerKickingAnimation),
 				newEntityAnimationDelay(SpriteRegistry::playerKickingAnimationTicksPerFrame),
-				newEntityAnimationPlaySound(Audio::soundKickAir, 0),
+				newEntityAnimationPlaySound(Audio::kickAirSound, 0),
 				newEntityAnimationDelay(
 					SpriteRegistry::playerKickingAnimation->getTotalTicksDuration()
 						- SpriteRegistry::playerKickingAnimationTicksPerFrame),
@@ -1007,7 +1007,7 @@ void PlayerState::kickClimb(float currentX, float currentY, float targetX, float
 				newCompositeQuarticValue(0.0f, 0.0f, xMoveDistance / moveDurationSquared, 0.0f, 0.0f),
 				newCompositeQuarticValue(
 					0.0f, 2.0f * yMoveDistance / floatMoveDuration, -yMoveDistance / moveDurationSquared, 0.0f, 0.0f)),
-		newEntityAnimationPlaySound(Audio::soundClimb, 0),
+		newEntityAnimationPlaySound(Audio::climbSound, 0),
 		//then delay for the rest of the animation and stop the player
 		newEntityAnimationDelay(moveDuration),
 		newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f)),
@@ -1098,10 +1098,10 @@ void PlayerState::kickFall(float currentX, float currentY, float targetX, float 
 		newEntityAnimationDelay(fallAnimationFirstFrameTicks),
 		//set the fall velocity
 		newEntityAnimationSetVelocity(xVelocity, yVelocity),
-		newEntityAnimationPlaySound(Audio::soundJump, 0),
+		newEntityAnimationPlaySound(Audio::jumpSound, 0),
 		//then delay for the rest of the animation and stop the player
 		newEntityAnimationDelay(moveDuration),
-		newEntityAnimationPlaySound(Audio::soundLand, 0),
+		newEntityAnimationPlaySound(Audio::landSound, 0),
 		newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f)),
 		newEntityAnimationGenerateHint(nullptr),
 	});
@@ -1222,16 +1222,16 @@ void PlayerState::addRailRideComponents(
 			nextSpriteDirection = getOppositeDirection(nextSpriteDirection);
 
 		//play a sound before moving if applicable
-		if (rideRailSpeed == RideRailSpeed::Forward && segmentNum % Audio::soundRideRailOutCount == 1) {
+		if (rideRailSpeed == RideRailSpeed::Forward && segmentNum % Audio::rideRailOutSoundsCount == 1) {
 			int segmentsRemaining = endSegmentIndex - segmentNum;
-			if (segmentsRemaining > Audio::soundRideRailOutCount) {
-				int rideRailSound = rand() % (Audio::soundRideRailCount - 1);
+			if (segmentsRemaining > Audio::rideRailOutSoundsCount) {
+				int rideRailSound = rand() % (Audio::rideRailSoundsCount - 1);
 				if (rideRailSound >= lastRideRailSound)
 					rideRailSound++;
-				components->push_back(newEntityAnimationPlaySound(Audio::soundRideRail[rideRailSound], 0));
+				components->push_back(newEntityAnimationPlaySound(Audio::rideRailSounds[rideRailSound], 0));
 				lastRideRailSound = rideRailSound;
 			} else
-				components->push_back(newEntityAnimationPlaySound(Audio::soundRideRailOut[segmentsRemaining - 1], 0));
+				components->push_back(newEntityAnimationPlaySound(Audio::rideRailOutSounds[segmentsRemaining - 1], 0));
 		}
 
 		float xMoveDistance = targetXPosition - lastXPosition;
@@ -1355,7 +1355,7 @@ void PlayerState::addKickSwitchComponents(
 			newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f)),
 			newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerKickingAnimation),
 			newEntityAnimationDelay(SpriteRegistry::playerKickingAnimationTicksPerFrame),
-			newEntityAnimationPlaySound(Audio::soundKick, 0),
+			newEntityAnimationPlaySound(Audio::kickSound, 0),
 			newEntityAnimationMapKickSwitch(switchId, moveRailsForward, allowRadioTowerAnimation),
 			newEntityAnimationGenerateHint(useHint),
 			newEntityAnimationDelay(

@@ -117,7 +117,7 @@ void SwitchState::flip(bool moveRailsForward, int flipOffTicksTime) {
 	for (RailState* railState : connectedRailStates)
 		railState->triggerMovement(moveRailsForward);
 	flipOnTicksTime = flipOffTicksTime + MapState::switchFlipDuration;
-	(switch0->getColor() == MapState::squareColor ? Audio::soundRailSlideSquare : Audio::soundRailSlide)->play(0);
+	(switch0->getColor() == MapState::squareColor ? Audio::railSlideSquareSound : Audio::railSlideSound)->play(0);
 }
 void SwitchState::updateWithPreviousSwitchState(SwitchState* prev) {
 	flipOnTicksTime = prev->flipOnTicksTime;

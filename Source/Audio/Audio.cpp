@@ -316,17 +316,17 @@ Music* Audio::switchesFadeInSoundTriangle = nullptr;
 Music* Audio::switchesFadeInSoundSaw = nullptr;
 Music* Audio::switchesFadeInSoundSine = nullptr;
 Music* Audio::victorySound = nullptr;
-Sound* Audio::soundStep[Audio::soundStepCount] = {};
-Sound* Audio::soundClimb = nullptr;
-Sound* Audio::soundJump = nullptr;
-Sound* Audio::soundLand = nullptr;
-Sound* Audio::soundKick = nullptr;
-Sound* Audio::soundKickAir = nullptr;
-Sound* Audio::soundSwitchOn = nullptr;
-Sound* Audio::soundRideRail[Audio::soundRideRailCount] = {};
-Sound* Audio::soundRideRailOut[Audio::soundRideRailOutCount] = {};
-Sound* Audio::soundRailSlide = nullptr;
-Sound* Audio::soundRailSlideSquare = nullptr;
+Sound* Audio::stepSounds[Audio::stepSoundsCount] = {};
+Sound* Audio::climbSound = nullptr;
+Sound* Audio::jumpSound = nullptr;
+Sound* Audio::landSound = nullptr;
+Sound* Audio::kickSound = nullptr;
+Sound* Audio::kickAirSound = nullptr;
+Sound* Audio::switchOnSound = nullptr;
+Sound* Audio::rideRailSounds[Audio::rideRailSoundsCount] = {};
+Sound* Audio::rideRailOutSounds[Audio::rideRailOutSoundsCount] = {};
+Sound* Audio::railSlideSound = nullptr;
+Sound* Audio::railSlideSquareSound = nullptr;
 void Audio::setUp() {
 	Mix_Init(0);
 	Mix_OpenAudio(sampleRate, format, channels, 2048);
@@ -382,22 +382,22 @@ void Audio::loadSounds() {
 			newMusic("victorysaw", -1, Music::Waveform::Saw, musicSoundEffectSpecs.withVolume(victorySoundSawVolume)),
 		victorySoundSine =
 			newMusic("victorysine", -1, Music::Waveform::Sine, musicSoundEffectSpecs.withVolume(victorySoundSineVolume)),
-		soundClimb = newSound("climb.wav", -1),
-		soundJump = newSound("jump.wav", -1),
-		soundLand = newSound("land.wav", -1),
-		soundKick = newSound("kick.wav", -1),
-		soundKickAir = newSound("kick air.wav", -1),
-		soundSwitchOn = newSound("switch on.wav", -1),
-		soundRailSlide = newSound("rail slide.wav", -1),
-		soundRailSlideSquare = newSound("rail slide square.wav", -1),
+		climbSound = newSound("climb.wav", -1),
+		jumpSound = newSound("jump.wav", -1),
+		landSound = newSound("land.wav", -1),
+		kickSound = newSound("kick.wav", -1),
+		kickAirSound = newSound("kick air.wav", -1),
+		switchOnSound = newSound("switch on.wav", -1),
+		railSlideSound = newSound("rail slide.wav", -1),
+		railSlideSquareSound = newSound("rail slide square.wav", -1),
 	});
 
 	for (Sound* sound : sounds)
 		sound->load();
 
-	loadSoundSet("step", soundStepCount, soundStep);
-	loadSoundSet("ride rail", soundRideRailCount, soundRideRail);
-	loadSoundSet("ride rail out", soundRideRailOutCount, soundRideRailOut);
+	loadSoundSet("step", stepSoundsCount, stepSounds);
+	loadSoundSet("ride rail", rideRailSoundsCount, rideRailSounds);
+	loadSoundSet("ride rail out", rideRailOutSoundsCount, rideRailOutSounds);
 
 	musicTriangle->overlay(musicSquare);
 	musicSaw->overlay(musicTriangle);
@@ -437,17 +437,17 @@ void Audio::unloadSounds() {
 	delete switchesFadeInSoundSaw;
 	delete switchesFadeInSoundSine;
 	delete victorySound;
-	unloadSoundSet(soundStepCount, soundStep);
-	delete soundClimb;
-	delete soundJump;
-	delete soundLand;
-	delete soundKick;
-	delete soundKickAir;
-	delete soundSwitchOn;
-	unloadSoundSet(soundRideRailCount, soundRideRail);
-	unloadSoundSet(soundRideRailOutCount, soundRideRailOut);
-	delete soundRailSlide;
-	delete soundRailSlideSquare;
+	unloadSoundSet(stepSoundsCount, stepSounds);
+	delete climbSound;
+	delete jumpSound;
+	delete landSound;
+	delete kickSound;
+	delete kickAirSound;
+	delete switchOnSound;
+	unloadSoundSet(rideRailSoundsCount, rideRailSounds);
+	unloadSoundSet(rideRailOutSoundsCount, rideRailOutSounds);
+	delete railSlideSound;
+	delete railSlideSquareSound;
 }
 void Audio::unloadSoundSet(int count, AudioTypes::Sound** soundSet) {
 	for (int i = 0; i < count; i++)

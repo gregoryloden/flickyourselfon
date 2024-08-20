@@ -132,9 +132,9 @@ private:
 	static constexpr float victorySoundSawVolume = 3.5f / 64.0f;
 	static constexpr float victorySoundSineVolume = 13.5f / 64.0f;
 public:
-	static const int soundStepCount = 6;
-	static const int soundRideRailCount = 6;
-	static const int soundRideRailOutCount = 3;
+	static const int stepSoundsCount = 6;
+	static const int rideRailSoundsCount = 6;
+	static const int rideRailOutSoundsCount = 3;
 
 	static int sampleRate;
 	static Uint16 format;
@@ -152,17 +152,17 @@ public:
 	static AudioTypes::Music* switchesFadeInSoundSaw;
 	static AudioTypes::Music* switchesFadeInSoundSine;
 	static AudioTypes::Music* victorySound;
-	static AudioTypes::Sound* soundStep[soundStepCount];
-	static AudioTypes::Sound* soundClimb;
-	static AudioTypes::Sound* soundJump;
-	static AudioTypes::Sound* soundLand;
-	static AudioTypes::Sound* soundKick;
-	static AudioTypes::Sound* soundKickAir;
-	static AudioTypes::Sound* soundSwitchOn;
-	static AudioTypes::Sound* soundRideRail[soundRideRailCount];
-	static AudioTypes::Sound* soundRideRailOut[soundRideRailOutCount];
-	static AudioTypes::Sound* soundRailSlide;
-	static AudioTypes::Sound* soundRailSlideSquare;
+	static AudioTypes::Sound* stepSounds[stepSoundsCount];
+	static AudioTypes::Sound* climbSound;
+	static AudioTypes::Sound* jumpSound;
+	static AudioTypes::Sound* landSound;
+	static AudioTypes::Sound* kickSound;
+	static AudioTypes::Sound* kickAirSound;
+	static AudioTypes::Sound* switchOnSound;
+	static AudioTypes::Sound* rideRailSounds[rideRailSoundsCount];
+	static AudioTypes::Sound* rideRailOutSounds[rideRailOutSoundsCount];
+	static AudioTypes::Sound* railSlideSound;
+	static AudioTypes::Sound* railSlideSquareSound;
 
 	//Prevent allocation
 	Audio() = delete;
