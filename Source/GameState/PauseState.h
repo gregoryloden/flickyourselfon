@@ -17,10 +17,15 @@ private:
 
 public:
 	enum class EndPauseDecision: int {
+		//save the game
 		Save = 1 << 0,
+		//reset the game state to the start of the game
 		Reset = 1 << 1,
+		//exit the game, shut down the program
 		Exit = 1 << 2,
+		//apply the saved state that has already been read from disk
 		Load = 1 << 3,
+		//show the current hint
 		RequestHint = 1 << 4,
 	};
 private:
