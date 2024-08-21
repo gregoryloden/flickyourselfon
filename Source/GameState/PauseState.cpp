@@ -507,7 +507,7 @@ PauseState* PauseState::handleMouseMotion(SDL_MouseMotionEvent motionEvent) {
 	if (selectingKeyBindingOption != nullptr)
 		return this;
 	int newPauseOption = pauseMenu->findHighlightedOption((int)motionEvent.x, (int)motionEvent.y);
-	if (newPauseOption < 0)
+	if (newPauseOption < 0 || newPauseOption == pauseOption)
 		return this;
 	return newPauseState(parentState.get(), pauseMenu, newPauseOption, nullptr, 0);
 }
