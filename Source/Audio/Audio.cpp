@@ -327,6 +327,8 @@ Sound* Audio::rideRailSounds[Audio::rideRailSoundsCount] = {};
 Sound* Audio::rideRailOutSounds[Audio::rideRailOutSoundsCount] = {};
 Sound* Audio::railSlideSound = nullptr;
 Sound* Audio::railSlideSquareSound = nullptr;
+Sound* Audio::selectSound = nullptr;
+Sound* Audio::confirmSound = nullptr;
 void Audio::setUp() {
 	Mix_Init(0);
 	Mix_OpenAudio(sampleRate, format, channels, 2048);
@@ -390,6 +392,8 @@ void Audio::loadSounds() {
 		switchOnSound = newSound("switch on.wav", -1),
 		railSlideSound = newSound("rail slide.wav", -1),
 		railSlideSquareSound = newSound("rail slide square.wav", -1),
+		selectSound = newSound("select.wav", -1),
+		confirmSound = newSound("confirm.wav", -1),
 	});
 
 	for (Sound* sound : sounds)
@@ -448,6 +452,8 @@ void Audio::unloadSounds() {
 	unloadSoundSet(rideRailOutSoundsCount, rideRailOutSounds);
 	delete railSlideSound;
 	delete railSlideSquareSound;
+	delete selectSound;
+	delete confirmSound;
 }
 void Audio::unloadSoundSet(int count, AudioTypes::Sound** soundSet) {
 	for (int i = 0; i < count; i++)

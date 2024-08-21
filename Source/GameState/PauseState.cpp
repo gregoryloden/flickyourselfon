@@ -339,6 +339,7 @@ PauseState* PauseState::produce(
 	return p;
 }
 PauseState* PauseState::produceBasePauseScreen() {
+	Audio::selectSound->play(0);
 	return newPauseState(nullptr, baseMenu, 0, nullptr, 0);
 }
 PauseState* PauseState::produceHomeScreen() {
@@ -468,18 +469,27 @@ PauseState* PauseState::handleKeyPress(SDL_Scancode keyScancode) {
 	if (selectingKeyBindingOption != nullptr) {
 		if (keyScancode != SDL_SCANCODE_ESCAPE)
 			selectingKeyBindingOption->setKeyBindingSettingEditingScancode(keyScancode);
+		Audio::confirmSound->play(0);
 		return newPauseState(parentState.get(), pauseMenu, pauseOption, nullptr, 0);
 	}
 
 	int optionsCount = pauseMenu->getOptionsCount();
 	switch (keyScancode) {
 		case SDL_SCANCODE_ESCAPE:
-			return pauseMenu == homeMenu ? this : nullptr;
+			if (pauseMenu == homeMenu)
+				return this;
+			Audio::confirmSound->play(0);
+			return nullptr;
 		case SDL_SCANCODE_BACKSPACE:
-			return pauseMenu == homeMenu ? this : navigateToMenu(nullptr);
+			if (pauseMenu == homeMenu)
+				return this;
+			Audio::confirmSound->play(0);
+			return navigateToMenu(nullptr);
 		case SDL_SCANCODE_UP:
+			Audio::selectSound->play(0);
 			return newPauseState(parentState.get(), pauseMenu, (pauseOption + optionsCount - 1) % optionsCount, nullptr, 0);
 		case SDL_SCANCODE_DOWN:
+			Audio::selectSound->play(0);
 			return newPauseState(parentState.get(), pauseMenu, (pauseOption + 1) % optionsCount, nullptr, 0);
 		case SDL_SCANCODE_LEFT:
 		case SDL_SCANCODE_RIGHT:
@@ -488,7 +498,8 @@ PauseState* PauseState::handleKeyPress(SDL_Scancode keyScancode) {
 			PauseOption* pauseOptionVal = pauseMenu->getOption(pauseOption);
 			if (!pauseOptionVal->enabled)
 				return this;
-			else if (keyScancode == SDL_SCANCODE_LEFT)
+			Audio::confirmSound->play(0);
+			if (keyScancode == SDL_SCANCODE_LEFT)
 				return pauseOptionVal->handleSide(this, -1);
 			else if (keyScancode == SDL_SCANCODE_RIGHT)
 				return pauseOptionVal->handleSide(this, 1);
@@ -509,6 +520,7 @@ PauseState* PauseState::handleMouseMotion(SDL_MouseMotionEvent motionEvent) {
 	int newPauseOption = pauseMenu->findHighlightedOption((int)motionEvent.x, (int)motionEvent.y);
 	if (newPauseOption < 0 || newPauseOption == pauseOption)
 		return this;
+	Audio::selectSound->play(0);
 	return newPauseState(parentState.get(), pauseMenu, newPauseOption, nullptr, 0);
 }
 PauseState* PauseState::handleMouseClick(SDL_MouseButtonEvent clickEvent) {
@@ -521,6 +533,7 @@ PauseState* PauseState::handleMouseClick(SDL_MouseButtonEvent clickEvent) {
 	PauseOption* pauseOptionVal = pauseMenu->getOption(clickPauseOption);
 	if (!pauseOptionVal->enabled)
 		return this;
+	Audio::confirmSound->play(0);
 	return pauseOptionVal->handle(this);
 }
 PauseState* PauseState::navigateToMenu(PauseMenu* menu) {

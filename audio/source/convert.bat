@@ -26,6 +26,8 @@ del "slow walking sped up.wav"
 
 REM original times are 3.66-3.86, 5.52-5.72, 7.31-7.51, 9.09-9.29, the 4th flick was discarded and the others were spaced out to be better distinguishable
 "%ffmpeg%" -i "flick switch.m4a" -filter_complex "[0:a]atrim=start=3.64:end=3.84[a1];[0:a]atrim=start=5.51:end=5.71[a2];[0:a]atrim=start=7.31:end=7.51[a3];[a1][a2][a3]amix=inputs=3,asetrate=62367[apre];[apre]volume=1.5[outa]" -map "[outa]" "..\switch on.wav" -y
+"%ffmpeg%" -i "flick switch.m4a" -filter_complex "[0:a]volume=0.5,atrim=start=4.596:end=4.65,asetrate=88200[outa]" -map "[outa]" ..\select.wav -y
+"%ffmpeg%" -i "flick switch.m4a" -filter_complex "[0:a]volume=0.5,atrim=start=4.596:end=4.65,asetrate=66075[outa]" -map "[outa]" ..\confirm.wav -y
 
 "%ffmpeg%" -i "slide metal.m4a" -ss 5.7 -t 0.24 -af volume=1.5 "..\ride rail1.wav" -y
 "%ffmpeg%" -i "slide metal.m4a" -ss 27.66 -t 0.24 -af volume=1.75 "..\ride rail2.wav" -y

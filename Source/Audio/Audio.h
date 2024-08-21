@@ -163,6 +163,8 @@ public:
 	static AudioTypes::Sound* rideRailOutSounds[rideRailOutSoundsCount];
 	static AudioTypes::Sound* railSlideSound;
 	static AudioTypes::Sound* railSlideSquareSound;
+	static AudioTypes::Sound* selectSound;
+	static AudioTypes::Sound* confirmSound;
 
 	//Prevent allocation
 	Audio() = delete;
