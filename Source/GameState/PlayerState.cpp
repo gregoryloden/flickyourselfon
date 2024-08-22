@@ -1248,6 +1248,8 @@ void PlayerState::addRailRideComponents(
 					newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerRidingRailAnimation),
 					newEntityAnimationSetDirection(nextSpriteDirection)
 				});
+			if (rideRailSpeed == RideRailSpeed::Forward)
+				components->push_back(newEntityAnimationPlaySound(Audio::stepOnRailSound, 0));
 			firstMove = false;
 		//straight section
 		} else if (fromSide == toSide) {
@@ -1326,6 +1328,8 @@ void PlayerState::addRailRideComponents(
 			newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f)),
 			newEntityAnimationGenerateHint(useHint),
 		});
+	if (rideRailSpeed == RideRailSpeed::Forward)
+		components->push_back(newEntityAnimationPlaySound(Audio::stepOffRailSound, 0));
 
 	if (outFinalXPosition != nullptr)
 		*outFinalXPosition = finalXPosition;

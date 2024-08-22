@@ -159,6 +159,8 @@ public:
 	static AudioTypes::Sound* kickSound;
 	static AudioTypes::Sound* kickAirSound;
 	static AudioTypes::Sound* switchOnSound;
+	static AudioTypes::Sound* stepOnRailSound;
+	static AudioTypes::Sound* stepOffRailSound;
 	static AudioTypes::Sound* rideRailSounds[rideRailSoundsCount];
 	static AudioTypes::Sound* rideRailOutSounds[rideRailOutSoundsCount];
 	static AudioTypes::Sound* railSlideSound;
