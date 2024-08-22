@@ -1388,6 +1388,7 @@ void PlayerState::addKickResetSwitchComponents(
 			newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f)),
 			newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerKickingAnimation),
 			newEntityAnimationDelay(SpriteRegistry::playerKickingAnimationTicksPerFrame),
+			newEntityAnimationPlaySound(Audio::kickSound, 0),
 			newEntityAnimationMapKickResetSwitch(resetSwitchId, kickResetSwitchUndoState),
 			newEntityAnimationGenerateHint(useHint),
 			newEntityAnimationDelay(
