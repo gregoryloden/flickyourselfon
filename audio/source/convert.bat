@@ -31,7 +31,7 @@ REM original times are 3.66-3.86, 5.52-5.72, 7.31-7.51, 9.09-9.29, the 4th flick
 "%ffmpeg%" -i "flick switch.m4a" -filter_complex "[0:a]volume=0.5,atrim=start=4.596:end=4.65,asetrate=88200[outa]" -map "[outa]" ..\select.wav -y
 "%ffmpeg%" -i "flick switch.m4a" -filter_complex "[0:a]volume=0.5,atrim=start=4.596:end=4.65,asetrate=66075[outa]" -map "[outa]" ..\confirm.wav -y
 
-"%ffmpeg%" -i "step on rail (sharp).m4a" -i "step on rail (dull).m4a" -filter_complex "[0:a]volume=0.45,atrim=start=3.51:end=3.685,asetrate=33038[a0];[a0]aresample=44100[a1];[1:a]volume=0.3,atrim=start=5.715:end=5.915,asetrate=78577[a2];[a2]aresample=44100[a3];[a1][a3]amix=inputs=2[outa]" -map "[outa]" "..\step on rail.wav" -y
+"%ffmpeg%" -i "step on rail.m4a" -filter_complex "[0:a]volume=0.4,atrim=start=6.61:end=6.61785[a0];[0:a]volume=2,atrim=start=6.61785:end=6.865[a1];[a0][a1]concat=n=2:v=0:a=1[outa]" -map "[outa]" "..\step on rail.wav" -y
 
 "%ffmpeg%" -i "slide metal.m4a" -ss 5.7 -t 0.24 -af volume=1.5 "..\ride rail1.wav" -y
 "%ffmpeg%" -i "slide metal.m4a" -ss 27.66 -t 0.24 -af volume=1.75 "..\ride rail2.wav" -y
