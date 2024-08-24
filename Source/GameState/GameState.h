@@ -4,6 +4,7 @@
 
 class PauseState;
 class PlayerState;
+enum class SpriteDirection : int;
 namespace AudioTypes {
 	class Music;
 }
@@ -142,6 +143,15 @@ public:
 	#endif
 	//give the camera and player their intro animations
 	void beginIntroAnimation(int ticksTime);
+private:
+	//add components to make the player start or continue walking, including sound effects
+	//returns the length of this walking animation so far, which is equal to the given duration plus the previous duration
+	int introAnimationWalk(
+		vector<ReferenceCounterHolder<EntityAnimationTypes::Component>>& playerAnimationComponents,
+		SpriteDirection spriteDirection,
+		int duration,
+		int previousDuration);
+public:
 	//reset all state
 	void resetGame(int ticksTime);
 };

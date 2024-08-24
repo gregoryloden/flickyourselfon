@@ -741,70 +741,83 @@ void GameState::beginIntroAnimation(int ticksTime) {
 
 	//player animation component helpers
 	EntityAnimation::SetVelocity* stopMoving = newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f));
-	EntityAnimation::SetVelocity* walkLeft = newEntityAnimationSetVelocity(
-		newCompositeQuarticValue(0.0f, -PlayerState::baseSpeedPerTick, 0.0f, 0.0f, 0.0f), newConstantValue(0.0f));
-	EntityAnimation::SetVelocity* walkRight = newEntityAnimationSetVelocity(
-		newCompositeQuarticValue(0.0f, PlayerState::baseSpeedPerTick, 0.0f, 0.0f, 0.0f), newConstantValue(0.0f));
-	EntityAnimation::SetVelocity* walkUp = newEntityAnimationSetVelocity(
-		newConstantValue(0.0f), newCompositeQuarticValue(0.0f, -PlayerState::baseSpeedPerTick, 0.0f, 0.0f, 0.0f));
-	EntityAnimation::SetVelocity* walkDown = newEntityAnimationSetVelocity(
-		newConstantValue(0.0f), newCompositeQuarticValue(0.0f, PlayerState::baseSpeedPerTick, 0.0f, 0.0f, 0.0f));
-	EntityAnimation::SetSpriteAnimation* setWalkingAnimation =
-		newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerWalkingAnimation);
 	EntityAnimation::SetSpriteAnimation* clearSpriteAnimation = newEntityAnimationSetSpriteAnimation(nullptr);
 
+	//wait the player offscreen
 	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> playerAnimationComponents ({
 		stopMoving,
 		newEntityAnimationSetPosition(
 			PlayerState::introAnimationPlayerCenterX, PlayerState::introAnimationPlayerCenterY),
 		newEntityAnimationDelay(introAnimationStartTicksTime + 2500),
-		//walk to the wall
-		entityAnimationVelocityAndAnimationAndDirectionForDelay(walkRight, setWalkingAnimation, SpriteDirection::Right, 2200),
-		//walk down, stop at the boot
-		walkDown,
-		entityAnimationDirectionForDelay(SpriteDirection::Down, 1000),
-		entityAnimationVelocityAndAnimationForDelay(stopMoving, clearSpriteAnimation, 3000),
-		//look at the boot
-		entityAnimationDirectionForDelay(SpriteDirection::Right, 800),
-		entityAnimationDirectionForDelay(SpriteDirection::Down, 1000),
-		//walk around the boot
-		entityAnimationVelocityAndAnimationForDelay(walkDown, setWalkingAnimation, 900),
-		entityAnimationVelocityAndAnimationForDelay(stopMoving, clearSpriteAnimation, 700),
-		entityAnimationVelocityAndAnimationAndDirectionForDelay(walkRight, setWalkingAnimation, SpriteDirection::Right, 1800),
-		//stop and look around
-		entityAnimationVelocityAndAnimationForDelay(stopMoving, clearSpriteAnimation, 700),
-		entityAnimationDirectionForDelay(SpriteDirection::Up, 700),
-		entityAnimationDirectionForDelay(SpriteDirection::Down, 500),
-		entityAnimationDirectionForDelay(SpriteDirection::Left, 350),
-		entityAnimationDirectionForDelay(SpriteDirection::Right, 1000),
-		//walk up
-		entityAnimationVelocityAndAnimationAndDirectionForDelay(walkUp, setWalkingAnimation, SpriteDirection::Up, 1700),
-		//stop and look around
-		entityAnimationVelocityAndAnimationForDelay(stopMoving, clearSpriteAnimation, 1000),
-		entityAnimationDirectionForDelay(SpriteDirection::Right, 600),
-		entityAnimationDirectionForDelay(SpriteDirection::Left, 400),
-		entityAnimationDirectionForDelay(SpriteDirection::Up, 1200),
-		//walk back down to the boot
-		entityAnimationVelocityAndAnimationAndDirectionForDelay(walkDown, setWalkingAnimation, SpriteDirection::Down, 900),
-		walkLeft,
-		entityAnimationDirectionForDelay(SpriteDirection::Left, 400),
-		entityAnimationVelocityAndAnimationForDelay(stopMoving, clearSpriteAnimation, 500),
-		//approach more slowly
-		newEntityAnimationSetVelocity(
-			newCompositeQuarticValue(0.0f, -PlayerState::baseSpeedPerTick * 0.5f, 0.0f, 0.0f, 0.0f), newConstantValue(0.0f)),
-		setWalkingAnimation,
-		newEntityAnimationDelay(540),
-		entityAnimationVelocityAndAnimationForDelay(stopMoving, clearSpriteAnimation, 800),
-		//put on the boot, moving the arbitrary distance needed to get to the right position
-		newEntityAnimationSetVelocity(
-			newCompositeQuarticValue(0.0f, -52.0f / 3.0f / (float)Config::ticksPerSecond, 0.0f, 0.0f, 0.0f),
-			newCompositeQuarticValue(0.0f, 10.0f / 3.0f / (float)Config::ticksPerSecond, 0.0f, 0.0f, 0.0f)),
-		newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerLegLiftAnimation),
-		newEntityAnimationDelay(SpriteRegistry::playerLegLiftAnimation->getTotalTicksDuration()),
-		stopMoving,
-		clearSpriteAnimation,
-		newEntityAnimationGenerateHint(nullptr),
 	});
+	//walk to the wall and down
+	int walkingDuration = introAnimationWalk(playerAnimationComponents, SpriteDirection::Right, 2200, 0);
+	introAnimationWalk(playerAnimationComponents, SpriteDirection::Down, 1000, walkingDuration);
+	//stop and look at the boot
+	playerAnimationComponents.insert(
+		playerAnimationComponents.end(),
+		{
+			entityAnimationVelocityAndAnimationForDelay(stopMoving, clearSpriteAnimation, 3000),
+			entityAnimationDirectionForDelay(SpriteDirection::Right, 800),
+			entityAnimationDirectionForDelay(SpriteDirection::Down, 1000),
+		});
+	//walk around the boot
+	introAnimationWalk(playerAnimationComponents, SpriteDirection::Down, 900, 0),
+	playerAnimationComponents.insert(
+		playerAnimationComponents.end(),
+		{
+			entityAnimationVelocityAndAnimationForDelay(stopMoving, clearSpriteAnimation, 700),
+		});
+	introAnimationWalk(playerAnimationComponents, SpriteDirection::Right, 1800, 0),
+	//stop and look around
+	playerAnimationComponents.insert(
+		playerAnimationComponents.end(),
+		{
+			entityAnimationVelocityAndAnimationForDelay(stopMoving, clearSpriteAnimation, 700),
+			entityAnimationDirectionForDelay(SpriteDirection::Up, 700),
+			entityAnimationDirectionForDelay(SpriteDirection::Down, 500),
+			entityAnimationDirectionForDelay(SpriteDirection::Left, 350),
+			entityAnimationDirectionForDelay(SpriteDirection::Right, 1000),
+		});
+	//walk up
+	introAnimationWalk(playerAnimationComponents, SpriteDirection::Up, 1700, 0);
+	//stop and look around
+	playerAnimationComponents.insert(
+		playerAnimationComponents.end(),
+		{
+			entityAnimationVelocityAndAnimationForDelay(stopMoving, clearSpriteAnimation, 1000),
+			entityAnimationDirectionForDelay(SpriteDirection::Right, 600),
+			entityAnimationDirectionForDelay(SpriteDirection::Left, 400),
+			entityAnimationDirectionForDelay(SpriteDirection::Up, 1200),
+		});
+	//walk back down and left to the boot
+	walkingDuration = introAnimationWalk(playerAnimationComponents, SpriteDirection::Down, 900, 0);
+	introAnimationWalk(playerAnimationComponents, SpriteDirection::Left, 400, walkingDuration);
+	//finish the animation near the boot
+	playerAnimationComponents.insert(
+		playerAnimationComponents.end(),
+		{
+			//stop near the boot
+			entityAnimationVelocityAndAnimationForDelay(stopMoving, clearSpriteAnimation, 500),
+			//approach more slowly
+			newEntityAnimationSetVelocity(
+				newCompositeQuarticValue(0.0f, -PlayerState::baseSpeedPerTick * 0.5f, 0.0f, 0.0f, 0.0f), newConstantValue(0.0f)),
+			newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerWalkingAnimation),
+			newEntityAnimationDelay(250),
+			newEntityAnimationPlaySound(Audio::stepSounds[rand() % Audio::stepSoundsCount], 0),
+			newEntityAnimationDelay(290),
+			entityAnimationVelocityAndAnimationForDelay(stopMoving, clearSpriteAnimation, 800),
+			//put on the boot, moving the arbitrary distance needed to get to the right position
+			newEntityAnimationSetVelocity(
+				newCompositeQuarticValue(0.0f, -52.0f / 3.0f / (float)Config::ticksPerSecond, 0.0f, 0.0f, 0.0f),
+				newCompositeQuarticValue(0.0f, 10.0f / 3.0f / (float)Config::ticksPerSecond, 0.0f, 0.0f, 0.0f)),
+			newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerLegLiftAnimation),
+			newEntityAnimationDelay(SpriteRegistry::playerLegLiftAnimation->getTotalTicksDuration()),
+			stopMoving,
+			clearSpriteAnimation,
+			newEntityAnimationGenerateHint(nullptr),
+			newEntityAnimationPlaySound(Audio::stepOffRailSound, 0),
+		});
 	playerState.get()->beginEntityAnimation(&playerAnimationComponents, ticksTime);
 	//fix the initial z because the player teleported to the start of the intro animation
 	playerState.get()->setInitialZ();
@@ -830,6 +843,60 @@ void GameState::beginIntroAnimation(int ticksTime) {
 		newEntityAnimationSwitchToPlayerCamera()
 	});
 	dynamicCameraAnchor.get()->beginEntityAnimation(&cameraAnimationComponents, ticksTime);
+}
+int GameState::introAnimationWalk(
+	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>>& playerAnimationComponents,
+	SpriteDirection spriteDirection,
+	int duration,
+	int previousDuration)
+{
+	ConstantValue* zero = newConstantValue(0.0f);
+	DynamicValue* xVelocity = zero;
+	DynamicValue* yVelocity = zero;
+	switch (spriteDirection) {
+		case SpriteDirection::Left:
+			xVelocity = newCompositeQuarticValue(0.0f, -PlayerState::baseSpeedPerTick, 0.0f, 0.0f, 0.0f);
+			break;
+		case SpriteDirection::Right:
+			xVelocity = newCompositeQuarticValue(0.0f, PlayerState::baseSpeedPerTick, 0.0f, 0.0f, 0.0f);
+			break;
+		case SpriteDirection::Up:
+			yVelocity = newCompositeQuarticValue(0.0f, -PlayerState::baseSpeedPerTick, 0.0f, 0.0f, 0.0f);
+			break;
+		default:
+			yVelocity = newCompositeQuarticValue(0.0f, PlayerState::baseSpeedPerTick, 0.0f, 0.0f, 0.0f);
+			break;
+	}
+	//begin the walking animation
+	playerAnimationComponents.push_back(newEntityAnimationSetVelocity(xVelocity, yVelocity));
+	if (previousDuration == 0)
+		playerAnimationComponents.push_back(newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerWalkingAnimation));
+	playerAnimationComponents.push_back(newEntityAnimationSetDirection(spriteDirection));
+	//check to see if we'll reach the part where we start playing sounds
+	constexpr int stepInterval = SpriteRegistry::playerWalkingAnimationTicksPerFrame * 2;
+	int delayBeforeNextSound =
+		stepInterval - (previousDuration + SpriteRegistry::playerWalkingAnimationTicksPerFrame - 1) % stepInterval - 1;
+	if (duration <= delayBeforeNextSound) {
+		playerAnimationComponents.push_back(newEntityAnimationDelay(duration));
+		return duration + previousDuration;
+	}
+	//play sounds
+	playerAnimationComponents.push_back(newEntityAnimationDelay(delayBeforeNextSound));
+	int durationRemaining = duration - delayBeforeNextSound;
+	int lastStepSound = -1;
+	while (true) {
+		int stepSound = rand() % (Audio::stepSoundsCount - 1);
+		if (stepSound >= lastStepSound)
+			stepSound++;
+		playerAnimationComponents.push_back(newEntityAnimationPlaySound(Audio::stepSounds[stepSound], 0));
+		lastStepSound = stepSound;
+		if (durationRemaining <= stepInterval) {
+			playerAnimationComponents.push_back(newEntityAnimationDelay(durationRemaining));
+			return duration + previousDuration;
+		}
+		playerAnimationComponents.push_back(newEntityAnimationDelay(stepInterval));
+		durationRemaining -= stepInterval;
+	}
 }
 void GameState::resetGame(int ticksTime) {
 	Audio::stopAll();
