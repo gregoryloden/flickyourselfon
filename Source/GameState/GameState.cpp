@@ -874,8 +874,8 @@ int GameState::introAnimationWalk(
 	playerAnimationComponents.push_back(newEntityAnimationSetDirection(spriteDirection));
 	//check to see if we'll reach the part where we start playing sounds
 	constexpr int stepInterval = SpriteRegistry::playerWalkingAnimationTicksPerFrame * 2;
-	int delayBeforeNextSound =
-		stepInterval - (previousDuration + SpriteRegistry::playerWalkingAnimationTicksPerFrame - 1) % stepInterval - 1;
+	constexpr int stepOffset = SpriteRegistry::playerWalkingAnimationTicksPerFrame;
+	int delayBeforeNextSound = stepInterval - (previousDuration + stepOffset - 1) % stepInterval - 1;
 	if (duration <= delayBeforeNextSound) {
 		playerAnimationComponents.push_back(newEntityAnimationDelay(duration));
 		return duration + previousDuration;
