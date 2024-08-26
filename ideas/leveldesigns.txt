@@ -21,3 +21,7 @@ Level 6: 4 x 4 pillars, rails between some, height 3 platforms between others, s
 	end result has two distinct solutions
 Level 7:
 	general layout based on the colors and terrain of the past 6 levels (or maybe not, the rest of the 4th area is a reverse-L shape)
+	"ladder" shape of 4 rails needs to be raised, one rail of each color, ride back and forth across each "rung" to get to level 8
+	red left, blue mid-left, green top, white mid-top, ladder at bottom-right
+	each section has at least one rail/switch of a different color which you get to from the other color section
+	part of the puzzle is figuring out the order that you have to do the different sections in (ex part of one color, then the switch/rail for another color, then all of that color and its ladder, etc.)
