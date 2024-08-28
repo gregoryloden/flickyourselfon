@@ -557,7 +557,7 @@ void RailState::setSegmentColor() {
 	Rail::setSegmentColor(MathUtils::fmin(1.0f, loweredScale), rail->getColor());
 }
 void RailState::renderMovementDirections(int screenLeftWorldX, int screenTopWorldY) {
-	if (Editor::isActive && rail->editorIsDeleted)
+	if ((Editor::isActive && rail->editorIsDeleted) || rail->getColor() == MapState::squareColor)
 		return;
 
 	constexpr int arrowSize = 3;

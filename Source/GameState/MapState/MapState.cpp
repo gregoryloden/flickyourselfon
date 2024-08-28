@@ -949,8 +949,7 @@ void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int 
 			Rail* rail = railState->getRail();
 			if (rail->getGroups().size() == 0)
 				continue;
-			if (rail->getColor() >= triangleColor)
-				railState->renderMovementDirections(screenLeftWorldX, screenTopWorldY);
+			railState->renderMovementDirections(screenLeftWorldX, screenTopWorldY);
 			rail->renderGroups(screenLeftWorldX, screenTopWorldY);
 		}
 		for (Switch* switch0 : switches) {
