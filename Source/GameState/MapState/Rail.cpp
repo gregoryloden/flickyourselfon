@@ -248,7 +248,7 @@ bool Rail::triggerMovement(char movementDirection, char* inOutTileOffset) {
 		case MapState::sineColor:
 			*inOutTileOffset = sineWaveNextOffset[movementMagnitude - 1][(movementDirection + 1) / 2][*inOutTileOffset];
 			if (*inOutTileOffset < 0) {
-				*inOutTileOffset = -*inOutTileOffset;
+				*inOutTileOffset = -1 - *inOutTileOffset;
 				return true;
 			}
 			return false;
