@@ -320,7 +320,7 @@ void MapState::buildLevels() {
 	vector<PlaneConnectionSwitch> planeConnectionSwitches;
 	for (Switch* switch0 : switches) {
 		int tile = switch0->getTopY() * mapWidth + switch0->getLeftX();
-		//TODO: don't validate the planeId, once the 4th group 0 switch is reachable
+		//TODO: don't validate the planeId
 		//during development, we might have switches which aren't on any plane accessible from the start, so skip those
 		short planeId = planeIds[tile];
 		if (planeId == 0)
@@ -356,6 +356,10 @@ void MapState::buildLevels() {
 		vector<PlaneConnectionSwitch*>& planeConnectionSwitchesByGroup =
 			planeConnectionSwitchesByGroupByColor[planeConnection.rail->getColor()];
 		for (char group : planeConnection.rail->getGroups()) {
+			//TODO: don't validate the group
+			//during development, we might have switches which aren't on any plane accessible from the start, so skip those
+			if (group >= (int)planeConnectionSwitchesByGroup.size())
+				continue;
 			PlaneConnectionSwitch* planeConnectionSwitch = planeConnectionSwitchesByGroup[group];
 			planeConnectionSwitch->plane->addRailConnectionToSwitch(
 				railByteMaskData, planeConnectionSwitch->planeConnectionSwitchIndex);
@@ -797,7 +801,12 @@ void MapState::toggleShowConnections() {
 HintState* MapState::generateHint(float playerX, float playerY) {
 	if (Editor::isActive)
 		return newHintState(&Hint::none);
-	LevelTypes::Plane* currentPlane = planes[planeIds[(int)playerY / tileSize * mapWidth + (int)playerX / tileSize] - 1];
+	//TODO: don't validate the planeId
+	//during development, we might have switches which aren't on any plane accessible from the start, so skip those
+	short planeId = planeIds[(int)playerY / tileSize * mapWidth + (int)playerX / tileSize];
+	if (planeId == 0)
+		return newHintState(&Hint::none);
+	LevelTypes::Plane* currentPlane = planes[planeId - 1];
 	return currentPlane->getOwningLevel()->generateHint(
 		currentPlane,
 		[this](short railId, Rail* rail, char* outMovementDirection, char* outTileOffset) {
