@@ -469,6 +469,8 @@ void GameState::saveState() {
 	FileUtils::openFileForWrite(&file, savedGameFileName, ios::out | ios::trunc);
 	if (sawIntroAnimation)
 		file << sawIntroAnimationFileValue << "\n";
+	if (perpetualHints)
+		file << perpetualHintsFileValue << "\n";
 	playerState.get()->saveState(file);
 	mapState.get()->saveState(file);
 	file.close();

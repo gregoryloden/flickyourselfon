@@ -1606,6 +1606,8 @@ void PlayerState::saveState(ofstream& file) {
 	if (finishedUndoRedoTutorial)
 		file << finishedUndoRedoTutorialFileValue << "\n";
 	file << lastGoalFilePrefix << lastGoalX << " " << lastGoalY << "\n";
+	if (noClip)
+		file << noClipFileValue << "\n";
 }
 bool PlayerState::loadState(string& line) {
 	if (StringUtils::startsWith(line, playerXFilePrefix)) {
