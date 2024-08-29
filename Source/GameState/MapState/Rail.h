@@ -36,12 +36,15 @@ public:
 
 private:
 	//pick the next offset for the rail, based on knowing [movement magnitude][movement direction][tile offset]
-	static constexpr char sineWaveNextOffset[3][2][5] = {
+	static constexpr char sineWaveNextOffset[3][3][5] = {
+		//movement magnitude index is (movement magnitude - 1)
+		//movement direction index is (movement direction + 1)
+		//tile offset index is (tile offset)
 		//certain tile offset inputs will be unused, but put values for them anyways to advance to the next valid tile offset
-		//for negative values, the real target is -N - 1
-		{ { -2, 0, 1, 1, 3 }, { 1, 3, 3, 4, -4 } },
-		{ { -4, 0, 0, 0, 3 }, { 3, 3, 3, -4, -4 } },
-		{ { -5, 0, 0, 0, 0 }, { 4, 4, 4, 4, -1 } },
+		//for tile offset negative values, the real target is -N - 1
+		{ { -2, 0, 1, 1, 3 }, { 0, 0, 0, 0, 0 }, { 1, 3, 3, 4, -4 } },
+		{ { -4, 0, 0, 0, 3 }, { 0, 0, 0, 0, 0 }, { 3, 3, 3, -4, -4 } },
+		{ { -5, 0, 0, 0, 0 }, { 0, 0, 0, 0, 0 }, { 4, 4, 4, 4, -1 } },
 	};
 
 	char baseHeight;

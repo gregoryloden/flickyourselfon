@@ -224,34 +224,43 @@ bool Rail::triggerMovement(char movementDirection, char* inOutTileOffset) {
 			return false;
 		//triangle wave rail: move the rail movementMagnitude tiles in its current movement direction, possibly bouncing and
 		//	reversing direction
-		case MapState::triangleColor:
-			*inOutTileOffset += movementMagnitude * movementDirection;
-			if (*inOutTileOffset < 0)
-				*inOutTileOffset = -*inOutTileOffset;
-			else if (*inOutTileOffset > maxTileOffset)
-				*inOutTileOffset = maxTileOffset * 2 - *inOutTileOffset;
-			else
+		case MapState::triangleColor: {
+			char newTileOffset = *inOutTileOffset + movementMagnitude * movementDirection;
+			if (newTileOffset < 0)
+				*inOutTileOffset = -newTileOffset;
+			else if (newTileOffset > maxTileOffset)
+				*inOutTileOffset = maxTileOffset * 2 - newTileOffset;
+			else {
+				*inOutTileOffset = newTileOffset;
 				return false;
+			}
 			return true;
+		}
 		//saw wave rail: move the rail movementMagnitude tiles up, possibly sending it to the bottom
-		case MapState::sawColor:
-			*inOutTileOffset += movementMagnitude * movementDirection;
-			if (*inOutTileOffset < 0)
-				*inOutTileOffset += maxTileOffset;
-			else if (*inOutTileOffset >= maxTileOffset)
-				*inOutTileOffset -= maxTileOffset;
-			else
+		case MapState::sawColor: {
+			char newTileOffset = *inOutTileOffset + movementMagnitude * movementDirection;
+			if (newTileOffset < 0)
+				*inOutTileOffset = newTileOffset + maxTileOffset;
+			else if (newTileOffset >= maxTileOffset)
+				*inOutTileOffset = newTileOffset - maxTileOffset;
+			else {
+				*inOutTileOffset = newTileOffset;
 				return false;
+			}
 			return true;
+		}
 		//sine wave rail: move the rail to the next of the 3 static sine wave positions for this movement direction
 		//higher movement magnitudes will move more than one position at a time
-		case MapState::sineColor:
-			*inOutTileOffset = sineWaveNextOffset[movementMagnitude - 1][(movementDirection + 1) / 2][*inOutTileOffset];
-			if (*inOutTileOffset < 0) {
-				*inOutTileOffset = -1 - *inOutTileOffset;
-				return true;
+		case MapState::sineColor: {
+			char newTileOffset = sineWaveNextOffset[movementMagnitude - 1][movementDirection + 1][*inOutTileOffset];
+			if (newTileOffset < 0)
+				*inOutTileOffset = -1 - newTileOffset;
+			else {
+				*inOutTileOffset = newTileOffset;
+				return false;
 			}
-			return false;
+			return true;
+		}
 		default:
 			return false;
 	}
