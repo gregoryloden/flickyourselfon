@@ -352,8 +352,8 @@ void GameState::render(int ticksTime) {
 		renderTextDisplay(gameTicksTime);
 
 	//TODO: real win condition
-	int winTileX = 160;
-	int winTileY = 124;
+	int winTileX = 55;
+	int winTileY = 144;
 	float px = playerState.get()->getRenderCenterWorldX(gameTicksTime);
 	float py = playerState.get()->getRenderCenterWorldY(gameTicksTime);
 	if (abs(px / MapState::tileSize - winTileX - 0.5f) <= 1.5f
