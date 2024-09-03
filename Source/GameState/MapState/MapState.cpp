@@ -289,7 +289,7 @@ void MapState::addResetSwitchSegments(
 void MapState::buildLevels() {
 	//initialize the base levels state
 	planeIds = new short[mapWidth * mapHeight] {};
-	Level* activeLevel = newLevel();
+	Level* activeLevel = newLevel(levels.size() + 1);
 	levels.push_back(activeLevel);
 	vector<PlaneConnection> planeConnections;
 
@@ -309,7 +309,7 @@ void MapState::buildLevels() {
 				tileChecks.push_back(nextTile);
 				continue;
 			}
-			levels.push_back(activeLevel = newLevel());
+			levels.push_back(activeLevel = newLevel(levels.size() + 1));
 		}
 		LevelTypes::Plane* newPlane = buildPlane(nextTile, activeLevel, tileChecks, planeConnections);
 		if (isVictoryTile)

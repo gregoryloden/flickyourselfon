@@ -251,9 +251,10 @@ Plane* Level::cachedHintSearchVictoryPlane = nullptr;
 	int Level::hintSearchComparisonsPerformed = 0;
 	int Level::foundHintSearchTotalSteps = 0;
 #endif
-Level::Level(objCounterParameters())
+Level::Level(objCounterParametersComma() int pLevelN)
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
-planes()
+levelN(pLevelN)
+, planes()
 , allRailByteMaskData()
 , railByteMaskBitsTracked(0)
 , victoryPlane(nullptr)
@@ -380,7 +381,8 @@ HintState* Level::generateHint(
 		int timeAfterCleanup = SDL_GetTicks();
 		stringstream hintSearchPerformanceMessage;
 		hintSearchPerformanceMessage
-			<< "level (" << planes.size() << "p, " << allRailByteMaskData.size() << "r, " << (int)minimumRailColor << "c)"
+			<< "level " << levelN
+			<< " (" << planes.size() << "p, " << allRailByteMaskData.size() << "r, c" << (int)minimumRailColor << ")"
 			<< "  actionsChecked " << hintSearchActionsChecked
 			<< "  uniqueStates " << hintSearchUniqueStates
 			<< "  comparisonsPerformed " << hintSearchComparisonsPerformed
