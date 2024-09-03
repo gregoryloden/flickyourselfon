@@ -121,6 +121,7 @@ private:
 	static const short resetSwitchIdValue = 3 << 12;
 	static const short railSwitchIndexBitmask = railIdValue - 1;
 public:
+	//see MapState::buildMap() in MapState.cpp for an explanation of the bitmask layout
 	static const int floorIsRailSwitchBitmask = 1;
 	static const int floorIsRailSwitchHeadBitmask = 2;
 	static const int floorIsRailSwitchAndHeadBitmask = floorIsRailSwitchHeadBitmask | floorIsRailSwitchBitmask;
