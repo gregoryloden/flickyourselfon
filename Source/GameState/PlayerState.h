@@ -27,7 +27,7 @@ private:
 	static constexpr float smallDistance = 1.0f / 256.0f;
 	static const int baseRailToRailTicksDuration = 80;
 	static const int railToRailFastTicksDuration = (int)(baseRailToRailTicksDuration / 2.5f);
-	static const int autoKickTriggerDelay = 400;
+	static const int autoKickTriggerDelay = 250;
 	static constexpr float boundingBoxWidth = 11.0f;
 	static constexpr float boundingBoxHeight = 5.0f;
 	static constexpr float boundingBoxLeftOffset = boundingBoxWidth * -0.5f;
