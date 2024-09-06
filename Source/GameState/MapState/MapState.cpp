@@ -900,7 +900,8 @@ void MapState::renderBelowPlayer(EntityState* camera, float playerWorldGroundY, 
 	for (RailState* railState : railStates)
 		railState->getRail()->renderShadow(screenLeftWorldX, screenTopWorldY);
 	for (RailState* railState : railStates) {
-		//guarantee that the rail renders behind the player if it has a lower height than the player
+		//guarantee that the rail renders behind the player if it has an equal or lower height than the player
+		//this is mainly relevant for rail ends
 		float effectivePlayerWorldGroundY =
 			railState->getRail()->getBaseHeight() <= playerZ ? playerWorldGroundY + mapHeight : playerWorldGroundY;
 		railState->renderBelowPlayer(screenLeftWorldX, screenTopWorldY, effectivePlayerWorldGroundY);
