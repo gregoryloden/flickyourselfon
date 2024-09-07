@@ -30,3 +30,5 @@ Level 8:
 	level 8 starting area/level 7 victory area is at the bottom left platform of level 1 area, has switch
 	level 1 area, far left platform, has steps going up north, and rail going [left?]
 	fun idea to have the player walk on planes from previous levels, but might be best to only use new planes
+	maybe: colors one at a time?
+	part of it: one puzzle is "pick the right switch to get to the end" guessing
