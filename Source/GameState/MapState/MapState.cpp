@@ -320,11 +320,16 @@ void MapState::buildLevels() {
 	vector<PlaneConnectionSwitch> planeConnectionSwitches;
 	for (Switch* switch0 : switches) {
 		int tile = switch0->getTopY() * mapWidth + switch0->getLeftX();
-		//TODO: don't validate the planeId
-		//during development, we might have switches which aren't on any plane accessible from the start, so skip those
+		//with the editor, it's possible to have switches which aren't on any plane accessible from the start, so skip those
+		//should never happen with an umodified floor file once the game is released
 		short planeId = planeIds[tile];
-		if (planeId == 0)
+		if (planeId == 0) {
+			stringstream message;
+			message << "ERROR: no plane found for switch @ " << switch0->getLeftX() << "," << switch0->getTopY();
+			logSwitchDescriptor(switch0, &message);
+			Logger::debugLogger.logString(message.str());
 			continue;
+		}
 		LevelTypes::Plane* plane = planes[planeId - 1];
 		if (switch0->getGroup() == 0)
 			plane->getOwningLevel()->assignRadioTowerSwitch(switch0);
@@ -356,10 +361,16 @@ void MapState::buildLevels() {
 		vector<PlaneConnectionSwitch*>& planeConnectionSwitchesByGroup =
 			planeConnectionSwitchesByGroupByColor[planeConnection.rail->getColor()];
 		for (char group : planeConnection.rail->getGroups()) {
-			//TODO: don't validate the group
-			//during development, we might have switches which aren't on any plane accessible from the start, so skip those
-			if (group >= (int)planeConnectionSwitchesByGroup.size())
+			//with the editor, it's possible to have switches which aren't on any plane accessible from the start, so skip rails
+			//	for those switches
+			//should never happen with an umodified floor file once the game is released
+			if (group >= (int)planeConnectionSwitchesByGroup.size()) {
+				stringstream message;
+				message << "ERROR: no switch found for rail c" << (int)planeConnection.rail->getColor() << " ";
+				logGroup(group, &message);
+				Logger::debugLogger.logString(message.str());
 				continue;
+			}
 			PlaneConnectionSwitch* planeConnectionSwitch = planeConnectionSwitchesByGroup[group];
 			planeConnectionSwitch->plane->addRailConnectionToSwitch(
 				railByteMaskData, planeConnectionSwitch->planeConnectionSwitchIndex);
@@ -801,11 +812,16 @@ void MapState::toggleShowConnections() {
 HintState* MapState::generateHint(float playerX, float playerY) {
 	if (Editor::isActive)
 		return newHintState(&Hint::none);
-	//TODO: don't validate the planeId
-	//during development, we might have switches which aren't on any plane accessible from the start, so skip those
+	//with noclip or editing the save file, it's possible to be somewhere that isn't a plane accessible from the start, so don't
+	//	try to generate a hint
+	//should never happen with an umodified save file once the game is released
 	short planeId = planeIds[(int)playerY / tileSize * mapWidth + (int)playerX / tileSize];
-	if (planeId == 0)
+	if (planeId == 0) {
+		stringstream message;
+		message << "ERROR: no plane found to generate hint at " << playerX << "," << playerY;
+		Logger::debugLogger.logString(message.str());
 		return newHintState(&Hint::none);
+	}
 	LevelTypes::Plane* currentPlane = planes[planeId - 1];
 	return currentPlane->getOwningLevel()->generateHint(
 		currentPlane,
