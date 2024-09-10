@@ -1108,11 +1108,8 @@ float MapState::waveformY(char color, float periodX) {
 	}
 }
 void MapState::logGroup(char group, stringstream* message) {
-	for (int i = 0; i < 2; i++) {
-		if (i > 0)
-			*message << " ";
+	for (int i = 0; true; i++) {
 		switch (group % 8) {
-			case 0: *message << "black"; break;
 			case 1: *message << "red"; break;
 			case 2: *message << "green"; break;
 			case 3: *message << "yellow"; break;
@@ -1120,7 +1117,11 @@ void MapState::logGroup(char group, stringstream* message) {
 			case 5: *message << "magenta"; break;
 			case 6: *message << "cyan"; break;
 			case 7: *message << "white"; break;
+			default: *message << "black"; break;
 		}
+		if (i >= 1)
+			return;
+		*message << " ";
 		group /= 8;
 	}
 }
@@ -1133,7 +1134,7 @@ void MapState::logSwitchKick(short switchId) {
 	Logger::gameplayLogger.logString(message.str());
 }
 void MapState::logSwitchDescriptor(Switch* switch0, stringstream* message) {
-	*message << " (" << (int)switch0->getColor() << " ";
+	*message << " (c" << (int)switch0->getColor() << " ";
 	logGroup(switch0->getGroup(), message);
 	*message << ")";
 }
@@ -1153,7 +1154,7 @@ void MapState::logRailRide(short railId, int playerX, int playerY) {
 	Logger::gameplayLogger.logString(message.str());
 }
 void MapState::logRailDescriptor(Rail* rail, stringstream* message) {
-	*message << " (" << (int)rail->getColor() << " ";
+	*message << " (c" << (int)rail->getColor() << " ";
 	bool skipComma = true;
 	for (char group : rail->getGroups()) {
 		if (skipComma)
