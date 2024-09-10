@@ -576,9 +576,9 @@ void RailState::renderMovementDirections(int screenLeftWorldX, int screenTopWorl
 		char movementMagnitude = rail->getMovementMagnitude();
 		GLint centerX = (GLint)(segment->x * MapState::tileSize - screenLeftWorldX + MapState::halfTileSize);
 		GLint baseTopY = (GLint)(segment->y * MapState::tileSize - screenTopWorldY + MapState::halfTileSize);
-		//center the arrow at the center of the tile, but if it's an odd height, make sure that the wide part of the middle
-		//	arrow is closer to the center
-		baseTopY -= (movementMagnitude * arrowSize + (int)(1 - nextMovementDirection) / 2) / 2;
+		//position the arrows so that one arrow has its wide end going through the middle of the group
+		//this happens normally on even magnitudes, and with a bias in the movement direction for odd magnitudes
+		baseTopY -= (movementMagnitude + (1 - nextMovementDirection) / 2) / 2 * arrowSize;
 		for (char i = 0; i < movementMagnitude; i++) {
 			GLint topY = baseTopY + i * arrowSize;
 			for (int j = 1; j <= arrowSize; j++) {
