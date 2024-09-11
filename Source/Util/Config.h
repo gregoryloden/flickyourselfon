@@ -75,6 +75,8 @@ public:
 	static constexpr float backgroundColorGreen = 0.0f;
 	static constexpr float backgroundColorBlue = 3.0f / 16.0f;
 	static constexpr char* optionsFileName = "kyo.options";
+	static const int heightBasedShadingOffValue = 1;
+	static const int heightBasedShadingExtraValue = 2;
 
 	static float currentPixelWidth;
 	static float currentPixelHeight;
@@ -99,7 +101,7 @@ public:
 	static ConfigTypes::OnOffSetting switchKickIndicator;
 	static ConfigTypes::OnOffSetting resetSwitchKickIndicator;
 	static ConfigTypes::HoldToggleSetting showConnectionsMode;
-	static ConfigTypes::OnOffSetting heightBasedShading;
+	static ConfigTypes::MultiStateSetting heightBasedShading;
 	static vector<ConfigTypes::VolumeSetting*> allVolumeSettings;
 	static ConfigTypes::VolumeSetting masterVolume;
 	static ConfigTypes::VolumeSetting musicVolume;

@@ -884,8 +884,18 @@ void MapState::renderBelowPlayer(EntityState* camera, float playerWorldGroundY, 
 			return;
 	//color tiles that are above or below the player, based on how far above or below the player they are, if the setting is
 	//	enabled
-	} else if (Config::heightBasedShading.isOn()) {
+	} else if (Config::heightBasedShading.state != Config::heightBasedShadingOffValue) {
 		glEnable(GL_BLEND);
+		//even distribution from 0%-50% across floor height differences 0-7
+		float nearHeightsDivisor = 28.0f;
+		float farHeightsDivisor = 28.0f;
+		if (Config::heightBasedShading.state == Config::heightBasedShadingExtraValue) {
+			//distribute 0%-25% across floor height differences 0-2
+			nearHeightsDivisor = 16.0f;
+			//distribute 25%-62.5% across floor height differences 2-7
+			farHeightsDivisor = 80.0f / 3.0f;
+		}
+		float farHeightsAddend = 4 / nearHeightsDivisor;
 		for (int y = tileMinY; y < tileMaxY; y++) {
 			for (int x = tileMinX; x < tileMaxX; x++) {
 				//consider any tile at the max height to be filler
@@ -893,10 +903,17 @@ void MapState::renderBelowPlayer(EntityState* camera, float playerWorldGroundY, 
 				if (mapHeight == emptySpaceHeight || mapHeight == playerZ)
 					continue;
 
-				if (mapHeight > playerZ)
-					glColor4f(1.0f, 1.0f, 1.0f, (mapHeight - playerZ) / 32.0f);
-				else
-					glColor4f(0.0f, 0.0f, 0.0f, (playerZ - mapHeight) / 32.0f);
+				if (mapHeight > playerZ) {
+					if (mapHeight - playerZ < 4)
+						glColor4f(1.0f, 1.0f, 1.0f, (mapHeight - playerZ) / nearHeightsDivisor);
+					else
+						glColor4f(1.0f, 1.0f, 1.0f, (mapHeight - playerZ - 4) / farHeightsDivisor + farHeightsAddend);
+				} else {
+					if (playerZ - mapHeight < 4)
+						glColor4f(0.0f, 0.0f, 0.0f, (playerZ - mapHeight) / nearHeightsDivisor);
+					else
+						glColor4f(0.0f, 0.0f, 0.0f, (playerZ - mapHeight - 4) / farHeightsDivisor + farHeightsAddend);
+				}
 				GLint leftX = (GLint)(x * tileSize - screenLeftWorldX);
 				GLint topY = (GLint)(y * tileSize - screenTopWorldY);
 				SpriteSheet::renderPreColoredRectangle(leftX, topY, leftX + (GLint)tileSize, topY + (GLint)tileSize);
