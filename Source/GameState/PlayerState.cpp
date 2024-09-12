@@ -1594,6 +1594,8 @@ void PlayerState::setHomeScreenState() {
 	obtainBoot();
 	x.set(newConstantValue(MapState::antennaCenterWorldX()));
 	y.set(newConstantValue(MapState::radioTowerPlatformCenterWorldY() - boundingBoxCenterYOffset));
+	//chosen as floor height 3 is in the middle of possible heights 0-7, and happens to be the height of platforms in level 1
+	z = 6;
 }
 void PlayerState::saveState(ofstream& file) {
 	file << playerXFilePrefix << lastControlledX << "\n";
