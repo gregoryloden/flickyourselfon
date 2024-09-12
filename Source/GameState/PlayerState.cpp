@@ -76,6 +76,7 @@ PlayerState* PlayerState::produce(objCounterParametersComma() MapState* mapState
 	p->hasBoot = false;
 	p->mapState.set(mapState);
 	p->availableKickAction.set(nullptr);
+	p->hintState.set(newHintState(&Hint::none));
 	return p;
 }
 void PlayerState::copyPlayerState(PlayerState* other) {
@@ -900,7 +901,7 @@ void PlayerState::tryCollectCompletedHint(PlayerState* other) {
 	hintSearchStorage.set(nullptr);
 }
 bool PlayerState::shouldSuggestUndoReset() {
-	return hintState.get() != nullptr && hintState.get()->hint->type == Hint::Type::UndoReset;
+	return hintState.get()->hint->type == Hint::Type::UndoReset;
 }
 void PlayerState::beginKicking(int ticksTime) {
 	if (entityAnimation.get() != nullptr)
@@ -1655,7 +1656,7 @@ void PlayerState::reset() {
 	lastGoalX = 0;
 	lastGoalY = 0;
 	clearUndoRedoStates();
-	hintState.set(nullptr);
+	hintState.set(newHintState(&Hint::none));
 }
 void PlayerState::setHighestZ() {
 	z = MapState::highestFloorHeight;

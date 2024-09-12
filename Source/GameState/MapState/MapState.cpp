@@ -110,6 +110,7 @@ MapState::~MapState() {
 }
 MapState* MapState::produce(objCounterParameters()) {
 	initializeWithNewFromPool(m, MapState)
+	m->hintState.set(newHintState(&Hint::none));
 	return m;
 }
 pooledReferenceCounterDefineRelease(MapState)
@@ -834,8 +835,7 @@ HintState* MapState::generateHint(float playerX, float playerY) {
 }
 void MapState::setHint(HintState* pHintState, int ticksTime) {
 	hintState.set(pHintState);
-	if (pHintState != nullptr)
-		pHintState->animationEndTicksTime = ticksTime + HintState::totalDisplayTicks;
+	pHintState->animationEndTicksTime = ticksTime + HintState::totalDisplayTicks;
 }
 void MapState::renderBelowPlayer(EntityState* camera, float playerWorldGroundY, char playerZ, int ticksTime) {
 	glDisable(GL_BLEND);
@@ -929,9 +929,7 @@ void MapState::renderBelowPlayer(EntityState* camera, float playerWorldGroundY, 
 	}
 
 	//draw plane hints below rails, if applicable
-	Hint::Type hintType = hintState.get() != nullptr && hintState.get()->animationEndTicksTime >= ticksTime
-		? hintState.get()->hint->type
-		: Hint::Type::None;
+	Hint::Type hintType = hintState.get()->animationEndTicksTime >= ticksTime ? hintState.get()->hint->type : Hint::Type::None;
 	if (hintType == Hint::Type::Plane)
 		hintState.get()->render(screenLeftWorldX, screenTopWorldY, ticksTime);
 

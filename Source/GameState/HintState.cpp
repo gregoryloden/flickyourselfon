@@ -29,8 +29,9 @@ HintState::PotentialLevelState::PotentialLevelState(objCounterParameters())
 }
 HintState::PotentialLevelState::~PotentialLevelState() {
 	//don't delete the prior state, it's being tracked separately
-	//don't delete the currentPlane, it's owned by a Level
+	//don't delete the plane, it's owned by a Level
 	delete[] railByteMasks;
+	//don't delete the hint, something else owns it
 }
 HintState::PotentialLevelState* HintState::PotentialLevelState::produce(
 	objCounterParametersComma()
@@ -97,7 +98,9 @@ HintState::HintState(objCounterParameters())
 , hint(nullptr)
 , animationEndTicksTime(0) {
 }
-HintState::~HintState() {}
+HintState::~HintState() {
+	//don't delete the hint, something else owns it
+}
 HintState* HintState::produce(objCounterParametersComma() Hint* pHint) {
 	initializeWithNewFromPool(h, HintState)
 	h->hint = pHint;

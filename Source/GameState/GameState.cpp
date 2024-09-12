@@ -135,8 +135,7 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 		prev->camera->setNextCamera(this, gameTicksTime);
 
 	HintState* playerHint = playerState.get()->getHint();
-	if (playerHint != nullptr)
-		levelsUnlocked = MathUtils::max(levelsUnlocked, playerHint->hint->levelN);
+	levelsUnlocked = MathUtils::max(levelsUnlocked, playerHint->hint->levelN);
 	if (perpetualHints)
 		mapState.get()->setHint(playerHint, gameTicksTime);
 
