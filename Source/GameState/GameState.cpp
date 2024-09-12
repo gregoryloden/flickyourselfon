@@ -3,6 +3,7 @@
 #include "Editor/Editor.h"
 #include "GameState/DynamicValue.h"
 #include "GameState/EntityAnimation.h"
+#include "GameState/HintState.h"
 #include "GameState/KickAction.h"
 #include "GameState/PauseState.h"
 #include "GameState/PlayerState.h"
@@ -32,7 +33,7 @@
 vector<string> GameState::saveFile;
 GameState::GameState(objCounterParameters())
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
-sawIntroAnimation(false)
+levelsUnlocked(0)
 , perpetualHints(false)
 , textDisplayType(TextDisplayType::None)
 , titleAnimationStartTicksTime(0)
@@ -64,7 +65,7 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 	pauseState.set(nullptr);
 
 	//copy values that don't usually change from state to state
-	sawIntroAnimation = prev->sawIntroAnimation;
+	levelsUnlocked = prev->levelsUnlocked;
 	perpetualHints = prev->perpetualHints;
 	textDisplayType = prev->textDisplayType;
 	titleAnimationStartTicksTime = prev->titleAnimationStartTicksTime;
@@ -133,8 +134,11 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 	} else
 		prev->camera->setNextCamera(this, gameTicksTime);
 
+	HintState* playerHint = playerState.get()->getHint();
+	if (playerHint != nullptr)
+		levelsUnlocked = MathUtils::max(levelsUnlocked, playerHint->hint->levelN);
 	if (perpetualHints)
-		mapState.get()->setHint(playerState.get()->getHint(), gameTicksTime);
+		mapState.get()->setHint(playerHint, gameTicksTime);
 
 	//handle events after states have been updated
 	SDL_Event gameEvent;
@@ -206,8 +210,8 @@ void GameState::setPlayerCamera() {
 	camera = playerState.get();
 
 	//the intro animation happens to call this when it ends, so we'll do cleanup here
-	if (!sawIntroAnimation) {
-		sawIntroAnimation = true;
+	if (levelsUnlocked == 0) {
+		levelsUnlocked = 1;
 		MapState::setIntroAnimationBootTile(false);
 		playerState.get()->setInitialZ();
 	}
@@ -333,7 +337,7 @@ void GameState::render(int ticksTime) {
 	mapState.get()->renderBelowPlayer(camera, playerState.get()->getWorldGroundY(gameTicksTime), playerZ, gameTicksTime);
 	playerState.get()->render(camera, gameTicksTime);
 	mapState.get()->renderAbovePlayer(camera, showConnections, gameTicksTime);
-	if (sawIntroAnimation && !camera->hasAnimation()) {
+	if (levelsUnlocked > 0 && !camera->hasAnimation()) {
 		if (!playerState.get()->renderTutorials())
 			mapState.get()->renderTutorials(showConnections, playerState.get()->shouldSuggestUndoReset());
 	}
@@ -467,8 +471,8 @@ void GameState::renderTextDisplay(int gameTicksTime) {
 void GameState::saveState() {
 	ofstream file;
 	FileUtils::openFileForWrite(&file, savedGameFileName, ios::out | ios::trunc);
-	if (sawIntroAnimation)
-		file << sawIntroAnimationFileValue << "\n";
+	if (levelsUnlocked > 0)
+		file << levelsUnlockedFilePrefix << levelsUnlocked << "\n";
 	if (perpetualHints)
 		file << perpetualHintsFileValue << "\n";
 	playerState.get()->saveState(file);
@@ -492,7 +496,7 @@ void GameState::loadInitialState(int ticksTime) {
 	//if we're in the editor, force-load the game and setup any remaining initial state
 	if (Editor::isActive) {
 		//always skip the intro animation for the editor, jump straight into walking
-		sawIntroAnimation = true;
+		levelsUnlocked = 100;
 		loadCachedSavedState(ticksTime);
 		playerState.get()->setHighestZ();
 		//enable show connections if necessary
@@ -515,14 +519,14 @@ void GameState::loadInitialState(int ticksTime) {
 }
 void GameState::loadCachedSavedState(int ticksTime) {
 	for (string& line : saveFile) {
-		if (StringUtils::startsWith(line, sawIntroAnimationFileValue))
-			sawIntroAnimation = true;
+		if (StringUtils::startsWith(line, levelsUnlockedFilePrefix))
+			levelsUnlocked = atoi(line.c_str() + StringUtils::strlenConst(levelsUnlockedFilePrefix));
 		else if (StringUtils::startsWith(line, perpetualHintsFileValue))
 			perpetualHints = true;
 		else
 			playerState.get()->loadState(line) || mapState.get()->loadState(line);
 	}
-	if (sawIntroAnimation) {
+	if (levelsUnlocked > 0) {
 		playerState.get()->obtainBoot();
 		playerState.get()->setInitialZ();
 		playerState.get()->generateHint(nullptr, ticksTime);
@@ -709,7 +713,7 @@ void GameState::loadCachedSavedState(int ticksTime) {
 		playerState.get()->setHighestZ();
 		playerState.get()->obtainBoot();
 		camera = playerState.get();
-		sawIntroAnimation = true;
+		levelsUnlocked = 100;
 		return true;
 	}
 	void GameState::addMoveWithGhost(
@@ -902,7 +906,7 @@ int GameState::introAnimationWalk(
 }
 void GameState::resetGame(int ticksTime) {
 	Audio::stopAll();
-	sawIntroAnimation = false;
+	levelsUnlocked = 0;
 	perpetualHints = false;
 	gameTimeOffsetTicksDuration = 0;
 	pauseState.set(nullptr);

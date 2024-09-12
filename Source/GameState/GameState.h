@@ -83,12 +83,12 @@ private:
 		static constexpr char* replayFileName = "kyo_replay.log";
 	#endif
 	static constexpr char* savedGameFileName = "kyo.sav";
-	static constexpr char* sawIntroAnimationFileValue = "sawIntroAnimation";
+	static constexpr char* levelsUnlockedFilePrefix = "levelsUnlocked ";
 	static constexpr char* perpetualHintsFileValue = "perpetualHints";
 
 	static vector<string> saveFile;
 
-	bool sawIntroAnimation;
+	int levelsUnlocked;
 	bool perpetualHints;
 	TextDisplayType textDisplayType;
 	int titleAnimationStartTicksTime;

@@ -34,8 +34,9 @@ public:
 
 	Type type;
 	Data data;
+	int levelN;
 
-	Hint(Type pType);
+	Hint(Type pType, int pLevelN);
 	virtual ~Hint();
 };
 class HintState: public PooledReferenceCounter {

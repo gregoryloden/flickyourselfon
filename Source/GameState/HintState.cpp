@@ -4,11 +4,12 @@
 #include "GameState/MapState/Switch.h"
 
 //////////////////////////////// Hint ////////////////////////////////
-Hint Hint::none (Hint::Type::None);
-Hint Hint::undoReset (Hint::Type::UndoReset);
-Hint::Hint(Type pType)
+Hint Hint::none (Hint::Type::None, 0);
+Hint Hint::undoReset (Hint::Type::UndoReset, 0);
+Hint::Hint(Type pType, int pLevelN)
 : type(pType)
-, data() {
+, data()
+, levelN(pLevelN) {
 }
 Hint::~Hint() {
 	//don't delete anything in data, it's owned by something else
