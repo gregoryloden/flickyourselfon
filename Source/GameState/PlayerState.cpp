@@ -1585,7 +1585,7 @@ bool PlayerState::renderTutorials() {
 			&& (undoState.get()->getTypeIdentifier() == RideRailUndoState::classTypeIdentifier
 				|| undoState.get()->getTypeIdentifier() == KickSwitchUndoState::classTypeIdentifier
 				|| undoState.get()->getTypeIdentifier() == KickResetSwitchUndoState::classTypeIdentifier))
-		MapState::renderControlsTutorial(undoTutorialText, { Config::undoKeyBinding.value });
+		MapState::renderControlsTutorial(undoRedoTutorialText, { Config::undoKeyBinding.value, Config::redoKeyBinding.value });
 	else
 		return false;
 	return true;

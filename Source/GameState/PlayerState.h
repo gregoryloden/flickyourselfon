@@ -51,7 +51,7 @@ private:
 	static constexpr float downKickingDistanceLimit = 0.5f;
 	static constexpr char* moveTutorialText = "Move: ";
 	static constexpr char* kickTutorialText = "Kick: ";
-	static constexpr char* undoTutorialText = "Undo: ";
+	static constexpr char* undoRedoTutorialText = "Undo/Redo: ";
 	static constexpr char* redoTutorialText = "Redo: ";
 	static constexpr char* playerXFilePrefix = "playerX ";
 	static constexpr char* playerYFilePrefix = "playerY ";
