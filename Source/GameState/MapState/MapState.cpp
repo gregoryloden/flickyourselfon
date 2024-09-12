@@ -886,16 +886,17 @@ void MapState::renderBelowPlayer(EntityState* camera, float playerWorldGroundY, 
 	//	enabled
 	} else if (Config::heightBasedShading.state != Config::heightBasedShadingOffValue) {
 		glEnable(GL_BLEND);
+		constexpr int nearHeightsEnd = 4;
 		//even distribution from 0%-50% across floor height differences 0-7
-		float nearHeightsDivisor = 28.0f;
-		float farHeightsDivisor = 28.0f;
+		float maxAlpha = 0.5f;
+		float nearHeightsMaxAlpha = maxAlpha * nearHeightsEnd / highestFloorHeight;
 		if (Config::heightBasedShading.state == Config::heightBasedShadingExtraValue) {
-			//distribute 0%-25% across floor height differences 0-2
-			nearHeightsDivisor = 16.0f;
-			//distribute 25%-62.5% across floor height differences 2-7
-			farHeightsDivisor = 80.0f / 3.0f;
+			//distribute 0%-25% across floor height differences 0-n, and 25%-62.5% across floor height differences n-7
+			nearHeightsMaxAlpha = 0.25f;
+			maxAlpha = 0.625f;
 		}
-		float farHeightsAddend = 4 / nearHeightsDivisor;
+		float nearHeightsMultiplier = nearHeightsMaxAlpha / nearHeightsEnd;
+		float farHeightsMultiplier = (maxAlpha - nearHeightsMaxAlpha) / (highestFloorHeight - nearHeightsEnd);
 		for (int y = tileMinY; y < tileMaxY; y++) {
 			for (int x = tileMinX; x < tileMaxX; x++) {
 				//consider any tile at the max height to be filler
@@ -903,17 +904,22 @@ void MapState::renderBelowPlayer(EntityState* camera, float playerWorldGroundY, 
 				if (mapHeight == emptySpaceHeight || mapHeight == playerZ)
 					continue;
 
-				if (mapHeight > playerZ) {
-					if (mapHeight - playerZ < 4)
-						glColor4f(1.0f, 1.0f, 1.0f, (mapHeight - playerZ) / nearHeightsDivisor);
-					else
-						glColor4f(1.0f, 1.0f, 1.0f, (mapHeight - playerZ - 4) / farHeightsDivisor + farHeightsAddend);
-				} else {
-					if (playerZ - mapHeight < 4)
-						glColor4f(0.0f, 0.0f, 0.0f, (playerZ - mapHeight) / nearHeightsDivisor);
-					else
-						glColor4f(0.0f, 0.0f, 0.0f, (playerZ - mapHeight - 4) / farHeightsDivisor + farHeightsAddend);
-				}
+				if (mapHeight > playerZ)
+					glColor4f(
+						1.0f,
+						1.0f,
+						1.0f,
+						mapHeight - playerZ <= nearHeightsEnd
+							? (mapHeight - playerZ) * nearHeightsMultiplier
+							: (mapHeight - playerZ - nearHeightsEnd) * farHeightsMultiplier + nearHeightsMaxAlpha);
+				else
+					glColor4f(
+						0.0f,
+						0.0f,
+						0.0f,
+						playerZ - mapHeight <= nearHeightsEnd
+							? (playerZ - mapHeight) * nearHeightsMultiplier
+							: (playerZ - mapHeight - nearHeightsEnd) * farHeightsMultiplier + nearHeightsMaxAlpha);
 				GLint leftX = (GLint)(x * tileSize - screenLeftWorldX);
 				GLint topY = (GLint)(y * tileSize - screenTopWorldY);
 				SpriteSheet::renderPreColoredRectangle(leftX, topY, leftX + (GLint)tileSize, topY + (GLint)tileSize);
