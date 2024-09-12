@@ -807,7 +807,8 @@ void GameState::beginIntroAnimation(int ticksTime) {
 			entityAnimationVelocityAndAnimationForDelay(stopMoving, clearSpriteAnimation, 500),
 			//approach more slowly
 			newEntityAnimationSetVelocity(
-				newCompositeQuarticValue(0.0f, -PlayerState::baseSpeedPerTick * 0.5f, 0.0f, 0.0f, 0.0f), newConstantValue(0.0f)),
+				newCompositeQuarticValue(0.0f, -PlayerState::baseSpeedPerTick * 0.5f, 0.0f, 0.0f, 0.0f),
+				newConstantValue(0.0f)),
 			newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerWalkingAnimation),
 			newEntityAnimationDelay(250),
 			newEntityAnimationPlaySound(Audio::stepSounds[rand() % Audio::stepSoundsCount], 0),
