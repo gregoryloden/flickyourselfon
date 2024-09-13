@@ -277,17 +277,14 @@ EntityAnimation::GenerateHint::GenerateHint(objCounterParameters())
 , useHint(nullptr) {
 }
 EntityAnimation::GenerateHint::~GenerateHint() {}
-EntityAnimation::GenerateHint* EntityAnimation::GenerateHint::produce(objCounterParametersComma() HintState* pUseHint) {
+EntityAnimation::GenerateHint* EntityAnimation::GenerateHint::produce(objCounterParametersComma() Hint* pUseHint) {
 	initializeWithNewFromPool(g, EntityAnimation::GenerateHint)
-	g->useHint.set(pUseHint);
+	g->useHint = pUseHint;
 	return g;
 }
 pooledReferenceCounterDefineRelease(EntityAnimation::GenerateHint)
-void EntityAnimation::GenerateHint::prepareReturnToPool() {
-	useHint.set(nullptr);
-}
 bool EntityAnimation::GenerateHint::handle(EntityState* entityState, int ticksTime) {
-	entityState->generateHint(useHint.get(), ticksTime);
+	entityState->generateHint(useHint, ticksTime);
 	return true;
 }
 

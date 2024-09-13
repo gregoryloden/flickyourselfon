@@ -21,7 +21,7 @@
 
 class DynamicValue;
 class EntityState;
-class HintState;
+class Hint;
 class KickResetSwitchUndoState;
 class SpriteAnimation;
 enum class SpriteDirection: int;
@@ -244,20 +244,16 @@ public:
 	};
 	class GenerateHint: public EntityAnimationTypes::Component {
 	private:
-		ReferenceCounterHolder<HintState> useHint;
+		Hint* useHint;
 
 	public:
 		GenerateHint(objCounterParameters());
 		virtual ~GenerateHint();
 
 		//initialize and return a GenerateHint
-		static GenerateHint* produce(objCounterParametersComma() HintState* pUseHint);
+		static GenerateHint* produce(objCounterParametersComma() Hint* pUseHint);
 		//release a reference to this GenerateHint and return it to the pool if applicable
 		virtual void release();
-	protected:
-		//release components before this is returned to the pool
-		virtual void prepareReturnToPool();
-	public:
 		//return that the animation should continue updating after requesting the entity state to generate a hint
 		virtual bool handle(EntityState* entityState, int ticksTime);
 	};

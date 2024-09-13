@@ -78,7 +78,7 @@ bool HintState::PotentialLevelState::isNewState(vector<PotentialLevelState*>& po
 	//all states have at least one byte difference, so this is a new state
 	return true;
 }
-HintState* HintState::PotentialLevelState::getHint() {
+Hint* HintState::PotentialLevelState::getHint() {
 	PotentialLevelState* hintLevelState = this;
 	#ifdef TRACK_HINT_SEARCH_STATS
 		Level::foundHintSearchTotalSteps = 1;
@@ -89,7 +89,7 @@ HintState* HintState::PotentialLevelState::getHint() {
 			Level::foundHintSearchTotalSteps++;
 		#endif
 	}
-	return newHintState(hintLevelState->hint);
+	return hintLevelState->hint;
 }
 
 //////////////////////////////// HintState ////////////////////////////////
@@ -101,15 +101,20 @@ HintState::HintState(objCounterParameters())
 HintState::~HintState() {
 	//don't delete the hint, something else owns it
 }
-HintState* HintState::produce(objCounterParametersComma() Hint* pHint) {
+HintState* HintState::produce(objCounterParametersComma() Hint* pHint, int animationStartTicksTime) {
 	initializeWithNewFromPool(h, HintState)
 	h->hint = pHint;
-	//don't show it as an animation until requested
-	h->animationEndTicksTime = 0;
+	h->animationEndTicksTime = animationStartTicksTime + totalDisplayTicks;
 	return h;
 }
 pooledReferenceCounterDefineRelease(HintState)
-void HintState::render(int screenLeftWorldX, int screenTopWorldY, int ticksTime) {
+void HintState::render(int screenLeftWorldX, int screenTopWorldY, bool belowRails, int ticksTime) {
+	if (ticksTime >= animationEndTicksTime
+			//only render planes below rails, and only rails and switches above rails
+			|| (belowRails
+				? hint->type != Hint::Type::Plane
+				: hint->type != Hint::Type::Rail && hint->type != Hint::Type::Switch))
+		return;
 	int progressTicks = ticksTime + totalDisplayTicks - animationEndTicksTime;
 	bool isOn = (progressTicks % flashOnOffTotalTicks) < flashOnOffTicks;
 	if (!isOn)

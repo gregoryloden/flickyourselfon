@@ -2,7 +2,7 @@
 #define HINT_STATE_H
 #include "Util/PooledReferenceCounter.h"
 
-#define newHintState(hint) produceWithArgs(HintState, hint)
+#define newHintState(hint, animationEndTicksTime) produceWithArgs(HintState, hint, animationEndTicksTime)
 #define newHintStatePotentialLevelState(priorState, plane, draftState, hint) \
 	produceWithArgs(HintState::PotentialLevelState, priorState, plane, draftState, hint)
 
@@ -70,9 +70,10 @@ public:
 		//check whether this state already appears in the given list of potential states
 		bool isNewState(vector<PotentialLevelState*>& potentialLevelStates);
 		//get the hint that leads the player to the second state in the priorState stack
-		HintState* getHint();
+		Hint* getHint();
 	};
 
+private:
 	static const int flashOnOffTicks = 350;
 	static const int flashOnOffTotalTicks = flashOnOffTicks * 2;
 	static const int flashTimes = 10;
@@ -81,14 +82,15 @@ public:
 	Hint* hint;
 	int animationEndTicksTime;
 
+public:
 	HintState(objCounterParameters());
 	virtual ~HintState();
 
 	//initialize and return a HintState
-	static HintState* produce(objCounterParametersComma() Hint* pHint);
+	static HintState* produce(objCounterParametersComma() Hint* pHint, int animationStartTicksTime);
 	//release a reference to this HintState and return it to the pool if applicable
 	virtual void release();
 	//render this hint
-	void render(int screenLeftWorldX, int screenTopWorldY, int ticksTime);
+	void render(int screenLeftWorldX, int screenTopWorldY, bool belowRails, int ticksTime);
 };
 #endif

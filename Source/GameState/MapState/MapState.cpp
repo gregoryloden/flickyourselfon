@@ -110,7 +110,7 @@ MapState::~MapState() {
 }
 MapState* MapState::produce(objCounterParameters()) {
 	initializeWithNewFromPool(m, MapState)
-	m->hintState.set(newHintState(&Hint::none));
+	m->hintState.set(newHintState(&Hint::none, 0));
 	return m;
 }
 pooledReferenceCounterDefineRelease(MapState)
@@ -810,9 +810,9 @@ void MapState::toggleShowConnections() {
 		finishedConnectionsTutorial = true;
 	}
 }
-HintState* MapState::generateHint(float playerX, float playerY) {
+Hint* MapState::generateHint(float playerX, float playerY) {
 	if (Editor::isActive)
-		return newHintState(&Hint::none);
+		return &Hint::none;
 	//with noclip or editing the save file, it's possible to be somewhere that isn't a plane accessible from the start, so don't
 	//	try to generate a hint
 	//should never happen with an umodified save file once the game is released
@@ -821,7 +821,7 @@ HintState* MapState::generateHint(float playerX, float playerY) {
 		stringstream message;
 		message << "ERROR: no plane found to generate hint at " << playerX << "," << playerY;
 		Logger::debugLogger.logString(message.str());
-		return newHintState(&Hint::none);
+		return &Hint::none;
 	}
 	LevelTypes::Plane* currentPlane = planes[planeId - 1];
 	return currentPlane->getOwningLevel()->generateHint(
@@ -833,9 +833,8 @@ HintState* MapState::generateHint(float playerX, float playerY) {
 		},
 		lastActivatedSwitchColor);
 }
-void MapState::setHint(HintState* pHintState, int ticksTime) {
-	hintState.set(pHintState);
-	pHintState->animationEndTicksTime = ticksTime + HintState::totalDisplayTicks;
+void MapState::setHint(Hint* hint, int ticksTime) {
+	hintState.set(newHintState(hint, ticksTime));
 }
 void MapState::renderBelowPlayer(EntityState* camera, float playerWorldGroundY, char playerZ, int ticksTime) {
 	glDisable(GL_BLEND);
@@ -928,10 +927,8 @@ void MapState::renderBelowPlayer(EntityState* camera, float playerWorldGroundY, 
 		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 	}
 
-	//draw plane hints below rails, if applicable
-	Hint::Type hintType = hintState.get()->animationEndTicksTime >= ticksTime ? hintState.get()->hint->type : Hint::Type::None;
-	if (hintType == Hint::Type::Plane)
-		hintState.get()->render(screenLeftWorldX, screenTopWorldY, ticksTime);
+	//draw hints below rails, if applicable
+	hintState.get()->render(screenLeftWorldX, screenTopWorldY, true, ticksTime);
 
 	//draw rail shadows, rails (that are below the player), and switches
 	for (RailState* railState : railStates)
@@ -968,9 +965,8 @@ void MapState::renderBelowPlayer(EntityState* camera, float playerWorldGroundY, 
 			particle.get()->render(camera, ticksTime);
 	}
 
-	//draw rail and switch hints, if applicable
-	if (hintType == Hint::Type::Rail || hintType == Hint::Type::Switch)
-		hintState.get()->render(screenLeftWorldX, screenTopWorldY, ticksTime);
+	//draw hints above rails, if applicable
+	hintState.get()->render(screenLeftWorldX, screenTopWorldY, false, ticksTime);
 }
 void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int ticksTime) {
 	if (Editor::isActive && editorHideNonTiles)

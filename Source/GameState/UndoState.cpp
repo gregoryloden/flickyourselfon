@@ -75,22 +75,18 @@ ClimbFallUndoState* ClimbFallUndoState::produce(
 	float pFromX,
 	float pFromY,
 	char pFromHeight,
-	HintState* pFromHint)
+	Hint* pFromHint)
 {
 	initializeWithNewFromPoolAndPlaceIntoStack(c, ClimbFallUndoState, stack)
 	c->fromX = pFromX;
 	c->fromY = pFromY;
 	c->fromHeight = pFromHeight;
-	c->fromHint.set(pFromHint);
+	c->fromHint = pFromHint;
 	return c;
 }
 pooledReferenceCounterDefineRelease(ClimbFallUndoState)
-void ClimbFallUndoState::prepareReturnToPool() {
-	fromHint.set(nullptr);
-	UndoState::prepareReturnToPool();
-}
 bool ClimbFallUndoState::handle(PlayerState* playerState, bool isUndo, int ticksTime) {
-	return playerState->undoMove(fromX, fromY, fromHeight, fromHint.get(), isUndo, ticksTime);
+	return playerState->undoMove(fromX, fromY, fromHeight, fromHint, isUndo, ticksTime);
 }
 
 //////////////////////////////// RideRailUndoState ////////////////////////////////
@@ -102,20 +98,16 @@ RideRailUndoState::RideRailUndoState(objCounterParameters())
 }
 RideRailUndoState::~RideRailUndoState() {}
 RideRailUndoState* RideRailUndoState::produce(
-	objCounterParametersComma() ReferenceCounterHolder<UndoState>& stack, short pRailId, HintState* pFromHint)
+	objCounterParametersComma() ReferenceCounterHolder<UndoState>& stack, short pRailId, Hint* pFromHint)
 {
 	initializeWithNewFromPoolAndPlaceIntoStack(r, RideRailUndoState, stack)
 	r->railId = pRailId;
-	r->fromHint.set(pFromHint);
+	r->fromHint = pFromHint;
 	return r;
 }
 pooledReferenceCounterDefineRelease(RideRailUndoState)
-void RideRailUndoState::prepareReturnToPool() {
-	fromHint.set(nullptr);
-	UndoState::prepareReturnToPool();
-}
 bool RideRailUndoState::handle(PlayerState* playerState, bool isUndo, int ticksTime) {
-	playerState->undoRideRail(railId, fromHint.get(), isUndo, ticksTime);
+	playerState->undoRideRail(railId, fromHint, isUndo, ticksTime);
 	return true;
 }
 
@@ -133,21 +125,17 @@ KickSwitchUndoState* KickSwitchUndoState::produce(
 	ReferenceCounterHolder<UndoState>& stack,
 	short pSwitchId,
 	SpriteDirection pDirection,
-	HintState* pFromHint)
+	Hint* pFromHint)
 {
 	initializeWithNewFromPoolAndPlaceIntoStack(k, KickSwitchUndoState, stack)
 	k->switchId = pSwitchId;
 	k->direction = pDirection;
-	k->fromHint.set(pFromHint);
+	k->fromHint = pFromHint;
 	return k;
 }
 pooledReferenceCounterDefineRelease(KickSwitchUndoState)
-void KickSwitchUndoState::prepareReturnToPool() {
-	fromHint.set(nullptr);
-	UndoState::prepareReturnToPool();
-}
 bool KickSwitchUndoState::handle(PlayerState* playerState, bool isUndo, int ticksTime) {
-	playerState->undoKickSwitch(switchId, direction, fromHint.get(), isUndo, ticksTime);
+	playerState->undoKickSwitch(switchId, direction, fromHint, isUndo, ticksTime);
 	return true;
 }
 
@@ -174,21 +162,17 @@ KickResetSwitchUndoState* KickResetSwitchUndoState::produce(
 	ReferenceCounterHolder<UndoState>& stack,
 	short pResetSwitchId,
 	SpriteDirection pDirection,
-	HintState* pFromHint)
+	Hint* pFromHint)
 {
 	initializeWithNewFromPoolAndPlaceIntoStack(k, KickResetSwitchUndoState, stack)
 	k->resetSwitchId = pResetSwitchId;
 	k->direction = pDirection;
 	k->railUndoStates.clear();
-	k->fromHint.set(pFromHint);
+	k->fromHint = pFromHint;
 	return k;
 }
 pooledReferenceCounterDefineRelease(KickResetSwitchUndoState)
-void KickResetSwitchUndoState::prepareReturnToPool() {
-	fromHint.set(nullptr);
-	UndoState::prepareReturnToPool();
-}
 bool KickResetSwitchUndoState::handle(PlayerState* playerState, bool isUndo, int ticksTime) {
-	playerState->undoKickResetSwitch(resetSwitchId, direction, this, fromHint.get(), isUndo, ticksTime);
+	playerState->undoKickResetSwitch(resetSwitchId, direction, this, fromHint, isUndo, ticksTime);
 	return true;
 }

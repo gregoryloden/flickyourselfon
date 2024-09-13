@@ -74,7 +74,7 @@ namespace LevelTypes {
 		//assumes this plane is a victory plane for a previous level, meaning its true indexInOwningLevel will always be 0
 		void writeVictoryPlaneIndex(Plane* victoryPlane, int pIndexInOwningLevel);
 		//follow all possible actions, and see if any of them lead to reaching the victory plane
-		HintState* pursueSolution(HintState::PotentialLevelState* currentState);
+		Hint* pursueSolution(HintState::PotentialLevelState* currentState);
 		//render boxes over every tile in this plane
 		void renderHint(int screenLeftWorldX, int screenTopWorldY, float alpha);
 		#ifdef LOG_FOUND_HINT_STEPS
@@ -160,7 +160,7 @@ public:
 	//	generating hints
 	void preAllocatePotentialLevelStates();
 	//generate a hint based on the initial state in this level
-	HintState* generateHint(
+	Hint* generateHint(
 		LevelTypes::Plane* currentPlane,
 		function<void(short railId, Rail* rail, char* outMovementDirection, char* outTileOffset)> getRailState,
 		char lastActivatedSwitchColor);

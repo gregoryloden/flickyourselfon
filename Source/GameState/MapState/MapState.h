@@ -6,6 +6,7 @@
 
 class DynamicCameraAnchor;
 class EntityState;
+class Hint;
 class HintState;
 class KickResetSwitchUndoState;
 class Level;
@@ -312,9 +313,9 @@ public:
 	//toggle the state of showing connections, and any other relevant state
 	void toggleShowConnections();
 	//generate a hint based on the state of the map and the given player position
-	HintState* generateHint(float playerX, float playerY);
+	Hint* generateHint(float playerX, float playerY);
 	//set the given hint to be shown
-	void setHint(HintState* pHintState, int ticksTime);
+	void setHint(Hint* hint, int ticksTime);
 	//render the map
 	void renderBelowPlayer(EntityState* camera, float playerWorldGroundY, char playerZ, int ticksTime);
 	//render anything (rails, groups) that render above the player

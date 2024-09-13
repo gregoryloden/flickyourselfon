@@ -93,7 +93,7 @@ void LevelTypes::Plane::writeVictoryPlaneIndex(Plane* victoryPlane, int pIndexIn
 	indexInOwningLevel = 0;
 	victoryPlane->indexInOwningLevel = pIndexInOwningLevel;
 }
-HintState* LevelTypes::Plane::pursueSolution(HintState::PotentialLevelState* currentState) {
+Hint* LevelTypes::Plane::pursueSolution(HintState::PotentialLevelState* currentState) {
 	unsigned int bucket = currentState->railByteMasksHash % Level::PotentialLevelStatesByBucket::bucketSize;
 	//check connections
 	for (Connection& connection : connections) {
@@ -302,24 +302,23 @@ void Level::setupPotentialLevelStateHelpers(vector<Level*>& allLevels) {
 		new unsigned int[HintState::PotentialLevelState::maxRailByteMaskCount];
 }
 void Level::preAllocatePotentialLevelStates() {
-	ReferenceCounterHolder<HintState> hintHolder (
-		generateHint(
-			planes[0],
-			[](short railId, Rail* rail, char* outMovementDirection, char* outTileOffset) {
-				*outMovementDirection = rail->getInitialMovementDirection();
-				*outTileOffset = rail->getInitialTileOffset();
-			},
-			minimumRailColor));
+	generateHint(
+		planes[0],
+		[](short railId, Rail* rail, char* outMovementDirection, char* outTileOffset) {
+			*outMovementDirection = rail->getInitialMovementDirection();
+			*outTileOffset = rail->getInitialTileOffset();
+		},
+		minimumRailColor);
 }
-HintState* Level::generateHint(
+Hint* Level::generateHint(
 	LevelTypes::Plane* currentPlane,
 	function<void(short railId, Rail* rail, char* outMovementDirection, char* outTileOffset)> getRailState,
 	char lastActivatedSwitchColor)
 {
 	if (lastActivatedSwitchColor < minimumRailColor)
-		return newHintState(&radioTowerHint);
+		return &radioTowerHint;
 	else if (victoryPlane == nullptr)
-		return newHintState(&Hint::none);
+		return &Hint::none;
 
 	//prepare the victory plane
 	cachedHintSearchVictoryPlane = victoryPlane;
@@ -348,7 +347,7 @@ HintState* Level::generateHint(
 	nextPotentialLevelStates.push_back(baseLevelState);
 
 	//go through all states and see if there's anything we could do to get closer to the victory plane
-	HintState* result = nullptr;
+	Hint* result = nullptr;
 	#ifdef TRACK_HINT_SEARCH_STATS
 		hintSearchActionsChecked = 0;
 		hintSearchUniqueStates = 0;
@@ -396,5 +395,5 @@ HintState* Level::generateHint(
 		Logger::debugLogger.logString(hintSearchPerformanceMessage.str());
 	#endif
 
-	return result != nullptr ? result : newHintState(&Hint::undoReset);
+	return result != nullptr ? result : &Hint::undoReset;
 }

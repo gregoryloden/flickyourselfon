@@ -5,7 +5,7 @@
 #define newPlayerState(mapState) produceWithArgs(PlayerState, mapState)
 
 class CollisionRect;
-class HintState;
+class Hint;
 class KickAction;
 enum class KickActionType: int;
 class KickResetSwitchUndoState;
@@ -63,7 +63,7 @@ private:
 	static constexpr char* noClipFileValue = "noClip";
 
 	static thread* hintSearchThread;
-	static ReferenceCounterHolder<HintState> hintSearchStorage;
+	static Hint* hintSearchStorage;
 
 	char z;
 	char xDirection;
@@ -96,14 +96,14 @@ private:
 	int lastGoalY;
 	ReferenceCounterHolder<UndoState> undoState;
 	ReferenceCounterHolder<UndoState> redoState;
-	ReferenceCounterHolder<HintState> hintState;
+	Hint* hint;
 	bool noClip;
 
 public:
 	PlayerState(objCounterParameters());
 	virtual ~PlayerState();
 
-	HintState* getHint() { return hintState.get(); }
+	Hint* getHint() { return hint; }
 	void obtainBoot() { hasBoot = true; }
 	//initialize and return a PlayerState
 	static PlayerState* produce(objCounterParametersComma() MapState* mapState);
@@ -136,7 +136,7 @@ public:
 	virtual void spawnParticle(
 		float pX, float pY, SpriteAnimation* pAnimation, SpriteDirection pDirection, int particleStartTicksTime);
 	//generate a hint based on our current state, or use the given state if present
-	virtual void generateHint(HintState* useHint, int ticksTime);
+	virtual void generateHint(Hint* useHint, int ticksTime);
 	//wait for the hint thread to finish, and clear it
 	void waitForHintThreadToFinish();
 	//return whether we have a kick action where we can show connections
@@ -225,7 +225,7 @@ public:
 		float xPosition,
 		float yPosition,
 		RideRailSpeed rideRailSpeed,
-		HintState* useHint,
+		Hint* useHint,
 		float* outFinalXPosition,
 		float* outFinalYPosition,
 		SpriteDirection* outFinalSpriteDirection);
@@ -239,7 +239,7 @@ public:
 		vector<ReferenceCounterHolder<EntityAnimationTypes::Component>>* components,
 		bool moveRailsForward,
 		bool allowRadioTowerAnimation,
-		HintState* useHint);
+		Hint* useHint);
 private:
 	//begin a kicking animation and set the reset switch to flip
 	void kickResetSwitch(short resetSwitchId, int ticksTime);
@@ -249,7 +249,7 @@ public:
 		short resetSwitchId,
 		vector<ReferenceCounterHolder<EntityAnimationTypes::Component>>* components,
 		KickResetSwitchUndoState* kickResetSwitchUndoState,
-		HintState* useHint);
+		Hint* useHint);
 private:
 	//set the undo/redo state to the given state, with special handling if we're deleting it
 	void setUndoState(ReferenceCounterHolder<UndoState>& holder, UndoState* newUndoState);
@@ -266,18 +266,18 @@ public:
 	void undoNoOp(bool isUndo);
 	//move the player to the given location, and queue a MoveUndoState in the other undo state stack
 	//returns whether a move was scheduled or not
-	bool undoMove(float fromX, float fromY, char fromHeight, HintState* fromHint, bool isUndo, int ticksTime);
+	bool undoMove(float fromX, float fromY, char fromHeight, Hint* fromHint, bool isUndo, int ticksTime);
 	//travel across this rail, and queue a RideRailUndoState in the other undo state stack
-	void undoRideRail(short railId, HintState* fromHint, bool isUndo, int ticksTime);
+	void undoRideRail(short railId, Hint* fromHint, bool isUndo, int ticksTime);
 	//kick a switch, and queue a KickSwitchUndoState in the other undo state stack
-	void undoKickSwitch(short switchId, SpriteDirection direction, HintState* fromHint, bool isUndo, int ticksTime);
+	void undoKickSwitch(short switchId, SpriteDirection direction, Hint* fromHint, bool isUndo, int ticksTime);
 	//restore rails to the positions they were before kicking this reset switch, and queue a KickResetSwitchUndoState in the
 	//	other undo state stack
 	void undoKickResetSwitch(
 		short resetSwitchId,
 		SpriteDirection direction,
 		KickResetSwitchUndoState* kickResetSwitchUndoState,
-		HintState* fromHint,
+		Hint* fromHint,
 		bool isUndo,
 		int ticksTime);
 	//render this player state, which was deemed to be the last state to need rendering

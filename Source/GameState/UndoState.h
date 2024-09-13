@@ -10,7 +10,7 @@
 #define stackNewKickResetSwitchUndoState(stack, resetSwitchId, direction, fromHint) \
 	produceWithArgs(KickResetSwitchUndoState, stack, resetSwitchId, direction, fromHint)
 
-class HintState;
+class Hint;
 class PlayerState;
 enum class SpriteDirection: int;
 
@@ -77,7 +77,7 @@ private:
 	float fromX;
 	float fromY;
 	char fromHeight;
-	ReferenceCounterHolder<HintState> fromHint;
+	Hint* fromHint;
 
 public:
 	ClimbFallUndoState(objCounterParameters());
@@ -91,13 +91,9 @@ public:
 		float pFromX,
 		float pFromY,
 		char pFromHeight,
-		HintState* pFromHint);
+		Hint* pFromHint);
 	//release a reference to this ClimbFallUndoState and return it to the pool if applicable
 	virtual void release();
-protected:
-	//release the hint before this is returned to the pool
-	virtual void prepareReturnToPool();
-public:
 	//move the player to the stored position and height
 	virtual bool handle(PlayerState* playerState, bool isUndo, int ticksTime);
 };
@@ -107,7 +103,7 @@ public:
 
 private:
 	short railId;
-	ReferenceCounterHolder<HintState> fromHint;
+	Hint* fromHint;
 
 public:
 	RideRailUndoState(objCounterParameters());
@@ -116,13 +112,9 @@ public:
 	int getTypeIdentifier() { return classTypeIdentifier; }
 	//initialize and return a RideRailUndoState
 	static RideRailUndoState* produce(
-		objCounterParametersComma() ReferenceCounterHolder<UndoState>& stack, short pRailId, HintState* pFromHint);
+		objCounterParametersComma() ReferenceCounterHolder<UndoState>& stack, short pRailId, Hint* pFromHint);
 	//release a reference to this RideRailUndoState and return it to the pool if applicable
 	virtual void release();
-protected:
-	//release the hint before this is returned to the pool
-	virtual void prepareReturnToPool();
-public:
 	//send the player across a rail
 	virtual bool handle(PlayerState* playerState, bool isUndo, int ticksTime);
 };
@@ -133,7 +125,7 @@ public:
 private:
 	short switchId;
 	SpriteDirection direction;
-	ReferenceCounterHolder<HintState> fromHint;
+	Hint* fromHint;
 
 public:
 	KickSwitchUndoState(objCounterParameters());
@@ -146,13 +138,9 @@ public:
 		ReferenceCounterHolder<UndoState>& stack,
 		short pSwitchId,
 		SpriteDirection pDirection,
-		HintState* pFromHint);
+		Hint* pFromHint);
 	//release a reference to this KickSwitchUndoState and return it to the pool if applicable
 	virtual void release();
-protected:
-	//release the hint before this is returned to the pool
-	virtual void prepareReturnToPool();
-public:
 	//kick the switch
 	virtual bool handle(PlayerState* playerState, bool isUndo, int ticksTime);
 };
@@ -175,7 +163,7 @@ private:
 	short resetSwitchId;
 	SpriteDirection direction;
 	vector<RailUndoState> railUndoStates;
-	ReferenceCounterHolder<HintState> fromHint;
+	Hint* fromHint;
 
 public:
 	KickResetSwitchUndoState(objCounterParameters());
@@ -189,13 +177,9 @@ public:
 		ReferenceCounterHolder<UndoState>& stack,
 		short pResetSwitchId,
 		SpriteDirection pDirection,
-		HintState* pFromHint);
+		Hint* pFromHint);
 	//release a reference to this KickResetSwitchUndoState and return it to the pool if applicable
 	virtual void release();
-protected:
-	//release the hint before this is returned to the pool
-	virtual void prepareReturnToPool();
-public:
 	//kick the switch
 	virtual bool handle(PlayerState* playerState, bool isUndo, int ticksTime);
 };
