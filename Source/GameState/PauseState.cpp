@@ -342,8 +342,8 @@ PauseState* PauseState::produceBasePauseScreen() {
 	Audio::selectSound->play(0);
 	return newPauseState(nullptr, baseMenu, 0, nullptr, 0);
 }
-PauseState* PauseState::produceHomeScreen() {
-	return newPauseState(nullptr, homeMenu, 0, nullptr, 0);
+PauseState* PauseState::produceHomeScreen(bool selectNewGame) {
+	return newPauseState(nullptr, homeMenu, selectNewGame ? 1 : 0, nullptr, 0);
 }
 pooledReferenceCounterDefineRelease(PauseState)
 void PauseState::prepareReturnToPool() {

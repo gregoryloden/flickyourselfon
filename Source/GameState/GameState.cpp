@@ -512,7 +512,7 @@ void GameState::loadInitialState(int ticksTime) {
 		if (saveFile.empty())
 			PauseState::disableContinueOption();
 		pauseStartTicksTime = 0;
-		pauseState.set(PauseState::produceHomeScreen());
+		pauseState.set(PauseState::produceHomeScreen(saveFile.empty()));
 		playerState.get()->setHomeScreenState();
 	}
 }

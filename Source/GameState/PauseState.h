@@ -234,7 +234,7 @@ public:
 	//return a new pause state at the base menu
 	static PauseState* produceBasePauseScreen();
 	//return a new pause state at the home screen menu
-	static PauseState* produceHomeScreen();
+	static PauseState* produceHomeScreen(bool selectNewGame);
 	//release a reference to this PauseState and return it to the pool if applicable
 	virtual void release();
 protected:
