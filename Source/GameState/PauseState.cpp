@@ -428,6 +428,7 @@ void PauseState::loadMenus() {
 								})) COMMA
 						newNavigationOption("back", nullptr) COMMA
 					})) COMMA
+			buildLevelSelectMenuOption() COMMA
 			newNavigationOption(
 				"reset game",
 				newPauseMenu(
@@ -443,9 +444,15 @@ void PauseState::loadMenus() {
 		GameState::titleGameName,
 		{
 			newEndPauseOption("continue", (int)EndPauseDecision::Load) COMMA
+			buildLevelSelectMenuOption() COMMA
 			newEndPauseOption("new game", (int)EndPauseDecision::Reset) COMMA
-			newEndPauseOption("exit", (int)EndPauseDecision::Exit)
+			newEndPauseOption("exit", (int)EndPauseDecision::Exit) COMMA
 		});
+}
+PauseState::PauseOption* PauseState::buildLevelSelectMenuOption() {
+	vector<PauseOption*> options;
+	options.push_back(newNavigationOption("back", nullptr));
+	return newNavigationOption("level select", newPauseMenu("Level Select", options));
 }
 void PauseState::unloadMenus() {
 	delete baseMenu;

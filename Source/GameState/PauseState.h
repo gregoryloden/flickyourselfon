@@ -243,6 +243,10 @@ protected:
 public:
 	//build the base pause menus
 	static void loadMenus();
+private:
+	//build the level select menu and containing option
+	static PauseOption* buildLevelSelectMenuOption();
+public:
 	//delete the base menus
 	static void unloadMenus();
 	//disable the continue option if there is no save file to load
