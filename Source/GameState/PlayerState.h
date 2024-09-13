@@ -137,8 +137,6 @@ public:
 		float pX, float pY, SpriteAnimation* pAnimation, SpriteDirection pDirection, int particleStartTicksTime);
 	//generate a hint based on our current state, or use the given state if present
 	virtual void generateHint(Hint* useHint, int ticksTime);
-	//wait for the hint thread to finish, and clear it
-	void waitForHintThreadToFinish();
 	//return whether we have a kick action where we can show connections
 	bool showTutorialConnectionsForKickAction();
 	//if we have a kick action matching the given type, write its railSwitchId out and return true, otherwise return false
@@ -202,6 +200,8 @@ private:
 	void trySpawnGoalSparks(int ticksTime);
 	//collect the completed hint if applicable
 	void tryCollectCompletedHint(PlayerState* other);
+	//wait for the hint thread to finish, and clear it
+	void waitForHintThreadToFinish();
 public:
 	//returns true if the player has an UndoReset hint
 	bool shouldSuggestUndoReset();

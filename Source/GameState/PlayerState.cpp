@@ -203,14 +203,6 @@ void PlayerState::generateHint(Hint* useHint, int ticksTime) {
 		});
 	}
 }
-void PlayerState::waitForHintThreadToFinish() {
-	if (hintSearchThread == nullptr)
-		return;
-	hintSearchThread->join();
-	delete hintSearchThread;
-	hintSearchThread = nullptr;
-	hintSearchStorage = nullptr;
-}
 bool PlayerState::showTutorialConnectionsForKickAction() {
 	KickAction* kickAction = availableKickAction.get();
 	if (kickAction == nullptr)
@@ -889,14 +881,19 @@ void PlayerState::trySpawnGoalSparks(int ticksTime) {
 	Audio::victorySound->play(0);
 }
 void PlayerState::tryCollectCompletedHint(PlayerState* other) {
-	if (hintSearchThread == nullptr || hintSearchStorage == nullptr) {
+	if (hintSearchStorage == nullptr) {
 		hint = other->hint;
 		return;
 	}
+	hint = hintSearchStorage;
+	waitForHintThreadToFinish();
+}
+void PlayerState::waitForHintThreadToFinish() {
+	if (hintSearchThread == nullptr)
+		return;
 	hintSearchThread->join();
 	delete hintSearchThread;
 	hintSearchThread = nullptr;
-	hint = hintSearchStorage;
 	hintSearchStorage = nullptr;
 }
 bool PlayerState::shouldSuggestUndoReset() {
