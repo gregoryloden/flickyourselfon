@@ -362,56 +362,70 @@ void PauseState::loadMenus() {
 						newNavigationOption("cancel", nullptr) COMMA
 						newEndPauseOption("request hint", (int)EndPauseDecision::RequestHint) COMMA
 					})) COMMA
-			newControlsNavigationOption(
-				"player controls",
-				newPauseMenu(
-					"Player Controls",
-					{
-						newKeyBindingOption(&Config::upKeyBinding, "up") COMMA
-						newKeyBindingOption(&Config::rightKeyBinding, "right") COMMA
-						newKeyBindingOption(&Config::downKeyBinding, "down") COMMA
-						newKeyBindingOption(&Config::leftKeyBinding, "left") COMMA
-						newKeyBindingOption(&Config::kickKeyBinding, "kick/climb/fall") COMMA
-						newKeyBindingOption(&Config::sprintKeyBinding, "sprint") COMMA
-						newDefaultKeyBindingsOption() COMMA
-						newAcceptKeyBindingsOption() COMMA
-						newNavigationOption("back", nullptr) COMMA
-					})) COMMA
-			newControlsNavigationOption(
-				"map controls",
-				newPauseMenu(
-					"Map Controls",
-					{
-						newKeyBindingOption(&Config::undoKeyBinding, "undo") COMMA
-						newKeyBindingOption(&Config::redoKeyBinding, "redo") COMMA
-						newKeyBindingOption(&Config::showConnectionsKeyBinding, "show connections") COMMA
-						newKeyBindingOption(&Config::mapCameraKeyBinding, "map camera") COMMA
-						newDefaultKeyBindingsOption() COMMA
-						newAcceptKeyBindingsOption() COMMA
-						newNavigationOption("back", nullptr) COMMA
-					})) COMMA
 			newNavigationOption(
-				"game options",
+				"options",
 				newPauseMenu(
-					"Game Options",
+					"Options",
 					{
-						newMultiStateOption(&Config::climbKickIndicator, "climb indicator") COMMA
-						newMultiStateOption(&Config::fallKickIndicator, "fall indicator") COMMA
-						newMultiStateOption(&Config::railKickIndicator, "rail indicator") COMMA
-						newMultiStateOption(&Config::switchKickIndicator, "switch indicator") COMMA
-						newMultiStateOption(&Config::resetSwitchKickIndicator, "reset switch indicator") COMMA
-						newMultiStateOption(&Config::showConnectionsMode, "show-connections mode") COMMA
-						newMultiStateOption(&Config::heightBasedShading, "height-based shading") COMMA
-						newNavigationOption("back", nullptr) COMMA
-					})) COMMA
-			newNavigationOption(
-				"audio settings",
-				newPauseMenu(
-					"Audio Settings",
-					{
-						newVolumeSettingOption(&Config::masterVolume, "master") COMMA
-						newVolumeSettingOption(&Config::musicVolume, "music") COMMA
-						newVolumeSettingOption(&Config::soundsVolume, "sounds") COMMA
+						newControlsNavigationOption(
+							"player controls",
+							newPauseMenu(
+								"Player Controls",
+								{
+									newKeyBindingOption(&Config::upKeyBinding, "up") COMMA
+									newKeyBindingOption(&Config::rightKeyBinding, "right") COMMA
+									newKeyBindingOption(&Config::downKeyBinding, "down") COMMA
+									newKeyBindingOption(&Config::leftKeyBinding, "left") COMMA
+									newKeyBindingOption(&Config::kickKeyBinding, "kick/climb/fall") COMMA
+									newKeyBindingOption(&Config::sprintKeyBinding, "sprint") COMMA
+									newDefaultKeyBindingsOption() COMMA
+									newAcceptKeyBindingsOption() COMMA
+									newNavigationOption("back", nullptr) COMMA
+								})) COMMA
+						newControlsNavigationOption(
+							"map controls",
+							newPauseMenu(
+								"Map Controls",
+								{
+									newKeyBindingOption(&Config::undoKeyBinding, "undo") COMMA
+									newKeyBindingOption(&Config::redoKeyBinding, "redo") COMMA
+									newKeyBindingOption(&Config::showConnectionsKeyBinding, "show connections") COMMA
+									newKeyBindingOption(&Config::mapCameraKeyBinding, "map camera") COMMA
+									newDefaultKeyBindingsOption() COMMA
+									newAcceptKeyBindingsOption() COMMA
+									newNavigationOption("back", nullptr) COMMA
+								})) COMMA
+						newNavigationOption(
+							"kick indicators",
+							newPauseMenu(
+								"Kick Indicators",
+								{
+									newMultiStateOption(&Config::climbKickIndicator, "climb indicator") COMMA
+									newMultiStateOption(&Config::fallKickIndicator, "fall indicator") COMMA
+									newMultiStateOption(&Config::railKickIndicator, "rail indicator") COMMA
+									newMultiStateOption(&Config::switchKickIndicator, "switch indicator") COMMA
+									newMultiStateOption(&Config::resetSwitchKickIndicator, "reset switch indicator") COMMA
+									newNavigationOption("back", nullptr) COMMA
+								})) COMMA
+						newNavigationOption(
+							"accessibility",
+							newPauseMenu(
+								"Accessibility",
+								{
+									newMultiStateOption(&Config::showConnectionsMode, "show-connections mode") COMMA
+									newMultiStateOption(&Config::heightBasedShading, "height-based shading") COMMA
+									newNavigationOption("back", nullptr) COMMA
+								})) COMMA
+						newNavigationOption(
+							"audio settings",
+							newPauseMenu(
+								"Audio Settings",
+								{
+									newVolumeSettingOption(&Config::masterVolume, "master") COMMA
+									newVolumeSettingOption(&Config::musicVolume, "music") COMMA
+									newVolumeSettingOption(&Config::soundsVolume, "sounds") COMMA
+									newNavigationOption("back", nullptr) COMMA
+								})) COMMA
 						newNavigationOption("back", nullptr) COMMA
 					})) COMMA
 			newNavigationOption(
