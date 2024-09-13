@@ -332,14 +332,14 @@ void GameState::render(int ticksTime) {
 	Editor::EditingMutexLocker editingMutexLocker;
 	int gameTicksTime = (pauseState.get() != nullptr ? pauseStartTicksTime : ticksTime) - gameTimeOffsetTicksDuration;
 
+	//map and player rendering
 	bool showConnections = mapState.get()->getShowConnections(playerState.get()->showTutorialConnectionsForKickAction());
 	char playerZ = (char)(floorf(playerState.get()->getDynamicZ(gameTicksTime) + 0.5f));
 	mapState.get()->renderBelowPlayer(camera, playerState.get()->getWorldGroundY(gameTicksTime), playerZ, gameTicksTime);
 	playerState.get()->render(camera, gameTicksTime);
 	mapState.get()->renderAbovePlayer(camera, showConnections, gameTicksTime);
-	if (levelsUnlocked > 0 && !camera->hasAnimation())
-		playerState.get()->renderTutorials() || mapState.get()->renderTutorials(showConnections);
 
+	//kick-action-related rendering
 	short contextualGroupsRailSwitchId;
 	bool hasRailsToReset = false;
 	if (playerState.get()->hasRailSwitchKickAction(KickActionType::ResetSwitch, &contextualGroupsRailSwitchId))
@@ -348,6 +348,8 @@ void GameState::render(int ticksTime) {
 		mapState.get()->renderGroupsForRailsFromSwitch(camera, contextualGroupsRailSwitchId, gameTicksTime);
 	playerState.get()->renderKickAction(camera, hasRailsToReset, gameTicksTime);
 
+	if (levelsUnlocked > 0 && !camera->hasAnimation())
+		playerState.get()->renderTutorials() || mapState.get()->renderTutorials(showConnections);
 	if (camera == dynamicCameraAnchor.get())
 		dynamicCameraAnchor.get()->render(gameTicksTime);
 	if (textDisplayType != TextDisplayType::None)
