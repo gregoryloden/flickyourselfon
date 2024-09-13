@@ -149,6 +149,7 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 			case SDL_KEYDOWN:
 				if (gameEvent.key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
 					Audio::pauseAll();
+					Audio::selectSound->play(0);
 					pauseState.set(PauseState::produceBasePauseScreen());
 					pauseStartTicksTime = ticksTime;
 				} else if (gameEvent.key.keysym.scancode == Config::kickKeyBinding.value) {

@@ -339,7 +339,6 @@ PauseState* PauseState::produce(
 	return p;
 }
 PauseState* PauseState::produceBasePauseScreen() {
-	Audio::selectSound->play(0);
 	return newPauseState(nullptr, baseMenu, 0, nullptr, 0);
 }
 PauseState* PauseState::produceHomeScreen(bool selectNewGame) {
