@@ -1475,6 +1475,7 @@ bool PlayerState::undoMove(float fromX, float fromY, char fromHeight, Hint* from
 	return true;
 }
 void PlayerState::undoRideRail(short railId, Hint* fromHint, bool isUndo, int ticksTime) {
+	//reserve the first component for setting the ghost sprite, because we don't know where finalX and finalY are yet
 	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> ridingRailAnimationComponents ({ nullptr });
 	float finalX;
 	float finalY;
