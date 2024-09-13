@@ -1094,19 +1094,14 @@ void MapState::renderGroupsForRailsFromSwitch(EntityState* camera, short switchI
 	}
 	switch0->renderGroup(screenLeftWorldX, screenTopWorldY);
 }
-void MapState::renderTutorials(bool showConnections, bool shouldSuggestUndoReset) {
-	if (lastActivatedSwitchColor < 0)
-		return;
-	if (!finishedMapCameraTutorial)
-		renderControlsTutorial(mapCameraTutorialText, { Config::mapCameraKeyBinding.value });
-	else if (showConnections && !finishedConnectionsTutorial)
+bool MapState::renderTutorials(bool showConnections) {
+	if (showConnections && !finishedConnectionsTutorial)
 		renderControlsTutorial(showConnectionsTutorialText, { Config::showConnectionsKeyBinding.value });
-	else if (shouldSuggestUndoReset) {
-		glColor4f(1.0f, 1.0f, 1.0f, 0.75f);
-		float afterUndoX = renderControlsTutorial(undoTutorialText, { Config::undoKeyBinding.value });
-		Text::render(slashResetTutorialText, afterUndoX, tutorialBaselineY, 1.0f);
-		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-	}
+	else if (!finishedMapCameraTutorial && lastActivatedSwitchColor >= 0)
+		renderControlsTutorial(mapCameraTutorialText, { Config::mapCameraKeyBinding.value });
+	else
+		return false;
+	return true;
 }
 void MapState::renderGroupRect(char group, GLint leftX, GLint topY, GLint rightX, GLint bottomY) {
 	GLint midX = (leftX + rightX) / 2;

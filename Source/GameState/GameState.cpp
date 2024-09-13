@@ -337,10 +337,8 @@ void GameState::render(int ticksTime) {
 	mapState.get()->renderBelowPlayer(camera, playerState.get()->getWorldGroundY(gameTicksTime), playerZ, gameTicksTime);
 	playerState.get()->render(camera, gameTicksTime);
 	mapState.get()->renderAbovePlayer(camera, showConnections, gameTicksTime);
-	if (levelsUnlocked > 0 && !camera->hasAnimation()) {
-		if (!playerState.get()->renderTutorials())
-			mapState.get()->renderTutorials(showConnections, playerState.get()->shouldSuggestUndoReset());
-	}
+	if (levelsUnlocked > 0 && !camera->hasAnimation())
+		playerState.get()->renderTutorials() || mapState.get()->renderTutorials(showConnections);
 
 	short contextualGroupsRailSwitchId;
 	bool hasRailsToReset = false;

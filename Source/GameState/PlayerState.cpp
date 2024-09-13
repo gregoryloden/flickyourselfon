@@ -896,9 +896,6 @@ void PlayerState::waitForHintThreadToFinish() {
 	hintSearchThread = nullptr;
 	hintSearchStorage = nullptr;
 }
-bool PlayerState::shouldSuggestUndoReset() {
-	return hint->type == Hint::Type::UndoReset;
-}
 void PlayerState::beginKicking(int ticksTime) {
 	if (entityAnimation.get() != nullptr)
 		return;
@@ -1583,7 +1580,13 @@ bool PlayerState::renderTutorials() {
 				|| undoState.get()->getTypeIdentifier() == KickSwitchUndoState::classTypeIdentifier
 				|| undoState.get()->getTypeIdentifier() == KickResetSwitchUndoState::classTypeIdentifier))
 		MapState::renderControlsTutorial(undoRedoTutorialText, { Config::undoKeyBinding.value, Config::redoKeyBinding.value });
-	else
+	//not exactly a tutorial, but it goes where tutorials are rendered and replaces any other tutorial that would render
+	else if (hint->type == Hint::Type::UndoReset) {
+		glColor4f(1.0f, 1.0f, 1.0f, 0.75f);
+		float afterUndoX = MapState::renderControlsTutorial(undoTutorialText, { Config::undoKeyBinding.value });
+		Text::render(slashResetTutorialText, afterUndoX, MapState::tutorialBaselineY, 1.0f);
+		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+	} else
 		return false;
 	return true;
 }

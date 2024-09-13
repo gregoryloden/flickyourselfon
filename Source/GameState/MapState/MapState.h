@@ -147,10 +147,10 @@ private:
 	//tutorials and serialization
 	static constexpr char* showConnectionsTutorialText = "Show connections: ";
 	static constexpr char* mapCameraTutorialText = "Map camera: ";
-	static constexpr char* undoTutorialText = "Undo: ";
-	static constexpr char* slashResetTutorialText = " / Reset";
 	static constexpr float tutorialLeftX = 10.0f;
+public:
 	static constexpr float tutorialBaselineY = 20.0f;
+private:
 	static constexpr char* lastActivatedSwitchColorFilePrefix = "lastActivatedSwitchColor ";
 	static constexpr char* finishedConnectionsTutorialFileValue = "finishedConnectionsTutorial";
 	static constexpr char* finishedMapCameraTutorialFileValue = "finishedMapCameraTutorial";
@@ -327,7 +327,8 @@ public:
 	//render the groups for rails that have the group of this switch
 	void renderGroupsForRailsFromSwitch(EntityState* camera, short switchId, int ticksTime);
 	//render any applicable tutorials
-	void renderTutorials(bool showConnections, bool shouldSuggestUndoReset);
+	//returns whether a tutorial was rendered
+	bool renderTutorials(bool showConnections);
 	//draw a graphic to represent this rail/switch group
 	static void renderGroupRect(char group, GLint leftX, GLint topY, GLint rightX, GLint bottomY);
 	//render a controls tutorial message

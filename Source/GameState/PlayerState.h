@@ -52,6 +52,8 @@ private:
 	static constexpr char* moveTutorialText = "Move: ";
 	static constexpr char* kickTutorialText = "Kick: ";
 	static constexpr char* undoRedoTutorialText = "Undo/Redo: ";
+	static constexpr char* undoTutorialText = "Undo: ";
+	static constexpr char* slashResetTutorialText = " / Reset";
 	static constexpr char* redoTutorialText = "Redo: ";
 	static constexpr char* playerXFilePrefix = "playerX ";
 	static constexpr char* playerYFilePrefix = "playerY ";
@@ -203,8 +205,6 @@ private:
 	//wait for the hint thread to finish, and clear it
 	void waitForHintThreadToFinish();
 public:
-	//returns true if the player has an UndoReset hint
-	bool shouldSuggestUndoReset();
 	//if we don't have a kicking animation, start one
 	//this should be called after the player has been updated
 	void beginKicking(int ticksTime);
