@@ -6,8 +6,8 @@
 #include "Sprites/SpriteSheet.h"
 #include "Util/Config.h"
 
-#define newPauseState(parentState, pauseMenu, pauseOption, selectingKey, endPauseDecision) \
-	produceWithArgs(PauseState, parentState, pauseMenu, pauseOption, selectingKey, endPauseDecision)
+#define newPauseState(parentState, pauseMenu, pauseOption, selectingKeyBindingOption, endPauseDecision) \
+	produceWithArgs(PauseState, parentState, pauseMenu, pauseOption, selectingKeyBindingOption, endPauseDecision)
 #define newPauseMenu(title, options) newWithArgs(PauseState::PauseMenu, title, options)
 #define newLevelSelectMenu(title, options) newWithArgs(PauseState::LevelSelectMenu, title, options)
 #define newNavigationOption(displayText, subMenu) newWithArgs(PauseState::NavigationOption, displayText, subMenu)
@@ -544,8 +544,7 @@ PauseState* PauseState::handleKeyPress(SDL_Scancode keyScancode) {
 			return newPauseState(parentState.get(), pauseMenu, (pauseOption + 1) % optionsCount, nullptr, 0);
 		case SDL_SCANCODE_LEFT:
 		case SDL_SCANCODE_RIGHT:
-		case SDL_SCANCODE_RETURN:
-		{
+		case SDL_SCANCODE_RETURN: {
 			PauseOption* pauseOptionVal = pauseMenu->getOption(pauseOption);
 			if (!pauseOptionVal->enabled)
 				return this;
