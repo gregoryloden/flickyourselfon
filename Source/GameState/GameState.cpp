@@ -141,7 +141,7 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 				if (gameEvent.key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
 					Audio::pauseAll();
 					Audio::selectSound->play(0);
-					pauseState.set(PauseState::produceBasePauseScreen());
+					pauseState.set(PauseState::produceBasePauseScreen(levelsUnlocked));
 					pauseStartTicksTime = ticksTime;
 				} else if (gameEvent.key.keysym.scancode == Config::kickKeyBinding.value) {
 					if (playerHasKeyboardControl && !Editor::isActive)
@@ -513,7 +513,7 @@ void GameState::loadInitialState(int ticksTime) {
 	//continue regular setup
 	camera = playerState.get();
 	pauseStartTicksTime = 0;
-	pauseState.set(PauseState::produceHomeScreen(levelsUnlocked == 0));
+	pauseState.set(PauseState::produceHomeScreen(levelsUnlocked));
 	if (levelsUnlocked > 0) {
 		playerState.get()->setInitialZ();
 		playerState.get()->generateHint(nullptr, ticksTime);

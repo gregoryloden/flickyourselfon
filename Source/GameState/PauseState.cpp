@@ -9,6 +9,7 @@
 #define newPauseState(parentState, pauseMenu, pauseOption, selectingKey, endPauseDecision) \
 	produceWithArgs(PauseState, parentState, pauseMenu, pauseOption, selectingKey, endPauseDecision)
 #define newPauseMenu(title, options) newWithArgs(PauseState::PauseMenu, title, options)
+#define newLevelSelectMenu(title, options) newWithArgs(PauseState::LevelSelectMenu, title, options)
 #define newNavigationOption(displayText, subMenu) newWithArgs(PauseState::NavigationOption, displayText, subMenu)
 #define newControlsNavigationOption(displayText, subMenu) \
 	newWithArgs(PauseState::ControlsNavigationOption, displayText, subMenu)
@@ -118,6 +119,18 @@ void PauseState::PauseMenu::render(int selectedOption, KeyBindingOption* selecti
 
 		lastMetrics = &optionMetrics;
 	}
+}
+
+//////////////////////////////// PauseState::LevelSelectMenu ////////////////////////////////
+PauseState::LevelSelectMenu::LevelSelectMenu(objCounterParametersComma() string pTitle, vector<PauseOption*> pOptions)
+: PauseMenu(objCounterArgumentsComma() pTitle, pOptions) {
+}
+PauseState::LevelSelectMenu::~LevelSelectMenu() {
+}
+void PauseState::LevelSelectMenu::enableDisableLevelOptions(int levelsUnlocked) {
+	int levelCount = MapState::getLevelCount();
+	for (int i = 1; i <= levelCount; i++)
+		options[i - 1]->enabled = i <= levelsUnlocked;
 }
 
 //////////////////////////////// PauseState::PauseOption ////////////////////////////////
@@ -313,7 +326,9 @@ PauseState* PauseState::EndPauseOption::handle(PauseState* currentState) {
 
 //////////////////////////////// PauseState ////////////////////////////////
 PauseState::PauseMenu* PauseState::baseMenu = nullptr;
+PauseState::LevelSelectMenu* PauseState::baseLevelSelectMenu = nullptr;
 PauseState::PauseMenu* PauseState::homeMenu = nullptr;
+PauseState::LevelSelectMenu* PauseState::homeLevelSelectMenu = nullptr;
 PauseState::PauseState(objCounterParameters())
 : PooledReferenceCounter(objCounterArguments())
 , parentState(nullptr)
@@ -339,11 +354,13 @@ PauseState* PauseState::produce(
 	p->endPauseDecision = pEndPauseDecision;
 	return p;
 }
-PauseState* PauseState::produceBasePauseScreen() {
+PauseState* PauseState::produceBasePauseScreen(int levelsUnlocked) {
+	baseLevelSelectMenu->enableDisableLevelOptions(levelsUnlocked);
 	return newPauseState(nullptr, baseMenu, 0, nullptr, 0);
 }
-PauseState* PauseState::produceHomeScreen(bool selectNewGame) {
-	return newPauseState(nullptr, homeMenu, selectNewGame ? 2 : 0, nullptr, 0);
+PauseState* PauseState::produceHomeScreen(int levelsUnlocked) {
+	homeLevelSelectMenu->enableDisableLevelOptions(levelsUnlocked);
+	return newPauseState(nullptr, homeMenu, levelsUnlocked == 0 ? 2 : 0, nullptr, 0);
 }
 pooledReferenceCounterDefineRelease(PauseState)
 void PauseState::prepareReturnToPool() {
@@ -364,7 +381,7 @@ void PauseState::loadMenus() {
 						newEndPauseOption("request hint", (int)EndPauseDecision::RequestHint) COMMA
 					})) COMMA
 			buildOptionsMenuOption() COMMA
-			buildLevelSelectMenuOption() COMMA
+			buildLevelSelectMenuOption(&baseLevelSelectMenu) COMMA
 			newNavigationOption(
 				"reset game",
 				newPauseMenu(
@@ -380,7 +397,7 @@ void PauseState::loadMenus() {
 		GameState::titleGameName,
 		{
 			newEndPauseOption("continue", (int)EndPauseDecision::Load) COMMA
-			buildLevelSelectMenuOption() COMMA
+			buildLevelSelectMenuOption(&homeLevelSelectMenu) COMMA
 			newEndPauseOption("new game", (int)EndPauseDecision::Reset) COMMA
 			buildOptionsMenuOption() COMMA
 			newEndPauseOption("exit", (int)EndPauseDecision::Exit) COMMA
@@ -454,7 +471,8 @@ PauseState::PauseOption* PauseState::buildOptionsMenuOption() {
 				newNavigationOption("back", nullptr) COMMA
 			}));
 }
-PauseState::PauseOption* PauseState::buildLevelSelectMenuOption() {
+PauseState::PauseOption* PauseState::buildLevelSelectMenuOption(LevelSelectMenu** levelSelectMenu) {
+	int levelCount = MapState::getLevelCount();
 	vector<PauseOption*> options;
 	for (int i = 1; i <= levelCount; i++) {
 		stringstream s;
@@ -462,7 +480,7 @@ PauseState::PauseOption* PauseState::buildLevelSelectMenuOption() {
 		options.push_back(newNavigationOption(s.str(), nullptr));
 	}
 	options.push_back(newNavigationOption("back", nullptr));
-	return newNavigationOption("level select", newPauseMenu("Level Select", options));
+	return newNavigationOption("level select", *levelSelectMenu = newLevelSelectMenu("Level Select", options));
 }
 void PauseState::unloadMenus() {
 	delete baseMenu;
