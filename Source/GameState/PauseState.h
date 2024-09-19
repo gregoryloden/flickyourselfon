@@ -37,6 +37,7 @@ private:
 
 		string title;
 		Text::Metrics titleMetrics;
+	protected:
 		vector<PauseOption*> options;
 
 	public:
@@ -56,6 +57,14 @@ private:
 		void loadAffectedKeyBindingSettings(vector<ConfigTypes::KeyBindingSetting*>* affectedSettings);
 		//render this menu
 		void render(int selectedOption, KeyBindingOption* selectingKeyBindingOption);
+	};
+	class LevelSelectMenu: public PauseMenu {
+	public:
+		LevelSelectMenu(objCounterParametersComma() string pTitle, vector<PauseOption*> pOptions);
+		virtual ~LevelSelectMenu();
+
+		//enable or disable level select options depending on how many levels are unlocked
+		void enableDisableLevelOptions(int levelsUnlocked);
 	};
 	class PauseOption onlyInDebug(: public ObjCounter) {
 	private:
@@ -208,7 +217,9 @@ private:
 	};
 
 	static PauseMenu* baseMenu;
+	static LevelSelectMenu* baseLevelSelectMenu;
 	static PauseMenu* homeMenu;
+	static LevelSelectMenu* homeLevelSelectMenu;
 
 	ReferenceCounterHolder<PauseState> parentState;
 	PauseMenu* pauseMenu;
@@ -233,9 +244,9 @@ private:
 		int pEndPauseDecision);
 public:
 	//return a new pause state at the base menu
-	static PauseState* produceBasePauseScreen();
-	//return a new pause state at the home screen menu, selecting the "continue" option by default or "new game" if specified
-	static PauseState* produceHomeScreen(bool selectNewGame);
+	static PauseState* produceBasePauseScreen(int levelsUnlocked);
+	//return a new pause state at the home screen menu
+	static PauseState* produceHomeScreen(int levelsUnlocked);
 	//release a reference to this PauseState and return it to the pool if applicable
 	virtual void release();
 protected:
@@ -248,7 +259,7 @@ private:
 	//build the options menu and containing option
 	static PauseOption* buildOptionsMenuOption();
 	//build the level select menu and containing option
-	static PauseOption* buildLevelSelectMenuOption();
+	static PauseOption* buildLevelSelectMenuOption(LevelSelectMenu** levelSelectMenu);
 public:
 	//delete the base menus
 	static void unloadMenus();
@@ -264,6 +275,8 @@ private:
 	PauseState* handleMouseMotion(SDL_MouseMotionEvent motionEvent);
 	//handle the mouse click and return the resulting new pause state
 	PauseState* handleMouseClick(SDL_MouseButtonEvent clickEvent);
+	//return a new state with the new pause option selected, after alerting it (or its menu) that it was selected
+	PauseState* selectNewOption(int newPauseOption);
 public:
 	//if we were given a menu, return a pause state with that pause menu, otherwise go up a level
 	PauseState* navigateToMenu(PauseMenu* menu);
