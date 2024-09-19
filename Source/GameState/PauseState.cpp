@@ -501,8 +501,10 @@ PauseState* PauseState::handleKeyPress(SDL_Scancode keyScancode) {
 	int optionsCount = pauseMenu->getOptionsCount();
 	switch (keyScancode) {
 		case SDL_SCANCODE_ESCAPE:
-			if (pauseMenu == homeMenu)
-				return this;
+			for (PauseState* menuState = this; menuState != nullptr; menuState = menuState->parentState.get()) {
+				if (menuState->pauseMenu == homeMenu)
+					return this;
+			}
 			Audio::confirmSound->play(0);
 			return nullptr;
 		case SDL_SCANCODE_BACKSPACE:
