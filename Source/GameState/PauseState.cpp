@@ -537,11 +537,9 @@ PauseState* PauseState::handleKeyPress(SDL_Scancode keyScancode) {
 			Audio::confirmSound->play(0);
 			return navigateToMenu(nullptr);
 		case SDL_SCANCODE_UP:
-			Audio::selectSound->play(0);
-			return newPauseState(parentState.get(), pauseMenu, (pauseOption + optionsCount - 1) % optionsCount, nullptr, 0);
+			return selectNewOption((pauseOption + optionsCount - 1) % optionsCount);
 		case SDL_SCANCODE_DOWN:
-			Audio::selectSound->play(0);
-			return newPauseState(parentState.get(), pauseMenu, (pauseOption + 1) % optionsCount, nullptr, 0);
+			return selectNewOption((pauseOption + 1) % optionsCount);
 		case SDL_SCANCODE_LEFT:
 		case SDL_SCANCODE_RIGHT:
 		case SDL_SCANCODE_RETURN: {
@@ -568,10 +566,7 @@ PauseState* PauseState::handleMouseMotion(SDL_MouseMotionEvent motionEvent) {
 	if (selectingKeyBindingOption != nullptr)
 		return this;
 	int newPauseOption = pauseMenu->findHighlightedOption((int)motionEvent.x, (int)motionEvent.y);
-	if (newPauseOption < 0 || newPauseOption == pauseOption)
-		return this;
-	Audio::selectSound->play(0);
-	return newPauseState(parentState.get(), pauseMenu, newPauseOption, nullptr, 0);
+	return newPauseOption >= 0 && newPauseOption != pauseOption ? selectNewOption(newPauseOption) : this;
 }
 PauseState* PauseState::handleMouseClick(SDL_MouseButtonEvent clickEvent) {
 	//can't change selection while selecting a key binding
@@ -585,6 +580,10 @@ PauseState* PauseState::handleMouseClick(SDL_MouseButtonEvent clickEvent) {
 		return this;
 	Audio::confirmSound->play(0);
 	return pauseOptionVal->handle(this);
+}
+PauseState* PauseState::selectNewOption(int newPauseOption) {
+	Audio::selectSound->play(0);
+	return newPauseState(parentState.get(), pauseMenu, newPauseOption, nullptr, 0);
 }
 PauseState* PauseState::navigateToMenu(PauseMenu* menu) {
 	return menu != nullptr ? newPauseState(this, menu, 0, nullptr, 0) : parentState.get();
