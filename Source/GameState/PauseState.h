@@ -244,6 +244,8 @@ public:
 	//build the base pause menus
 	static void loadMenus();
 private:
+	//build the options menu and containing option
+	static PauseOption* buildOptionsMenuOption();
 	//build the level select menu and containing option
 	static PauseOption* buildLevelSelectMenuOption();
 public:
