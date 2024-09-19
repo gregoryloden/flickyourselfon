@@ -1,6 +1,7 @@
 #include "PauseState.h"
 #include "Audio/Audio.h"
 #include "GameState/GameState.h"
+#include "GameState/MapState/MapState.h"
 #include "GameState/KickAction.h"
 #include "Sprites/SpriteSheet.h"
 #include "Util/Config.h"
@@ -455,6 +456,11 @@ PauseState::PauseOption* PauseState::buildOptionsMenuOption() {
 }
 PauseState::PauseOption* PauseState::buildLevelSelectMenuOption() {
 	vector<PauseOption*> options;
+	for (int i = 1; i <= levelCount; i++) {
+		stringstream s;
+		s << "level " << i;
+		options.push_back(newNavigationOption(s.str(), nullptr));
+	}
 	options.push_back(newNavigationOption("back", nullptr));
 	return newNavigationOption("level select", newPauseMenu("Level Select", options));
 }

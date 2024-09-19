@@ -204,6 +204,7 @@ public:
 	static bool tileHasRail(int x, int y) { return (getRailSwitchId(x, y) & railSwitchIdBitmask) == railIdValue; }
 	static bool tileHasSwitch(int x, int y) { return (getRailSwitchId(x, y) & railSwitchIdBitmask) == switchIdValue; }
 	static bool tileHasResetSwitch(int x, int y) { return (getRailSwitchId(x, y) & railSwitchIdBitmask) == resetSwitchIdValue; }
+	static int getLevelCount() { return (int)levels.size(); }
 	RailState* getRailState(int x, int y) { return railStates[getRailSwitchId(x, y) & railSwitchIndexBitmask]; }
 	SwitchState* getSwitchState(int x, int y) { return switchStates[getRailSwitchId(x, y) & railSwitchIndexBitmask]; }
 	ResetSwitchState* getResetSwitchState(int x, int y) {
