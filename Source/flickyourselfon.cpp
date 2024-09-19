@@ -83,7 +83,6 @@ int gameMain(int argc, char* argv[]) {
 	Config::loadSettings();
 	Audio::applyVolume();
 	MapState::buildMap();
-	GameState::cacheSaveFile();
 
 	//create our state queue
 	//the render thread has to handle updating our initial state because states store the SpriteSheets they use, which requires

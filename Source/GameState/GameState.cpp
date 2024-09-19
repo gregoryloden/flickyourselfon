@@ -30,7 +30,6 @@
 	newEntityAnimationSetDirection(direction), \
 	newEntityAnimationDelay(delay)
 
-vector<string> GameState::saveFile;
 GameState::GameState(objCounterParameters())
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
 levelsUnlocked(0)
@@ -48,14 +47,6 @@ levelsUnlocked(0)
 }
 GameState::~GameState() {
 	//don't delete the camera, it's one of our other states
-}
-void GameState::cacheSaveFile() {
-	ifstream file;
-	FileUtils::openFileForRead(&file, savedGameFileName, FileUtils::FileReadLocation::ApplicationData);
-	string line;
-	while (getline(file, line))
-		saveFile.push_back(line);
-	file.close();
 }
 void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 	//first things first: dump all our previous state so that we can start fresh
@@ -91,7 +82,7 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 			}
 			if ((endPauseDecision & (int)PauseState::EndPauseDecision::Load) != 0) {
 				Logger::gameplayLogger.log("  load state");
-				loadCachedSavedState(ticksTime - gameTimeOffsetTicksDuration);
+				startMusic();
 			}
 			if ((endPauseDecision & (int)PauseState::EndPauseDecision::RequestHint) != 0 && !Editor::isActive)
 				mapState.get()->setHint(playerState.get()->getHint(), ticksTime - gameTimeOffsetTicksDuration);
@@ -328,6 +319,11 @@ AudioTypes::Music* GameState::getMusic(int lastActivatedSwitchColor) {
 	};
 	return musics[lastActivatedSwitchColor];
 }
+void GameState::startMusic() {
+	char lastActivatedSwitchColor = mapState.get()->getLastActivatedSwitchColor();
+	if (lastActivatedSwitchColor >= 0 && lastActivatedSwitchColor < 4)
+		getMusic(lastActivatedSwitchColor)->play(-1);
+}
 void GameState::render(int ticksTime) {
 	Editor::EditingMutexLocker editingMutexLocker;
 	int gameTicksTime = (pauseState.get() != nullptr ? pauseStartTicksTime : ticksTime) - gameTimeOffsetTicksDuration;
@@ -492,13 +488,16 @@ void GameState::loadInitialState(int ticksTime) {
 	#endif
 
 	//we have no replay, continue setup
-	camera = playerState.get();
-	//if we're in the editor, force-load the game and setup any remaining initial state
+	loadSaveFile();
+	playerState.get()->obtainBoot();
+
+	//special setup for the editor, skip the home screen and start in map mode
 	if (Editor::isActive) {
-		//always skip the intro animation for the editor, jump straight into walking
-		levelsUnlocked = 100;
-		loadCachedSavedState(ticksTime);
+		//put the player at the radio tower if we start the editor without a save file
+		if (levelsUnlocked == 0)
+			playerState.get()->setHomeScreenState();
 		playerState.get()->setHighestZ();
+		startMusic();
 		//enable show connections if necessary
 		if (!mapState.get()->getShowConnections(false)) {
 			//toggle twice to skip the hide-non-tiles setting
@@ -508,17 +507,26 @@ void GameState::loadInitialState(int ticksTime) {
 		//start map mode
 		camera = dynamicCameraAnchor.get();
 		camera->copyEntityState(playerState.get());
-	//otherwise, start the game at the home screen
+		return;
+	}
+
+	//continue regular setup
+	camera = playerState.get();
+	pauseStartTicksTime = 0;
+	pauseState.set(PauseState::produceHomeScreen(levelsUnlocked == 0));
+	if (levelsUnlocked > 0) {
+		playerState.get()->setInitialZ();
+		playerState.get()->generateHint(nullptr, ticksTime);
 	} else {
-		if (saveFile.empty())
-			PauseState::disableContinueOption();
-		pauseStartTicksTime = 0;
-		pauseState.set(PauseState::produceHomeScreen(saveFile.empty()));
 		playerState.get()->setHomeScreenState();
+		PauseState::disableContinueOptions();
 	}
 }
-void GameState::loadCachedSavedState(int ticksTime) {
-	for (string& line : saveFile) {
+void GameState::loadSaveFile() {
+	ifstream file;
+	FileUtils::openFileForRead(&file, savedGameFileName, FileUtils::FileReadLocation::ApplicationData);
+	string line;
+	while (getline(file, line)) {
 		if (StringUtils::startsWith(line, levelsUnlockedFilePrefix))
 			levelsUnlocked = atoi(line.c_str() + StringUtils::strlenConst(levelsUnlockedFilePrefix));
 		else if (StringUtils::startsWith(line, perpetualHintsFileValue))
@@ -526,16 +534,7 @@ void GameState::loadCachedSavedState(int ticksTime) {
 		else
 			playerState.get()->loadState(line) || mapState.get()->loadState(line);
 	}
-	if (levelsUnlocked > 0) {
-		playerState.get()->obtainBoot();
-		playerState.get()->setInitialZ();
-		playerState.get()->generateHint(nullptr, ticksTime);
-		if (mapState.get()->getLastActivatedSwitchColor() >= 0)
-			getMusic(mapState.get()->getLastActivatedSwitchColor())->play(-1);
-	} else {
-		playerState.get()->reset();
-		beginIntroAnimation(ticksTime);
-	}
+	file.close();
 }
 #ifdef DEBUG
 	bool GameState::loadReplay() {

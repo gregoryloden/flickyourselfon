@@ -86,8 +86,6 @@ private:
 	static constexpr char* levelsUnlockedFilePrefix = "levelsUnlocked ";
 	static constexpr char* perpetualHintsFileValue = "perpetualHints";
 
-	static vector<string> saveFile;
-
 	int levelsUnlocked;
 	bool perpetualHints;
 	TextDisplayType textDisplayType;
@@ -107,8 +105,6 @@ public:
 
 	//return whether updates and renders should stop
 	bool getShouldQuitGame() { return shouldQuitGame; }
-	//internally store the state of the save file
-	static void cacheSaveFile();
 	//update this GameState by reading from the previous state
 	void updateWithPreviousGameState(GameState* prev, int ticksTime);
 	//set our camera to our player
@@ -119,6 +115,8 @@ public:
 	void startRadioTowerAnimation(int ticksTime);
 	//get the music for the given switch color
 	AudioTypes::Music* getMusic(int lastActivatedSwitchColor);
+	//start the music as indicated by the map state
+	void startMusic();
 	//render this state, which was deemed to be the last state to need rendering
 	void render(int ticksTime);
 	//render the title animation at the given time
@@ -127,8 +125,8 @@ public:
 	void saveState();
 	//initialize our state at the home screen (or load the save state in the editor)
 	void loadInitialState(int ticksTime);
-	//load the cached saved state from the save file
-	void loadCachedSavedState(int ticksTime);
+	//load the state from the save file
+	void loadSaveFile();
 	#ifdef DEBUG
 		//load a replay and finish initialization if a replay is available, return whether it was
 		bool loadReplay();

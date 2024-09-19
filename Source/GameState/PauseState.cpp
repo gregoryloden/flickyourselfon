@@ -342,7 +342,7 @@ PauseState* PauseState::produceBasePauseScreen() {
 	return newPauseState(nullptr, baseMenu, 0, nullptr, 0);
 }
 PauseState* PauseState::produceHomeScreen(bool selectNewGame) {
-	return newPauseState(nullptr, homeMenu, selectNewGame ? 1 : 0, nullptr, 0);
+	return newPauseState(nullptr, homeMenu, selectNewGame ? 2 : 0, nullptr, 0);
 }
 pooledReferenceCounterDefineRelease(PauseState)
 void PauseState::prepareReturnToPool() {
@@ -462,8 +462,9 @@ void PauseState::unloadMenus() {
 	delete baseMenu;
 	delete homeMenu;
 }
-void PauseState::disableContinueOption() {
+void PauseState::disableContinueOptions() {
 	homeMenu->getOption(0)->enabled = false;
+	homeMenu->getOption(1)->enabled = false;
 }
 PauseState* PauseState::getNextPauseState() {
 	PauseState* nextPauseState = this;

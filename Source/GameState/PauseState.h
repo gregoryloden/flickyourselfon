@@ -23,7 +23,8 @@ public:
 		Reset = 1 << 1,
 		//exit the game, shut down the program
 		Exit = 1 << 2,
-		//apply the saved state that has already been read from disk
+		//load the game that has already been set by/at this pause state
+		//doesn't do anything specific besides playing music
 		Load = 1 << 3,
 		//show the current hint
 		RequestHint = 1 << 4,
@@ -233,7 +234,7 @@ private:
 public:
 	//return a new pause state at the base menu
 	static PauseState* produceBasePauseScreen();
-	//return a new pause state at the home screen menu
+	//return a new pause state at the home screen menu, selecting the "continue" option by default or "new game" if specified
 	static PauseState* produceHomeScreen(bool selectNewGame);
 	//release a reference to this PauseState and return it to the pool if applicable
 	virtual void release();
@@ -251,8 +252,8 @@ private:
 public:
 	//delete the base menus
 	static void unloadMenus();
-	//disable the continue option if there is no save file to load
-	static void disableContinueOption();
+	//disable the continue option and level select menu if there is no save data
+	static void disableContinueOptions();
 	//if any keys were pressed, return a new updated pause state, otherwise return this non-updated state
 	//if the game was closed, return whatever intermediate state we have specifying to quit the game
 	PauseState* getNextPauseState();
