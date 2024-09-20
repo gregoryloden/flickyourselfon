@@ -53,6 +53,8 @@ private:
 		void getTotalHeightAndMetrics(
 			KeyBindingOption* selectingKeyBindingOption, float* outTotalHeight, vector<Text::Metrics>* optionsMetrics);
 	public:
+		//handle selecting an option in this menu
+		void handleSelectOption(int pauseOption);
 		//find the option that the mouse is hovering over
 		int findHighlightedOption(int mouseX, int mouseY);
 		//load all key binding settings from this menu's options

@@ -45,6 +45,11 @@ void PauseState::PauseMenu::getTotalHeightAndMetrics(
 	}
 	*outTotalHeight = totalHeight - titleMetrics.topPadding - outOptionsMetrics->back().bottomPadding;
 }
+void PauseState::PauseMenu::handleSelectOption(int pauseOption) {
+	PauseOption* pauseOptionVal = options[pauseOption];
+	if (!pauseOptionVal->enabled || !pauseOptionVal->handleSelect())
+		handleSelect();
+}
 int PauseState::PauseMenu::findHighlightedOption(int mouseX, int mouseY) {
 	float screenX = mouseX / Config::currentPixelWidth;
 	float screenY = mouseY / Config::currentPixelHeight;
@@ -595,9 +600,7 @@ PauseState* PauseState::handleMouseClick(SDL_MouseButtonEvent clickEvent) {
 }
 PauseState* PauseState::selectNewOption(int newPauseOption) {
 	Audio::selectSound->play(0);
-	PauseOption* pauseOptionVal = pauseMenu->getOption(newPauseOption);
-	if (!pauseOptionVal->enabled || !pauseOptionVal->handleSelect())
-		pauseMenu->handleSelect();
+	pauseMenu->handleSelectOption(newPauseOption);
 	return newPauseState(parentState.get(), pauseMenu, newPauseOption, nullptr, 0);
 }
 PauseState* PauseState::navigateToMenu(PauseMenu* menu) {
