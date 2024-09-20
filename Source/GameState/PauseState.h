@@ -46,6 +46,8 @@ private:
 
 		int getOptionsCount() { return (int)options.size(); }
 		PauseOption* getOption(int optionIndex) { return options[optionIndex]; }
+		//handle selecting an option in this menu after the selected option did not handle being selected
+		virtual void handleSelect() {}
 	private:
 		//calculate the total height for this pause menu
 		void getTotalHeightAndMetrics(
@@ -65,6 +67,8 @@ private:
 
 		//enable or disable level select options depending on how many levels are unlocked
 		void enableDisableLevelOptions(int levelsUnlocked);
+		//restore the player to the position in the save file
+		virtual void handleSelect();
 	};
 	class PauseOption onlyInDebug(: public ObjCounter) {
 	private:
@@ -87,6 +91,9 @@ private:
 		//handle a side direction input, return the pause state to use as a result
 		//by default, return the given state, as most pause options do not handle side direction input
 		virtual PauseState* handleSide(PauseState* currentState, int direction) { return currentState; }
+		//handle navigating to this pause option in the menu
+		//returns whether this option handled being selected
+		virtual bool handleSelect() { return false; }
 		//render the PauseOption
 		virtual void render(float leftX, float baselineY);
 		//update the display text and its metrics
@@ -210,6 +217,8 @@ private:
 
 		//the player is already positioned properly, load the game at this level by resuming
 		virtual PauseState* handle(PauseState* currentState) { return nullptr; }
+		//select this level if unlocked
+		virtual bool handleSelect();
 	};
 	class EndPauseOption: public PauseOption {
 	private:

@@ -133,6 +133,8 @@ void PauseState::LevelSelectMenu::enableDisableLevelOptions(int levelsUnlocked) 
 	for (int i = 1; i <= levelCount; i++)
 		options[i - 1]->enabled = i <= levelsUnlocked;
 }
+void PauseState::LevelSelectMenu::handleSelect() {
+}
 
 //////////////////////////////// PauseState::PauseOption ////////////////////////////////
 PauseState::PauseOption::PauseOption(objCounterParametersComma() string pDisplayText)
@@ -320,6 +322,9 @@ PauseState::LevelSelectOption::LevelSelectOption(objCounterParametersComma() str
 : PauseOption(objCounterArgumentsComma() pDisplayText) {
 }
 PauseState::LevelSelectOption::~LevelSelectOption() {}
+bool PauseState::LevelSelectOption::handleSelect() {
+	return false;
+}
 
 //////////////////////////////// PauseState::EndPauseOption ////////////////////////////////
 PauseState::EndPauseOption::EndPauseOption(objCounterParametersComma() string pDisplayText, int pEndPauseDecision)
@@ -590,6 +595,9 @@ PauseState* PauseState::handleMouseClick(SDL_MouseButtonEvent clickEvent) {
 }
 PauseState* PauseState::selectNewOption(int newPauseOption) {
 	Audio::selectSound->play(0);
+	PauseOption* pauseOptionVal = pauseMenu->getOption(newPauseOption);
+	if (!pauseOptionVal->enabled || !pauseOptionVal->handleSelect())
+		pauseMenu->handleSelect();
 	return newPauseState(parentState.get(), pauseMenu, newPauseOption, nullptr, 0);
 }
 PauseState* PauseState::navigateToMenu(PauseMenu* menu) {
