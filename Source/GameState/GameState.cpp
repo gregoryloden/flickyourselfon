@@ -64,7 +64,6 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 	//don't update any state if we're paused
 	if (prev->pauseState.get() != nullptr) {
 		PauseState* nextPauseState = prev->pauseState.get()->getNextPauseState();
-		pauseState.set(nextPauseState);
 		gameTimeOffsetTicksDuration = prev->gameTimeOffsetTicksDuration + ticksTime - prev->pauseStartTicksTime;
 		pauseStartTicksTime = ticksTime;
 
@@ -96,10 +95,11 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 			if ((endPauseDecision & (int)PauseState::EndPauseDecision::Exit) != 0)
 				shouldQuitGame = true;
 			else if (endPauseDecision != 0)
-				pauseState.set(nullptr);
+				nextPauseState = nullptr;
 		}
-		if (pauseState.get() == nullptr)
+		if (nextPauseState == nullptr)
 			Audio::resumeAll();
+		pauseState.set(nextPauseState);
 		return;
 	}
 
