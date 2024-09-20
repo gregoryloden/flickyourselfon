@@ -18,6 +18,7 @@
 #define newAcceptKeyBindingsOption() newWithoutArgs(PauseState::AcceptKeyBindingsOption)
 #define newMultiStateOption(setting, displayPrefix) newWithArgs(PauseState::MultiStateOption, setting, displayPrefix)
 #define newVolumeSettingOption(setting, displayPrefix) newWithArgs(PauseState::VolumeSettingOption, setting, displayPrefix)
+#define newLevelSelectOption(displayText) newWithArgs(PauseState::LevelSelectOption, displayText)
 #define newEndPauseOption(displayText, endPauseDecision) newWithArgs(PauseState::EndPauseOption, displayText, endPauseDecision)
 
 //////////////////////////////// PauseState::PauseMenu ////////////////////////////////
@@ -314,6 +315,12 @@ PauseState* PauseState::VolumeSettingOption::handleSide(PauseState* currentState
 	return currentState;
 }
 
+//////////////////////////////// PauseState::LevelSelectOption ////////////////////////////////
+PauseState::LevelSelectOption::LevelSelectOption(objCounterParametersComma() string pDisplayText)
+: PauseOption(objCounterArgumentsComma() pDisplayText) {
+}
+PauseState::LevelSelectOption::~LevelSelectOption() {}
+
 //////////////////////////////// PauseState::EndPauseOption ////////////////////////////////
 PauseState::EndPauseOption::EndPauseOption(objCounterParametersComma() string pDisplayText, int pEndPauseDecision)
 : PauseOption(objCounterArgumentsComma() pDisplayText)
@@ -477,7 +484,7 @@ PauseState::PauseOption* PauseState::buildLevelSelectMenuOption(LevelSelectMenu*
 	for (int i = 1; i <= levelCount; i++) {
 		stringstream s;
 		s << "level " << i;
-		options.push_back(newNavigationOption(s.str(), nullptr));
+		options.push_back(newLevelSelectOption(s.str()));
 	}
 	options.push_back(newNavigationOption("back", nullptr));
 	return newNavigationOption("level select", *levelSelectMenu = newLevelSelectMenu("Level Select", options));

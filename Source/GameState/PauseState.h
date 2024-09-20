@@ -203,6 +203,14 @@ private:
 		//increase or decrease the volume
 		virtual PauseState* handleSide(PauseState* currentState, int direction);
 	};
+	class LevelSelectOption: public PauseOption {
+	public:
+		LevelSelectOption(objCounterParametersComma() string pDisplayText);
+		virtual ~LevelSelectOption();
+
+		//the player is already positioned properly, load the game at this level by resuming
+		virtual PauseState* handle(PauseState* currentState) { return nullptr; }
+	};
 	class EndPauseOption: public PauseOption {
 	private:
 		int endPauseDecision;
