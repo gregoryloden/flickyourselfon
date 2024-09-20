@@ -62,16 +62,24 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 	titleAnimationStartTicksTime = prev->titleAnimationStartTicksTime;
 
 	//don't update any state if we're paused
-	if (prev->pauseState.get() != nullptr) {
-		PauseState* nextPauseState = prev->pauseState.get()->getNextPauseState();
+	PauseState* lastPauseState = prev->pauseState.get();
+	if (lastPauseState != nullptr) {
+		PauseState* nextPauseState = lastPauseState->getNextPauseState();
 		gameTimeOffsetTicksDuration = prev->gameTimeOffsetTicksDuration + ticksTime - prev->pauseStartTicksTime;
 		pauseStartTicksTime = ticksTime;
+		int gameTicksTime = ticksTime - gameTimeOffsetTicksDuration;
 
 		//use the direct pointers from the previous state since they didn't change
 		mapState.set(prev->mapState.get());
-		playerState.set(prev->playerState.get());
 		dynamicCameraAnchor.set(prev->dynamicCameraAnchor.get());
-		camera = prev->camera;
+
+		//because of level select, the player can't be the same pointer and the camera might also not be 
+		playerState.set(newPlayerState(mapState.get()));
+		playerState.get()->copyPlayerState(prev->playerState.get());
+		prev->camera->setNextCamera(this, gameTicksTime);
+		int selectedLevelN = nextPauseState == nullptr ? 0 : nextPauseState->getSelectedLevelN();
+		if (selectedLevelN != lastPauseState->getSelectedLevelN())
+			playerState.get()->setLevelSelectState(selectedLevelN);
 
 		if (nextPauseState != nullptr) {
 			int endPauseDecision = nextPauseState->getEndPauseDecision();
@@ -84,7 +92,9 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 				startMusic();
 			}
 			if ((endPauseDecision & (int)PauseState::EndPauseDecision::RequestHint) != 0 && !Editor::isActive)
-				mapState.get()->setHint(playerState.get()->getHint(), ticksTime - gameTimeOffsetTicksDuration);
+				mapState.get()->setHint(playerState.get()->getHint(), gameTicksTime);
+			if ((endPauseDecision & (int)PauseState::EndPauseDecision::SelectLevel) != 0)
+				playerState.get()->confirmSelectLevel(selectedLevelN, gameTicksTime);
 			//don't reset the game in editor mode
 			if ((endPauseDecision & (int)PauseState::EndPauseDecision::Reset) != 0 && !Editor::isActive) {
 				Logger::gameplayLogger.log("  reset game");
@@ -126,7 +136,14 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 		prev->camera->setNextCamera(this, gameTicksTime);
 
 	Hint* playerHint = playerState.get()->getHint();
-	levelsUnlocked = MathUtils::max(levelsUnlocked, playerHint->levelN);
+	if (playerHint->levelN > levelsUnlocked) {
+		//this is the end of the intro animation
+		if (levelsUnlocked == 0) {
+			MapState::setIntroAnimationBootTile(false);
+			playerState.get()->setInitialZ();
+		}
+		levelsUnlocked = playerHint->levelN;
+	}
 	if (perpetualHints)
 		mapState.get()->setHint(playerHint, gameTicksTime);
 
@@ -143,6 +160,7 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 					Audio::selectSound->play(0);
 					pauseState.set(PauseState::produceBasePauseScreen(levelsUnlocked));
 					pauseStartTicksTime = ticksTime;
+					playerState.get()->savePauseState();
 				} else if (gameEvent.key.keysym.scancode == Config::kickKeyBinding.value) {
 					if (playerHasKeyboardControl && !Editor::isActive)
 						playerState.get()->beginKicking(gameTicksTime);
@@ -199,13 +217,6 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 }
 void GameState::setPlayerCamera() {
 	camera = playerState.get();
-
-	//the intro animation happens to call this when it ends, so we'll do cleanup here
-	if (levelsUnlocked == 0) {
-		levelsUnlocked = 1;
-		MapState::setIntroAnimationBootTile(false);
-		playerState.get()->setInitialZ();
-	}
 }
 void GameState::setDynamicCamera() {
 	camera = dynamicCameraAnchor.get();
@@ -517,6 +528,7 @@ void GameState::loadInitialState(int ticksTime) {
 	if (levelsUnlocked > 0) {
 		playerState.get()->setInitialZ();
 		playerState.get()->generateHint(nullptr, ticksTime);
+		playerState.get()->savePauseState();
 	} else {
 		playerState.get()->setHomeScreenState();
 		PauseState::disableContinueOptions();

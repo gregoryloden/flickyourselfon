@@ -63,6 +63,10 @@ PlayerState::PlayerState(objCounterParameters())
 , undoState(nullptr)
 , redoState(nullptr)
 , hint(&Hint::none)
+, pauseX(nullptr)
+, pauseY(nullptr)
+, pauseSpriteDirection(SpriteDirection::Down)
+, pauseZ(0)
 , noClip(false) {
 }
 PlayerState::~PlayerState() {
@@ -112,6 +116,10 @@ void PlayerState::copyPlayerState(PlayerState* other) {
 	setUndoState(undoState, other->undoState.get());
 	setUndoState(redoState, other->redoState.get());
 	hint = other->hint;
+	pauseX.set(other->pauseX.get());
+	pauseY.set(other->pauseY.get());
+	pauseSpriteDirection = other->pauseSpriteDirection;
+	pauseZ = other->pauseZ;
 	noClip = other->noClip;
 }
 pooledReferenceCounterDefineRelease(PlayerState)
@@ -223,6 +231,32 @@ bool PlayerState::hasRailSwitchKickAction(KickActionType kickActionType, short* 
 		return true;
 	}
 	return false;
+}
+void PlayerState::savePauseState() {
+	pauseX.set(x.get());
+	pauseY.set(y.get());
+	pauseSpriteDirection = spriteDirection;
+	pauseZ = z;
+}
+void PlayerState::setLevelSelectState(int levelN) {
+	if (levelN > 0) {
+		int newMapX, newMapY;
+		MapState::getLevelStartPosition(levelN, &newMapX, &newMapY, &z);
+		setXAndUpdateCollisionRect(newConstantValue((float)(newMapX * MapState::tileSize + MapState::halfTileSize)));
+		setYAndUpdateCollisionRect(
+			newConstantValue(newMapY * MapState::tileSize + MapState::halfTileSize - boundingBoxCenterYOffset));
+		setDirection(SpriteDirection::Down);
+	} else {
+		setXAndUpdateCollisionRect(pauseX.get());
+		setYAndUpdateCollisionRect(pauseY.get());
+		setDirection(pauseSpriteDirection);
+		z = pauseZ;
+	}
+}
+void PlayerState::confirmSelectLevel(int levelN, int ticksTime) {
+	char ignoreZ;
+	MapState::getLevelStartPosition(levelN, &lastGoalX, &lastGoalY, &ignoreZ);
+	generateHint(nullptr, ticksTime);
 }
 void PlayerState::updateWithPreviousPlayerState(PlayerState* prev, bool hasKeyboardControl, int ticksTime) {
 	bool previousStateHadEntityAnimation = prev->entityAnimation.get() != nullptr;

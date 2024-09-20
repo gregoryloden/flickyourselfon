@@ -290,12 +290,13 @@ void MapState::addResetSwitchSegments(
 void MapState::buildLevels() {
 	//initialize the base levels state
 	planeIds = new short[mapWidth * mapHeight] {};
-	Level* activeLevel = newLevel(levels.size() + 1);
+	int introAnimationBootTile = introAnimationBootTileY * mapWidth + introAnimationBootTileX;
+	Level* activeLevel = newLevel(levels.size() + 1, introAnimationBootTile);
 	levels.push_back(activeLevel);
 	vector<PlaneConnection> planeConnections;
 
 	//the first tile we'll check is the tile where the boot starts
-	deque<int> tileChecks ({ introAnimationBootTileY * mapWidth + introAnimationBootTileX });
+	deque<int> tileChecks ({ introAnimationBootTile });
 	while (!tileChecks.empty()) {
 		int nextTile = tileChecks.front();
 		tileChecks.pop_front();
@@ -310,7 +311,7 @@ void MapState::buildLevels() {
 				tileChecks.push_back(nextTile);
 				continue;
 			}
-			levels.push_back(activeLevel = newLevel(levels.size() + 1));
+			levels.push_back(activeLevel = newLevel(levels.size() + 1, nextTile));
 		}
 		LevelTypes::Plane* newPlane = buildPlane(nextTile, activeLevel, tileChecks, planeConnections);
 		if (isVictoryTile)
@@ -635,6 +636,12 @@ char MapState::verticalTilesHeight(int mapX, int lowMapY, int highMapY) {
 void MapState::setIntroAnimationBootTile(bool showBootTile) {
 	//if we're not showing the boot tile, just show a default tile instead of showing the tile from the floor file
 	tiles[introAnimationBootTileY * mapWidth + introAnimationBootTileX] = showBootTile ? tileBoot : tileFloorFirst;
+}
+void MapState::getLevelStartPosition(int levelN, int* outMapX, int* outMapY, char* outZ) {
+	int startTile = levels[levelN - 1]->getStartTile();
+	*outMapX = startTile % mapWidth;
+	*outMapY = startTile / mapWidth;
+	*outZ = getHeight(*outMapX, *outMapY);
 }
 void MapState::updateWithPreviousMapState(MapState* prev, int ticksTime) {
 	lastActivatedSwitchColor = prev->lastActivatedSwitchColor;

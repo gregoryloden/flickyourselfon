@@ -1,6 +1,6 @@
 #include "GameState/HintState.h"
 
-#define newLevel(levelN) newWithArgs(Level, levelN)
+#define newLevel(levelN, startTile) newWithArgs(Level, levelN, startTile)
 #ifdef DEBUG
 	#define TRACK_HINT_SEARCH_STATS
 	#define LOG_FOUND_HINT_STEPS
@@ -133,6 +133,7 @@ public:
 
 private:
 	int levelN;
+	int startTile;
 	vector<LevelTypes::Plane*> planes;
 	vector<LevelTypes::RailByteMaskData> allRailByteMaskData;
 	int railByteMaskBitsTracked;
@@ -141,10 +142,11 @@ private:
 	Hint radioTowerHint;
 
 public:
-	Level(objCounterParametersComma() int pLevelN);
+	Level(objCounterParametersComma() int pLevelN, int pStartTile);
 	virtual ~Level();
 
 	int getLevelN() { return levelN; }
+	int getStartTile() { return startTile; }
 	void assignVictoryPlane(LevelTypes::Plane* pVictoryPlane) { victoryPlane = pVictoryPlane; }
 	void assignRadioTowerSwitch(Switch* radioTowerSwitch) { radioTowerHint.data.switch0 = radioTowerSwitch; }
 	LevelTypes::RailByteMaskData* getRailByteMaskData(int i) { return &allRailByteMaskData[i]; }

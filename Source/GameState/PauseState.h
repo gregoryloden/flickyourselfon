@@ -28,6 +28,8 @@ public:
 		Load = 1 << 3,
 		//show the current hint
 		RequestHint = 1 << 4,
+		//confirm selecting the current level
+		SelectLevel = 1 << 5,
 	};
 private:
 	class PauseMenu onlyInDebug(: public ObjCounter) {
@@ -46,15 +48,13 @@ private:
 
 		int getOptionsCount() { return (int)options.size(); }
 		PauseOption* getOption(int optionIndex) { return options[optionIndex]; }
-		//handle selecting an option in this menu after the selected option did not handle being selected
-		virtual void handleSelect() {}
 	private:
 		//calculate the total height for this pause menu
 		void getTotalHeightAndMetrics(
 			KeyBindingOption* selectingKeyBindingOption, float* outTotalHeight, vector<Text::Metrics>* optionsMetrics);
 	public:
 		//handle selecting an option in this menu
-		void handleSelectOption(int pauseOption);
+		void handleSelectOption(int pauseOption, int* outSelectedLevelN);
 		//find the option that the mouse is hovering over
 		int findHighlightedOption(int mouseX, int mouseY);
 		//load all key binding settings from this menu's options
@@ -69,8 +69,6 @@ private:
 
 		//enable or disable level select options depending on how many levels are unlocked
 		void enableDisableLevelOptions(int levelsUnlocked);
-		//restore the player to the position in the save file
-		virtual void handleSelect();
 	};
 	class PauseOption onlyInDebug(: public ObjCounter) {
 	private:
@@ -94,8 +92,7 @@ private:
 		//by default, return the given state, as most pause options do not handle side direction input
 		virtual PauseState* handleSide(PauseState* currentState, int direction) { return currentState; }
 		//handle navigating to this pause option in the menu
-		//returns whether this option handled being selected
-		virtual bool handleSelect() { return false; }
+		virtual void handleSelect(int* outSelectedLevelN) {}
 		//render the PauseOption
 		virtual void render(float leftX, float baselineY);
 		//update the display text and its metrics
@@ -213,14 +210,17 @@ private:
 		virtual PauseState* handleSide(PauseState* currentState, int direction);
 	};
 	class LevelSelectOption: public PauseOption {
+	private:
+		int levelN;
+
 	public:
-		LevelSelectOption(objCounterParametersComma() string pDisplayText);
+		LevelSelectOption(objCounterParametersComma() string pDisplayText, int pLevelN);
 		virtual ~LevelSelectOption();
 
-		//the player is already positioned properly, load the game at this level by resuming
-		virtual PauseState* handle(PauseState* currentState) { return nullptr; }
-		//select this level if unlocked
-		virtual bool handleSelect();
+		//the player is already positioned properly, resume the game and have the player do any level-select finalizing
+		virtual PauseState* handle(PauseState* currentState);
+		//select this level
+		virtual void handleSelect(int* outSelectedLevelN);
 	};
 	class EndPauseOption: public PauseOption {
 	private:
@@ -244,6 +244,7 @@ private:
 	PauseMenu* pauseMenu;
 	int pauseOption;
 	KeyBindingOption* selectingKeyBindingOption;
+	int selectedLevelN;
 	int endPauseDecision;
 
 public:
@@ -252,6 +253,8 @@ public:
 
 	//return a bit field of EndPauseDecision specifying whether we should save, quit
 	int getEndPauseDecision() { return endPauseDecision; }
+	//return the level number being selected, if applicable
+	int getSelectedLevelN() { return selectedLevelN; }
 private:
 	//initialize and return a PauseState
 	static PauseState* produce(
@@ -260,6 +263,7 @@ private:
 		PauseMenu* pPauseMenu,
 		int pPauseOption,
 		KeyBindingOption* pSelectingKeyBindingOption,
+		int pSelectedLevelN,
 		int pEndPauseDecision);
 public:
 	//return a new pause state at the base menu
@@ -284,6 +288,8 @@ public:
 	static void unloadMenus();
 	//disable the continue option and level select menu if there is no save data
 	static void disableContinueOptions();
+	//check if this pause state is at the home menu or one of the menus under it
+	bool isAtHomeMenu();
 	//if any keys were pressed, return a new updated pause state, otherwise return this non-updated state
 	//if the game was closed, return whatever intermediate state we have specifying to quit the game
 	PauseState* getNextPauseState();

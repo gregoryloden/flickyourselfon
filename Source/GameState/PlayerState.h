@@ -99,6 +99,10 @@ private:
 	ReferenceCounterHolder<UndoState> undoState;
 	ReferenceCounterHolder<UndoState> redoState;
 	Hint* hint;
+	ReferenceCounterHolder<DynamicValue> pauseX;
+	ReferenceCounterHolder<DynamicValue> pauseY;
+	SpriteDirection pauseSpriteDirection;
+	char pauseZ;
 	bool noClip;
 
 public:
@@ -143,6 +147,12 @@ public:
 	bool showTutorialConnectionsForKickAction();
 	//if we have a kick action matching the given type, write its railSwitchId out and return true, otherwise return false
 	bool hasRailSwitchKickAction(KickActionType kickActionType, short* outRailSwitchId);
+	//save the current state into the pause state
+	void savePauseState();
+	//move the player to the given level, or restore the state without a selected level
+	void setLevelSelectState(int levelN);
+	//do any last steps needed after selecting a level
+	void confirmSelectLevel(int levelN, int ticksTime);
 	//update this PlayerState by reading from the previous state
 	void updateWithPreviousPlayerState(PlayerState* prev, bool hasKeyboardControl, int ticksTime);
 private:

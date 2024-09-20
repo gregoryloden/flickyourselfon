@@ -290,6 +290,8 @@ public:
 	static char verticalTilesHeight(int mapX, int lowMapY, int highMapY);
 	//change one of the tiles to be the boot tile
 	static void setIntroAnimationBootTile(bool showBootTile);
+	//get the starting position of the given level (1-based)
+	static void getLevelStartPosition(int levelN, int* outMapX, int* outMapY, char* outZ);
 	//update the rails and switches of the MapState by reading from the previous state
 	void updateWithPreviousMapState(MapState* prev, int ticksTime);
 	//queue a particle

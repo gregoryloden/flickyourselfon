@@ -6,8 +6,9 @@
 #include "Sprites/SpriteSheet.h"
 #include "Util/Config.h"
 
-#define newPauseState(parentState, pauseMenu, pauseOption, selectingKeyBindingOption, endPauseDecision) \
-	produceWithArgs(PauseState, parentState, pauseMenu, pauseOption, selectingKeyBindingOption, endPauseDecision)
+#define newPauseState(parentState, pauseMenu, pauseOption, selectingKeyBindingOption, selectedLevelN, endPauseDecision) \
+	produceWithArgs(\
+		PauseState, parentState, pauseMenu, pauseOption, selectingKeyBindingOption, selectedLevelN, endPauseDecision)
 #define newPauseMenu(title, options) newWithArgs(PauseState::PauseMenu, title, options)
 #define newLevelSelectMenu(title, options) newWithArgs(PauseState::LevelSelectMenu, title, options)
 #define newNavigationOption(displayText, subMenu) newWithArgs(PauseState::NavigationOption, displayText, subMenu)
@@ -18,7 +19,7 @@
 #define newAcceptKeyBindingsOption() newWithoutArgs(PauseState::AcceptKeyBindingsOption)
 #define newMultiStateOption(setting, displayPrefix) newWithArgs(PauseState::MultiStateOption, setting, displayPrefix)
 #define newVolumeSettingOption(setting, displayPrefix) newWithArgs(PauseState::VolumeSettingOption, setting, displayPrefix)
-#define newLevelSelectOption(displayText) newWithArgs(PauseState::LevelSelectOption, displayText)
+#define newLevelSelectOption(displayText, levelN) newWithArgs(PauseState::LevelSelectOption, displayText, levelN)
 #define newEndPauseOption(displayText, endPauseDecision) newWithArgs(PauseState::EndPauseOption, displayText, endPauseDecision)
 
 //////////////////////////////// PauseState::PauseMenu ////////////////////////////////
@@ -45,10 +46,10 @@ void PauseState::PauseMenu::getTotalHeightAndMetrics(
 	}
 	*outTotalHeight = totalHeight - titleMetrics.topPadding - outOptionsMetrics->back().bottomPadding;
 }
-void PauseState::PauseMenu::handleSelectOption(int pauseOption) {
+void PauseState::PauseMenu::handleSelectOption(int pauseOption, int* outSelectedLevelN) {
 	PauseOption* pauseOptionVal = options[pauseOption];
-	if (!pauseOptionVal->enabled || !pauseOptionVal->handleSelect())
-		handleSelect();
+	if (pauseOptionVal->enabled)
+		pauseOptionVal->handleSelect(outSelectedLevelN);
 }
 int PauseState::PauseMenu::findHighlightedOption(int mouseX, int mouseY) {
 	float screenX = mouseX / Config::currentPixelWidth;
@@ -137,8 +138,6 @@ void PauseState::LevelSelectMenu::enableDisableLevelOptions(int levelsUnlocked) 
 	int levelCount = MapState::getLevelCount();
 	for (int i = 1; i <= levelCount; i++)
 		options[i - 1]->enabled = i <= levelsUnlocked;
-}
-void PauseState::LevelSelectMenu::handleSelect() {
 }
 
 //////////////////////////////// PauseState::PauseOption ////////////////////////////////
@@ -323,12 +322,17 @@ PauseState* PauseState::VolumeSettingOption::handleSide(PauseState* currentState
 }
 
 //////////////////////////////// PauseState::LevelSelectOption ////////////////////////////////
-PauseState::LevelSelectOption::LevelSelectOption(objCounterParametersComma() string pDisplayText)
-: PauseOption(objCounterArgumentsComma() pDisplayText) {
+PauseState::LevelSelectOption::LevelSelectOption(objCounterParametersComma() string pDisplayText, int pLevelN)
+: PauseOption(objCounterArgumentsComma() pDisplayText)
+, levelN(pLevelN) {
 }
 PauseState::LevelSelectOption::~LevelSelectOption() {}
-bool PauseState::LevelSelectOption::handleSelect() {
-	return false;
+PauseState* PauseState::LevelSelectOption::handle(PauseState* currentState) {
+	return currentState->produceEndPauseState(
+		(int)EndPauseDecision::SelectLevel | (currentState->isAtHomeMenu() ? (int)EndPauseDecision::Load : 0));
+}
+void PauseState::LevelSelectOption::handleSelect(int* outSelectedLevelN) {
+	*outSelectedLevelN = levelN;
 }
 
 //////////////////////////////// PauseState::EndPauseOption ////////////////////////////////
@@ -352,6 +356,7 @@ PauseState::PauseState(objCounterParameters())
 , pauseMenu(nullptr)
 , pauseOption(0)
 , selectingKeyBindingOption(nullptr)
+, selectedLevelN(0)
 , endPauseDecision(0) {
 }
 PauseState::~PauseState() {}
@@ -361,6 +366,7 @@ PauseState* PauseState::produce(
 	PauseMenu* pCurrentPauseMenu,
 	int pPauseOption,
 	KeyBindingOption* pSelectingKeyBindingOption,
+	int pSelectedLevelN,
 	int pEndPauseDecision)
 {
 	initializeWithNewFromPool(p, PauseState)
@@ -368,16 +374,17 @@ PauseState* PauseState::produce(
 	p->pauseMenu = pCurrentPauseMenu;
 	p->pauseOption = pPauseOption;
 	p->selectingKeyBindingOption = pSelectingKeyBindingOption;
+	p->selectedLevelN = pSelectedLevelN;
 	p->endPauseDecision = pEndPauseDecision;
 	return p;
 }
 PauseState* PauseState::produceBasePauseScreen(int levelsUnlocked) {
 	baseLevelSelectMenu->enableDisableLevelOptions(levelsUnlocked);
-	return newPauseState(nullptr, baseMenu, 0, nullptr, 0);
+	return newPauseState(nullptr, baseMenu, 0, nullptr, 0, 0);
 }
 PauseState* PauseState::produceHomeScreen(int levelsUnlocked) {
 	homeLevelSelectMenu->enableDisableLevelOptions(levelsUnlocked);
-	return newPauseState(nullptr, homeMenu, levelsUnlocked == 0 ? 2 : 0, nullptr, 0);
+	return newPauseState(nullptr, homeMenu, levelsUnlocked == 0 ? 2 : 0, nullptr, 0, 0);
 }
 pooledReferenceCounterDefineRelease(PauseState)
 void PauseState::prepareReturnToPool() {
@@ -491,10 +498,10 @@ PauseState::PauseOption* PauseState::buildOptionsMenuOption() {
 PauseState::PauseOption* PauseState::buildLevelSelectMenuOption(LevelSelectMenu** levelSelectMenu) {
 	int levelCount = MapState::getLevelCount();
 	vector<PauseOption*> options;
-	for (int i = 1; i <= levelCount; i++) {
+	for (int levelN = 1; levelN <= levelCount; levelN++) {
 		stringstream s;
-		s << "level " << i;
-		options.push_back(newLevelSelectOption(s.str()));
+		s << "level " << levelN;
+		options.push_back(newLevelSelectOption(s.str(), levelN));
 	}
 	options.push_back(newNavigationOption("back", nullptr));
 	return newNavigationOption("level select", *levelSelectMenu = newLevelSelectMenu("Level Select", options));
@@ -506,6 +513,13 @@ void PauseState::unloadMenus() {
 void PauseState::disableContinueOptions() {
 	homeMenu->getOption(0)->enabled = false;
 	homeMenu->getOption(1)->enabled = false;
+}
+bool PauseState::isAtHomeMenu() {
+	for (PauseState* menuState = this; menuState != nullptr; menuState = menuState->parentState.get()) {
+		if (menuState->pauseMenu == homeMenu)
+			return true;
+	}
+	return false;
 }
 PauseState* PauseState::getNextPauseState() {
 	PauseState* nextPauseState = this;
@@ -536,16 +550,14 @@ PauseState* PauseState::handleKeyPress(SDL_Scancode keyScancode) {
 		if (keyScancode != SDL_SCANCODE_ESCAPE)
 			selectingKeyBindingOption->setKeyBindingSettingEditingScancode(keyScancode);
 		Audio::confirmSound->play(0);
-		return newPauseState(parentState.get(), pauseMenu, pauseOption, nullptr, 0);
+		return newPauseState(parentState.get(), pauseMenu, pauseOption, nullptr, 0, 0);
 	}
 
 	int optionsCount = pauseMenu->getOptionsCount();
 	switch (keyScancode) {
 		case SDL_SCANCODE_ESCAPE:
-			for (PauseState* menuState = this; menuState != nullptr; menuState = menuState->parentState.get()) {
-				if (menuState->pauseMenu == homeMenu)
-					return this;
-			}
+			if (isAtHomeMenu())
+				return this;
 			Audio::confirmSound->play(0);
 			return nullptr;
 		case SDL_SCANCODE_BACKSPACE:
@@ -600,17 +612,24 @@ PauseState* PauseState::handleMouseClick(SDL_MouseButtonEvent clickEvent) {
 }
 PauseState* PauseState::selectNewOption(int newPauseOption) {
 	Audio::selectSound->play(0);
-	pauseMenu->handleSelectOption(newPauseOption);
-	return newPauseState(parentState.get(), pauseMenu, newPauseOption, nullptr, 0);
+	int newSelectedLevelN = 0;
+	pauseMenu->handleSelectOption(newPauseOption, &newSelectedLevelN);
+	return newPauseState(parentState.get(), pauseMenu, newPauseOption, nullptr, newSelectedLevelN, 0);
 }
 PauseState* PauseState::navigateToMenu(PauseMenu* menu) {
-	return menu != nullptr ? newPauseState(this, menu, 0, nullptr, 0) : parentState.get();
+	if (menu != nullptr) {
+		int newSelectedLevelN = 0;
+		menu->handleSelectOption(0, &newSelectedLevelN);
+		return newPauseState(this, menu, 0, nullptr, newSelectedLevelN, 0);
+	}
+	return parentState.get();
 }
 PauseState* PauseState::beginKeySelection(KeyBindingOption* pSelectingKeyBindingOption) {
-	return newPauseState(parentState.get(), pauseMenu, pauseOption, pSelectingKeyBindingOption, 0);
+	return newPauseState(parentState.get(), pauseMenu, pauseOption, pSelectingKeyBindingOption, 0, 0);
 }
 PauseState* PauseState::produceEndPauseState(int pEndPauseDecision) {
-	return newPauseState(parentState.get(), pauseMenu, pauseOption, selectingKeyBindingOption, pEndPauseDecision);
+	return newPauseState(
+		parentState.get(), pauseMenu, pauseOption, selectingKeyBindingOption, selectedLevelN, pEndPauseDecision);
 }
 void PauseState::render() {
 	pauseMenu->render(pauseOption, selectingKeyBindingOption);

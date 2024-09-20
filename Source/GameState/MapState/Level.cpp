@@ -254,9 +254,10 @@ Plane* Level::cachedHintSearchVictoryPlane = nullptr;
 	int Level::hintSearchComparisonsPerformed = 0;
 	int Level::foundHintSearchTotalSteps = 0;
 #endif
-Level::Level(objCounterParametersComma() int pLevelN)
+Level::Level(objCounterParametersComma() int pLevelN, int pStartTile)
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
 levelN(pLevelN)
+, startTile(pStartTile)
 , planes()
 , allRailByteMaskData()
 , railByteMaskBitsTracked(0)
