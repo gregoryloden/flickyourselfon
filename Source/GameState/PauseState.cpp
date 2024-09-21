@@ -36,7 +36,7 @@ PauseState::PauseMenu::~PauseMenu() {
 void PauseState::PauseMenu::getTotalHeightAndMetrics(
 	KeyBindingOption* selectingKeyBindingOption, float* outTotalHeight, vector<Text::Metrics>* outOptionsMetrics)
 {
-	float totalHeight = titleMetrics.getTotalHeight();
+	float totalHeight = titleMetrics.getTotalHeight() - titleMetrics.topPadding;
 	for (PauseOption* option : options) {
 		Text::Metrics optionMetrics = option == selectingKeyBindingOption
 			? selectingKeyBindingOption->getSelectingDisplayTextMetrics(true)
@@ -44,7 +44,7 @@ void PauseState::PauseMenu::getTotalHeightAndMetrics(
 		totalHeight += optionMetrics.getTotalHeight();
 		outOptionsMetrics->push_back(optionMetrics);
 	}
-	*outTotalHeight = totalHeight - titleMetrics.topPadding - outOptionsMetrics->back().bottomPadding;
+	*outTotalHeight = totalHeight - outOptionsMetrics->back().bottomPadding;
 }
 void PauseState::PauseMenu::handleSelectOption(int pauseOption, int* outSelectedLevelN) {
 	PauseOption* pauseOptionVal = options[pauseOption];
