@@ -239,10 +239,10 @@ void Text::render(const char* text, float leftX, float baselineY, float fontScal
 			glyphSpriteY,
 			glyphSpriteX + glyphWidth,
 			glyphSpriteY + glyphHeight,
-			(int)leftX,
-			(int)topY,
-			(int)(leftX + (float)glyphWidth * fontScale),
-			(int)(topY + (float)glyphHeight * fontScale));
+			(GLint)leftX,
+			(GLint)topY,
+			(GLint)(leftX + (float)glyphWidth * fontScale),
+			(GLint)(topY + (float)glyphHeight * fontScale));
 
 		leftX += (float)(glyphWidth + defaultInterCharacterSpacing) * fontScale;
 	}
