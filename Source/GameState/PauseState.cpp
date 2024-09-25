@@ -283,7 +283,7 @@ PauseState::MultiStateOption::MultiStateOption(
 	objCounterParametersComma() ConfigTypes::MultiStateSetting* pSetting, string pDisplayPrefix)
 : PauseOption(objCounterArgumentsComma() pDisplayPrefix + ": " + pSetting->getSelectedOption())
 , setting(pSetting)
-, displayPrefix(pDisplayPrefix) {
+, displayPrefix(pDisplayPrefix + ": ") {
 }
 PauseState::MultiStateOption::~MultiStateOption() {}
 PauseState* PauseState::MultiStateOption::handle(PauseState* currentState) {
@@ -291,7 +291,7 @@ PauseState* PauseState::MultiStateOption::handle(PauseState* currentState) {
 }
 PauseState* PauseState::MultiStateOption::handleSide(PauseState* currentState, int direction) {
 	setting->cycleState(direction);
-	updateDisplayText(displayPrefix + ": " + setting->getSelectedOption());
+	updateDisplayText(displayPrefix + setting->getSelectedOption());
 	Config::saveSettings();
 	return currentState;
 }
@@ -301,7 +301,7 @@ PauseState::VolumeSettingOption::VolumeSettingOption(
 	objCounterParametersComma() ConfigTypes::VolumeSetting* pSetting, string pDisplayPrefix)
 : PauseOption(objCounterArgumentsComma() pDisplayPrefix + ": " + getVolume(pSetting))
 , setting(pSetting)
-, displayPrefix(pDisplayPrefix) {
+, displayPrefix(pDisplayPrefix + ": ") {
 }
 PauseState::VolumeSettingOption::~VolumeSettingOption() {}
 string PauseState::VolumeSettingOption::getVolume(ConfigTypes::VolumeSetting* pSetting) {
@@ -315,7 +315,7 @@ string PauseState::VolumeSettingOption::getVolume(ConfigTypes::VolumeSetting* pS
 }
 PauseState* PauseState::VolumeSettingOption::handleSide(PauseState* currentState, int direction) {
 	setting->volume = MathUtils::min(ConfigTypes::VolumeSetting::maxVolume, MathUtils::max(0, setting->volume + direction));
-	updateDisplayText(displayPrefix + ": " + getVolume(setting));
+	updateDisplayText(displayPrefix + getVolume(setting));
 	Audio::applyVolume();
 	Config::saveSettings();
 	return currentState;
