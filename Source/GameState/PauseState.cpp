@@ -305,12 +305,13 @@ PauseState::VolumeSettingOption::VolumeSettingOption(
 }
 PauseState::VolumeSettingOption::~VolumeSettingOption() {}
 string PauseState::VolumeSettingOption::getVolume(ConfigTypes::VolumeSetting* pSetting) {
-	string result = "";
+	string result = "[";
 	int i = 0;
 	for (; i < pSetting->volume; i++)
 		result += '|';
 	for (; i < ConfigTypes::VolumeSetting::maxVolume; i++)
 		result += '.';
+	result += ']';
 	return result;
 }
 PauseState* PauseState::VolumeSettingOption::handleSide(PauseState* currentState, int direction) {
