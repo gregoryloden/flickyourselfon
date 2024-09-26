@@ -55,6 +55,10 @@ private:
 	char maxTileOffset;
 	char initialMovementDirection;
 	char movementMagnitude;
+	int renderLeftTileX;
+	int renderTopTileY;
+	int renderRightTileX;
+	int renderBottomTileY;
 public:
 	bool editorIsDeleted;
 
@@ -96,9 +100,13 @@ public:
 	void addGroup(char group);
 	//add a segment on this tile to the rail
 	void addSegment(int x, int y);
+	//go through all the segments and extend the render box to accomodate every tile it could render to
+	void assignRenderBox();
 	//the switch connected to this rail was kicked, move this rail accordingly
 	//returns whether a bounce occurred
 	bool triggerMovement(char movementDirection, char* inOutTileOffset);
+	//returns whether this rail can render on screen, given the (open-ended) tile coordinates that will be drawn
+	bool canRender(int screenLeftTileX, int screenTopTileY, int screenRightTileX, int screenBottomTileY);
 	//render the shadow below the rail
 	void renderShadow(int screenLeftWorldX, int screenTopWorldY);
 	//render groups where the rail would be at 0 offset

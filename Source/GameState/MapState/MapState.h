@@ -186,6 +186,7 @@ private:
 	int waveformStartTicksTime;
 	int waveformEndTicksTime;
 	ReferenceCounterHolder<HintState> hintState;
+	vector<RailState*> renderRailStates;
 
 public:
 	MapState(objCounterParameters());

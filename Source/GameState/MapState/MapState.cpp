@@ -75,7 +75,8 @@ MapState::MapState(objCounterParameters())
 , radioWavesColor(-1)
 , waveformStartTicksTime(0)
 , waveformEndTicksTime(0)
-, hintState(nullptr) {
+, hintState(nullptr)
+, renderRailStates() {
 	for (int i = 0; i < (int)rails.size(); i++)
 		railStates.push_back(newRailState(rails[i]));
 	for (Switch* switch0 : switches)
@@ -211,6 +212,7 @@ void MapState::buildMap() {
 				rail->addSegment(railIndex % mapWidth, railIndex / mapWidth);
 				rail->addGroup((char)(pixels[railIndex] >> floorRailGroupShiftedShift) & floorRailSwitchGroupPostShiftBitmask);
 			}
+			rail->assignRenderBox();
 		}
 	}
 
@@ -938,9 +940,15 @@ void MapState::renderBelowPlayer(EntityState* camera, float playerWorldGroundY, 
 	hintState.get()->render(screenLeftWorldX, screenTopWorldY, true, ticksTime);
 
 	//draw rail shadows, rails (that are below the player), and switches
-	for (RailState* railState : railStates)
-		railState->getRail()->renderShadow(screenLeftWorldX, screenTopWorldY);
+	renderRailStates.clear();
 	for (RailState* railState : railStates) {
+		Rail* rail = railState->getRail();
+		if (!rail->canRender(tileMinX, tileMinY, tileMaxX, tileMaxY))
+			continue;
+		rail->renderShadow(screenLeftWorldX, screenTopWorldY);
+		renderRailStates.push_back(railState);
+	}
+	for (RailState* railState : renderRailStates) {
 		//guarantee that the rail renders behind the player if it has an equal or lower height than the player
 		//this is mainly relevant for rail ends
 		float effectivePlayerWorldGroundY =
@@ -981,12 +989,12 @@ void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int 
 
 	int screenLeftWorldX = getScreenLeftWorldX(camera, ticksTime);
 	int screenTopWorldY = getScreenTopWorldY(camera, ticksTime);
-	for (RailState* railState : railStates)
+	for (RailState* railState : renderRailStates)
 		railState->renderAbovePlayer(screenLeftWorldX, screenTopWorldY);
 
 	if (showConnections) {
 		//show movement directions and groups above the player for all rails
-		for (RailState* railState : railStates) {
+		for (RailState* railState : renderRailStates) {
 			Rail* rail = railState->getRail();
 			if (rail->getGroups().size() == 0)
 				continue;
@@ -1066,7 +1074,7 @@ bool MapState::renderGroupsForRailsToReset(EntityState* camera, short resetSwitc
 	ResetSwitch* resetSwitch = resetSwitches[resetSwitchId & railSwitchIndexBitmask];
 	bool hasRailsToReset = false;
 	for (short railId : *resetSwitch->getAffectedRailIds()) {
-		RailState* railState = railStates[railId & railSwitchIndexBitmask];
+		RailState* railState = renderRailStates[railId & railSwitchIndexBitmask];
 		if (railState->isInDefaultState())
 			continue;
 		railState->renderMovementDirections(screenLeftWorldX, screenTopWorldY);
@@ -1087,7 +1095,7 @@ void MapState::renderGroupsForRailsFromSwitch(EntityState* camera, short switchI
 		return;
 	int screenLeftWorldX = getScreenLeftWorldX(camera, ticksTime);
 	int screenTopWorldY = getScreenTopWorldY(camera, ticksTime);
-	for (RailState* railState : railStates) {
+	for (RailState* railState : renderRailStates) {
 		Rail* rail = railState->getRail();
 		if (rail->getColor() != color)
 			continue;

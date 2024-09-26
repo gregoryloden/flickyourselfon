@@ -92,6 +92,10 @@ baseHeight(pBaseHeight)
 , maxTileOffset(pBaseHeight / 2)
 , initialMovementDirection(pInitialMovementDirection)
 , movementMagnitude(pMovementMagnitude)
+, renderLeftTileX(0)
+, renderTopTileY(0)
+, renderRightTileX(MapState::getMapWidth())
+, renderBottomTileY(MapState::getMapHeight())
 , editorIsDeleted(false) {
 	segments->push_back(Segment(x, y, 0));
 	if (pColor == MapState::sineColor)
@@ -216,6 +220,23 @@ void Rail::addSegment(int x, int y) {
 	} else
 		lastEnd->spriteHorizontalIndex = endSegmentSpriteHorizontalIndex(end->x - lastEnd->x, end->y - lastEnd->y);
 }
+void Rail::assignRenderBox() {
+	renderLeftTileX = MapState::getMapWidth();
+	renderTopTileY = MapState::getMapHeight();
+	renderRightTileX = 0;
+	renderBottomTileY = 0;
+	char renderMaxTileOffset = maxTileOffset;
+	for (Segment& segment : *segments) {
+		//extend the render box
+		renderLeftTileX = MathUtils::min(segment.x, renderLeftTileX);
+		renderTopTileY = MathUtils::min(segment.y, renderTopTileY);
+		renderRightTileX = MathUtils::max(segment.x + 1, renderRightTileX);
+		renderBottomTileY = MathUtils::max(segment.y + 1, renderBottomTileY);
+		if (segment.maxTileOffset != Segment::absentTileOffset)
+			renderMaxTileOffset = MathUtils::max(segment.maxTileOffset, renderMaxTileOffset);
+	}
+	renderBottomTileY += renderMaxTileOffset;
+}
 bool Rail::triggerMovement(char movementDirection, char* inOutTileOffset) {
 	switch (color) {
 		//square wave rail: swap the tile offset between 0 and the max tile offset
@@ -264,6 +285,12 @@ bool Rail::triggerMovement(char movementDirection, char* inOutTileOffset) {
 		default:
 			return false;
 	}
+}
+bool Rail::canRender(int screenLeftTileX, int screenTopTileY, int screenRightTileX, int screenBottomTileY) {
+	return renderLeftTileX < screenRightTileX
+		&& renderRightTileX > screenLeftTileX
+		&& renderTopTileY < screenBottomTileY
+		&& renderBottomTileY > screenTopTileY;
 }
 void Rail::renderShadow(int screenLeftWorldX, int screenTopWorldY) {
 	if (Editor::isActive && editorIsDeleted)
