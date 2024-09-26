@@ -56,7 +56,7 @@ private:
 		//handle selecting an option in this menu
 		void handleSelectOption(int pauseOption, int* outSelectedLevelN);
 		//find the option that the mouse is hovering over
-		int findHighlightedOption(int mouseX, int mouseY);
+		int findHighlightedOption(int mouseX, int mouseY, float* outOptionX);
 		//load all key binding settings from this menu's options
 		void loadAffectedKeyBindingSettings(vector<ConfigTypes::KeyBindingSetting*>* affectedSettings);
 		//render this menu
@@ -97,6 +97,8 @@ private:
 		virtual void render(float leftX, float baselineY);
 		//update the display text and its metrics
 		void updateDisplayText(const string& newDisplayText);
+		//handle this option being selected at the given x, return the pause state to use as a result
+		virtual PauseState* handleWithX(PauseState* currentState, float x);
 		//handle this option being selected, return the pause state to use as a result
 		virtual PauseState* handle(PauseState* currentState) = 0;
 	};
@@ -197,6 +199,9 @@ private:
 	private:
 		ConfigTypes::VolumeSetting* setting;
 		string displayPrefix;
+		float widthBeforeVolume;
+		float widthBeforeVolumeIncrements;
+		float volumeIncrementWidth;
 
 	public:
 		VolumeSettingOption(objCounterParametersComma() ConfigTypes::VolumeSetting* pSetting, string pDisplayPrefix);
@@ -206,8 +211,14 @@ private:
 		virtual PauseState* handle(PauseState* currentState) { return currentState; }
 		//get the string to represent the volume
 		static string getVolume(ConfigTypes::VolumeSetting* pSetting);
+	private:
+		//apply the given volume to the setting
+		void applyVolume(int volume);
+	public:
 		//increase or decrease the volume
 		virtual PauseState* handleSide(PauseState* currentState, int direction);
+		//adjust the volume if the mouse is within the volume display area
+		virtual PauseState* handleWithX(PauseState* currentState, float x);
 	};
 	class LevelSelectOption: public PauseOption {
 	private:

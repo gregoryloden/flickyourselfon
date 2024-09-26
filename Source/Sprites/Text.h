@@ -77,6 +77,8 @@ private:
 public:
 	//Prevent allocation
 	Text() = delete;
+	//get the inter-character spacing at this font scale
+	static float getInterCharacterSpacing(float fontScale) { return fontScale * defaultInterCharacterSpacing; }
 	//load the font sprite sheet and find which glyphs we have
 	static void loadFont();
 	//delete the font sprite sheet

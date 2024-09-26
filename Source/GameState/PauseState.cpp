@@ -51,7 +51,7 @@ void PauseState::PauseMenu::handleSelectOption(int pauseOption, int* outSelected
 	if (pauseOptionVal->enabled)
 		pauseOptionVal->handleSelect(outSelectedLevelN);
 }
-int PauseState::PauseMenu::findHighlightedOption(int mouseX, int mouseY) {
+int PauseState::PauseMenu::findHighlightedOption(int mouseX, int mouseY, float* outOptionX) {
 	float screenX = mouseX / Config::currentPixelWidth;
 	float screenY = mouseY / Config::currentPixelHeight;
 	float totalHeight;
@@ -64,10 +64,13 @@ int PauseState::PauseMenu::findHighlightedOption(int mouseX, int mouseY) {
 		float optionBottom = optionTop + metrics.getTotalHeight();
 		float halfWidth = metrics.charactersWidth * 0.5f;
 		if (screenX >= optionMiddle - halfWidth
-				&& screenX <= optionMiddle + halfWidth
-				&& screenY >= optionTop
-				&& screenY <= optionBottom)
+			&& screenX <= optionMiddle + halfWidth
+			&& screenY >= optionTop
+			&& screenY <= optionBottom)
+		{
+			*outOptionX = screenX - optionMiddle + halfWidth;
 			return i;
+		}
 		optionTop = optionBottom;
 	}
 	return -1;
@@ -154,6 +157,9 @@ void PauseState::PauseOption::render(float leftX, float baselineY) {
 void PauseState::PauseOption::updateDisplayText(const string& newDisplayText) {
 	displayText = newDisplayText;
 	displayTextMetrics = Text::getMetrics(newDisplayText.c_str(), displayTextFontScale);
+}
+PauseState* PauseState::PauseOption::handleWithX(PauseState* currentState, float x) {
+	return handle(currentState);
 }
 
 //////////////////////////////// PauseState::NavigationOption ////////////////////////////////
@@ -301,7 +307,21 @@ PauseState::VolumeSettingOption::VolumeSettingOption(
 	objCounterParametersComma() ConfigTypes::VolumeSetting* pSetting, string pDisplayPrefix)
 : PauseOption(objCounterArgumentsComma() pDisplayPrefix + ": " + getVolume(pSetting))
 , setting(pSetting)
-, displayPrefix(pDisplayPrefix + ": ") {
+, displayPrefix(pDisplayPrefix + ": ")
+, widthBeforeVolume(
+	Text::getMetrics(displayPrefix.c_str(), displayTextFontScale).charactersWidth
+		+ Text::getInterCharacterSpacing(displayTextFontScale))
+, widthBeforeVolumeIncrements(
+	//position 0 volume to be halfway between the bracket and the left volume bar
+	widthBeforeVolume
+		+ Text::getMetrics("[", displayTextFontScale).charactersWidth
+		+ Text::getInterCharacterSpacing(displayTextFontScale) * 0.5f)
+, volumeIncrementWidth(
+	Text::getMetrics(".", displayTextFontScale).charactersWidth + Text::getInterCharacterSpacing(displayTextFontScale))
+{
+	//move the 0-volume line so that clicking the first bar sets the volume to 1
+	//only clicking at the left bracket will set the volume to 0
+	widthBeforeVolumeIncrements -= volumeIncrementWidth;
 }
 PauseState::VolumeSettingOption::~VolumeSettingOption() {}
 string PauseState::VolumeSettingOption::getVolume(ConfigTypes::VolumeSetting* pSetting) {
@@ -314,11 +334,19 @@ string PauseState::VolumeSettingOption::getVolume(ConfigTypes::VolumeSetting* pS
 	result += ']';
 	return result;
 }
-PauseState* PauseState::VolumeSettingOption::handleSide(PauseState* currentState, int direction) {
-	setting->volume = MathUtils::min(ConfigTypes::VolumeSetting::maxVolume, MathUtils::max(0, setting->volume + direction));
+void PauseState::VolumeSettingOption::applyVolume(int volume) {
+	setting->volume = MathUtils::min(ConfigTypes::VolumeSetting::maxVolume, MathUtils::max(0, volume));
 	updateDisplayText(displayPrefix + getVolume(setting));
 	Audio::applyVolume();
 	Config::saveSettings();
+}
+PauseState* PauseState::VolumeSettingOption::handleSide(PauseState* currentState, int direction) {
+	applyVolume(setting->volume + direction);
+	return currentState;
+}
+PauseState* PauseState::VolumeSettingOption::handleWithX(PauseState* currentState, float x) {
+	if (x > widthBeforeVolume)
+		applyVolume((int)((x - widthBeforeVolumeIncrements) / volumeIncrementWidth));
 	return currentState;
 }
 
@@ -595,21 +623,23 @@ PauseState* PauseState::handleMouseMotion(SDL_MouseMotionEvent motionEvent) {
 	//can't change selection while selecting a key binding
 	if (selectingKeyBindingOption != nullptr)
 		return this;
-	int newPauseOption = pauseMenu->findHighlightedOption((int)motionEvent.x, (int)motionEvent.y);
+	float ignoreX;
+	int newPauseOption = pauseMenu->findHighlightedOption((int)motionEvent.x, (int)motionEvent.y, &ignoreX);
 	return newPauseOption >= 0 && newPauseOption != pauseOption ? selectNewOption(newPauseOption) : this;
 }
 PauseState* PauseState::handleMouseClick(SDL_MouseButtonEvent clickEvent) {
 	//can't change selection while selecting a key binding
 	if (selectingKeyBindingOption != nullptr)
 		return this;
-	int clickPauseOption = pauseMenu->findHighlightedOption((int)clickEvent.x, (int)clickEvent.y);
+	float optionX;
+	int clickPauseOption = pauseMenu->findHighlightedOption((int)clickEvent.x, (int)clickEvent.y, &optionX);
 	if (clickPauseOption < 0)
 		return this;
 	PauseOption* pauseOptionVal = pauseMenu->getOption(clickPauseOption);
 	if (!pauseOptionVal->enabled)
 		return this;
 	Audio::confirmSound->play(0);
-	return pauseOptionVal->handle(this);
+	return pauseOptionVal->handleWithX(this, optionX);
 }
 PauseState* PauseState::selectNewOption(int newPauseOption) {
 	Audio::selectSound->play(0);
