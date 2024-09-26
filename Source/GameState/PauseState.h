@@ -98,7 +98,7 @@ private:
 		//update the display text and its metrics
 		void updateDisplayText(const string& newDisplayText);
 		//handle this option being selected at the given x, return the pause state to use as a result
-		virtual PauseState* handleWithX(PauseState* currentState, float x);
+		virtual PauseState* handleWithX(PauseState* currentState, float x, bool isDrag);
 		//handle this option being selected, return the pause state to use as a result
 		virtual PauseState* handle(PauseState* currentState) = 0;
 	};
@@ -218,7 +218,7 @@ private:
 		//increase or decrease the volume
 		virtual PauseState* handleSide(PauseState* currentState, int direction);
 		//adjust the volume if the mouse is within the volume display area
-		virtual PauseState* handleWithX(PauseState* currentState, float x);
+		virtual PauseState* handleWithX(PauseState* currentState, float x, bool isDrag);
 	};
 	class LevelSelectOption: public PauseOption {
 	private:

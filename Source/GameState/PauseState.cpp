@@ -158,8 +158,8 @@ void PauseState::PauseOption::updateDisplayText(const string& newDisplayText) {
 	displayText = newDisplayText;
 	displayTextMetrics = Text::getMetrics(newDisplayText.c_str(), displayTextFontScale);
 }
-PauseState* PauseState::PauseOption::handleWithX(PauseState* currentState, float x) {
-	return handle(currentState);
+PauseState* PauseState::PauseOption::handleWithX(PauseState* currentState, float x, bool isDrag) {
+	return isDrag ? currentState : handle(currentState);
 }
 
 //////////////////////////////// PauseState::NavigationOption ////////////////////////////////
@@ -344,9 +344,13 @@ PauseState* PauseState::VolumeSettingOption::handleSide(PauseState* currentState
 	applyVolume(setting->volume + direction);
 	return currentState;
 }
-PauseState* PauseState::VolumeSettingOption::handleWithX(PauseState* currentState, float x) {
-	if (x > widthBeforeVolume)
+PauseState* PauseState::VolumeSettingOption::handleWithX(PauseState* currentState, float x, bool isDrag) {
+	if (x > widthBeforeVolume) {
+		int oldVolume = setting->volume;
 		applyVolume((int)((x - widthBeforeVolumeIncrements) / volumeIncrementWidth));
+		if (isDrag && oldVolume != setting->volume)
+			Audio::selectSound->play(0);
+	}
 	return currentState;
 }
 
@@ -623,9 +627,15 @@ PauseState* PauseState::handleMouseMotion(SDL_MouseMotionEvent motionEvent) {
 	//can't change selection while selecting a key binding
 	if (selectingKeyBindingOption != nullptr)
 		return this;
-	float ignoreX;
-	int newPauseOption = pauseMenu->findHighlightedOption((int)motionEvent.x, (int)motionEvent.y, &ignoreX);
-	return newPauseOption >= 0 && newPauseOption != pauseOption ? selectNewOption(newPauseOption) : this;
+	float optionX;
+	int newPauseOption = pauseMenu->findHighlightedOption((int)motionEvent.x, (int)motionEvent.y, &optionX);
+	if (newPauseOption < 0)
+		return this;
+	return motionEvent.state != 0
+		//a mouse button is down - handle movement if it's within the same pause option
+		? newPauseOption == pauseOption ? pauseMenu->getOption(newPauseOption)->handleWithX(this, optionX, true) : this
+		//no mouse button is down - select an option if it's different
+		: newPauseOption != pauseOption ? selectNewOption(newPauseOption) : this;
 }
 PauseState* PauseState::handleMouseClick(SDL_MouseButtonEvent clickEvent) {
 	//can't change selection while selecting a key binding
@@ -639,7 +649,7 @@ PauseState* PauseState::handleMouseClick(SDL_MouseButtonEvent clickEvent) {
 	if (!pauseOptionVal->enabled)
 		return this;
 	Audio::confirmSound->play(0);
-	return pauseOptionVal->handleWithX(this, optionX);
+	return pauseOptionVal->handleWithX(this, optionX, false);
 }
 PauseState* PauseState::selectNewOption(int newPauseOption) {
 	Audio::selectSound->play(0);
