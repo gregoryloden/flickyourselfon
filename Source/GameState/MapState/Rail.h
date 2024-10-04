@@ -141,6 +141,7 @@ private:
 	float tileOffset;
 	char targetTileOffset;
 	char currentMovementDirection;
+	float effectiveHeight;
 	int bouncesRemaining;
 	char nextMovementDirection;
 	float distancePerMovement;
@@ -158,6 +159,7 @@ public:
 		return targetTileOffset == rail->getInitialTileOffset() && nextMovementDirection == rail->getInitialMovementDirection();
 	}
 	bool canRide() { return tileOffset == 0.0f; }
+	static bool effectiveHeightsAreAscending(RailState* a, RailState* b) { return a->effectiveHeight < b->effectiveHeight; }
 	//check if we need to start/stop moving
 	void updateWithPreviousRailState(RailState* prev, int ticksTime);
 	//update the position of a sine wave rail

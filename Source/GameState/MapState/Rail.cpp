@@ -450,6 +450,7 @@ rail(pRail)
 , tileOffset((float)pRail->getInitialTileOffset())
 , targetTileOffset(pRail->getInitialTileOffset())
 , currentMovementDirection(pRail->getInitialMovementDirection())
+, effectiveHeight((float)(pRail->getBaseHeight() - 2 * pRail->getInitialTileOffset()))
 , bouncesRemaining(0)
 , nextMovementDirection(pRail->getInitialMovementDirection())
 , distancePerMovement(rail->getColor() == MapState::squareColor ? rail->getMaxTileOffset() : rail->getMovementMagnitude())
@@ -464,6 +465,7 @@ void RailState::updateWithPreviousRailState(RailState* prev, int ticksTime) {
 	lastUpdateTicksTime = ticksTime;
 	if (Editor::isActive) {
 		tileOffset = (float)rail->getInitialTileOffset();
+		effectiveHeight = rail->getBaseHeight() - 2 * tileOffset;
 		nextMovementDirection = rail->getInitialMovementDirection();
 		return;
 	}
@@ -483,6 +485,7 @@ void RailState::updateWithPreviousRailState(RailState* prev, int ticksTime) {
 			break;
 		case MapState::sineColor:
 			updateSineRailTileOffset(prev, ticksTime);
+			effectiveHeight = rail->getBaseHeight() - 2 * tileOffset;
 			return;
 		case MapState::triangleColor:
 		default:
@@ -496,8 +499,10 @@ void RailState::updateWithPreviousRailState(RailState* prev, int ticksTime) {
 			tileOffset = MathUtils::fmin(-tileOffset, targetTileOffset);
 		else if (tileOffset > rail->getMaxTileOffset())
 			tileOffset = MathUtils::fmax(rail->getMaxTileOffset() * 2 - tileOffset, targetTileOffset);
-		else
+		else {
+			effectiveHeight = rail->getBaseHeight() - 2 * tileOffset;
 			return;
+		}
 		currentMovementDirection = -currentMovementDirection;
 		bouncesRemaining -= (bouncesRemaining > 0 ? 1 : -1);
 	} else if (prev->tileOffset != targetTileOffset)
@@ -506,6 +511,7 @@ void RailState::updateWithPreviousRailState(RailState* prev, int ticksTime) {
 			: MathUtils::fmin(targetTileOffset, prev->tileOffset + tileOffsetDiff);
 	else
 		tileOffset = targetTileOffset;
+	effectiveHeight = rail->getBaseHeight() - 2 * tileOffset;
 }
 void RailState::updateSineRailTileOffset(RailState* prev, int ticksTime) {
 	//find the current "angle" for the rail
