@@ -453,7 +453,7 @@ rail(pRail)
 , effectiveHeight((float)(pRail->getBaseHeight() - 2 * pRail->getInitialTileOffset()))
 , bouncesRemaining(0)
 , nextMovementDirection(pRail->getInitialMovementDirection())
-, distancePerMovement(rail->getColor() == MapState::squareColor ? rail->getMaxTileOffset() : rail->getMovementMagnitude())
+, distancePerMovement(pRail->getColor() == MapState::squareColor ? pRail->getMaxTileOffset() : pRail->getMovementMagnitude())
 , segmentsAbovePlayer()
 , lastUpdateTicksTime(0) {
 }
