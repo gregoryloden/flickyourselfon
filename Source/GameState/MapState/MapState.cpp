@@ -1075,7 +1075,7 @@ bool MapState::renderGroupsForRailsToReset(EntityState* camera, short resetSwitc
 	ResetSwitch* resetSwitch = resetSwitches[resetSwitchId & railSwitchIndexBitmask];
 	bool hasRailsToReset = false;
 	for (short railId : *resetSwitch->getAffectedRailIds()) {
-		RailState* railState = renderRailStates[railId & railSwitchIndexBitmask];
+		RailState* railState = railStates[railId & railSwitchIndexBitmask];
 		if (railState->isInDefaultState())
 			continue;
 		railState->renderMovementDirections(screenLeftWorldX, screenTopWorldY);
