@@ -153,7 +153,7 @@ void AudioTypes::Music::load() {
 	for (char c = *nextNotes; c != 0; c = *nextNotes) {
 		if (c == '-') {
 			if (notes.size() == 0 || notes.back().frequency != 0)
-				notes.push_back(Music::Note(0, 1));
+				notes.push_back(Note(0, 1));
 			else
 				notes.back().beats++;
 		} else if (c == '_') {
@@ -176,14 +176,14 @@ void AudioTypes::Music::load() {
 				frequency = noteFrequencies[noteIndex * 3];
 			if (c != '4')
 				frequency *= pow(2.0f, c - '4');
-			notes.push_back(Music::Note(frequency, 1));
+			notes.push_back(Note(frequency, 1));
 		}
 		nextNotes++;
 	}
 
 	//calculate the duration of the track
 	int totalBeats = 0;
-	for (Music::Note& note : notes)
+	for (Note& note : notes)
 		totalBeats += note.beats;
 	float totalDuration = (float)totalBeats * 60 / bpm;
 
@@ -199,7 +199,7 @@ void AudioTypes::Music::load() {
 	//finally, go through all the notes and write their samples
 	int beatsProcessed = 0;
 	int samplesProcessed = 0;
-	for (Music::Note& note : notes) {
+	for (Note& note : notes) {
 		int sampleStart = samplesProcessed;
 		beatsProcessed += note.beats;
 		samplesProcessed = (int)((float)beatsProcessed * 60 / bpm * Audio::sampleRate);
