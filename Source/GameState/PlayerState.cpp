@@ -57,6 +57,7 @@ PlayerState::PlayerState(objCounterParameters())
 , worldGroundYOffset(0.0f)
 , finishedMoveTutorial(false)
 , finishedKickTutorial(false)
+, undoRedoTutorialUnlocked(false)
 , finishedUndoRedoTutorial(false)
 , lastGoalX(0)
 , lastGoalY(0)
@@ -110,6 +111,7 @@ void PlayerState::copyPlayerState(PlayerState* other) {
 	worldGroundYOffset = other->worldGroundYOffset;
 	finishedMoveTutorial = other->finishedMoveTutorial;
 	finishedKickTutorial = other->finishedKickTutorial;
+	undoRedoTutorialUnlocked = other->undoRedoTutorialUnlocked;
 	finishedUndoRedoTutorial = other->finishedUndoRedoTutorial;
 	lastGoalX = other->lastGoalX;
 	lastGoalY = other->lastGoalY;
@@ -277,6 +279,7 @@ void PlayerState::updateWithPreviousPlayerState(PlayerState* prev, bool hasKeybo
 	worldGroundYOffset = 0.0f;
 	finishedMoveTutorial = prev->finishedMoveTutorial;
 	finishedKickTutorial = prev->finishedKickTutorial;
+	undoRedoTutorialUnlocked = prev->undoRedoTutorialUnlocked;
 	finishedUndoRedoTutorial = prev->finishedUndoRedoTutorial;
 	lastGoalX = prev->lastGoalX;
 	lastGoalY = prev->lastGoalY;
@@ -1163,6 +1166,7 @@ void PlayerState::kickRail(short railId, float xPosition, float yPosition, int t
 		nullptr);
 	tryAddNoOpUndoState();
 	stackNewRideRailUndoState(undoState, railId, hint);
+	undoRedoTutorialUnlocked = true;
 	beginEntityAnimation(&ridingRailAnimationComponents, ticksTime);
 	//the player is visually moved up to simulate a half-height raise on the rail, but the world ground y needs to stay the same
 	worldGroundYOffset = MapState::halfTileSize + boundingBoxHeight / 2;
@@ -1373,6 +1377,7 @@ void PlayerState::kickSwitch(short switchId, int ticksTime) {
 	beginEntityAnimation(&kickAnimationComponents, ticksTime);
 	tryAddNoOpUndoState();
 	stackNewKickSwitchUndoState(undoState, switchId, spriteDirection, hint);
+	undoRedoTutorialUnlocked = true;
 }
 void PlayerState::addKickSwitchComponents(
 	short switchId,
@@ -1403,6 +1408,7 @@ void PlayerState::kickResetSwitch(short resetSwitchId, int ticksTime) {
 	tryAddNoOpUndoState();
 	mapState.get()->writeCurrentRailStates(
 		resetSwitchId, stackNewKickResetSwitchUndoState(undoState, resetSwitchId, spriteDirection, hint));
+	undoRedoTutorialUnlocked = true;
 }
 void PlayerState::addKickResetSwitchComponents(
 	short resetSwitchId,
@@ -1608,11 +1614,7 @@ bool PlayerState::renderTutorials() {
 		MapState::renderControlsTutorial(kickTutorialText, { Config::kickKeyBinding.value });
 	else if (!finishedUndoRedoTutorial && redoState.get() != nullptr)
 		MapState::renderControlsTutorial(redoTutorialText, { Config::redoKeyBinding.value });
-	else if (!finishedUndoRedoTutorial
-			&& undoState.get() != nullptr
-			&& (undoState.get()->getTypeIdentifier() == RideRailUndoState::classTypeIdentifier
-				|| undoState.get()->getTypeIdentifier() == KickSwitchUndoState::classTypeIdentifier
-				|| undoState.get()->getTypeIdentifier() == KickResetSwitchUndoState::classTypeIdentifier))
+	else if (!finishedUndoRedoTutorial && undoState.get() != nullptr && undoRedoTutorialUnlocked)
 		MapState::renderControlsTutorial(undoRedoTutorialText, { Config::undoKeyBinding.value, Config::redoKeyBinding.value });
 	//not exactly a tutorial, but it goes where tutorials are rendered and replaces any other tutorial that would render
 	else if (hint->type == Hint::Type::UndoReset) {
@@ -1684,6 +1686,7 @@ void PlayerState::reset() {
 	canImmediatelyAutoKick = false;
 	finishedMoveTutorial = false;
 	finishedKickTutorial = false;
+	undoRedoTutorialUnlocked = false;
 	finishedUndoRedoTutorial = false;
 	lastGoalX = 0;
 	lastGoalY = 0;

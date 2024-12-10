@@ -93,6 +93,7 @@ private:
 	float worldGroundYOffset;
 	bool finishedMoveTutorial;
 	bool finishedKickTutorial;
+	bool undoRedoTutorialUnlocked;
 	bool finishedUndoRedoTutorial;
 	int lastGoalX;
 	int lastGoalY;
