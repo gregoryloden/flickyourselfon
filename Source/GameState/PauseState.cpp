@@ -507,9 +507,9 @@ PauseState::PauseOption* PauseState::buildOptionsMenuOption() {
 							newNavigationOption("back", nullptr) COMMA
 						})) COMMA
 				newNavigationOption(
-					"accessibility",
+					"visibility",
 					newPauseMenu(
-						"Accessibility",
+						"Visibility",
 						{
 							newMultiStateOption(&Config::showConnectionsMode, "show-connections mode") COMMA
 							newMultiStateOption(&Config::heightBasedShading, "height-based shading") COMMA
