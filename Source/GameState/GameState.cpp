@@ -936,10 +936,15 @@ void GameState::resetGame(int ticksTime) {
 	perpetualHints = false;
 	gameTimeOffsetTicksDuration = 0;
 	pauseState.set(nullptr);
+	//discard old states before assigning new states and resetting them, that way we reuse states only if they aren't in use by
+	//a previous paused state
+	mapState.set(nullptr);
 	mapState.set(newMapState());
 	mapState.get()->resetMap();
+	playerState.set(nullptr);
 	playerState.set(newPlayerState(mapState.get()));
 	playerState.get()->reset();
+	dynamicCameraAnchor.set(nullptr);
 	dynamicCameraAnchor.set(newDynamicCameraAnchor());
 	finishedPauseTutorial = false;
 
