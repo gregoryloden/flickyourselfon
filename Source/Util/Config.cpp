@@ -79,6 +79,7 @@ OnOffSetting Config::resetSwitchKickIndicator ("resetSwitch ", Config::allMultiS
 HoldToggleSetting Config::showConnectionsMode ("showConnectionsMode ", Config::allMultiStateSettings);
 MultiStateSetting Config::heightBasedShading (
 	{ "normal", "off", "extra" }, "heightBasedShading ", Config::allMultiStateSettings);
+OnOffSetting Config::showActivatedSwitchWaves ("showActivatedSwitchWaves ", Config::allMultiStateSettings);
 vector<VolumeSetting*> Config::allVolumeSettings;
 VolumeSetting Config::masterVolume ("masterVolume ", Config::allVolumeSettings);
 VolumeSetting Config::musicVolume ("musicVolume ", Config::allVolumeSettings);

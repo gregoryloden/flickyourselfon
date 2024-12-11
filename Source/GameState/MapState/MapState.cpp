@@ -1069,13 +1069,15 @@ void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int 
 	}
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 
-	GLint wavesActivatedX =
-		(GLint)(Config::gameScreenWidth - wavesActivatedEdgeSpacing - SpriteRegistry::wavesActivated->getSpriteWidth());
-	int wavesActivatedYSpacing = SpriteRegistry::wavesActivated->getSpriteHeight() + 2;
-	for (int i = 0; i <= lastActivatedSwitchColor; i++) {
-		if (i < lastActivatedSwitchColor || ticksTime >= switchesAnimationFadeInStartTicksTime)
-			SpriteRegistry::wavesActivated->renderSpriteAtScreenPosition(
-				0, i, wavesActivatedX, wavesActivatedEdgeSpacing + i * wavesActivatedYSpacing);
+	if (Config::showActivatedSwitchWaves.isOn()) {
+		GLint wavesActivatedX =
+			(GLint)(Config::gameScreenWidth - wavesActivatedEdgeSpacing - SpriteRegistry::wavesActivated->getSpriteWidth());
+		int wavesActivatedYSpacing = SpriteRegistry::wavesActivated->getSpriteHeight() + 2;
+		for (int i = 0; i <= lastActivatedSwitchColor; i++) {
+			if (i < lastActivatedSwitchColor || ticksTime >= switchesAnimationFadeInStartTicksTime)
+				SpriteRegistry::wavesActivated->renderSpriteAtScreenPosition(
+					0, i, wavesActivatedX, wavesActivatedEdgeSpacing + i * wavesActivatedYSpacing);
+		}
 	}
 }
 bool MapState::renderGroupsForRailsToReset(EntityState* camera, short resetSwitchId, int ticksTime) {

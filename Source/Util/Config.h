@@ -102,6 +102,7 @@ public:
 	static ConfigTypes::OnOffSetting resetSwitchKickIndicator;
 	static ConfigTypes::HoldToggleSetting showConnectionsMode;
 	static ConfigTypes::MultiStateSetting heightBasedShading;
+	static ConfigTypes::OnOffSetting showActivatedSwitchWaves;
 	static vector<ConfigTypes::VolumeSetting*> allVolumeSettings;
 	static ConfigTypes::VolumeSetting masterVolume;
 	static ConfigTypes::VolumeSetting musicVolume;

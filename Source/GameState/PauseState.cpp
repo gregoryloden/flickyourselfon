@@ -513,6 +513,7 @@ PauseState::PauseOption* PauseState::buildOptionsMenuOption() {
 						{
 							newMultiStateOption(&Config::showConnectionsMode, "show-connections mode") COMMA
 							newMultiStateOption(&Config::heightBasedShading, "height-based shading") COMMA
+							newMultiStateOption(&Config::showActivatedSwitchWaves, "show activated switch waves") COMMA
 							newNavigationOption("back", nullptr) COMMA
 						})) COMMA
 				newNavigationOption(
