@@ -16,6 +16,7 @@ SpriteSheet* SpriteRegistry::resetSwitch = nullptr;
 SpriteSheet* SpriteRegistry::kickIndicator = nullptr;
 SpriteSheet* SpriteRegistry::sparks = nullptr;
 SpriteSheet* SpriteRegistry::borderArrows = nullptr;
+SpriteSheet* SpriteRegistry::wavesActivated = nullptr;
 SpriteAnimation* SpriteRegistry::playerWalkingAnimation = nullptr;
 SpriteAnimation* SpriteRegistry::playerLegLiftAnimation = nullptr;
 SpriteAnimation* SpriteRegistry::playerBootWalkingAnimation = nullptr;
@@ -47,6 +48,7 @@ void SpriteRegistry::loadAll() {
 	kickIndicator = newSpriteSheetWithImagePath(kickIndicatorFileName, 13, 1, true);
 	sparks = newSpriteSheetWithImagePath(sparksFileName, 6, 4, true);
 	borderArrows = newSpriteSheetWithImagePath(borderArrowsFileName, 3, 3, false);
+	wavesActivated = newSpriteSheetWithImagePath(wavesActivatedFileName, 1, 4, false);
 	playerWalkingAnimation = newSpriteAnimation(
 		player,
 		{
@@ -204,4 +206,5 @@ void SpriteRegistry::unloadAll() {
 	delete kickIndicator;
 	delete sparks;
 	delete borderArrows;
+	delete wavesActivated;
 }

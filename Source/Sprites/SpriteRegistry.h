@@ -25,6 +25,7 @@ public:
 	static constexpr char* kickIndicatorFileName = "kickindicator.png";
 	static constexpr char* sparksFileName = "sparks.png";
 	static constexpr char* borderArrowsFileName = "borderarrows.png";
+	static constexpr char* wavesActivatedFileName = "wavesactivated.png";
 
 	static SpriteSheet* player;
 	static SpriteSheet* tiles;
@@ -38,6 +39,7 @@ public:
 	static SpriteSheet* kickIndicator;
 	static SpriteSheet* sparks;
 	static SpriteSheet* borderArrows;
+	static SpriteSheet* wavesActivated;
 	static SpriteAnimation* playerWalkingAnimation;
 	static SpriteAnimation* playerLegLiftAnimation;
 	static SpriteAnimation* playerBootWalkingAnimation;

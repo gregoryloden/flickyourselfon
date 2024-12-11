@@ -80,6 +80,7 @@ private:
 	static const int waveformStartEndBufferTicks = 500;
 	static constexpr float waveformAnimationPeriods = 2.5f;
 	static const int waveformRailSpacing = 1;
+	static const int wavesActivatedEdgeSpacing = 10;
 public:
 	static const int switchesFadeInDuration = 1000;
 	static const int switchFlipDuration = 600;
