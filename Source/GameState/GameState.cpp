@@ -106,8 +106,10 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 			}
 			if ((endPauseDecision & (int)PauseState::EndPauseDecision::Exit) != 0)
 				shouldQuitGame = true;
-			else if (endPauseDecision != 0)
+			else if (endPauseDecision != 0) {
+				ReferenceCounterHolder<PauseState> nextPauseStateHolder (nextPauseState);
 				nextPauseState = nullptr;
+			}
 		}
 		if (nextPauseState == nullptr)
 			Audio::resumeAll();
