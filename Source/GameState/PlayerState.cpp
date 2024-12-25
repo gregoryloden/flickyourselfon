@@ -725,7 +725,7 @@ bool PlayerState::setFallKickAction(float xPosition, float yPosition) {
 		int centerMapX = (int)xPosition / MapState::tileSize;
 		int oneTileDownMapY = (int)(yPosition + boundingBoxBottomOffset + kickingDistanceLimit) / MapState::tileSize;
 		int fallY;
-		if (!MapState::tileFalls(centerMapX, oneTileDownMapY, z, &fallY, &fallHeight))
+		if (MapState::tileFalls(centerMapX, oneTileDownMapY, z, &fallY, &fallHeight) != MapState::TileFallResult::Floor)
 			return false;
 		//we found a matching floor tile, move a distance such that the bottom of the player is slightly below the bottom of the
 		//	cliff
@@ -743,7 +743,7 @@ bool PlayerState::setFallKickAction(float xPosition, float yPosition) {
 			targetXPosition = (float)(sideTilesEdgeMapX * MapState::tileSize) - boundingBoxLeftOffset + smallDistance;
 		}
 		int fallY;
-		if (!MapState::tileFalls(sideTilesEdgeMapX, centerMapY, z, &fallY, &fallHeight))
+		if (MapState::tileFalls(sideTilesEdgeMapX, centerMapY, z, &fallY, &fallHeight) != MapState::TileFallResult::Floor)
 			return false;
 		targetYPosition = yPosition + (fallY - centerMapY) * MapState::tileSize;
 	}

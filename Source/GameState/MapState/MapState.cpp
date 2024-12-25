@@ -48,9 +48,11 @@ MapState::PlaneConnectionSwitch::~PlaneConnectionSwitch() {
 
 //////////////////////////////// MapState ////////////////////////////////
 char* MapState::tiles = nullptr;
+char* MapState::tileBorders = nullptr;
 char* MapState::heights = nullptr;
 short* MapState::railSwitchIds = nullptr;
 short* MapState::planeIds = nullptr;
+char* MapState::mapZeroes = nullptr;
 vector<Rail*> MapState::rails;
 vector<Switch*> MapState::switches;
 vector<ResetSwitch*> MapState::resetSwitches;
@@ -125,8 +127,10 @@ void MapState::buildMap() {
 	mapHeight = floor->h;
 	int totalTiles = mapWidth * mapHeight;
 	tiles = new char[totalTiles];
+	tileBorders = new char[totalTiles];
 	heights = new char[totalTiles];
 	railSwitchIds = new short[totalTiles];
+	mapZeroes = new char[totalTiles];
 
 	int redShift = (int)floor->format->Rshift;
 	int redMask = (int)floor->format->Rmask;
@@ -139,8 +143,10 @@ void MapState::buildMap() {
 	//set all tiles, heights, and IDs before loading rails/switches
 	for (int i = 0; i < totalTiles; i++) {
 		tiles[i] = (char)(((pixels[i] & greenMask) >> greenShift) / tileDivisor);
+		tileBorders[i] = 0;
 		heights[i] = (char)(((pixels[i] & blueMask) >> blueShift) / heightDivisor);
 		railSwitchIds[i] = absentRailSwitchId;
+		mapZeroes[i] = 0;
 	}
 
 	for (int i = 0; i < totalTiles; i++) {
@@ -214,6 +220,28 @@ void MapState::buildMap() {
 			}
 			rail->assignRenderBox();
 		}
+	}
+
+	for (int i = 0; i < totalTiles; i++) {
+		int height = heights[i];
+		if (height == emptySpaceHeight || height % 2 != 0)
+			continue;
+		int x = i % mapWidth;
+		int y = i / mapWidth;
+		int fallY;
+		char fallHeight;
+		//left is blocked
+		if (heights[i - 1] < height && tileFalls(x - 1, y, height, &fallY, &fallHeight) == TileFallResult::Blocked)
+			tileBorders[i] |= 1 << (int)SpriteDirection::Left;
+		//right is blocked
+		if (heights[i + 1] < height && tileFalls(x + 1, y, height, &fallY, &fallHeight) == TileFallResult::Blocked)
+			tileBorders[i] |= 1 << (int)SpriteDirection::Right;
+		//top is blocked
+		if (heights[i - mapWidth] % 2 == 1 && heights[i - mapWidth] < height)
+			tileBorders[i] |= 1 << (int)SpriteDirection::Up;
+		//bottom is blocked
+		if (heights[i + mapWidth] % 2 == 1 && tileFalls(x, y + 1, height, &fallY, &fallHeight) == TileFallResult::Blocked)
+			tileBorders[i] |= 1 << (int)SpriteDirection::Down;
 	}
 
 	SDL_FreeSurface(floor);
@@ -437,7 +465,7 @@ LevelTypes::Plane* MapState::buildPlane(
 				else if (neighbor != upNeighbor) {
 					int fallX = neighbor % mapWidth;
 					int fallY;
-					if (!tileFalls(fallX, neighbor / mapWidth, planeHeight, &fallY, nullptr))
+					if (tileFalls(fallX, neighbor / mapWidth, planeHeight, &fallY, nullptr) != TileFallResult::Floor)
 						continue;
 					neighbor = fallY * mapWidth + fallX;
 				} else if (neighborHeight % 2 != 0)
@@ -493,9 +521,11 @@ void MapState::addRailPlaneConnection(
 }
 void MapState::deleteMap() {
 	delete[] tiles;
+	delete[] tileBorders;
 	delete[] heights;
 	delete[] railSwitchIds;
 	delete[] planeIds;
+	delete[] mapZeroes;
 	for (Rail* rail : rails)
 		delete rail;
 	rails.clear();
@@ -571,29 +601,31 @@ bool MapState::tileHasRailEnd(int x, int y) {
 	Rail::Segment* endSegment = rail->getSegment(rail->getSegmentCount() - 1);
 	return endSegment->x == x && endSegment->y == y;
 }
-bool MapState::tileFalls(int x, int y, char initialHeight, int* outFallY, char* outFallHeight) {
+MapState::TileFallResult MapState::tileFalls(int x, int y, char initialHeight, int* outFallY, char* outFallHeight) {
+	TileFallResult blockedFallResult = TileFallResult::Blocked;
 	//start one tile down and look for an eligible floor below our current height
 	for (char tileOffset = 1; true; tileOffset++) {
 		char fallHeight = getHeight(x, y + tileOffset);
 		char targetHeight = initialHeight - tileOffset * 2;
 		//an empty tile height is fine...
-		if (fallHeight == MapState::emptySpaceHeight) {
+		if (fallHeight == emptySpaceHeight) {
 			//...unless we reached the lowest height, in which case there is no longer a possible fall height
 			if (targetHeight <= 0)
-				return false;
+				return TileFallResult::Empty;
+			blockedFallResult = TileFallResult::Empty;
 			continue;
-		//the tile is higher than us, we can't fall here
+			//the tile is higher than us, we can't fall here
 		} else if (fallHeight > targetHeight)
-			return false;
+			return blockedFallResult;
 		//this is a cliff face or lower floor, keep looking
-		else if (fallHeight < targetHeight)
+		else if (fallHeight % 2 == 1 || fallHeight < targetHeight)
 			continue;
 
 		//we found a matching floor tile
 		*outFallY = y + tileOffset;
 		if (outFallHeight != nullptr)
 			*outFallHeight = fallHeight;
-		return true;
+		return TileFallResult::Floor;
 	}
 }
 KickActionType MapState::getSwitchKickActionType(short switchId) {
@@ -855,6 +887,7 @@ void MapState::renderBelowPlayer(EntityState* camera, float playerWorldGroundY, 
 	int tileMinY = MathUtils::max(screenTopWorldY / tileSize, 0);
 	int tileMaxX = MathUtils::min((Config::gameScreenWidth + screenLeftWorldX - 1) / tileSize + 1, mapWidth);
 	int tileMaxY = MathUtils::min((Config::gameScreenHeight + screenTopWorldY - 1) / tileSize + 1, mapHeight);
+	char* useTileBorders = Config::showBlockedFallEdges.isOn() ? tileBorders : mapZeroes;
 	for (int y = tileMinY; y < tileMaxY; y++) {
 		for (int x = tileMinX; x < tileMaxX; x++) {
 			//consider any tile at the max height to be filler
@@ -864,7 +897,8 @@ void MapState::renderBelowPlayer(EntityState* camera, float playerWorldGroundY, 
 
 			GLint leftX = (GLint)(x * tileSize - screenLeftWorldX);
 			GLint topY = (GLint)(y * tileSize - screenTopWorldY);
-			SpriteRegistry::tiles->renderSpriteAtScreenPosition((int)(tiles[mapIndex]), 0, leftX, topY);
+			SpriteRegistry::tiles->renderSpriteAtScreenPosition(
+				(int)(tiles[mapIndex]), (int)(useTileBorders[mapIndex]), leftX, topY);
 		}
 	}
 

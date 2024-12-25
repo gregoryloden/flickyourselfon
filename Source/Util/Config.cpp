@@ -80,6 +80,7 @@ HoldToggleSetting Config::showConnectionsMode ("showConnectionsMode ", Config::a
 MultiStateSetting Config::heightBasedShading (
 	{ "normal", "off", "extra" }, "heightBasedShading ", Config::allMultiStateSettings);
 OnOffSetting Config::showActivatedSwitchWaves ("showActivatedSwitchWaves ", Config::allMultiStateSettings);
+OnOffSetting Config::showBlockedFallEdges ("showBlockedFallEdges ", Config::allMultiStateSettings);
 vector<VolumeSetting*> Config::allVolumeSettings;
 VolumeSetting Config::masterVolume ("masterVolume ", Config::allVolumeSettings);
 VolumeSetting Config::musicVolume ("musicVolume ", Config::allVolumeSettings);

@@ -26,6 +26,12 @@ namespace LevelTypes {
 }
 
 class MapState: public PooledReferenceCounter {
+public:
+	enum class TileFallResult: int {
+		Floor,
+		Empty,
+		Blocked,
+	};
 private:
 	//Should only be allocated within an object, on the stack, or as a static object
 	class PlaneConnection {
@@ -159,11 +165,13 @@ private:
 	static constexpr char* railOffsetFilePrefix = "rail ";
 
 	static char* tiles;
+	static char* tileBorders;
 	static char* heights;
 	//bits 0-11 indicate the index in the appropriate rail/switch array, bits 13 and 12 indicate a rail (01), a switch (10), or
 	//	a reset switch (11)
 	static short* railSwitchIds;
 	static short* planeIds;
+	static char* mapZeroes;
 	static vector<Rail*> rails;
 	static vector<Switch*> switches;
 	static vector<ResetSwitch*> resetSwitches;
@@ -281,7 +289,8 @@ public:
 	static bool tileHasRailEnd(int x, int y);
 	//check if there is a floor tile that is lower than the given height and corresponds to the world ground Y of the given tile
 	//	at the given height, and write it if there is one
-	static bool tileFalls(int x, int y, char initialHeight, int* outFallY, char* outFallHeight);
+	//if there isn't, return why it wasn't (either because there was an empty tile, or because the space was blocked by a hill
+	static TileFallResult tileFalls(int x, int y, char initialHeight, int* outFallY, char* outFallHeight);
 	//a switch can only be kicked if it's group 0 or if its color is activated
 	KickActionType getSwitchKickActionType(short switchId);
 	//check the height of all the tiles in the row (indices inclusive), and return it if they're all the same or invalidHeight

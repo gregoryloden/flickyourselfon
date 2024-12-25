@@ -36,7 +36,7 @@ SpriteAnimation* SpriteRegistry::sparksSlowAnimationA = nullptr;
 SpriteAnimation* SpriteRegistry::sparksSlowAnimationB = nullptr;
 void SpriteRegistry::loadAll() {
 	player = newSpriteSheetWithImagePath(playerFileName, 10, 4, false);
-	tiles = newSpriteSheetWithImagePath(tilesFileName, MapState::tileCount, 1, true);
+	loadTiles();
 	radioTower = newSpriteSheetWithImagePath(radioTowerFileName, 1, 1, false);
 	rails = newSpriteSheetWithImagePath(railsFileName, 22, 1, true);
 	switches = newSpriteSheetWithImagePath(switchesFileName, 9, 1, true);
@@ -175,6 +175,40 @@ void SpriteRegistry::loadAll() {
 			newSpriteAnimationFrame(5, SpriteAnimation::absentSpriteIndex, sparksSlowTicksPerFrame) COMMA
 		});
 	sparksSlowAnimationB->disableLooping();
+}
+void SpriteRegistry::loadTiles() {
+	SDL_Surface* tilesSurface = FileUtils::loadImage(tilesFileName);
+	SDL_Surface* tileBordersSurface = FileUtils::loadImage(tileBordersFileName);
+	SDL_Surface* combinedSurface = SDL_CreateRGBSurface(
+		tilesSurface->flags,
+		tilesSurface->w - 1,
+		(tilesSurface->h - 1) * 16,
+		tilesSurface->format->BitsPerPixel,
+		tilesSurface->format->Rmask,
+		tilesSurface->format->Gmask,
+		tilesSurface->format->Bmask,
+		tilesSurface->format->Amask);
+	SDL_Rect tilesRect = { 0, 0, tilesSurface->w - 1, tilesSurface->h - 1 };
+	SDL_Rect tilesDestRect = tilesRect;
+	SDL_Rect tileBordersRect = { 0, 0, MapState::tileSize, MapState::tileSize };
+	SDL_Rect tileBordersDestRect = tileBordersRect;
+	for (int i = 0; i < 16; i++) {
+		tilesDestRect.y = (tileBordersDestRect.y = MapState::tileSize * i);
+		SDL_BlitSurface(tilesSurface, &tilesRect, combinedSurface, &tilesDestRect);
+		for (int j = 0; j < MapState::tileCount; j++) {
+			tileBordersDestRect.x = j * MapState::tileSize;
+			for (int k = 0; k < 4; k++) {
+				if ((i & (1 << k)) != 0) {
+					tileBordersRect.x = k * MapState::tileSize;
+					SDL_BlitSurface(tileBordersSurface, &tileBordersRect, combinedSurface, &tileBordersDestRect);
+				}
+			}
+		}
+	}
+	tiles = newSpriteSheet(combinedSurface, MapState::tileCount, 16, false);
+	SDL_FreeSurface(tilesSurface);
+	SDL_FreeSurface(tileBordersSurface);
+	SDL_FreeSurface(combinedSurface);
 }
 void SpriteRegistry::unloadAll() {
 	delete playerWalkingAnimation;

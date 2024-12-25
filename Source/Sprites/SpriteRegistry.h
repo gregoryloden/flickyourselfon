@@ -15,6 +15,7 @@ public:
 	static const int sparksSlowTicksPerFrame = 100;
 	static constexpr char* playerFileName = "player.png";
 	static constexpr char* tilesFileName = "tiles.png";
+	static constexpr char* tileBordersFileName = "tileborders.png";
 	static constexpr char* radioTowerFileName = "radiotower.png";
 	static constexpr char* railsFileName = "rails.png";
 	static constexpr char* switchesFileName = "switches.png";
@@ -63,6 +64,10 @@ public:
 	//load all the sprite sheets
 	//this should only be called after the gl context has been created
 	static void loadAll();
+private:
+	//load the tiles sprite sheet, overlaying the border image onto it
+	static void loadTiles();
+public:
 	//delete all the sprite sheets
 	static void unloadAll();
 };

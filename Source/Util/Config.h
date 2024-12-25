@@ -103,6 +103,7 @@ public:
 	static ConfigTypes::HoldToggleSetting showConnectionsMode;
 	static ConfigTypes::MultiStateSetting heightBasedShading;
 	static ConfigTypes::OnOffSetting showActivatedSwitchWaves;
+	static ConfigTypes::OnOffSetting showBlockedFallEdges;
 	static vector<ConfigTypes::VolumeSetting*> allVolumeSettings;
 	static ConfigTypes::VolumeSetting masterVolume;
 	static ConfigTypes::VolumeSetting musicVolume;
