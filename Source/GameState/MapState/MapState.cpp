@@ -614,12 +614,12 @@ MapState::TileFallResult MapState::tileFalls(int x, int y, char initialHeight, i
 				return TileFallResult::Empty;
 			blockedFallResult = TileFallResult::Empty;
 			continue;
-			//the tile is higher than us, we can't fall here
-		} else if (fallHeight > targetHeight)
-			return blockedFallResult;
 		//this is a cliff face or lower floor, keep looking
-		else if (fallHeight % 2 == 1 || fallHeight < targetHeight)
+		} else if (fallHeight % 2 == 1 || fallHeight < targetHeight)
 			continue;
+		//the tile is higher than us, we can't fall here
+		else if (fallHeight > targetHeight)
+			return blockedFallResult;
 
 		//we found a matching floor tile
 		*outFallY = y + tileOffset;
