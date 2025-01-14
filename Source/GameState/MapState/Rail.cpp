@@ -370,6 +370,8 @@ bool Rail::editorRemoveSegment(int x, int y, char pColor, char group) {
 	}
 	if (segments->size() == 0)
 		editorIsDeleted = true;
+	else
+		assignRenderBox();
 	return true;
 }
 bool Rail::editorAddSegment(int x, int y, char pColor, char group, char tileHeight) {
@@ -398,6 +400,7 @@ bool Rail::editorAddSegment(int x, int y, char pColor, char group, char tileHeig
 	}
 	addGroup(group);
 	addSegment(x, y);
+	assignRenderBox();
 	return true;
 }
 void Rail::editorAdjustMovementMagnitude(int x, int y, char magnitudeAdd) {
