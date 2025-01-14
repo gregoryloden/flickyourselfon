@@ -16,7 +16,7 @@ ResetSwitch::Segment::Segment(int pX, int pY, char pColor, char pGroup, int pSpr
 ResetSwitch::Segment::~Segment() {}
 void ResetSwitch::Segment::render(int screenLeftWorldX, int screenTopWorldY) {
 	glEnable(GL_BLEND);
-	Rail::setSegmentColor(0.0f, color);
+	Rail::setSegmentColor(color, 1.0f, 1.0f);
 	GLint drawLeftX = (GLint)(x * MapState::tileSize - screenLeftWorldX);
 	GLint drawTopY = (GLint)(y * MapState::tileSize - screenTopWorldY);
 	SpriteRegistry::rails->renderSpriteAtScreenPosition(spriteHorizontalIndex, 0, drawLeftX, drawTopY);

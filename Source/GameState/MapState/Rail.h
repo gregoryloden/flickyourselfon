@@ -88,12 +88,9 @@ public:
 	static int middleSegmentSpriteHorizontalIndex(int prevX, int prevY, int x, int y, int nextX, int nextY);
 	//get the sprite index that extends straight from the previous segment
 	static int extentSegmentSpriteHorizontalIndex(int prevX, int prevY, int x, int y);
-	//set the color and alpha masks for segments of the given rail color based on how much it's been lowered, using a scale from
-	//	0 (fully raised) to 1 (fully lowered)
-	static void setSegmentColor(float loweredScale, int railColor);
-	//set the color mask for segments of the given rail color based on how much it's been lowered, using a scale from 0 (fully
-	//	raised) to 1 (fully lowered), with the given alpha
-	static void setSegmentColor(float loweredScale, int railColor, float alpha);
+	//set the color mask for segments of the given rail color based on the given saturation (1 for raised rails at full saturation,
+	//	0 for lowered rails at 0 saturation), with the given alpha
+	static void setSegmentColor(int railColor, float saturation, float alpha);
 	//reverse the order of the segments
 	void reverseSegments();
 	//add this group to the rail if it does not already contain it
@@ -136,6 +133,7 @@ private:
 	static constexpr float fullMovementDurationTicks = 0.75f * Config::ticksPerSecond;
 	static constexpr float squareSpeedMultiplier = 2.0f;
 	static constexpr float sawReverseSpeedMultiplier = 8.0f;
+	static constexpr float nearlyRaisedAlphaIntensity = 11.0f / 16.0f;
 
 	Rail* rail;
 	float tileOffset;

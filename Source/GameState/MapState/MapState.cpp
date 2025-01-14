@@ -1086,7 +1086,7 @@ void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int 
 			lastPointTop = pointTop;
 			lastPointBottom = pointBottom;
 		}
-		Rail::setSegmentColor(0.0f, radioWavesColor, alpha);
+		Rail::setSegmentColor(radioWavesColor, 1.0f, alpha);
 		GLint railBaseTopY = waveformTop - (GLint)SpriteRegistry::rails->getSpriteHeight() / 2;
 		SpriteRegistry::rails->renderSpriteAtScreenPosition(
 			Rail::Segment::spriteHorizontalIndexHorizontal,

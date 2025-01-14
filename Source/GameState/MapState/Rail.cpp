@@ -126,28 +126,23 @@ int Rail::middleSegmentSpriteHorizontalIndex(int prevX, int prevY, int x, int y,
 int Rail::extentSegmentSpriteHorizontalIndex(int prevX, int prevY, int x, int y) {
 	return middleSegmentSpriteHorizontalIndex(prevX, prevY, x, y, x + (x - prevX), y + (y - prevY));
 }
-void Rail::setSegmentColor(float loweredScale, int railColor) {
-	constexpr float loweredAlphaIntensity = 0.5f;
-	constexpr float loweredAlphaIntensityAdd = loweredAlphaIntensity - 1.0f;
-	setSegmentColor(loweredScale, railColor, 1.0f + loweredAlphaIntensityAdd * loweredScale);
-}
-void Rail::setSegmentColor(float loweredScale, int railColor, float alpha) {
-	constexpr float nonColorIntensity = 9.0f / 16.0f;
+void Rail::setSegmentColor(int railColor, float saturation, float alpha) {
 	constexpr float sineColorIntensity = 14.0f / 16.0f;
 	float redColor = sineColorIntensity;
 	float greenColor = sineColorIntensity;
 	float blueColor = sineColorIntensity;
 	if (railColor != MapState::sineColor) {
+		constexpr float nonColorIntensity = 9.0f / 16.0f;
 		redColor = railColor == MapState::squareColor ? 1.0f : nonColorIntensity;
 		greenColor = railColor == MapState::sawColor ? 1.0f : nonColorIntensity;
 		blueColor = railColor == MapState::triangleColor ? 1.0f : nonColorIntensity;
 	}
-	float raisedScale = 1.0f - loweredScale;
-	constexpr float loweredColorIntensity = 0.625f;
+	constexpr float desaturatedColorIntensity = 0.625f;
+	float desaturatedAdd = (1.0f - saturation) * desaturatedColorIntensity;
 	glColor4f(
-		redColor * raisedScale + loweredColorIntensity * loweredScale,
-		greenColor * raisedScale + loweredColorIntensity * loweredScale,
-		blueColor * raisedScale + loweredColorIntensity * loweredScale,
+		redColor * saturation + desaturatedAdd,
+		greenColor * saturation + desaturatedAdd,
+		blueColor * saturation + desaturatedAdd,
 		alpha);
 }
 void Rail::reverseSegments() {
@@ -578,7 +573,7 @@ void RailState::renderBelowPlayer(int screenLeftWorldX, int screenTopWorldY, flo
 		else
 			segmentsAbovePlayer.push_back(segment);
 	}
-	Rail::setSegmentColor(0.0f, rail->getColor());
+	Rail::setSegmentColor(rail->getColor(), 1.0f, canRide() ? 1.0f : nearlyRaisedAlphaIntensity);
 	rail->getSegment(0)->render(screenLeftWorldX, screenTopWorldY, 0.0f, baseHeight);
 	rail->getSegment(lastSegmentIndex)->render(screenLeftWorldX, screenTopWorldY, 0.0f, baseHeight);
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
@@ -595,8 +590,13 @@ void RailState::renderAbovePlayer(int screenLeftWorldX, int screenTopWorldY) {
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 }
 void RailState::setSegmentColor() {
+	constexpr float loweredAlphaIntensity = 0.5f;
+	constexpr float loweredAlphaIntensityAdd = loweredAlphaIntensity - nearlyRaisedAlphaIntensity;
 	float loweredScale = rail->getMaxTileOffset() > 0 ? tileOffset / rail->getMaxTileOffset() : 0.0f;
-	Rail::setSegmentColor(MathUtils::fmin(1.0f, loweredScale), rail->getColor());
+	Rail::setSegmentColor(
+		rail->getColor(),
+		1.0f - loweredScale,
+		loweredScale == 0 ? 1.0f : nearlyRaisedAlphaIntensity + loweredAlphaIntensityAdd * loweredScale);
 }
 void RailState::renderMovementDirections(int screenLeftWorldX, int screenTopWorldY) {
 	if ((Editor::isActive && rail->editorIsDeleted) || rail->getColor() == MapState::squareColor)
