@@ -115,14 +115,17 @@ public:
 	void setPlayerCamera();
 	//set our camera to the dynamic camera anchor
 	void setDynamicCamera();
+private:
 	//begin a radio tower animation for the various states
 	void startRadioTowerAnimation(int ticksTime);
 	//get the music for the given switch color
 	AudioTypes::Music* getMusic(int lastActivatedSwitchColor);
 	//start the music as indicated by the map state
 	void startMusic();
+public:
 	//render this state, which was deemed to be the last state to need rendering
 	void render(int ticksTime);
+private:
 	//render the title animation at the given time
 	void renderTextDisplay(int gameTicksTime);
 	//render any applicable tutorials
@@ -130,8 +133,10 @@ public:
 	bool renderTutorials();
 	//save the state to a file
 	void saveState();
+public:
 	//initialize our state at the home screen (or load the save state in the editor)
 	void loadInitialState(int ticksTime);
+private:
 	//load the state from the save file
 	void loadSaveFile();
 	#ifdef DEBUG
@@ -148,7 +153,6 @@ public:
 	#endif
 	//give the camera and player their intro animations
 	void beginIntroAnimation(int ticksTime);
-private:
 	//add components to make the player start or continue walking, including sound effects
 	//returns the length of this walking animation so far, which is equal to the given duration plus the previous duration
 	int introAnimationWalk(
@@ -156,7 +160,6 @@ private:
 		SpriteDirection spriteDirection,
 		int duration,
 		int previousDuration);
-public:
 	//reset all state
 	void resetGame(int ticksTime);
 };
