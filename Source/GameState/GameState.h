@@ -53,6 +53,8 @@ private:
 	static const int preSwitchesFadeInAnimationTicks = 1000;
 	static const int postSwitchesFadeInAnimationTicks = 1000;
 	static const int switchesToPlayerAnimationTicks = 2000;
+	//save icon timing
+	static const int saveIconShowDuration = 4000;
 	//switches color activation positions
 	static constexpr float squareSwitchesAnimationCenterWorldX = MapState::firstLevelTileOffsetX * MapState::tileSize + 280;
 	static constexpr float squareSwitchesAnimationCenterWorldY = MapState::firstLevelTileOffsetY * MapState::tileSize + 80;
@@ -88,6 +90,9 @@ private:
 	static constexpr char* levelsUnlockedFilePrefix = "levelsUnlocked ";
 	static constexpr char* perpetualHintsFileValue = "perpetualHints";
 	static constexpr char* finishedPauseTutorialFileValue = "finishedPauseTutorial";
+	//render constants
+	static const int saveIconEdgeSpacing = 10;
+	static constexpr float saveIconMaxAlpha = 7.0f / 8.0f;
 
 	int levelsUnlocked;
 	bool perpetualHints;
@@ -98,6 +103,7 @@ private:
 	ReferenceCounterHolder<DynamicCameraAnchor> dynamicCameraAnchor;
 	EntityState* camera;
 	bool finishedPauseTutorial;
+	int lastSaveTicksTime;
 	ReferenceCounterHolder<PauseState> pauseState;
 	int pauseStartTicksTime;
 	int gameTimeOffsetTicksDuration;
@@ -131,8 +137,10 @@ private:
 	//render any applicable tutorials
 	//returns whether a tutorial was rendered
 	bool renderTutorials();
+	//render the save icon if applicable
+	void renderSaveIcon(int gameTicksTime);
 	//save the state to a file
-	void saveState();
+	void saveState(int gameTicksTime);
 public:
 	//initialize our state at the home screen (or load the save state in the editor)
 	void loadInitialState(int ticksTime);

@@ -27,6 +27,7 @@ public:
 	static constexpr char* sparksFileName = "sparks.png";
 	static constexpr char* borderArrowsFileName = "borderarrows.png";
 	static constexpr char* wavesActivatedFileName = "wavesactivated.png";
+	static constexpr char* saveFileName = "save.png";
 
 	static SpriteSheet* player;
 	static SpriteSheet* tiles;
@@ -41,6 +42,7 @@ public:
 	static SpriteSheet* sparks;
 	static SpriteSheet* borderArrows;
 	static SpriteSheet* wavesActivated;
+	static SpriteSheet* save;
 	static SpriteAnimation* playerWalkingAnimation;
 	static SpriteAnimation* playerLegLiftAnimation;
 	static SpriteAnimation* playerBootWalkingAnimation;

@@ -41,6 +41,7 @@ levelsUnlocked(0)
 , dynamicCameraAnchor(nullptr)
 , camera(nullptr)
 , finishedPauseTutorial(false)
+, lastSaveTicksTime(-saveIconShowDuration)
 , pauseState(nullptr)
 , pauseStartTicksTime(-1)
 , gameTimeOffsetTicksDuration(0)
@@ -62,6 +63,7 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 	textDisplayType = prev->textDisplayType;
 	titleAnimationStartTicksTime = prev->titleAnimationStartTicksTime;
 	finishedPauseTutorial = prev->finishedPauseTutorial;
+	lastSaveTicksTime = prev->lastSaveTicksTime;
 
 	//don't update any state if we're paused
 	PauseState* lastPauseState = prev->pauseState.get();
@@ -87,7 +89,7 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 			int endPauseDecision = nextPauseState->getEndPauseDecision();
 			if ((endPauseDecision & (int)PauseState::EndPauseDecision::Save) != 0) {
 				Logger::gameplayLogger.log("  save state");
-				saveState();
+				saveState(gameTicksTime);
 			}
 			if ((endPauseDecision & (int)PauseState::EndPauseDecision::Load) != 0) {
 				Logger::gameplayLogger.log("  load state");
@@ -216,7 +218,7 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 
 	//if we saved the floor file, the editor requests that we save the game too, since rail/switch ids may have changed
 	if (Editor::needsGameStateSave) {
-		saveState();
+		saveState(gameTicksTime);
 		Editor::needsGameStateSave = false;
 	}
 }
@@ -366,6 +368,8 @@ void GameState::render(int ticksTime) {
 		dynamicCameraAnchor.get()->render(gameTicksTime);
 	if (textDisplayType != TextDisplayType::None)
 		renderTextDisplay(gameTicksTime);
+	if (gameTicksTime < lastSaveTicksTime + saveIconShowDuration)
+		renderSaveIcon(gameTicksTime);
 
 	//TODO: real win condition
 	int winTileX = 55;
@@ -487,7 +491,15 @@ bool GameState::renderTutorials() {
 		return false;
 	return true;
 }
-void GameState::saveState() {
+void GameState::renderSaveIcon(int gameTicksTime) {
+	float baseAlpha = 1.0f - MathUtils::fsqr((float)(gameTicksTime - lastSaveTicksTime) / saveIconShowDuration);
+	glColor4f(1.0f, 1.0f, 1.0f, saveIconMaxAlpha * baseAlpha);
+	GLint drawLeftX = Config::gameScreenWidth - SpriteRegistry::save->getSpriteWidth() - saveIconEdgeSpacing;
+	GLint drawTopY = Config::gameScreenHeight - SpriteRegistry::save->getSpriteHeight() - saveIconEdgeSpacing;
+	SpriteRegistry::save->renderSpriteAtScreenPosition(0, 0, drawLeftX, drawTopY);
+	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+}
+void GameState::saveState(int gameTicksTime) {
 	ofstream file;
 	FileUtils::openFileForWrite(&file, savedGameFileName, ios::out | ios::trunc);
 	if (levelsUnlocked > 0)
@@ -499,6 +511,7 @@ void GameState::saveState() {
 	playerState.get()->saveState(file);
 	mapState.get()->saveState(file);
 	file.close();
+	lastSaveTicksTime = gameTicksTime;
 }
 void GameState::loadInitialState(int ticksTime) {
 	//first things first, we need some state
