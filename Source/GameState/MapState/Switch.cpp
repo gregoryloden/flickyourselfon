@@ -22,6 +22,12 @@ float Switch::getSwitchWavesCenterX() {
 float Switch::getSwitchWavesCenterY() {
 	return (float)(topY * MapState::tileSize + 3);
 }
+void Switch::getHintRenderBounds(int* outLeftWorldX, int* outTopWorldY, int* outRightWorldX, int* outBottomWorldY) {
+	*outLeftWorldX = leftX * MapState::tileSize;
+	*outTopWorldY = topY * MapState::tileSize;
+	*outRightWorldX = (leftX + 2) * MapState::tileSize;
+	*outBottomWorldY = (topY + 2) * MapState::tileSize;
+}
 void Switch::render(
 	int screenLeftWorldX,
 	int screenTopWorldY,

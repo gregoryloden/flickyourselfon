@@ -1103,6 +1103,8 @@ void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int 
 	}
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 
+	hintState.get()->renderOffscreenArrow(screenLeftWorldX, screenTopWorldY);
+
 	if (Config::showActivatedSwitchWaves.isOn()) {
 		GLint wavesActivatedX =
 			(GLint)(Config::gameScreenWidth - wavesActivatedEdgeSpacing - SpriteRegistry::wavesActivated->getSpriteWidth());

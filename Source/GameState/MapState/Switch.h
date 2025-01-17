@@ -26,6 +26,8 @@ public:
 	float getSwitchWavesCenterX();
 	//get the map center y that radio waves should originate from
 	float getSwitchWavesCenterY();
+	//get the bounds of the hint to render for this switch
+	void getHintRenderBounds(int* outLeftWorldX, int* outTopWorldY, int* outRightWorldX, int* outBottomWorldY);
 	//render the switch
 	void render(
 		int screenLeftWorldX,

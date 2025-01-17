@@ -59,6 +59,7 @@ private:
 	int renderTopTileY;
 	int renderRightTileX;
 	int renderBottomTileY;
+	int renderHintBottomTileY;
 public:
 	bool editorIsDeleted;
 
@@ -104,6 +105,8 @@ public:
 	bool triggerMovement(char movementDirection, char* inOutTileOffset);
 	//returns whether this rail can render on screen, given the (open-ended) tile coordinates that will be drawn
 	bool canRender(int screenLeftTileX, int screenTopTileY, int screenRightTileX, int screenBottomTileY);
+	//get the bounds of the hint to render for this rail
+	void getHintRenderBounds(int* outLeftWorldX, int* outTopWorldY, int* outRightWorldX, int* outBottomWorldY);
 	//render the shadow below the rail
 	void renderShadow(int screenLeftWorldX, int screenTopWorldY);
 	//render groups where the rail would be at 0 offset

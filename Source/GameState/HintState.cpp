@@ -2,6 +2,8 @@
 #include "GameState/MapState/Level.h"
 #include "GameState/MapState/Rail.h"
 #include "GameState/MapState/Switch.h"
+#include "Sprites/SpriteRegistry.h"
+#include "Sprites/SpriteSheet.h"
 
 //////////////////////////////// Hint ////////////////////////////////
 Hint Hint::none (Hint::Type::None, 0);
@@ -96,7 +98,12 @@ Hint* HintState::PotentialLevelState::getHint() {
 HintState::HintState(objCounterParameters())
 : PooledReferenceCounter(objCounterArguments())
 , hint(nullptr)
-, animationEndTicksTime(0) {
+, animationEndTicksTime(0)
+, renderAlpha(0)
+, renderLeftWorldX(0)
+, renderTopWorldY(0)
+, renderRightWorldX(0)
+, renderBottomWorldY(0) {
 }
 HintState::~HintState() {
 	//don't delete the hint, something else owns it
@@ -105,20 +112,41 @@ HintState* HintState::produce(objCounterParametersComma() Hint* pHint, int anima
 	initializeWithNewFromPool(h, HintState)
 	h->hint = pHint;
 	h->animationEndTicksTime = animationStartTicksTime + totalDisplayTicks;
+	switch (pHint->type) {
+		case Hint::Type::Plane:
+			pHint->data.plane->getHintRenderBounds(
+				&h->renderLeftWorldX, &h->renderTopWorldY, &h->renderRightWorldX, &h->renderBottomWorldY);
+			break;
+		case Hint::Type::Rail:
+			pHint->data.rail->getHintRenderBounds(
+				&h->renderLeftWorldX, &h->renderTopWorldY, &h->renderRightWorldX, &h->renderBottomWorldY);
+			break;
+		case Hint::Type::Switch:
+			pHint->data.switch0->getHintRenderBounds(
+				&h->renderLeftWorldX, &h->renderTopWorldY, &h->renderRightWorldX, &h->renderBottomWorldY);
+			break;
+		default:
+			break;
+	}
 	return h;
 }
 pooledReferenceCounterDefineRelease(HintState)
 void HintState::render(int screenLeftWorldX, int screenTopWorldY, bool belowRails, int ticksTime) {
-	if (ticksTime >= animationEndTicksTime
-			//only render planes below rails, and only rails and switches above rails
-			|| (belowRails
-				? hint->type != Hint::Type::Plane
-				: hint->type != Hint::Type::Rail && hint->type != Hint::Type::Switch))
+	//animation is over, don't render the hint or offscreen arrow
+	if (ticksTime >= animationEndTicksTime) {
+		renderAlpha = 0;
+		return;
+	//only render planes below rails, and only rails and switches above rails
+	} else if (belowRails
+			? hint->type != Hint::Type::Plane
+			: hint->type != Hint::Type::Rail && hint->type != Hint::Type::Switch)
 		return;
 	int progressTicks = ticksTime + totalDisplayTicks - animationEndTicksTime;
 	bool isOn = (progressTicks % flashOnOffTotalTicks) < flashOnOffTicks;
-	if (!isOn)
+	if (!isOn) {
+		renderAlpha = 0;
 		return;
+	}
 	float progress = (float)progressTicks / totalDisplayTicks;
 	float alpha = 0.5f - (progress + progress * progress) * 0.25f;
 	switch (hint->type) {
@@ -134,4 +162,55 @@ void HintState::render(int screenLeftWorldX, int screenTopWorldY, bool belowRail
 		default:
 			break;
 	}
+	renderAlpha = alpha;
+}
+void HintState::renderOffscreenArrow(int screenLeftWorldX, int screenTopWorldY) {
+	if (renderAlpha == 0)
+		return;
+	int renderScreenLeftX = renderLeftWorldX - screenLeftWorldX;
+	int renderScreenTopY = renderTopWorldY - screenTopWorldY;
+	int renderScreenRightX = renderRightWorldX - screenLeftWorldX;
+	int renderScreenBottomY = renderBottomWorldY - screenTopWorldY;
+	if (renderScreenLeftX <= Config::gameScreenWidth - offscreenEdgeSpacing
+			&& renderScreenTopY <= Config::gameScreenHeight - offscreenEdgeSpacing
+			&& renderScreenRightX >= offscreenEdgeSpacing
+			&& renderScreenBottomY >= offscreenEdgeSpacing)
+		return;
+	//figure out where to place the arrow
+	int arrowSpriteHorizontalIndex = 1;
+	int arrowSpriteVerticalIndex = 1;
+	GLint drawArrowLeftX;
+	GLint drawArrowTopY;
+	if (renderScreenRightX < offscreenEdgeSpacing) {
+		arrowSpriteHorizontalIndex = 0;
+		drawArrowLeftX = (GLint)MathUtils::max(offscreenArrowMinEdgeSpacing, renderScreenRightX + offscreenArrowToHintSpacing);
+	} else if (renderScreenLeftX > Config::gameScreenWidth - offscreenEdgeSpacing) {
+		arrowSpriteHorizontalIndex = 2;
+		int arrowRightX = MathUtils::min(
+			Config::gameScreenWidth - offscreenArrowMinEdgeSpacing, renderScreenLeftX - offscreenArrowToHintSpacing);
+		drawArrowLeftX = (GLint)(arrowRightX - SpriteRegistry::borderArrows->getSpriteWidth());
+	} else {
+		int baseArrowLeftX = (renderScreenLeftX + renderScreenRightX - SpriteRegistry::borderArrows->getSpriteWidth()) / 2;
+		int maxArrowLeftX =
+			Config::gameScreenWidth - offscreenArrowMaxEdgeSpacing - SpriteRegistry::borderArrows->getSpriteWidth();
+		drawArrowLeftX = (GLint)(MathUtils::max(offscreenArrowMaxEdgeSpacing, MathUtils::min(maxArrowLeftX, baseArrowLeftX)));
+	}
+	if (renderScreenBottomY < offscreenEdgeSpacing) {
+		arrowSpriteVerticalIndex = 0;
+		drawArrowTopY = (GLint)MathUtils::max(offscreenArrowMinEdgeSpacing, renderScreenBottomY + offscreenArrowToHintSpacing);
+	} else if (renderScreenTopY > Config::gameScreenHeight - offscreenEdgeSpacing) {
+		arrowSpriteVerticalIndex = 2;
+		int arrowBottomY = MathUtils::min(
+			Config::gameScreenHeight - offscreenArrowMinEdgeSpacing, renderScreenTopY - offscreenArrowToHintSpacing);
+		drawArrowTopY = (GLint)(arrowBottomY - SpriteRegistry::borderArrows->getSpriteHeight());
+	} else {
+		int baseArrowTopY = (renderScreenTopY + renderScreenBottomY - SpriteRegistry::borderArrows->getSpriteHeight()) / 2;
+		int maxArrowTopY =
+			Config::gameScreenHeight - offscreenArrowMaxEdgeSpacing - SpriteRegistry::borderArrows->getSpriteHeight();
+		drawArrowTopY = (GLint)(MathUtils::max(offscreenArrowMaxEdgeSpacing, MathUtils::min(maxArrowTopY, baseArrowTopY)));
+	}
+	glColor4f(1.0f, 1.0f, 1.0f, renderAlpha);
+	SpriteRegistry::borderArrows->renderSpriteAtScreenPosition(
+		arrowSpriteHorizontalIndex, arrowSpriteVerticalIndex, drawArrowLeftX, drawArrowTopY);
+	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 }

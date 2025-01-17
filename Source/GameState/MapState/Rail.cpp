@@ -96,6 +96,7 @@ baseHeight(pBaseHeight)
 , renderTopTileY(0)
 , renderRightTileX(MapState::getMapWidth())
 , renderBottomTileY(MapState::getMapHeight())
+, renderHintBottomTileY(MapState::getMapHeight())
 , editorIsDeleted(false) {
 	segments->push_back(Segment(x, y, 0));
 	if (pColor == MapState::sineColor)
@@ -219,18 +220,18 @@ void Rail::assignRenderBox() {
 	renderLeftTileX = MapState::getMapWidth();
 	renderTopTileY = MapState::getMapHeight();
 	renderRightTileX = 0;
-	renderBottomTileY = 0;
+	renderHintBottomTileY = 0;
 	char renderMaxTileOffset = maxTileOffset;
 	for (Segment& segment : *segments) {
 		//extend the render box
 		renderLeftTileX = MathUtils::min(segment.x, renderLeftTileX);
 		renderTopTileY = MathUtils::min(segment.y, renderTopTileY);
 		renderRightTileX = MathUtils::max(segment.x + 1, renderRightTileX);
-		renderBottomTileY = MathUtils::max(segment.y + 1, renderBottomTileY);
+		renderHintBottomTileY = MathUtils::max(segment.y + 1, renderHintBottomTileY);
 		if (segment.maxTileOffset != Segment::absentTileOffset)
 			renderMaxTileOffset = MathUtils::max(segment.maxTileOffset, renderMaxTileOffset);
 	}
-	renderBottomTileY += renderMaxTileOffset;
+	renderBottomTileY = renderHintBottomTileY + renderMaxTileOffset;
 }
 bool Rail::triggerMovement(char movementDirection, char* inOutTileOffset) {
 	switch (color) {
@@ -286,6 +287,12 @@ bool Rail::canRender(int screenLeftTileX, int screenTopTileY, int screenRightTil
 		&& renderRightTileX > screenLeftTileX
 		&& renderTopTileY < screenBottomTileY
 		&& renderBottomTileY > screenTopTileY;
+}
+void Rail::getHintRenderBounds(int* outLeftWorldX, int* outTopWorldY, int* outRightWorldX, int* outBottomWorldY) {
+	*outLeftWorldX = renderLeftTileX * MapState::tileSize;
+	*outTopWorldY = renderTopTileY * MapState::tileSize;
+	*outRightWorldX = renderRightTileX * MapState::tileSize;
+	*outBottomWorldY = renderBottomTileY * MapState::tileSize;
 }
 void Rail::renderShadow(int screenLeftWorldX, int screenTopWorldY) {
 	if (Editor::isActive && editorIsDeleted)

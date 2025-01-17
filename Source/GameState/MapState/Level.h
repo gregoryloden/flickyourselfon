@@ -51,17 +51,22 @@ namespace LevelTypes {
 		vector<Tile> tiles;
 		vector<ConnectionSwitch> connectionSwitches;
 		vector<Connection> connections;
+		int renderLeftTileX;
+		int renderTopTileY;
+		int renderRightTileX;
+		int renderBottomTileY;
 
 	public:
 		Plane(objCounterParametersComma() Level* pOwningLevel, int pIndexInOwningLevel);
 		virtual ~Plane();
 
-		void addTile(int x, int y) { tiles.push_back(Tile(x, y)); }
 		Level* getOwningLevel() { return owningLevel; }
 		int getIndexInOwningLevel() { return indexInOwningLevel; }
 		void addRailConnectionToSwitch(LevelTypes::RailByteMaskData* railByteMaskData, int connectionSwitchesIndex) {
 			connectionSwitches[connectionSwitchesIndex].affectedRailByteMaskData.push_back(railByteMaskData);
 		}
+		//add a tile
+		void addTile(int x, int y);
 		//add a switch
 		//returns the index of the switch in this plane
 		int addConnectionSwitch(Switch* switch0);
@@ -75,6 +80,8 @@ namespace LevelTypes {
 		void writeVictoryPlaneIndex(Plane* victoryPlane, int pIndexInOwningLevel);
 		//follow all possible actions, and see if any of them lead to reaching the victory plane
 		Hint* pursueSolution(HintState::PotentialLevelState* currentState);
+		//get the bounds of the hint to render for this plane
+		void getHintRenderBounds(int* outLeftWorldX, int* outTopWorldY, int* outRightWorldX, int* outBottomWorldY);
 		//render boxes over every tile in this plane
 		void renderHint(int screenLeftWorldX, int screenTopWorldY, float alpha);
 		#ifdef LOG_FOUND_HINT_STEPS

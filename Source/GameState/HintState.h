@@ -78,9 +78,18 @@ private:
 	static const int flashOnOffTotalTicks = flashOnOffTicks * 2;
 	static const int flashTimes = 10;
 	static const int totalDisplayTicks = flashOnOffTotalTicks * flashTimes;
+	static const int offscreenEdgeSpacing = 12;
+	static const int offscreenArrowMinEdgeSpacing = 1;
+	static const int offscreenArrowMaxEdgeSpacing = offscreenArrowMinEdgeSpacing + offscreenEdgeSpacing;
+	static const int offscreenArrowToHintSpacing = 1;
 
 	Hint* hint;
 	int animationEndTicksTime;
+	float renderAlpha;
+	int renderLeftWorldX;
+	int renderTopWorldY;
+	int renderRightWorldX;
+	int renderBottomWorldY;
 
 public:
 	HintState(objCounterParameters());
@@ -92,5 +101,7 @@ public:
 	virtual void release();
 	//render this hint
 	void render(int screenLeftWorldX, int screenTopWorldY, bool belowRails, int ticksTime);
+	//render an arrow pointing to this hint which is offscreen, using the alpha saved from render()
+	void renderOffscreenArrow(int screenLeftWorldX, int screenTopWorldY);
 };
 #endif

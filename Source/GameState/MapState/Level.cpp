@@ -50,10 +50,21 @@ owningLevel(pOwningLevel)
 , indexInOwningLevel(pIndexInOwningLevel)
 , tiles()
 , connectionSwitches()
-, connections() {
+, connections()
+, renderLeftTileX(MapState::getMapWidth())
+, renderTopTileY(MapState::getMapHeight())
+, renderRightTileX(0)
+, renderBottomTileY(0) {
 }
 LevelTypes::Plane::~Plane() {
 	//don't delete owningLevel, it owns and deletes this
+}
+void LevelTypes::Plane::addTile(int x, int y) {
+	tiles.push_back(Tile(x, y));
+	renderLeftTileX = MathUtils::min(renderLeftTileX, x);
+	renderTopTileY = MathUtils::min(renderTopTileY, y);
+	renderRightTileX = MathUtils::max(renderRightTileX, x + 1);
+	renderBottomTileY = MathUtils::max(renderBottomTileY, y + 1);
 }
 int LevelTypes::Plane::addConnectionSwitch(Switch* switch0) {
 	connectionSwitches.push_back(ConnectionSwitch(switch0, owningLevel->getLevelN()));
@@ -177,6 +188,12 @@ Hint* LevelTypes::Plane::pursueSolution(HintState::PotentialLevelState* currentS
 	}
 
 	return nullptr;
+}
+void LevelTypes::Plane::getHintRenderBounds(int* outLeftWorldX, int* outTopWorldY, int* outRightWorldX, int* outBottomWorldY) {
+	*outLeftWorldX = renderLeftTileX * MapState::tileSize;
+	*outTopWorldY = renderTopTileY * MapState::tileSize;
+	*outRightWorldX = renderRightTileX * MapState::tileSize;
+	*outBottomWorldY = renderBottomTileY * MapState::tileSize;
 }
 void LevelTypes::Plane::renderHint(int screenLeftWorldX, int screenTopWorldY, float alpha) {
 	glEnable(GL_BLEND);
