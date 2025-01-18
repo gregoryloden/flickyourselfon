@@ -54,7 +54,7 @@ private:
 	static const int postSwitchesFadeInAnimationTicks = 1000;
 	static const int switchesToPlayerAnimationTicks = 2000;
 	//save icon timing
-	static const int saveIconShowDuration = 4000;
+	static const int saveIconShowDuration = 3000;
 	//switches color activation positions
 	static constexpr float squareSwitchesAnimationCenterWorldX = MapState::firstLevelTileOffsetX * MapState::tileSize + 280;
 	static constexpr float squareSwitchesAnimationCenterWorldY = MapState::firstLevelTileOffsetY * MapState::tileSize + 80;
