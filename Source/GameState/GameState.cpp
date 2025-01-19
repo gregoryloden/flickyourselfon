@@ -221,6 +221,11 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 		saveState(gameTicksTime);
 		Editor::needsGameStateSave = false;
 	}
+
+	//autosave if applicable
+	if (Config::autosaveEnabled.isOn()
+			&& gameTicksTime >= lastSaveTicksTime + Config::autosaveInterval.selectedValue * Config::ticksPerSecond)
+		saveState(gameTicksTime);
 }
 void GameState::setPlayerCamera() {
 	camera = playerState.get();
