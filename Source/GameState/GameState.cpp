@@ -77,7 +77,7 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 		mapState.set(prev->mapState.get());
 		dynamicCameraAnchor.set(prev->dynamicCameraAnchor.get());
 
-		//because of level select, the player can't be the same pointer and the camera might also not be 
+		//because of level select, the player can't be the same pointer and the camera might also not be the same pointer
 		playerState.set(newPlayerState(mapState.get()));
 		playerState.get()->copyPlayerState(prev->playerState.get());
 		prev->camera->setNextCamera(this, gameTicksTime);

@@ -89,8 +89,8 @@ public:
 	static int middleSegmentSpriteHorizontalIndex(int prevX, int prevY, int x, int y, int nextX, int nextY);
 	//get the sprite index that extends straight from the previous segment
 	static int extentSegmentSpriteHorizontalIndex(int prevX, int prevY, int x, int y);
-	//set the color mask for segments of the given rail color based on the given saturation (1 for raised rails at full saturation,
-	//	0 for lowered rails at 0 saturation), with the given alpha
+	//set the color mask for segments of the given rail color based on the given saturation (1 for raised rails at full
+	//	saturation, 0 for lowered rails at 0 saturation), with the given alpha
 	static void setSegmentColor(int railColor, float saturation, float alpha);
 	//reverse the order of the segments
 	void reverseSegments();
