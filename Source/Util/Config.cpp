@@ -51,6 +51,62 @@ ConfigTypes::VolumeSetting::VolumeSetting(string pFilePrefix, vector<VolumeSetti
 	containingList.push_back(this);
 }
 ConfigTypes::VolumeSetting::~VolumeSetting() {}
+
+//////////////////////////////// Config::ValueSelectionSetting::SelectableValue ////////////////////////////////
+ConfigTypes::ValueSelectionSetting::SelectableValue::SelectableValue(string pName, int pValue)
+: name(pName)
+, value(pValue) {
+}
+ConfigTypes::ValueSelectionSetting::SelectableValue::~SelectableValue() {}
+
+//////////////////////////////// Config::ValueSelectionSetting ////////////////////////////////
+ConfigTypes::ValueSelectionSetting::ValueSelectionSetting(
+	vector<SelectableValue> pValues,
+	int pDefaultSelectedValueIndex,
+	string pCustomValueNameSuffix,
+	string pFilePrefix,
+	vector<ValueSelectionSetting*>& containingList)
+: values(pValues)
+, defaultSelectedValueIndex(pDefaultSelectedValueIndex)
+, selectedValueIndex(pDefaultSelectedValueIndex)
+, selectedValue(pValues[pDefaultSelectedValueIndex].value)
+, customValueNameSuffix(pCustomValueNameSuffix)
+, filePrefix(pFilePrefix) {
+	containingList.push_back(this);
+}
+ConfigTypes::ValueSelectionSetting::~ValueSelectionSetting() {}
+string ConfigTypes::ValueSelectionSetting::getSelectedValueName() {
+	if (selectedValueIndex == customValueIndex) {
+		stringstream selectedValueName;
+		selectedValueName << selectedValue << customValueNameSuffix;
+		return selectedValueName.str();
+	} else
+		return values[selectedValueIndex].name;
+}
+void ConfigTypes::ValueSelectionSetting::changeSelection(int direction) {
+	int newSelectedValueIndex;
+	//custom value selected - find the nearest preset value in the given direction
+	//we can assume that the current value is not equal to any of the preset values, because it's impossible to set a custom
+	//	value while the program is running, and we find a matching index at the start if it's possible
+	if (selectedValueIndex == customValueIndex) {
+		//find the first preset value greater than the current one
+		//if we don't find one, treat the first index after the list as the index
+		int firstGreaterIndex = (int)values.size();
+		for (int i = 0; i < (int)values.size(); i++) {
+			if (values[i].value > selectedValue) {
+				firstGreaterIndex = i;
+				break;
+			}
+		}
+		newSelectedValueIndex = direction > 0 ? firstGreaterIndex : firstGreaterIndex - 1;
+	//preset value selected - just go up or down one value
+	} else
+		newSelectedValueIndex = selectedValueIndex + direction;
+	if (newSelectedValueIndex >= 0 && newSelectedValueIndex < (int)values.size()) {
+		selectedValueIndex = newSelectedValueIndex;
+		selectedValue = values[newSelectedValueIndex].value;
+	}
+}
 using namespace ConfigTypes;
 
 //////////////////////////////// Config ////////////////////////////////
@@ -81,6 +137,27 @@ MultiStateSetting Config::heightBasedShading (
 	{ "normal", "off", "extra" }, "heightBasedShading ", Config::allMultiStateSettings);
 OnOffSetting Config::showActivatedSwitchWaves ("showActivatedSwitchWaves ", Config::allMultiStateSettings);
 OnOffSetting Config::showBlockedFallEdges ("showBlockedFallEdges ", Config::allMultiStateSettings);
+OnOffSetting Config::autosaveEnabled ("autosaveEnabled ", Config::allMultiStateSettings);
+vector<ValueSelectionSetting*> Config::allValueSelectionSettings;
+ValueSelectionSetting Config::autosaveInterval (
+	{
+		ValueSelectionSetting::SelectableValue("5 seconds", 5),
+		ValueSelectionSetting::SelectableValue("10 seconds", 10),
+		ValueSelectionSetting::SelectableValue("15 seconds", 15),
+		ValueSelectionSetting::SelectableValue("30 seconds", 30),
+		ValueSelectionSetting::SelectableValue("1 minute", 60),
+		ValueSelectionSetting::SelectableValue("2 minutes", 120),
+		ValueSelectionSetting::SelectableValue("3 minutes", 180),
+		ValueSelectionSetting::SelectableValue("5 minutes", 300),
+		ValueSelectionSetting::SelectableValue("10 minutes", 600),
+		ValueSelectionSetting::SelectableValue("15 minutes", 900),
+		ValueSelectionSetting::SelectableValue("20 minutes", 1200),
+		ValueSelectionSetting::SelectableValue("30 minutes", 1800),
+	},
+	7,
+	" seconds",
+	"autosaveInterval ",
+	Config::allValueSelectionSettings);
 vector<VolumeSetting*> Config::allVolumeSettings;
 VolumeSetting Config::masterVolume ("masterVolume ", Config::allVolumeSettings);
 VolumeSetting Config::musicVolume ("musicVolume ", Config::allVolumeSettings);
@@ -100,6 +177,10 @@ void Config::saveSettings() {
 		if (volumeSetting->volume != VolumeSetting::defaultVolume)
 			file << volumeSetting->filePrefix << volumeSetting->volume << "\n";
 	}
+	for (ValueSelectionSetting* valueSelectionSetting : allValueSelectionSettings) {
+		if (valueSelectionSetting->selectedValueIndex != valueSelectionSetting->defaultSelectedValueIndex)
+			file << valueSelectionSetting->filePrefix << valueSelectionSetting->selectedValue << "\n";
+	}
 	file.close();
 }
 void Config::loadSettings() {
@@ -107,7 +188,10 @@ void Config::loadSettings() {
 	FileUtils::openFileForRead(&file, optionsFileName, FileUtils::FileReadLocation::ApplicationData);
 	string line;
 	while (getline(file, line))
-		loadKeyBindingSetting(line) || loadMultiStateSetting(line) || loadVolumeSetting(line);
+		loadKeyBindingSetting(line)
+			|| loadMultiStateSetting(line)
+			|| loadVolumeSetting(line)
+			|| loadValueSelectionSetting(line);
 	file.close();
 }
 bool Config::loadKeyBindingSetting(string& line) {
@@ -132,6 +216,22 @@ bool Config::loadVolumeSetting(string& line) {
 	for (VolumeSetting* volumeSetting : allVolumeSettings) {
 		if (StringUtils::startsWith(line, volumeSetting->filePrefix)) {
 			volumeSetting->volume = atoi(line.c_str() + volumeSetting->filePrefix.size());
+			return true;
+		}
+	}
+	return false;
+}
+bool Config::loadValueSelectionSetting(string& line) {
+	for (ValueSelectionSetting* valueSelectionSetting : allValueSelectionSettings) {
+		if (StringUtils::startsWith(line, valueSelectionSetting->filePrefix)) {
+			valueSelectionSetting->selectedValue = atoi(line.c_str() + valueSelectionSetting->filePrefix.size());
+			valueSelectionSetting->selectedValueIndex = ValueSelectionSetting::customValueIndex;
+			for (int i = 0; i < (int)valueSelectionSetting->values.size(); i++) {
+				if (valueSelectionSetting->values[i].value == valueSelectionSetting->selectedValue) {
+					valueSelectionSetting->selectedValueIndex = i;
+					break;
+				}
+			}
 			return true;
 		}
 	}

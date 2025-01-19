@@ -6,6 +6,7 @@ namespace ConfigTypes {
 	class KeyBindingSetting;
 	class MultiStateSetting;
 	class VolumeSetting;
+	class ValueSelectionSetting;
 }
 
 //a single instance of a PauseState is immutable and shared between states
@@ -219,6 +220,20 @@ private:
 		virtual PauseState* handleSide(PauseState* currentState, int direction);
 		//adjust the volume if the mouse is within the volume display area
 		virtual PauseState* handleWithX(PauseState* currentState, float x, bool isDrag);
+	};
+	class ValueSelectionOption: public PauseOption {
+	private:
+		ConfigTypes::ValueSelectionSetting* setting;
+		string displayPrefix;
+
+	public:
+		ValueSelectionOption(objCounterParametersComma() ConfigTypes::ValueSelectionSetting* pSetting, string pDisplayPrefix);
+		virtual ~ValueSelectionOption();
+
+		//selecting a value selection setting doesn't do anything
+		virtual PauseState* handle(PauseState* currentState) { return currentState; }
+		//select a different value
+		virtual PauseState* handleSide(PauseState* currentState, int direction);
 	};
 	class LevelSelectOption: public PauseOption {
 	private:

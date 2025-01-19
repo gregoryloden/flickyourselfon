@@ -19,6 +19,7 @@
 #define newAcceptKeyBindingsOption() newWithoutArgs(PauseState::AcceptKeyBindingsOption)
 #define newMultiStateOption(setting, displayPrefix) newWithArgs(PauseState::MultiStateOption, setting, displayPrefix)
 #define newVolumeSettingOption(setting, displayPrefix) newWithArgs(PauseState::VolumeSettingOption, setting, displayPrefix)
+#define newValueSelectionOption(setting, displayPrefix) newWithArgs(PauseState::ValueSelectionOption, setting, displayPrefix)
 #define newLevelSelectOption(displayText, levelN) newWithArgs(PauseState::LevelSelectOption, displayText, levelN)
 #define newEndPauseOption(displayText, endPauseDecision) newWithArgs(PauseState::EndPauseOption, displayText, endPauseDecision)
 
@@ -354,6 +355,21 @@ PauseState* PauseState::VolumeSettingOption::handleWithX(PauseState* currentStat
 	return currentState;
 }
 
+//////////////////////////////// PauseState::ValueSelectionOption ////////////////////////////////
+PauseState::ValueSelectionOption::ValueSelectionOption(
+	objCounterParametersComma() ConfigTypes::ValueSelectionSetting* pSetting, string pDisplayPrefix)
+: PauseOption(objCounterArgumentsComma() pDisplayPrefix + ": " + pSetting->getSelectedValueName())
+, setting(pSetting)
+, displayPrefix(pDisplayPrefix + ": ") {
+}
+PauseState::ValueSelectionOption::~ValueSelectionOption() {}
+PauseState* PauseState::ValueSelectionOption::handleSide(PauseState* currentState, int direction) {
+	setting->changeSelection(direction);
+	updateDisplayText(displayPrefix + setting->getSelectedValueName());
+	Config::saveSettings();
+	return currentState;
+}
+
 //////////////////////////////// PauseState::LevelSelectOption ////////////////////////////////
 PauseState::LevelSelectOption::LevelSelectOption(objCounterParametersComma() string pDisplayText, int pLevelN)
 : PauseOption(objCounterArgumentsComma() pDisplayText)
@@ -515,6 +531,15 @@ PauseState::PauseOption* PauseState::buildOptionsMenuOption() {
 							newMultiStateOption(&Config::heightBasedShading, "height-based shading") COMMA
 							newMultiStateOption(&Config::showActivatedSwitchWaves, "show activated switch waves") COMMA
 							newMultiStateOption(&Config::showBlockedFallEdges, "show blocked fall edges") COMMA
+							newNavigationOption("back", nullptr) COMMA
+						})) COMMA
+				newNavigationOption(
+					"autosave",
+					newPauseMenu(
+						"Autosave",
+						{
+							newMultiStateOption(&Config::autosaveEnabled, "autosave enabled") COMMA
+							newValueSelectionOption(&Config::autosaveInterval, "autosave interval") COMMA
 							newNavigationOption("back", nullptr) COMMA
 						})) COMMA
 				newNavigationOption(

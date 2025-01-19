@@ -58,6 +58,41 @@ namespace ConfigTypes {
 		VolumeSetting(string pFilePrefix, vector<VolumeSetting*>& containingList);
 		virtual ~VolumeSetting();
 	};
+	//Should only be allocated within an object, on the stack, or as a static object
+	class ValueSelectionSetting {
+	public:
+		//Should only be allocated within an object, on the stack, or as a static object
+		class SelectableValue {
+		public:
+			const string name;
+			const int value;
+
+			SelectableValue(string pName, int pValue);
+			virtual ~SelectableValue();
+		};
+
+		static const int customValueIndex = -1;
+
+		const vector<SelectableValue> values;
+		const int defaultSelectedValueIndex;
+		int selectedValueIndex;
+		int selectedValue;
+		const string customValueNameSuffix;
+		const string filePrefix;
+
+		ValueSelectionSetting(
+			vector<SelectableValue> pValues,
+			int pDefaultSelectedValueIndex,
+			string pCustomValueNameSuffix,
+			string pFilePrefix,
+			vector<ValueSelectionSetting*>& containingList);
+		virtual ~ValueSelectionSetting();
+
+		//get the built-in or generated name for this value
+		string getSelectedValueName();
+		//select a different value, in the given direction
+		void changeSelection(int direction);
+	};
 }
 class Config {
 public:
@@ -104,6 +139,9 @@ public:
 	static ConfigTypes::MultiStateSetting heightBasedShading;
 	static ConfigTypes::OnOffSetting showActivatedSwitchWaves;
 	static ConfigTypes::OnOffSetting showBlockedFallEdges;
+	static ConfigTypes::OnOffSetting autosaveEnabled;
+	static vector<ConfigTypes::ValueSelectionSetting*> allValueSelectionSettings;
+	static ConfigTypes::ValueSelectionSetting autosaveInterval;
 	static vector<ConfigTypes::VolumeSetting*> allVolumeSettings;
 	static ConfigTypes::VolumeSetting masterVolume;
 	static ConfigTypes::VolumeSetting musicVolume;
@@ -122,5 +160,7 @@ private:
 	static bool loadMultiStateSetting(string& line);
 	//load a volume setting, if applicable
 	static bool loadVolumeSetting(string& line);
+	//load a value selection setting, if applicable
+	static bool loadValueSelectionSetting(string& line);
 };
 #endif
