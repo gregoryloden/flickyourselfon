@@ -308,7 +308,7 @@ private:
 	//build the options menu and containing option
 	static PauseOption* buildOptionsMenuOption();
 	//build the level select menu and containing option
-	static PauseOption* buildLevelSelectMenuOption(LevelSelectMenu** levelSelectMenu);
+	static PauseOption* buildLevelSelectMenuOption(LevelSelectMenu** outLevelSelectMenu);
 public:
 	//delete the base menus
 	static void unloadMenus();

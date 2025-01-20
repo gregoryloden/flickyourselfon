@@ -555,7 +555,7 @@ PauseState::PauseOption* PauseState::buildOptionsMenuOption() {
 				newNavigationOption("back", nullptr) COMMA
 			}));
 }
-PauseState::PauseOption* PauseState::buildLevelSelectMenuOption(LevelSelectMenu** levelSelectMenu) {
+PauseState::PauseOption* PauseState::buildLevelSelectMenuOption(LevelSelectMenu** outLevelSelectMenu) {
 	int levelCount = MapState::getLevelCount();
 	vector<PauseOption*> options;
 	for (int levelN = 1; levelN <= levelCount; levelN++) {
@@ -564,7 +564,7 @@ PauseState::PauseOption* PauseState::buildLevelSelectMenuOption(LevelSelectMenu*
 		options.push_back(newLevelSelectOption(s.str(), levelN));
 	}
 	options.push_back(newNavigationOption("back", nullptr));
-	return newNavigationOption("level select", *levelSelectMenu = newLevelSelectMenu("Level Select", options));
+	return newNavigationOption("level select", *outLevelSelectMenu = newLevelSelectMenu("Level Select", options));
 }
 void PauseState::unloadMenus() {
 	delete baseMenu;
