@@ -41,7 +41,7 @@ levelsUnlocked(0)
 , dynamicCameraAnchor(nullptr)
 , camera(nullptr)
 , finishedPauseTutorial(false)
-, lastSaveTicksTime(-saveIconShowDuration)
+, lastSaveTicksTime(0)
 , pauseState(nullptr)
 , pauseStartTicksTime(-1)
 , gameTimeOffsetTicksDuration(0)
@@ -373,7 +373,7 @@ void GameState::render(int ticksTime) {
 		dynamicCameraAnchor.get()->render(gameTicksTime);
 	if (textDisplayType != TextDisplayType::None)
 		renderTextDisplay(gameTicksTime);
-	if (gameTicksTime < lastSaveTicksTime + saveIconShowDuration)
+	if (gameTicksTime < lastSaveTicksTime + saveIconShowDuration && lastSaveTicksTime > 0)
 		renderSaveIcon(gameTicksTime);
 
 	//TODO: real win condition
