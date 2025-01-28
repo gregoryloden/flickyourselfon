@@ -27,6 +27,7 @@ Level 7:
 	part of the puzzle is figuring out the order that you have to do the different sections in (ex part of one color, then the switch/rail for another color, then all of that color and its ladder, etc.)
 	certain switches can be reached by more than one rail, but only one rail gets you there at a time
 	treat the level like a maze, having to connect paths to get through
+	blue area: re-use the first part with the first two red-black rails raised (via lowering the white-black rail), for part 2 solution
 	order: green, blue, red + ladder, white, green, blue + ladder, white, red, green + ladder, red, blue, white + ladder
 Level 8:
 	level 8 starting area/level 7 victory area is at the bottom left platform of level 1 area, has switch
