@@ -334,9 +334,10 @@ void MapState::buildLevels() {
 		if (planeIds[nextTile] != 0)
 			continue;
 
-		//this tile is a victory tile - start a new level if this is the last tile we know about, otherwise keep building planes
+		//this tile is a victory tile - start a new level if this is the last tile we know about
 		bool isVictoryTile = tiles[nextTile] == tilePuzzleEnd;
 		if (isVictoryTile) {
+			//there are more tiles/planes to check, stick this tile at the end and keep building planes
 			if (!tileChecks.empty()) {
 				tileChecks.push_back(nextTile);
 				continue;
