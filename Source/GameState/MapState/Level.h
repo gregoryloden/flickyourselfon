@@ -84,6 +84,8 @@ namespace LevelTypes {
 		void getHintRenderBounds(int* outLeftWorldX, int* outTopWorldY, int* outRightWorldX, int* outBottomWorldY);
 		//render boxes over every tile in this plane
 		void renderHint(int screenLeftWorldX, int screenTopWorldY, float alpha);
+		//track the switches in this plane
+		void countSwitches(int switchCounts[4]);
 		#ifdef LOG_FOUND_HINT_STEPS
 			//log all the steps of a hint state
 			void logSteps(HintState::PotentialLevelState* hintState);
@@ -173,4 +175,6 @@ public:
 		LevelTypes::Plane* currentPlane,
 		function<void(short railId, Rail* rail, char* outMovementDirection, char* outTileOffset)> getRailState,
 		char lastActivatedSwitchColor);
+	//log basic information about this level
+	void logStats();
 };

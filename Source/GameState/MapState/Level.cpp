@@ -3,9 +3,7 @@
 #include "GameState/MapState/Rail.h"
 #include "GameState/MapState/Switch.h"
 #include "Sprites/SpriteSheet.h"
-#if defined(TRACK_HINT_SEARCH_STATS) || defined(LOG_FOUND_HINT_STEPS)
-	#include "Util/Logger.h"
-#endif
+#include "Util/Logger.h"
 
 #define newPlane(owningLevel, indexInOwningLevel) newWithArgs(Plane, owningLevel, indexInOwningLevel)
 
@@ -205,6 +203,10 @@ void LevelTypes::Plane::renderHint(int screenLeftWorldX, int screenTopWorldY, fl
 			leftX, topY, leftX + (GLint)MapState::tileSize, topY + (GLint)MapState::tileSize);
 	}
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+}
+void LevelTypes::Plane::countSwitches(int switchCounts[4]) {
+	for (ConnectionSwitch& connectionSwitch : connectionSwitches)
+		switchCounts[connectionSwitch.hint.data.switch0->getColor()]++;
 }
 #ifdef LOG_FOUND_HINT_STEPS
 	void LevelTypes::Plane::logSteps(HintState::PotentialLevelState* hintState) {
@@ -414,4 +416,21 @@ Hint* Level::generateHint(
 	#endif
 
 	return result != nullptr ? result : &Hint::undoReset;
+}
+void Level::logStats() {
+	int switchCounts[4] = {};
+	for (Plane* plane : planes)
+		plane->countSwitches(switchCounts);
+	int totalSwitches = 0;
+	for (int switchCount : switchCounts)
+		totalSwitches += switchCount;
+	stringstream message;
+	message
+		<< "level " << levelN << " detected: "
+		<< planes.size() << " planes, "
+		<< allRailByteMaskData.size() << " rails, "
+		<< totalSwitches << " switches (";
+	for (int i = 0; i < 4; i++)
+		message << switchCounts[i] << (i == 3 ? ")" : " ");
+	Logger::debugLogger.logString(message.str());
 }
