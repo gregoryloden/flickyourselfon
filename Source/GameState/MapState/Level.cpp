@@ -150,12 +150,13 @@ Hint* LevelTypes::Plane::pursueSolution(HintState::PotentialLevelState* currentS
 		for (int i = HintState::PotentialLevelState::currentRailByteMaskCount - 1; i >= 0; i--)
 			HintState::PotentialLevelState::draftState.railByteMasks[i] = currentState->railByteMasks[i];
 		//then, go through and modify the byte mask for each affected rail
+		char lastTileOffset;
 		for (RailByteMaskData* railByteMaskData : connectionSwitch.affectedRailByteMaskData) {
 			unsigned int* railByteMask =
 				&HintState::PotentialLevelState::draftState.railByteMasks[railByteMaskData->railByteIndex];
 			char shiftedRailState = (char)(*railByteMask >> railByteMaskData->railBitShift);
 			char movementDirectionBit = shiftedRailState & (char)Level::baseRailMovementDirectionByteMask;
-			char tileOffset = shiftedRailState & (char)Level::baseRailTileOffsetByteMask;
+			char tileOffset = (lastTileOffset = shiftedRailState & (char)Level::baseRailTileOffsetByteMask);
 			char movementDirection = (movementDirectionBit >> Level::railTileOffsetByteMaskBitCount) * 2 - 1;
 			char resultRailState =
 				railByteMaskData->rail->triggerMovement(movementDirection, &tileOffset)
@@ -173,6 +174,9 @@ Hint* LevelTypes::Plane::pursueSolution(HintState::PotentialLevelState* currentS
 		vector<HintState::PotentialLevelState*>& potentialLevelStates =
 			Level::potentialLevelStatesByBucketByPlane[indexInOwningLevel].buckets[bucket];
 		if (!HintState::PotentialLevelState::draftState.isNewState(potentialLevelStates))
+			continue;
+		//also don't bother with any states that lower the only rail of a single-rail switch
+		if (connectionSwitch.affectedRailByteMaskData.size() == 1 && lastTileOffset == 0)
 			continue;
 
 		//build out the new PotentialLevelState and track it
