@@ -369,8 +369,6 @@ void MapState::buildLevels() {
 		else
 			planeConnectionSwitches.push_back(PlaneConnectionSwitch(switch0, plane, plane->addConnectionSwitch(switch0)));
 	}
-	for (Level* level : levels)
-		level->logStats();
 
 	//organize switch/plane combinations so that we can refer to them when adding rail connections
 	vector<PlaneConnectionSwitch*> planeConnectionSwitchesByGroupByColor[colorCount];
@@ -411,6 +409,9 @@ void MapState::buildLevels() {
 				railByteMaskData, planeConnectionSwitch->planeConnectionSwitchIndex);
 		}
 	}
+
+	for (Level* level : levels)
+		level->logStats();
 
 	//initialize utilities for hints
 	Level::setupPotentialLevelStateHelpers(levels);

@@ -204,9 +204,12 @@ void LevelTypes::Plane::renderHint(int screenLeftWorldX, int screenTopWorldY, fl
 	}
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 }
-void LevelTypes::Plane::countSwitches(int switchCounts[4]) {
-	for (ConnectionSwitch& connectionSwitch : connectionSwitches)
-		switchCounts[connectionSwitch.hint.data.switch0->getColor()]++;
+void LevelTypes::Plane::countSwitches(int outSwitchCounts[4], int* outSingleUseSwitches) {
+	for (ConnectionSwitch& connectionSwitch : connectionSwitches) {
+		outSwitchCounts[connectionSwitch.hint.data.switch0->getColor()]++;
+		if (connectionSwitch.affectedRailByteMaskData.size() == 1)
+			(*outSingleUseSwitches)++;
+	}
 }
 #ifdef LOG_FOUND_HINT_STEPS
 	void LevelTypes::Plane::logSteps(HintState::PotentialLevelState* hintState) {
@@ -419,8 +422,9 @@ Hint* Level::generateHint(
 }
 void Level::logStats() {
 	int switchCounts[4] = {};
+	int singleUseSwitches = 0;
 	for (Plane* plane : planes)
-		plane->countSwitches(switchCounts);
+		plane->countSwitches(switchCounts, &singleUseSwitches);
 	int totalSwitches = 0;
 	for (int switchCount : switchCounts)
 		totalSwitches += switchCount;
@@ -431,6 +435,7 @@ void Level::logStats() {
 		<< allRailByteMaskData.size() << " rails, "
 		<< totalSwitches << " switches (";
 	for (int i = 0; i < 4; i++)
-		message << switchCounts[i] << (i == 3 ? ")" : " ");
+		message << switchCounts[i] << (i == 3 ? ", " : " ");
+	message << singleUseSwitches << " single-use)";
 	Logger::debugLogger.logString(message.str());
 }
