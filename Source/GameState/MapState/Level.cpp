@@ -90,6 +90,8 @@ bool LevelTypes::Plane::addConnection(Plane* toPlane, Rail* rail) {
 	return false;
 }
 void LevelTypes::Plane::addRailConnection(Plane* toPlane, RailByteMaskData* railByteMaskData, Rail* rail) {
+	if (toPlane->owningLevel != owningLevel)
+		toPlane = owningLevel->getVictoryPlane();
 	connections.push_back(
 		Connection(
 			toPlane,
@@ -97,10 +99,6 @@ void LevelTypes::Plane::addRailConnection(Plane* toPlane, RailByteMaskData* rail
 			Level::baseRailTileOffsetByteMask << railByteMaskData->railBitShift,
 			rail,
 			owningLevel->getLevelN()));
-}
-void LevelTypes::Plane::writeVictoryPlaneIndex(Plane* victoryPlane, int pIndexInOwningLevel) {
-	indexInOwningLevel = 0;
-	victoryPlane->indexInOwningLevel = pIndexInOwningLevel;
 }
 Hint* LevelTypes::Plane::pursueSolution(HintState::PotentialLevelState* currentState) {
 	unsigned int bucket = currentState->railByteMasksHash % Level::PotentialLevelStatesByBucket::bucketSize;
@@ -294,12 +292,15 @@ levelN(pLevelN)
 Level::~Level() {
 	for (Plane* plane : planes)
 		delete plane;
-	//don't delete victoryPlane, it's owned by another Level
+	//don't delete victoryPlane, it was included in planes
 }
 Plane* Level::addNewPlane() {
 	Plane* plane = newPlane(this, (int)planes.size());
 	planes.push_back(plane);
 	return plane;
+}
+void Level::addVictoryPlane() {
+	victoryPlane = addNewPlane();
 }
 int Level::trackNextRail(short railId, Rail* rail) {
 	minimumRailColor = MathUtils::max(rail->getColor(), minimumRailColor);
@@ -317,8 +318,8 @@ int Level::trackNextRail(short railId, Rail* rail) {
 }
 void Level::setupPotentialLevelStateHelpers(vector<Level*>& allLevels) {
 	for (Level* level : allLevels) {
-		//add one PotentialLevelStatesByBucket per plane, plus one extra for the victory plane
-		while (potentialLevelStatesByBucketByPlane.size() <= level->planes.size())
+		//add one PotentialLevelStatesByBucket per plane, which includes the victory plane
+		while (potentialLevelStatesByBucketByPlane.size() < level->planes.size())
 			potentialLevelStatesByBucketByPlane.push_back(PotentialLevelStatesByBucket());
 		HintState::PotentialLevelState::maxRailByteMaskCount =
 			MathUtils::max(HintState::PotentialLevelState::maxRailByteMaskCount, level->getRailByteMaskCount());
@@ -347,10 +348,8 @@ Hint* Level::generateHint(
 	else if (victoryPlane == nullptr)
 		return &Hint::none;
 
-	//prepare the victory plane
+	//save the victory plane so Plane can use it
 	cachedHintSearchVictoryPlane = victoryPlane;
-	//make sure to distinguish our plane 0 from the victory plane, which is always plane 0 of the next level
-	planes[0]->writeVictoryPlaneIndex(victoryPlane, (int)planes.size());
 
 	//setup the base potential level state
 	HintState::PotentialLevelState::currentRailByteMaskCount = getRailByteMaskCount();

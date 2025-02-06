@@ -75,9 +75,6 @@ namespace LevelTypes {
 		bool addConnection(Plane* toPlane, Rail* rail);
 		//add a rail connection to another plane
 		void addRailConnection(Plane* toPlane, LevelTypes::RailByteMaskData* railByteMaskData, Rail* rail);
-		//reset the indexInOwningLevel to 0 for this plane, and set it to the given value on the given plane
-		//assumes this plane is a victory plane for a previous level, meaning its true indexInOwningLevel will always be 0
-		void writeVictoryPlaneIndex(Plane* victoryPlane, int pIndexInOwningLevel);
 		//follow all possible actions, and see if any of them lead to reaching the victory plane
 		Hint* pursueSolution(HintState::PotentialLevelState* currentState);
 		//get the bounds of the hint to render for this plane
@@ -156,12 +153,14 @@ public:
 
 	int getLevelN() { return levelN; }
 	int getStartTile() { return startTile; }
-	void assignVictoryPlane(LevelTypes::Plane* pVictoryPlane) { victoryPlane = pVictoryPlane; }
 	void assignRadioTowerSwitch(Switch* radioTowerSwitch) { radioTowerHint.data.switch0 = radioTowerSwitch; }
 	LevelTypes::RailByteMaskData* getRailByteMaskData(int i) { return &allRailByteMaskData[i]; }
 	int getRailByteMaskCount() { return (railByteMaskBitsTracked + 31) / 32; }
+	LevelTypes::Plane* getVictoryPlane() { return victoryPlane; }
 	//add a new plane to this level
 	LevelTypes::Plane* addNewPlane();
+	//add a special plane for use as the victory plane
+	void addVictoryPlane();
 	//create a byte mask for a new rail
 	//returns the index into the internal byte mask vector for use in getRailByteMaskData()
 	int trackNextRail(short railId, Rail* rail);

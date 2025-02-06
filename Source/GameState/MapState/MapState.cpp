@@ -335,18 +335,16 @@ void MapState::buildLevels() {
 			continue;
 
 		//this tile is a victory tile - start a new level if this is the last tile we know about
-		bool isVictoryTile = tiles[nextTile] == tilePuzzleEnd;
-		if (isVictoryTile) {
+		if (tiles[nextTile] == tilePuzzleEnd) {
 			//there are more tiles/planes to check, stick this tile at the end and keep building planes
 			if (!tileChecks.empty()) {
 				tileChecks.push_back(nextTile);
 				continue;
 			}
+			activeLevel->addVictoryPlane();
 			levels.push_back(activeLevel = newLevel(levels.size() + 1, nextTile));
 		}
 		LevelTypes::Plane* newPlane = buildPlane(nextTile, activeLevel, tileChecks, planeConnections);
-		if (isVictoryTile)
-			levels[levels.size() - 2]->assignVictoryPlane(newPlane);
 	}
 
 	//add switches to planes
