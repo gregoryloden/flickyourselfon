@@ -1558,6 +1558,9 @@ void PlayerState::undoKickResetSwitch(
 	mapState.get()->writeCurrentRailStates(
 		resetSwitchId, stackNewKickResetSwitchUndoState(isUndo ? redoState : undoState, resetSwitchId, direction, hint));
 }
+int PlayerState::getLevelN() {
+	return mapState.get()->getLevelN(lastControlledX, lastControlledY + boundingBoxCenterYOffset);
+}
 void PlayerState::render(EntityState* camera, int ticksTime) {
 	if (ghostSpriteX.get() != nullptr && ghostSpriteY.get() != nullptr) {
 		float ghostRenderCenterX = getRenderCenterScreenXFromWorldX(

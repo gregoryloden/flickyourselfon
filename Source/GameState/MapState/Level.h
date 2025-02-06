@@ -31,7 +31,7 @@ namespace LevelTypes {
 			vector<RailByteMaskData*> affectedRailByteMaskData;
 			Hint hint;
 
-			ConnectionSwitch(Switch* switch0, int levelN);
+			ConnectionSwitch(Switch* switch0);
 			virtual ~ConnectionSwitch();
 		};
 		//Should only be allocated within an object, on the stack, or as a static object
@@ -42,7 +42,7 @@ namespace LevelTypes {
 			unsigned int railTileOffsetByteMask;
 			Hint hint;
 
-			Connection(Plane* pToPlane, int pRailByteIndex, int pRailTileOffsetByteMask, Rail* rail, int levelN);
+			Connection(Plane* pToPlane, int pRailByteIndex, int pRailTileOffsetByteMask, Rail* rail);
 			virtual ~Connection();
 		};
 

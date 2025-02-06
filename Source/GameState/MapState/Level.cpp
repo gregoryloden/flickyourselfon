@@ -15,20 +15,19 @@ LevelTypes::Plane::Tile::Tile(int pX, int pY)
 LevelTypes::Plane::Tile::~Tile() {}
 
 //////////////////////////////// LevelTypes::Plane::ConnectionSwitch ////////////////////////////////
-LevelTypes::Plane::ConnectionSwitch::ConnectionSwitch(Switch* switch0, int levelN)
+LevelTypes::Plane::ConnectionSwitch::ConnectionSwitch(Switch* switch0)
 : affectedRailByteMaskData()
-, hint(Hint::Type::Switch, levelN) {
+, hint(Hint::Type::Switch) {
 	hint.data.switch0 = switch0;
 }
 LevelTypes::Plane::ConnectionSwitch::~ConnectionSwitch() {}
 
 //////////////////////////////// LevelTypes::Plane::Connection ////////////////////////////////
-LevelTypes::Plane::Connection::Connection(
-	Plane* pToPlane, int pRailByteIndex, int pRailTileOffsetByteMask, Rail* rail, int levelN)
+LevelTypes::Plane::Connection::Connection(Plane* pToPlane, int pRailByteIndex, int pRailTileOffsetByteMask, Rail* rail)
 : toPlane(pToPlane)
 , railByteIndex(pRailByteIndex)
 , railTileOffsetByteMask(pRailTileOffsetByteMask)
-, hint(Hint::Type::None, levelN) {
+, hint(Hint::Type::None) {
 	if (rail != nullptr) {
 		hint.type = Hint::Type::Rail;
 		hint.data.rail = rail;
@@ -65,7 +64,7 @@ void LevelTypes::Plane::addTile(int x, int y) {
 	renderBottomTileY = MathUtils::max(renderBottomTileY, y + 1);
 }
 int LevelTypes::Plane::addConnectionSwitch(Switch* switch0) {
-	connectionSwitches.push_back(ConnectionSwitch(switch0, owningLevel->getLevelN()));
+	connectionSwitches.push_back(ConnectionSwitch(switch0));
 	return (int)connectionSwitches.size() - 1;
 }
 bool LevelTypes::Plane::addConnection(Plane* toPlane, Rail* rail) {
@@ -76,15 +75,14 @@ bool LevelTypes::Plane::addConnection(Plane* toPlane, Rail* rail) {
 			if (connection.toPlane == toPlane)
 				return true;
 		}
-		connections.push_back(Connection(toPlane, Level::absentRailByteIndex, 0, nullptr, owningLevel->getLevelN()));
+		connections.push_back(Connection(toPlane, Level::absentRailByteIndex, 0, nullptr));
 		return true;
 	}
 	//add a rail connection to a plane that is already connected to this plane
 	for (Connection& connection : toPlane->connections) {
 		if (connection.toPlane != this || connection.hint.data.rail != rail)
 			continue;
-		connections.push_back(
-			Connection(toPlane, connection.railByteIndex, connection.railTileOffsetByteMask, rail, owningLevel->getLevelN()));
+		connections.push_back(Connection(toPlane, connection.railByteIndex, connection.railTileOffsetByteMask, rail));
 		return true;
 	}
 	return false;
@@ -97,8 +95,7 @@ void LevelTypes::Plane::addRailConnection(Plane* toPlane, RailByteMaskData* rail
 			toPlane,
 			railByteMaskData->railByteIndex,
 			Level::baseRailTileOffsetByteMask << railByteMaskData->railBitShift,
-			rail,
-			owningLevel->getLevelN()));
+			rail));
 }
 Hint* LevelTypes::Plane::pursueSolution(HintState::PotentialLevelState* currentState) {
 	unsigned int bucket = currentState->railByteMasksHash % Level::PotentialLevelStatesByBucket::bucketSize;
@@ -287,7 +284,7 @@ levelN(pLevelN)
 , railByteMaskBitsTracked(0)
 , victoryPlane(nullptr)
 , minimumRailColor(0)
-, radioTowerHint(Hint::Type::Switch, pLevelN) {
+, radioTowerHint(Hint::Type::Switch) {
 }
 Level::~Level() {
 	for (Plane* plane : planes)

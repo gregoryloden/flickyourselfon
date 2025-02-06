@@ -141,17 +141,17 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 	} else
 		prev->camera->setNextCamera(this, gameTicksTime);
 
-	Hint* playerHint = playerState.get()->getHint();
-	if (playerHint->levelN > levelsUnlocked) {
+	int playerLevelN = playerState.get()->getLevelN();
+	if (playerLevelN > levelsUnlocked) {
 		//this is the end of the intro animation
 		if (levelsUnlocked == 0) {
 			MapState::setIntroAnimationBootTile(false);
 			playerState.get()->setInitialZ();
 		}
-		levelsUnlocked = playerHint->levelN;
+		levelsUnlocked = playerLevelN;
 	}
 	if (perpetualHints)
-		mapState.get()->setHint(playerHint, gameTicksTime);
+		mapState.get()->setHint(playerState.get()->getHint(), gameTicksTime);
 
 	//handle events after states have been updated
 	SDL_Event gameEvent;

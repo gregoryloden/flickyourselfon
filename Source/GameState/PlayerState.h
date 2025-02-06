@@ -291,6 +291,8 @@ public:
 		Hint* fromHint,
 		bool isUndo,
 		int ticksTime);
+	//get the level that the player is currently on
+	int getLevelN();
 	//render this player state, which was deemed to be the last state to need rendering
 	void render(EntityState* camera, int ticksTime);
 	//render the kick action for this player state if one is available

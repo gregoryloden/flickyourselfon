@@ -879,6 +879,11 @@ Hint* MapState::generateHint(float playerX, float playerY) {
 void MapState::setHint(Hint* hint, int ticksTime) {
 	hintState.set(newHintState(hint, ticksTime));
 }
+int MapState::getLevelN(float playerX, float playerY) {
+	//don't worry if the player is outside of a level plane (whether due to noclip or a modified save file)
+	short planeId = planeIds[(int)playerY / tileSize * mapWidth + (int)playerX / tileSize];
+	return planeId == 0 ? 0 : planes[planeId - 1]->getOwningLevel()->getLevelN();
+}
 void MapState::renderBelowPlayer(EntityState* camera, float playerWorldGroundY, char playerZ, int ticksTime) {
 	glDisable(GL_BLEND);
 	//render the map

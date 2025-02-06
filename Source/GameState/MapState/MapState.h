@@ -330,6 +330,8 @@ public:
 	Hint* generateHint(float playerX, float playerY);
 	//set the given hint to be shown
 	void setHint(Hint* hint, int ticksTime);
+	//get the level for the given position
+	int getLevelN(float playerX, float playerY);
 	//render the map
 	void renderBelowPlayer(EntityState* camera, float playerWorldGroundY, char playerZ, int ticksTime);
 	//render anything (rails, groups) that render above the player

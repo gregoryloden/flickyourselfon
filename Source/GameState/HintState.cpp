@@ -6,12 +6,11 @@
 #include "Sprites/SpriteSheet.h"
 
 //////////////////////////////// Hint ////////////////////////////////
-Hint Hint::none (Hint::Type::None, 0);
-Hint Hint::undoReset (Hint::Type::UndoReset, 0);
-Hint::Hint(Type pType, int pLevelN)
+Hint Hint::none (Hint::Type::None);
+Hint Hint::undoReset (Hint::Type::UndoReset);
+Hint::Hint(Type pType)
 : type(pType)
-, data()
-, levelN(pLevelN) {
+, data() {
 }
 Hint::~Hint() {
 	//don't delete anything in data, it's owned by something else
