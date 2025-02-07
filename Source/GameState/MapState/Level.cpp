@@ -133,7 +133,7 @@ Hint* LevelTypes::Plane::pursueSolution(HintState::PotentialLevelState* currentS
 		}
 		//otherwise, track it
 		potentialLevelStates.push_back(nextPotentialLevelState);
-		Level::nextPotentialLevelStates.push_back(nextPotentialLevelState);
+		Level::getNextPotentialLevelStatesForAdditionalSteps(1)->push_back(nextPotentialLevelState);
 	}
 
 	//check switches
@@ -181,7 +181,7 @@ Hint* LevelTypes::Plane::pursueSolution(HintState::PotentialLevelState* currentS
 			Level::hintSearchUniqueStates++;
 		#endif
 		potentialLevelStates.push_back(nextPotentialLevelState);
-		Level::nextPotentialLevelStates.push_back(nextPotentialLevelState);
+		Level::getNextPotentialLevelStatesForAdditionalSteps(1)->push_back(nextPotentialLevelState);
 	}
 
 	return nullptr;
@@ -267,7 +267,8 @@ Level::PotentialLevelStatesByBucket::~PotentialLevelStatesByBucket() {}
 
 //////////////////////////////// Level ////////////////////////////////
 vector<Level::PotentialLevelStatesByBucket> Level::potentialLevelStatesByBucketByPlane;
-deque<HintState::PotentialLevelState*> Level::nextPotentialLevelStates;
+vector<deque<HintState::PotentialLevelState*>*> Level::nextPotentialLevelStatesBySteps;
+int Level::currentPotentialLevelStateSteps = 0;
 Plane* Level::cachedHintSearchVictoryPlane = nullptr;
 #ifdef TRACK_HINT_SEARCH_STATS
 	int Level::hintSearchActionsChecked = 0;
@@ -367,7 +368,8 @@ Hint* Level::generateHint(
 	potentialLevelStatesByBucketByPlane[currentPlane->getIndexInOwningLevel()]
 		.buckets[baseLevelState->railByteMasksHash % PotentialLevelStatesByBucket::bucketSize]
 		.push_back(baseLevelState);
-	nextPotentialLevelStates.push_back(baseLevelState);
+	currentPotentialLevelStateSteps = 0;
+	getNextPotentialLevelStatesForAdditionalSteps(0)->push_back(baseLevelState);
 
 	//go through all states and see if there's anything we could do to get closer to the victory plane
 	Hint* result = nullptr;
@@ -378,19 +380,27 @@ Hint* Level::generateHint(
 		foundHintSearchTotalSteps = 0;
 		int timeBeforeSearch = SDL_GetTicks();
 	#endif
-	while (!nextPotentialLevelStates.empty()) {
-		HintState::PotentialLevelState* potentialLevelState = nextPotentialLevelStates.front();
-		nextPotentialLevelStates.pop_front();
-		result = potentialLevelState->plane->pursueSolution(potentialLevelState);
-		if (result != nullptr)
-			break;
+	for (; currentPotentialLevelStateSteps < (int)nextPotentialLevelStatesBySteps.size(); currentPotentialLevelStateSteps++) {
+		deque<HintState::PotentialLevelState*>* nextPotentialLevelStates =
+			nextPotentialLevelStatesBySteps[currentPotentialLevelStateSteps];
+		while (!nextPotentialLevelStates->empty()) {
+			HintState::PotentialLevelState* potentialLevelState = nextPotentialLevelStates->front();
+			nextPotentialLevelStates->pop_front();
+			result = potentialLevelState->plane->pursueSolution(potentialLevelState);
+			if (result != nullptr) {
+				currentPotentialLevelStateSteps = (int)nextPotentialLevelStatesBySteps.size();
+				break;
+			}
+		}
 	}
 
 	//cleanup
 	#ifdef TRACK_HINT_SEARCH_STATS
 		int timeAfterSearchBeforeCleanup = SDL_GetTicks();
 	#endif
-	nextPotentialLevelStates.clear();
+	for (deque<HintState::PotentialLevelState*>* nextPotentialLevelStates : nextPotentialLevelStatesBySteps)
+		delete nextPotentialLevelStates;
+	nextPotentialLevelStatesBySteps.clear();
 	//only clear as many plane buckets as we used
 	for (int i = 0; i < (int)planes.size(); i++) {
 		for (vector<HintState::PotentialLevelState*>& potentialLevelStates : potentialLevelStatesByBucketByPlane[i].buckets) {
@@ -419,6 +429,12 @@ Hint* Level::generateHint(
 	#endif
 
 	return result != nullptr ? result : &Hint::undoReset;
+}
+deque<HintState::PotentialLevelState*>* Level::getNextPotentialLevelStatesForAdditionalSteps(int additionalSteps) {
+	int nextPotentialLevelStateSteps = currentPotentialLevelStateSteps + additionalSteps;
+	while ((int)nextPotentialLevelStatesBySteps.size() <= nextPotentialLevelStateSteps)
+		nextPotentialLevelStatesBySteps.push_back(new deque<HintState::PotentialLevelState*>());
+	return nextPotentialLevelStatesBySteps[nextPotentialLevelStateSteps];
 }
 void Level::logStats() {
 	int switchCounts[4] = {};
