@@ -537,6 +537,7 @@ void MapState::deleteMap() {
 	for (ResetSwitch* resetSwitch : resetSwitches)
 		delete resetSwitch;
 	resetSwitches.clear();
+	Level::deleteHelpers();
 	//don't delete planes, they are owned by the Levels
 	planes.clear();
 	for (Level* level : levels)

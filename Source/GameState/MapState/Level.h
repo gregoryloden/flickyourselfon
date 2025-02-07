@@ -169,6 +169,8 @@ public:
 	int trackNextRail(short railId, Rail* rail);
 	//initialize PotentialLevelState helper objects to accomodate all of the given levels
 	static void setupPotentialLevelStateHelpers(vector<Level*>& allLevels);
+	//delete helpers used in hint searching
+	static void deleteHelpers();
 	//generate a hint to solve this level from the start, to save time in the future allocating PotentialLevelStates when
 	//	generating hints
 	void preAllocatePotentialLevelStates();

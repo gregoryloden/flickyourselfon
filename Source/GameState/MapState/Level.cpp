@@ -327,6 +327,9 @@ void Level::setupPotentialLevelStateHelpers(vector<Level*>& allLevels) {
 	HintState::PotentialLevelState::draftState.railByteMasks =
 		new unsigned int[HintState::PotentialLevelState::maxRailByteMaskCount];
 }
+void Level::deleteHelpers() {
+	potentialLevelStatesByBucketByPlane.clear();
+}
 void Level::preAllocatePotentialLevelStates() {
 	generateHint(
 		planes[0],
