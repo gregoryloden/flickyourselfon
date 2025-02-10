@@ -78,9 +78,9 @@ bool LevelTypes::Plane::addConnection(Plane* toPlane, Rail* rail) {
 		connections.push_back(Connection(toPlane, Level::absentRailByteIndex, 0, nullptr));
 		return true;
 	}
-	//add a rail connection to a plane that is already connected to this plane
+	//add a rail connection to a plane that is already connected to this plane by the given rail
 	for (Connection& connection : toPlane->connections) {
-		if (connection.toPlane != this || connection.hint.data.rail != rail)
+		if (connection.toPlane != this || connection.hint.type != Hint::Type::Rail || connection.hint.data.rail != rail)
 			continue;
 		connections.push_back(Connection(toPlane, connection.railByteIndex, connection.railTileOffsetByteMask, rail));
 		return true;
