@@ -25,10 +25,8 @@
 	newEntityAnimationDelay(animation->getTotalTicksDuration())
 
 //////////////////////////////// MapState::PlaneConnection ////////////////////////////////
-MapState::PlaneConnection::PlaneConnection(
-	LevelTypes::Plane* pFromPlane, int pToTile, Rail* pRail, int pLevelRailByteMaskDataIndex)
-: fromPlane(pFromPlane)
-, toTile(pToTile)
+MapState::PlaneConnection::PlaneConnection(int pToTile, Rail* pRail, int pLevelRailByteMaskDataIndex)
+: toTile(pToTile)
 , rail(pRail)
 , levelRailByteMaskDataIndex(pLevelRailByteMaskDataIndex) {
 }
@@ -323,7 +321,7 @@ void MapState::buildLevels() {
 	int introAnimationBootTile = introAnimationBootTileY * mapWidth + introAnimationBootTileX;
 	Level* activeLevel = newLevel(levels.size() + 1, introAnimationBootTile);
 	levels.push_back(activeLevel);
-	vector<PlaneConnection> planeConnections;
+	vector<vector<PlaneConnection>> allPlaneConnections;
 
 	//the first tile we'll check is the tile where the boot starts
 	deque<int> tileChecks ({ introAnimationBootTile });
@@ -344,7 +342,8 @@ void MapState::buildLevels() {
 			activeLevel->addVictoryPlane();
 			levels.push_back(activeLevel = newLevel(levels.size() + 1, nextTile));
 		}
-		LevelTypes::Plane* newPlane = buildPlane(nextTile, activeLevel, tileChecks, planeConnections);
+		allPlaneConnections.push_back(vector<PlaneConnection>());
+		LevelTypes::Plane* newPlane = buildPlane(nextTile, activeLevel, tileChecks, allPlaneConnections.back());
 	}
 
 	//add switches to planes
@@ -380,38 +379,41 @@ void MapState::buildLevels() {
 	}
 
 	//add connections between planes
-	for (PlaneConnection& planeConnection : planeConnections) {
-		LevelTypes::Plane* toPlane = planes[planeIds[planeConnection.toTile] - 1];
-		//plane-plane connection
-		if (planeConnection.rail == nullptr)
-			planeConnection.fromPlane->addPlaneConnection(toPlane);
-		//we have a new rail - add a connection to it and add the data to all applicable switches
-		else if (planeConnection.levelRailByteMaskDataIndex >= 0) {
-			LevelTypes::RailByteMaskData* railByteMaskData =
-				planeConnection.fromPlane->getOwningLevel()->getRailByteMaskData(planeConnection.levelRailByteMaskDataIndex);
-			planeConnection.fromPlane->addRailConnection(toPlane, railByteMaskData, planeConnection.rail);
-			vector<PlaneConnectionSwitch*>& planeConnectionSwitchesByGroup =
-				planeConnectionSwitchesByGroupByColor[planeConnection.rail->getColor()];
-			for (char group : planeConnection.rail->getGroups()) {
-				//with the editor, it's possible to have switches which aren't on any plane accessible from the start, so skip
-				//	rails for those switches
-				//should never happen with an umodified floor file once the game is released
-				if (group >= (int)planeConnectionSwitchesByGroup.size()) {
-					stringstream message;
-					message << "ERROR: no switch found for rail c" << (int)planeConnection.rail->getColor() << " ";
-					logGroup(group, &message);
-					Logger::debugLogger.logString(message.str());
-					continue;
+	for (int planeI = 0; planeI < (int)planes.size(); planeI++) {
+		LevelTypes::Plane* fromPlane = planes[planeI];
+		for (PlaneConnection& planeConnection : allPlaneConnections[planeI]) {
+			LevelTypes::Plane* toPlane = planes[planeIds[planeConnection.toTile] - 1];
+			//plane-plane connection
+			if (planeConnection.rail == nullptr)
+				fromPlane->addPlaneConnection(toPlane);
+			//we have a new rail - add a connection to it and add the data to all applicable switches
+			else if (planeConnection.levelRailByteMaskDataIndex >= 0) {
+				LevelTypes::RailByteMaskData* railByteMaskData =
+					fromPlane->getOwningLevel()->getRailByteMaskData(planeConnection.levelRailByteMaskDataIndex);
+				fromPlane->addRailConnection(toPlane, railByteMaskData, planeConnection.rail);
+				vector<PlaneConnectionSwitch*>& planeConnectionSwitchesByGroup =
+					planeConnectionSwitchesByGroupByColor[planeConnection.rail->getColor()];
+				for (char group : planeConnection.rail->getGroups()) {
+					//with the editor, it's possible to have switches which aren't on any plane accessible from the start, so
+					//	skip rails for those switches
+					//should never happen with an umodified floor file once the game is released
+					if (group >= (int)planeConnectionSwitchesByGroup.size()) {
+						stringstream message;
+						message << "ERROR: no switch found for rail c" << (int)planeConnection.rail->getColor() << " ";
+						logGroup(group, &message);
+						Logger::debugLogger.logString(message.str());
+						continue;
+					}
+					PlaneConnectionSwitch* planeConnectionSwitch = planeConnectionSwitchesByGroup[group];
+					planeConnectionSwitch->plane->addRailConnectionToSwitch(
+						railByteMaskData, planeConnectionSwitch->planeConnectionSwitchIndex);
 				}
-				PlaneConnectionSwitch* planeConnectionSwitch = planeConnectionSwitchesByGroup[group];
-				planeConnectionSwitch->plane->addRailConnectionToSwitch(
-					railByteMaskData, planeConnectionSwitch->planeConnectionSwitchIndex);
-			}
-		//add a connection going back to a plane that is already connected to this plane
-		//because these PlaneConnections are only added when connecting to an already-existing plane, which has already
-		//	added all its connections, we can assume that there is a corresponding reverse rail connection to copy from
-		} else
-			planeConnection.fromPlane->addReverseRailConnection(toPlane, planeConnection.rail);
+			//add a connection going back to a plane that is already connected to this plane
+			//because these PlaneConnections are only added when connecting to an already-existing plane, which has already
+			//	added all its connections, we can assume that there is a corresponding reverse rail connection to copy from
+			} else
+				fromPlane->addReverseRailConnection(toPlane, planeConnection.rail);
+		}
 	}
 
 	for (Level* level : levels)
@@ -483,7 +485,7 @@ LevelTypes::Plane* MapState::buildPlane(
 			//we have a neighboring tile that we can climb or fall to, but if it belongs to a plane on a previous level, drop it
 			if (planeIds[neighbor] != 0 && planes[planeIds[neighbor] - 1]->getOwningLevel() != activeLevel)
 				continue;
-			planeConnections.push_back(PlaneConnection(plane, neighbor, nullptr, -1));
+			planeConnections.push_back(PlaneConnection(neighbor, nullptr, -1));
 			tileChecks.push_back(neighbor);
 		}
 
@@ -498,15 +500,14 @@ LevelTypes::Plane* MapState::buildPlane(
 			int endTile = endSegment->y * mapWidth + endSegment->x;
 			if (tile == startTile)
 				addRailPlaneConnection(
-					plane, endTile, railId, planeConnections, activeLevel, rail, rail->getSegmentCount() - 2, tileChecks);
+					endTile, railId, planeConnections, activeLevel, rail, rail->getSegmentCount() - 2, tileChecks);
 			else if (tile == endTile)
-				addRailPlaneConnection(plane, startTile, railId, planeConnections, activeLevel, rail, 1, tileChecks);
+				addRailPlaneConnection(startTile, railId, planeConnections, activeLevel, rail, 1, tileChecks);
 		}
 	}
 	return plane;
 }
 void MapState::addRailPlaneConnection(
-	LevelTypes::Plane* plane,
 	int toTile,
 	short railId,
 	vector<PlaneConnection>& planeConnections,
@@ -516,7 +517,7 @@ void MapState::addRailPlaneConnection(
 	deque<int>& tileChecks)
 {
 	if (planeIds[toTile] == 0) {
-		planeConnections.push_back(PlaneConnection(plane, toTile, rail, activeLevel->trackNextRail(railId, rail)));
+		planeConnections.push_back(PlaneConnection(toTile, rail, activeLevel->trackNextRail(railId, rail)));
 		Rail::Segment* toAdjacentSegment = rail->getSegment(adjacentRailSegmentIndex);
 		int toAdjacentTile = toTile * 2 - toAdjacentSegment->y * mapWidth - toAdjacentSegment->x;
 		if (tiles[toAdjacentTile] == tilePuzzleEnd)
@@ -525,7 +526,7 @@ void MapState::addRailPlaneConnection(
 			tileChecks.push_back(toTile);
 	//only add reverse rail connections to planes in the same level
 	} else if (planes[planeIds[toTile] - 1]->getOwningLevel() == activeLevel)
-		planeConnections.push_back(PlaneConnection(plane, toTile, rail, -1));
+		planeConnections.push_back(PlaneConnection(toTile, rail, -1));
 }
 void MapState::deleteMap() {
 	delete[] tiles;

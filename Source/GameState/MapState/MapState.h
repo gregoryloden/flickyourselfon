@@ -36,7 +36,6 @@ private:
 	//Should only be allocated within an object, on the stack, or as a static object
 	class PlaneConnection {
 	public:
-		LevelTypes::Plane* fromPlane;
 		int toTile;
 		Rail* rail;
 		//we need to store an index into the level's RailByteMaskData list when tracking the connection, instead of adding it
@@ -44,7 +43,7 @@ private:
 		//	it stores objects instead of pointers
 		int levelRailByteMaskDataIndex;
 
-		PlaneConnection(LevelTypes::Plane* pFromPlane, int pToTile, Rail* pRail, int pLevelRailByteMaskDataIndex);
+		PlaneConnection(int pToTile, Rail* pRail, int pLevelRailByteMaskDataIndex);
 		virtual ~PlaneConnection();
 	};
 	//Should only be allocated within an object, on the stack, or as a static object
@@ -257,7 +256,6 @@ private:
 	static LevelTypes::Plane* buildPlane(
 		int tile, Level* activeLevel, deque<int>& tileChecks, vector<PlaneConnection>& planeConnections);
 	static void addRailPlaneConnection(
-		LevelTypes::Plane* plane,
 		int toTile,
 		short railId,
 		vector<PlaneConnection>& planeConnections,
