@@ -382,30 +382,36 @@ void MapState::buildLevels() {
 	//add connections between planes
 	for (PlaneConnection& planeConnection : planeConnections) {
 		LevelTypes::Plane* toPlane = planes[planeIds[planeConnection.toTile] - 1];
-		if (planeConnection.fromPlane->addConnection(toPlane, planeConnection.rail))
-			continue;
-
+		//plane-plane connection
+		if (planeConnection.rail == nullptr)
+			planeConnection.fromPlane->addPlaneConnection(toPlane);
 		//we have a new rail - add a connection to it and add the data to all applicable switches
-		LevelTypes::RailByteMaskData* railByteMaskData =
-			planeConnection.fromPlane->getOwningLevel()->getRailByteMaskData(planeConnection.levelRailByteMaskDataIndex);
-		planeConnection.fromPlane->addRailConnection(toPlane, railByteMaskData, planeConnection.rail);
-		vector<PlaneConnectionSwitch*>& planeConnectionSwitchesByGroup =
-			planeConnectionSwitchesByGroupByColor[planeConnection.rail->getColor()];
-		for (char group : planeConnection.rail->getGroups()) {
-			//with the editor, it's possible to have switches which aren't on any plane accessible from the start, so skip rails
-			//	for those switches
-			//should never happen with an umodified floor file once the game is released
-			if (group >= (int)planeConnectionSwitchesByGroup.size()) {
-				stringstream message;
-				message << "ERROR: no switch found for rail c" << (int)planeConnection.rail->getColor() << " ";
-				logGroup(group, &message);
-				Logger::debugLogger.logString(message.str());
-				continue;
+		else if (planeConnection.levelRailByteMaskDataIndex >= 0) {
+			LevelTypes::RailByteMaskData* railByteMaskData =
+				planeConnection.fromPlane->getOwningLevel()->getRailByteMaskData(planeConnection.levelRailByteMaskDataIndex);
+			planeConnection.fromPlane->addRailConnection(toPlane, railByteMaskData, planeConnection.rail);
+			vector<PlaneConnectionSwitch*>& planeConnectionSwitchesByGroup =
+				planeConnectionSwitchesByGroupByColor[planeConnection.rail->getColor()];
+			for (char group : planeConnection.rail->getGroups()) {
+				//with the editor, it's possible to have switches which aren't on any plane accessible from the start, so skip
+				//	rails for those switches
+				//should never happen with an umodified floor file once the game is released
+				if (group >= (int)planeConnectionSwitchesByGroup.size()) {
+					stringstream message;
+					message << "ERROR: no switch found for rail c" << (int)planeConnection.rail->getColor() << " ";
+					logGroup(group, &message);
+					Logger::debugLogger.logString(message.str());
+					continue;
+				}
+				PlaneConnectionSwitch* planeConnectionSwitch = planeConnectionSwitchesByGroup[group];
+				planeConnectionSwitch->plane->addRailConnectionToSwitch(
+					railByteMaskData, planeConnectionSwitch->planeConnectionSwitchIndex);
 			}
-			PlaneConnectionSwitch* planeConnectionSwitch = planeConnectionSwitchesByGroup[group];
-			planeConnectionSwitch->plane->addRailConnectionToSwitch(
-				railByteMaskData, planeConnectionSwitch->planeConnectionSwitchIndex);
-		}
+		//add a connection going back to a plane that is already connected to this plane
+		//because these PlaneConnections are only added when connecting to an already-existing plane, which has already
+		//	added all its connections, we can assume that there is a corresponding reverse rail connection to copy from
+		} else
+			planeConnection.fromPlane->addReverseRailConnection(toPlane, planeConnection.rail);
 	}
 
 	for (Level* level : levels)

@@ -70,11 +70,12 @@ namespace LevelTypes {
 		//add a switch
 		//returns the index of the switch in this plane
 		int addConnectionSwitch(Switch* switch0);
-		//add a connection to another plane, if we don't already have one
-		//returns true if the connection was redundant or added, and false if we need to add a new rail connection
-		bool addConnection(Plane* toPlane, Rail* rail);
+		//add a plane-plane connection to another plane, if we don't already have one
+		void addPlaneConnection(Plane* toPlane);
 		//add a rail connection to another plane
 		void addRailConnection(Plane* toPlane, LevelTypes::RailByteMaskData* railByteMaskData, Rail* rail);
+		//add a rail connection to another plane that is already connected to this plane
+		void addReverseRailConnection(Plane* toPlane, Rail* rail);
 		//follow all possible actions, and see if any of them lead to reaching the victory plane
 		Hint* pursueSolution(HintState::PotentialLevelState* currentState);
 		//get the bounds of the hint to render for this plane
