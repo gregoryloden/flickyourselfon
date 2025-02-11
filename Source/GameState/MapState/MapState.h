@@ -39,6 +39,9 @@ private:
 		LevelTypes::Plane* fromPlane;
 		int toTile;
 		Rail* rail;
+		//we need to store an index into the level's RailByteMaskData list when tracking the connection, instead of adding it
+		//	when adding the connection to the plane, because the pointers into the list get invalidated as the list grows, since
+		//	it stores objects instead of pointers
 		int levelRailByteMaskDataIndex;
 
 		PlaneConnection(LevelTypes::Plane* pFromPlane, int pToTile, Rail* pRail, int pLevelRailByteMaskDataIndex);
