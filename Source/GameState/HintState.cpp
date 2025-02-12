@@ -5,6 +5,9 @@
 #include "Sprites/SpriteRegistry.h"
 #include "Sprites/SpriteSheet.h"
 
+#define newHintStatePotentialLevelState(priorStateAndDraftState, containingList) \
+	produceWithArgs(HintState::PotentialLevelState, priorStateAndDraftState, containingList)
+
 //////////////////////////////// Hint ////////////////////////////////
 Hint Hint::none (Hint::Type::None);
 Hint Hint::undoReset (Hint::Type::UndoReset);
@@ -23,9 +26,9 @@ int HintState::PotentialLevelState::currentRailByteMaskCount = 0;
 HintState::PotentialLevelState::PotentialLevelState(objCounterParameters())
 : PooledReferenceCounter(objCounterArguments())
 , priorState(nullptr)
-, plane(nullptr)
 , railByteMasks(new unsigned int[maxRailByteMaskCount])
 , railByteMasksHash(0)
+, plane(nullptr)
 , hint(nullptr) {
 }
 HintState::PotentialLevelState::~PotentialLevelState() {
@@ -35,19 +38,15 @@ HintState::PotentialLevelState::~PotentialLevelState() {
 	//don't delete the hint, something else owns it
 }
 HintState::PotentialLevelState* HintState::PotentialLevelState::produce(
-	objCounterParametersComma()
-	PotentialLevelState* pPriorState,
-	LevelTypes::Plane* pPlane,
-	PotentialLevelState* pDraftState,
-	Hint* pHint)
+	objCounterParametersComma() PotentialLevelState* priorStateAndDraftState, vector<PotentialLevelState*>& containingList)
 {
 	initializeWithNewFromPool(p, PotentialLevelState)
-	p->priorState = pPriorState;
-	p->plane = pPlane;
+	p->priorState = priorStateAndDraftState;
 	for (int i = currentRailByteMaskCount - 1; i >= 0; i--)
-		p->railByteMasks[i] = pDraftState->railByteMasks[i];
-	p->railByteMasksHash = pDraftState->railByteMasksHash;
-	p->hint = pHint;
+		p->railByteMasks[i] = priorStateAndDraftState->railByteMasks[i];
+	p->railByteMasksHash = priorStateAndDraftState->railByteMasksHash;
+	containingList.push_back(p);
+	p->retain();
 	return p;
 }
 pooledReferenceCounterDefineRelease(HintState::PotentialLevelState)
@@ -57,7 +56,9 @@ void HintState::PotentialLevelState::setHash() {
 		val = val ^ railByteMasks[i];
 	railByteMasksHash = val;
 }
-bool HintState::PotentialLevelState::isNewState(vector<PotentialLevelState*>& potentialLevelStates) {
+HintState::PotentialLevelState* HintState::PotentialLevelState::addNewState(
+	vector<PotentialLevelState*>& potentialLevelStates)
+{
 	//look through every other state, and see if it matches this one
 	for (PotentialLevelState* potentialLevelState : potentialLevelStates) {
 		#ifdef TRACK_HINT_SEARCH_STATS
@@ -72,12 +73,12 @@ bool HintState::PotentialLevelState::isNewState(vector<PotentialLevelState*>& po
 				break;
 			//if we've looked at every byte and they're all the same, this state is not new
 			if (i == 0)
-				return false;
+				return nullptr;
 		}
 	}
 
 	//all states have at least one byte difference, so this is a new state
-	return true;
+	return newHintStatePotentialLevelState(this, potentialLevelStates);
 }
 Hint* HintState::PotentialLevelState::getHint() {
 	PotentialLevelState* hintLevelState = this;

@@ -106,29 +106,26 @@ Hint* LevelTypes::Plane::pursueSolution(HintState::PotentialLevelState* currentS
 			continue;
 
 		//make sure we haven't seen this state before
-		vector<HintState::PotentialLevelState*>& potentialLevelStates =
-			Level::potentialLevelStatesByBucketByPlane[connection.toPlane->indexInOwningLevel].buckets[bucket];
-		if (!currentState->isNewState(potentialLevelStates))
+		HintState::PotentialLevelState* nextPotentialLevelState = currentState->addNewState(
+			Level::potentialLevelStatesByBucketByPlane[connection.toPlane->indexInOwningLevel].buckets[bucket]);
+		if (nextPotentialLevelState == nullptr)
 			continue;
 
-		//build out the new PotentialLevelState
-		HintState::PotentialLevelState* nextPotentialLevelState =
-			newHintStatePotentialLevelState(currentState, connection.toPlane, currentState, &connection.hint);
+		//fill out the new PotentialLevelState
+		nextPotentialLevelState->plane = connection.toPlane;
+		nextPotentialLevelState->hint = &connection.hint;
 		#ifdef TRACK_HINT_SEARCH_STATS
 			Level::hintSearchUniqueStates++;
 		#endif
 
 		//if it goes to the victory plane, return the hint for the first transition
 		if (connection.toPlane == Level::cachedHintSearchVictoryPlane) {
-			//make sure the new state is returned to the pool
-			ReferenceCounterHolder<HintState::PotentialLevelState> nextPotentialLevelStateHolder (nextPotentialLevelState);
 			#ifdef LOG_FOUND_HINT_STEPS
 				logSteps(nextPotentialLevelState);
 			#endif
 			return nextPotentialLevelState->getHint();
 		}
 		//otherwise, track it
-		potentialLevelStates.push_back(nextPotentialLevelState);
 		Level::getNextPotentialLevelStatesForAdditionalSteps(1)->push_back(nextPotentialLevelState);
 	}
 
@@ -164,19 +161,24 @@ Hint* LevelTypes::Plane::pursueSolution(HintState::PotentialLevelState* currentS
 		//make sure we haven't seen this state before
 		vector<HintState::PotentialLevelState*>& potentialLevelStates =
 			Level::potentialLevelStatesByBucketByPlane[indexInOwningLevel].buckets[bucket];
-		if (!HintState::PotentialLevelState::draftState.isNewState(potentialLevelStates))
+		HintState::PotentialLevelState* nextPotentialLevelState =
+			HintState::PotentialLevelState::draftState.addNewState(potentialLevelStates);
+		if (nextPotentialLevelState == nullptr)
 			continue;
 		//also don't bother with any states that lower the only rail of a single-rail switch
-		if (connectionSwitch.affectedRailByteMaskData.size() == 1 && lastTileOffset == 0)
+		if (connectionSwitch.affectedRailByteMaskData.size() == 1 && lastTileOffset == 0) {
+			potentialLevelStates.pop_back();
+			nextPotentialLevelState->release();
 			continue;
+		}
 
-		//build out the new PotentialLevelState and track it
-		HintState::PotentialLevelState* nextPotentialLevelState = newHintStatePotentialLevelState(
-			currentState, this, &HintState::PotentialLevelState::draftState, &connectionSwitch.hint);
+		//fill out the new PotentialLevelState and track it
+		nextPotentialLevelState->priorState = currentState;
+		nextPotentialLevelState->plane = this;
+		nextPotentialLevelState->hint = &connectionSwitch.hint;
 		#ifdef TRACK_HINT_SEARCH_STATS
 			Level::hintSearchUniqueStates++;
 		#endif
-		potentialLevelStates.push_back(nextPotentialLevelState);
 		Level::getNextPotentialLevelStatesForAdditionalSteps(1)->push_back(nextPotentialLevelState);
 	}
 
@@ -362,11 +364,12 @@ Hint* Level::generateHint(
 	HintState::PotentialLevelState::draftState.setHash();
 
 	//load it into the potential level state structures
-	HintState::PotentialLevelState* baseLevelState =
-		newHintStatePotentialLevelState(nullptr, currentPlane, &HintState::PotentialLevelState::draftState, nullptr);
-	potentialLevelStatesByBucketByPlane[currentPlane->getIndexInOwningLevel()]
-		.buckets[baseLevelState->railByteMasksHash % PotentialLevelStatesByBucket::bucketSize]
-		.push_back(baseLevelState);
+	HintState::PotentialLevelState* baseLevelState = HintState::PotentialLevelState::draftState.addNewState(
+		potentialLevelStatesByBucketByPlane[currentPlane->getIndexInOwningLevel()]
+			.buckets[HintState::PotentialLevelState::draftState.railByteMasksHash % PotentialLevelStatesByBucket::bucketSize]);
+	baseLevelState->priorState = nullptr;
+	baseLevelState->plane = currentPlane;
+	baseLevelState->hint = nullptr;
 	currentPotentialLevelStateSteps = 0;
 	getNextPotentialLevelStatesForAdditionalSteps(0)->push_back(baseLevelState);
 
@@ -403,10 +406,9 @@ Hint* Level::generateHint(
 	//only clear as many plane buckets as we used
 	for (int i = 0; i < (int)planes.size(); i++) {
 		for (vector<HintState::PotentialLevelState*>& potentialLevelStates : potentialLevelStatesByBucketByPlane[i].buckets) {
-			//rather than doing the most correct thing, and storing ReferenceCounterHolders in PotentialLevelStatesByBucket, we
-			//	only store pointers, so retain-and-release each one here
+			//these were all retained once before by PotentialLevelState::addNewState, so release them here
 			for (HintState::PotentialLevelState* potentialLevelState : potentialLevelStates)
-				ReferenceCounterHolder<HintState::PotentialLevelState> potendialLevelStateHolder (potentialLevelState);
+				potentialLevelState->release();
 			potentialLevelStates.clear();
 		}
 	}

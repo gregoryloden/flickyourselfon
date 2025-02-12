@@ -3,8 +3,6 @@
 #include "Util/PooledReferenceCounter.h"
 
 #define newHintState(hint, animationEndTicksTime) produceWithArgs(HintState, hint, animationEndTicksTime)
-#define newHintStatePotentialLevelState(priorState, plane, draftState, hint) \
-	produceWithArgs(HintState::PotentialLevelState, priorState, plane, draftState, hint)
 
 class Rail;
 class Switch;
@@ -47,27 +45,28 @@ public:
 		static int currentRailByteMaskCount;
 
 		PotentialLevelState* priorState;
-		LevelTypes::Plane* plane;
 		unsigned int* railByteMasks;
 		unsigned int railByteMasksHash;
+		LevelTypes::Plane* plane;
 		Hint* hint;
 
 		PotentialLevelState(objCounterParameters());
 		virtual ~PotentialLevelState();
 
 		//initialize and return a PotentialLevelState
+		//retains the PotentialLevelState, callers are responsible for releasing it
 		static PotentialLevelState* produce(
 			objCounterParametersComma()
-			PotentialLevelState* pPriorState,
-			LevelTypes::Plane* pPlane,
-			PotentialLevelState* pDraftState,
-			Hint* pHint);
+			PotentialLevelState* priorStateAndDraftState,
+			vector<PotentialLevelState*>& containingList);
 		//release a reference to this PotentialLevelState and return it to the pool if applicable
 		virtual void release();
 		//set a hash based on the railByteMasks
 		void setHash();
-		//check whether this state already appears in the given list of potential states
-		bool isNewState(vector<PotentialLevelState*>& potentialLevelStates);
+		//check if the given list of potential states has a state matching this state, and if not, create a new one (using this
+		//	state as the prior state and draft state), add it to the list, and retain it
+		//callers are responsible for releasing it
+		PotentialLevelState* addNewState(vector<PotentialLevelState*>& potentialLevelStates);
 		//get the hint that leads the player to the second state in the priorState stack
 		Hint* getHint();
 	};
