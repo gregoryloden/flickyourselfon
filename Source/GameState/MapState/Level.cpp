@@ -265,6 +265,7 @@ Level::PotentialLevelStatesByBucket::~PotentialLevelStatesByBucket() {}
 
 //////////////////////////////// Level ////////////////////////////////
 vector<Level::PotentialLevelStatesByBucket> Level::potentialLevelStatesByBucketByPlane;
+int Level::maxPotentialLevelStateSteps = -1;
 vector<deque<HintState::PotentialLevelState*>*> Level::nextPotentialLevelStatesBySteps;
 int Level::currentPotentialLevelStateSteps = 0;
 Plane* Level::cachedHintSearchVictoryPlane = nullptr;
@@ -327,6 +328,9 @@ void Level::setupPotentialLevelStateHelpers(vector<Level*>& allLevels) {
 }
 void Level::deleteHelpers() {
 	potentialLevelStatesByBucketByPlane.clear();
+	for (deque<HintState::PotentialLevelState*>* nextPotentialLevelStates : nextPotentialLevelStatesBySteps)
+		delete nextPotentialLevelStates;
+	nextPotentialLevelStatesBySteps.clear();
 }
 void Level::preAllocatePotentialLevelStates() {
 	generateHint(
@@ -371,6 +375,7 @@ Hint* Level::generateHint(
 	baseLevelState->plane = currentPlane;
 	baseLevelState->hint = nullptr;
 	currentPotentialLevelStateSteps = 0;
+	maxPotentialLevelStateSteps = -1;
 	getNextPotentialLevelStatesForAdditionalSteps(0)->push_back(baseLevelState);
 
 	//go through all states and see if there's anything we could do to get closer to the victory plane
@@ -400,9 +405,8 @@ Hint* Level::generateHint(
 	#ifdef TRACK_HINT_SEARCH_STATS
 		int timeAfterSearchBeforeCleanup = SDL_GetTicks();
 	#endif
-	for (deque<HintState::PotentialLevelState*>* nextPotentialLevelStates : nextPotentialLevelStatesBySteps)
-		delete nextPotentialLevelStates;
-	nextPotentialLevelStatesBySteps.clear();
+	for (int i = 0; i <= maxPotentialLevelStateSteps; i++)
+		nextPotentialLevelStatesBySteps[i]->clear();
 	//only clear as many plane buckets as we used
 	for (int i = 0; i < (int)planes.size(); i++) {
 		for (vector<HintState::PotentialLevelState*>& potentialLevelStates : potentialLevelStatesByBucketByPlane[i].buckets) {
@@ -433,8 +437,11 @@ Hint* Level::generateHint(
 }
 deque<HintState::PotentialLevelState*>* Level::getNextPotentialLevelStatesForAdditionalSteps(int additionalSteps) {
 	int nextPotentialLevelStateSteps = currentPotentialLevelStateSteps + additionalSteps;
-	while ((int)nextPotentialLevelStatesBySteps.size() <= nextPotentialLevelStateSteps)
-		nextPotentialLevelStatesBySteps.push_back(new deque<HintState::PotentialLevelState*>());
+	while (maxPotentialLevelStateSteps < nextPotentialLevelStateSteps) {
+		maxPotentialLevelStateSteps++;
+		if ((int)nextPotentialLevelStatesBySteps.size() == maxPotentialLevelStateSteps)
+			nextPotentialLevelStatesBySteps.push_back(new deque<HintState::PotentialLevelState*>());
+	}
 	return nextPotentialLevelStatesBySteps[nextPotentialLevelStateSteps];
 }
 void Level::logStats() {

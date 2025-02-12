@@ -130,6 +130,7 @@ public:
 
 	static vector<PotentialLevelStatesByBucket> potentialLevelStatesByBucketByPlane;
 private:
+	static int maxPotentialLevelStateSteps;
 	static vector<deque<HintState::PotentialLevelState*>*> nextPotentialLevelStatesBySteps;
 	static int currentPotentialLevelStateSteps;
 public:
