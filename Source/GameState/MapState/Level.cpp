@@ -95,6 +95,7 @@ void LevelTypes::Plane::addReverseRailConnection(Plane* toPlane, Rail* rail) {
 }
 Hint* LevelTypes::Plane::pursueSolution(HintState::PotentialLevelState* currentState) {
 	unsigned int bucket = currentState->railByteMasksHash % Level::PotentialLevelStatesByBucket::bucketSize;
+	int nextPotentialLevelStateSteps = Level::currentPotentialLevelStateSteps + 1;
 	//check connections
 	for (Connection& connection : connections) {
 		#ifdef TRACK_HINT_SEARCH_STATS
@@ -126,7 +127,7 @@ Hint* LevelTypes::Plane::pursueSolution(HintState::PotentialLevelState* currentS
 			return nextPotentialLevelState->getHint();
 		}
 		//otherwise, track it
-		Level::getNextPotentialLevelStatesForAdditionalSteps(1)->push_back(nextPotentialLevelState);
+		Level::getNextPotentialLevelStatesForSteps(nextPotentialLevelStateSteps)->push_back(nextPotentialLevelState);
 	}
 
 	//check switches
@@ -179,7 +180,7 @@ Hint* LevelTypes::Plane::pursueSolution(HintState::PotentialLevelState* currentS
 		#ifdef TRACK_HINT_SEARCH_STATS
 			Level::hintSearchUniqueStates++;
 		#endif
-		Level::getNextPotentialLevelStatesForAdditionalSteps(1)->push_back(nextPotentialLevelState);
+		Level::getNextPotentialLevelStatesForSteps(nextPotentialLevelStateSteps)->push_back(nextPotentialLevelState);
 	}
 
 	return nullptr;
@@ -265,9 +266,9 @@ Level::PotentialLevelStatesByBucket::~PotentialLevelStatesByBucket() {}
 
 //////////////////////////////// Level ////////////////////////////////
 vector<Level::PotentialLevelStatesByBucket> Level::potentialLevelStatesByBucketByPlane;
+int Level::currentPotentialLevelStateSteps = 0;
 int Level::maxPotentialLevelStateSteps = -1;
 vector<deque<HintState::PotentialLevelState*>*> Level::nextPotentialLevelStatesBySteps;
-int Level::currentPotentialLevelStateSteps = 0;
 Plane* Level::cachedHintSearchVictoryPlane = nullptr;
 #ifdef TRACK_HINT_SEARCH_STATS
 	int Level::hintSearchActionsChecked = 0;
@@ -374,9 +375,8 @@ Hint* Level::generateHint(
 	baseLevelState->priorState = nullptr;
 	baseLevelState->plane = currentPlane;
 	baseLevelState->hint = nullptr;
-	currentPotentialLevelStateSteps = 0;
 	maxPotentialLevelStateSteps = -1;
-	getNextPotentialLevelStatesForAdditionalSteps(0)->push_back(baseLevelState);
+	getNextPotentialLevelStatesForSteps(0)->push_back(baseLevelState);
 
 	//go through all states and see if there's anything we could do to get closer to the victory plane
 	Hint* result = nullptr;
@@ -387,7 +387,10 @@ Hint* Level::generateHint(
 		foundHintSearchTotalSteps = 0;
 		int timeBeforeSearch = SDL_GetTicks();
 	#endif
-	for (; currentPotentialLevelStateSteps < (int)nextPotentialLevelStatesBySteps.size(); currentPotentialLevelStateSteps++) {
+	for (currentPotentialLevelStateSteps = 0;
+		currentPotentialLevelStateSteps < (int)nextPotentialLevelStatesBySteps.size();
+		currentPotentialLevelStateSteps++)
+	{
 		deque<HintState::PotentialLevelState*>* nextPotentialLevelStates =
 			nextPotentialLevelStatesBySteps[currentPotentialLevelStateSteps];
 		while (!nextPotentialLevelStates->empty()) {
@@ -435,8 +438,7 @@ Hint* Level::generateHint(
 
 	return result != nullptr ? result : &Hint::undoReset;
 }
-deque<HintState::PotentialLevelState*>* Level::getNextPotentialLevelStatesForAdditionalSteps(int additionalSteps) {
-	int nextPotentialLevelStateSteps = currentPotentialLevelStateSteps + additionalSteps;
+deque<HintState::PotentialLevelState*>* Level::getNextPotentialLevelStatesForSteps(int nextPotentialLevelStateSteps) {
 	while (maxPotentialLevelStateSteps < nextPotentialLevelStateSteps) {
 		maxPotentialLevelStateSteps++;
 		if ((int)nextPotentialLevelStatesBySteps.size() == maxPotentialLevelStateSteps)

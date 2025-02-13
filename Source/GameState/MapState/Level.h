@@ -129,10 +129,10 @@ public:
 	static const unsigned int baseRailByteMask = (1 << railByteMaskBitCount) - 1;
 
 	static vector<PotentialLevelStatesByBucket> potentialLevelStatesByBucketByPlane;
+	static int currentPotentialLevelStateSteps;
 private:
 	static int maxPotentialLevelStateSteps;
 	static vector<deque<HintState::PotentialLevelState*>*> nextPotentialLevelStatesBySteps;
-	static int currentPotentialLevelStateSteps;
 public:
 	static LevelTypes::Plane* cachedHintSearchVictoryPlane;
 	#ifdef TRACK_HINT_SEARCH_STATS
@@ -181,8 +181,8 @@ public:
 		LevelTypes::Plane* currentPlane,
 		function<void(short railId, Rail* rail, char* outMovementDirection, char* outTileOffset)> getRailState,
 		char lastActivatedSwitchColor);
-	//get the queue of next potential level states corresponding to the current steps being processed plus the given steps
-	static deque<HintState::PotentialLevelState*>* getNextPotentialLevelStatesForAdditionalSteps(int additionalSteps);
+	//get the queue of next potential level states corresponding to the given steps
+	static deque<HintState::PotentialLevelState*>* getNextPotentialLevelStatesForSteps(int nextPotentialLevelStateSteps);
 	//log basic information about this level
 	void logStats();
 };
