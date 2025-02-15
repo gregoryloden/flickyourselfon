@@ -385,6 +385,9 @@ Hint* Level::generateHint(
 		hintSearchUniqueStates = 0;
 		hintSearchComparisonsPerformed = 0;
 		foundHintSearchTotalSteps = 0;
+		stringstream beginHintSearchMessage;
+		beginHintSearchMessage << "begin level " << levelN << " hint search";
+		Logger::debugLogger.logString(beginHintSearchMessage.str());
 		int timeBeforeSearch = SDL_GetTicks();
 	#endif
 	for (currentPotentialLevelStateSteps = 0;
