@@ -47,6 +47,7 @@ public:
 		PotentialLevelState* priorState;
 		unsigned int* railByteMasks;
 		unsigned int railByteMasksHash;
+		int steps;
 		LevelTypes::Plane* plane;
 		Hint* hint;
 
@@ -56,17 +57,19 @@ public:
 		//initialize and return a PotentialLevelState
 		//retains the PotentialLevelState, callers are responsible for releasing it
 		static PotentialLevelState* produce(
-			objCounterParametersComma()
-			PotentialLevelState* priorStateAndDraftState,
-			vector<PotentialLevelState*>& containingList);
+			objCounterParametersComma() PotentialLevelState* priorStateAndDraftState, int pSteps);
 		//release a reference to this PotentialLevelState and return it to the pool if applicable
 		virtual void release();
 		//set a hash based on the railByteMasks
 		void setHash();
-		//check if the given list of potential states has a state matching this state, and if not, create a new one (using this
-		//	state as the prior state and draft state), add it to the list, and retain it
+		//check if the given list of potential states has a state matching this state, and if applicable (see below), create a
+		//	new one (using this state as the prior state and draft state), add it to the list, and retain it
 		//callers are responsible for releasing it
-		PotentialLevelState* addNewState(vector<PotentialLevelState*>& potentialLevelStates);
+		//- if there was no matching state: returns the new state after adding it to the end of the list
+		//- if there was a matching state with equal or fewer steps than the given steps: returns nullptr
+		//- if there was a matching state with more steps than the given steps: returns the new state after setting steps on the
+		//	old state to -1 and replacing it in the list with the new state
+		PotentialLevelState* addNewState(vector<PotentialLevelState*>& potentialLevelStates, int pSteps);
 		//get the hint that leads the player to the second state in the priorState stack
 		Hint* getHint();
 	};

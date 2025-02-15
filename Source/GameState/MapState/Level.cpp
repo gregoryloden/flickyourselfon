@@ -23,12 +23,17 @@ LevelTypes::Plane::ConnectionSwitch::ConnectionSwitch(Switch* switch0)
 LevelTypes::Plane::ConnectionSwitch::~ConnectionSwitch() {}
 
 //////////////////////////////// LevelTypes::Plane::Connection ////////////////////////////////
-LevelTypes::Plane::Connection::Connection(Plane* pToPlane, int pRailByteIndex, int pRailTileOffsetByteMask, Rail* rail)
+LevelTypes::Plane::Connection::Connection(
+	Plane* pToPlane, int pRailByteIndex, int pRailTileOffsetByteMask, int pSteps, Rail* rail, Plane* hintPlane)
 : toPlane(pToPlane)
 , railByteIndex(pRailByteIndex)
 , railTileOffsetByteMask(pRailTileOffsetByteMask)
+, steps(pSteps)
 , hint(Hint::Type::None) {
-	if (rail != nullptr) {
+	if (hintPlane != nullptr) {
+		hint.type = Hint::Type::Plane;
+		hint.data.plane = hintPlane;
+	} else if (rail != nullptr) {
 		hint.type = Hint::Type::Rail;
 		hint.data.rail = rail;
 	} else {
@@ -48,6 +53,7 @@ owningLevel(pOwningLevel)
 , tiles()
 , connectionSwitches()
 , connections()
+, hasAction(false)
 , renderLeftTileX(MapState::getMapWidth())
 , renderTopTileY(MapState::getMapHeight())
 , renderRightTileX(0)
@@ -65,17 +71,20 @@ void LevelTypes::Plane::addTile(int x, int y) {
 }
 int LevelTypes::Plane::addConnectionSwitch(Switch* switch0) {
 	connectionSwitches.push_back(ConnectionSwitch(switch0));
+	hasAction = true;
 	return (int)connectionSwitches.size() - 1;
 }
-void LevelTypes::Plane::addPlaneConnection(Plane* toPlane) {
+void LevelTypes::Plane::addPlaneConnection(Plane* toPlane, int steps, Plane* hintPlane) {
 	//add a plane-plane connection to a plane if we don't already have one
 	for (Connection& connection : connections) {
-		if (connection.toPlane == toPlane)
+		if (connection.toPlane == toPlane && connection.hint.type == Hint::Type::Plane)
 			return;
 	}
-	connections.push_back(Connection(toPlane, Level::absentRailByteIndex, 0, nullptr));
+	connections.push_back(Connection(toPlane, Level::absentRailByteIndex, 0, steps, nullptr, hintPlane));
 }
-void LevelTypes::Plane::addRailConnection(Plane* toPlane, RailByteMaskData* railByteMaskData, Rail* rail) {
+void LevelTypes::Plane::addRailConnection(
+	Plane* toPlane, RailByteMaskData* railByteMaskData, int steps, Rail* rail, Plane* hintPlane)
+{
 	if (toPlane->owningLevel != owningLevel)
 		toPlane = owningLevel->getVictoryPlane();
 	connections.push_back(
@@ -83,19 +92,21 @@ void LevelTypes::Plane::addRailConnection(Plane* toPlane, RailByteMaskData* rail
 			toPlane,
 			railByteMaskData->railByteIndex,
 			Level::baseRailTileOffsetByteMask << railByteMaskData->railBitShift,
-			rail));
+			steps,
+			rail,
+			hintPlane));
 }
-void LevelTypes::Plane::addReverseRailConnection(Plane* toPlane, Rail* rail) {
-	//add a rail connection to a plane that is already connected to this plane by the given rail
+void LevelTypes::Plane::addReverseRailConnection(Plane* fromPlane, Plane* toPlane, int steps, Rail* rail, Plane* hintPlane) {
+	//add a rail connection to a plane that is already connected to the from-plane (usually this plane) by the given rail
 	for (Connection& connection : toPlane->connections) {
-		if (connection.toPlane != this || connection.hint.type != Hint::Type::Rail || connection.hint.data.rail != rail)
+		if (connection.toPlane != fromPlane || connection.hint.type != Hint::Type::Rail || connection.hint.data.rail != rail)
 			continue;
-		connections.push_back(Connection(toPlane, connection.railByteIndex, connection.railTileOffsetByteMask, rail));
+		connections.push_back(
+			Connection(toPlane, connection.railByteIndex, connection.railTileOffsetByteMask, steps, rail, hintPlane));
 	}
 }
 Hint* LevelTypes::Plane::pursueSolution(HintState::PotentialLevelState* currentState) {
 	unsigned int bucket = currentState->railByteMasksHash % Level::PotentialLevelStatesByBucket::bucketSize;
-	int nextPotentialLevelStateSteps = Level::currentPotentialLevelStateSteps + 1;
 	//check connections
 	for (Connection& connection : connections) {
 		#ifdef TRACK_HINT_SEARCH_STATS
@@ -107,8 +118,10 @@ Hint* LevelTypes::Plane::pursueSolution(HintState::PotentialLevelState* currentS
 			continue;
 
 		//make sure we haven't seen this state before
-		HintState::PotentialLevelState* nextPotentialLevelState = currentState->addNewState(
-			Level::potentialLevelStatesByBucketByPlane[connection.toPlane->indexInOwningLevel].buckets[bucket]);
+		vector<HintState::PotentialLevelState*>& potentialLevelStates =
+			Level::potentialLevelStatesByBucketByPlane[connection.toPlane->indexInOwningLevel].buckets[bucket];
+		HintState::PotentialLevelState* nextPotentialLevelState =
+			currentState->addNewState(potentialLevelStates, Level::currentPotentialLevelStateSteps + connection.steps);
 		if (nextPotentialLevelState == nullptr)
 			continue;
 
@@ -124,10 +137,13 @@ Hint* LevelTypes::Plane::pursueSolution(HintState::PotentialLevelState* currentS
 			#ifdef LOG_FOUND_HINT_STEPS
 				logSteps(nextPotentialLevelState);
 			#endif
+			#ifdef TRACK_HINT_SEARCH_STATS
+				Level::foundHintSearchTotalSteps = nextPotentialLevelState->steps;
+			#endif
 			return nextPotentialLevelState->getHint();
 		}
 		//otherwise, track it
-		Level::getNextPotentialLevelStatesForSteps(nextPotentialLevelStateSteps)->push_back(nextPotentialLevelState);
+		Level::getNextPotentialLevelStatesForSteps(nextPotentialLevelState->steps)->push_back(nextPotentialLevelState);
 	}
 
 	//check switches
@@ -162,8 +178,8 @@ Hint* LevelTypes::Plane::pursueSolution(HintState::PotentialLevelState* currentS
 		//make sure we haven't seen this state before
 		vector<HintState::PotentialLevelState*>& potentialLevelStates =
 			Level::potentialLevelStatesByBucketByPlane[indexInOwningLevel].buckets[bucket];
-		HintState::PotentialLevelState* nextPotentialLevelState =
-			HintState::PotentialLevelState::draftState.addNewState(potentialLevelStates);
+		HintState::PotentialLevelState* nextPotentialLevelState = HintState::PotentialLevelState::draftState.addNewState(
+			potentialLevelStates, Level::currentPotentialLevelStateSteps + 1);
 		if (nextPotentialLevelState == nullptr)
 			continue;
 		//also don't bother with any states that lower the only rail of a single-rail switch
@@ -180,7 +196,7 @@ Hint* LevelTypes::Plane::pursueSolution(HintState::PotentialLevelState* currentS
 		#ifdef TRACK_HINT_SEARCH_STATS
 			Level::hintSearchUniqueStates++;
 		#endif
-		Level::getNextPotentialLevelStatesForSteps(nextPotentialLevelStateSteps)->push_back(nextPotentialLevelState);
+		Level::getNextPotentialLevelStatesForSteps(nextPotentialLevelState->steps)->push_back(nextPotentialLevelState);
 	}
 
 	return nullptr;
@@ -219,6 +235,7 @@ void LevelTypes::Plane::countSwitches(int outSwitchCounts[4], int* outSingleUseS
 			logSteps(hintState->priorState);
 			stepsMessage << " -> ";
 			logHint(stepsMessage, hintState->hint, hintState->railByteMasks);
+			stepsMessage << " -> plane " << hintState->plane->getIndexInOwningLevel();
 		}
 		Logger::debugLogger.logString(stepsMessage.str());
 	}
@@ -266,6 +283,7 @@ Level::PotentialLevelStatesByBucket::~PotentialLevelStatesByBucket() {}
 
 //////////////////////////////// Level ////////////////////////////////
 vector<Level::PotentialLevelStatesByBucket> Level::potentialLevelStatesByBucketByPlane;
+vector<HintState::PotentialLevelState*> Level::replacedPotentialLevelStates;
 int Level::currentPotentialLevelStateSteps = 0;
 int Level::maxPotentialLevelStateSteps = -1;
 vector<deque<HintState::PotentialLevelState*>*> Level::nextPotentialLevelStatesBySteps;
@@ -274,6 +292,7 @@ Plane* Level::cachedHintSearchVictoryPlane = nullptr;
 	int Level::hintSearchActionsChecked = 0;
 	int Level::hintSearchUniqueStates = 0;
 	int Level::hintSearchComparisonsPerformed = 0;
+	int Level::foundHintSearchTotalHintSteps = 0;
 	int Level::foundHintSearchTotalSteps = 0;
 #endif
 Level::Level(objCounterParametersComma() int pLevelN, int pStartTile)
@@ -299,6 +318,7 @@ Plane* Level::addNewPlane() {
 }
 void Level::addVictoryPlane() {
 	victoryPlane = addNewPlane();
+	victoryPlane->setHasAction();
 }
 int Level::trackNextRail(short railId, Rail* rail) {
 	minimumRailColor = MathUtils::max(rail->getColor(), minimumRailColor);
@@ -371,7 +391,8 @@ Hint* Level::generateHint(
 	//load it into the potential level state structures
 	HintState::PotentialLevelState* baseLevelState = HintState::PotentialLevelState::draftState.addNewState(
 		potentialLevelStatesByBucketByPlane[currentPlane->getIndexInOwningLevel()]
-			.buckets[HintState::PotentialLevelState::draftState.railByteMasksHash % PotentialLevelStatesByBucket::bucketSize]);
+			.buckets[HintState::PotentialLevelState::draftState.railByteMasksHash % PotentialLevelStatesByBucket::bucketSize],
+		0);
 	baseLevelState->priorState = nullptr;
 	baseLevelState->plane = currentPlane;
 	baseLevelState->hint = nullptr;
@@ -384,7 +405,7 @@ Hint* Level::generateHint(
 		hintSearchActionsChecked = 0;
 		hintSearchUniqueStates = 0;
 		hintSearchComparisonsPerformed = 0;
-		foundHintSearchTotalSteps = 0;
+		foundHintSearchTotalHintSteps = 0;
 		stringstream beginHintSearchMessage;
 		beginHintSearchMessage << "begin level " << levelN << " hint search";
 		Logger::debugLogger.logString(beginHintSearchMessage.str());
@@ -399,6 +420,9 @@ Hint* Level::generateHint(
 		while (!nextPotentialLevelStates->empty()) {
 			HintState::PotentialLevelState* potentialLevelState = nextPotentialLevelStates->front();
 			nextPotentialLevelStates->pop_front();
+			//skip any states that were replaced with shorter routes
+			if (potentialLevelState->steps == -1)
+				continue;
 			result = potentialLevelState->plane->pursueSolution(potentialLevelState);
 			if (result != nullptr) {
 				currentPotentialLevelStateSteps = (int)nextPotentialLevelStatesBySteps.size();
@@ -422,6 +446,11 @@ Hint* Level::generateHint(
 			potentialLevelStates.clear();
 		}
 	}
+	//release all PotentialLevelStates that were taken out of potentialLevelStatesByBucketByPlane, but couldn't be released
+	//	because they were still in nextPotentialLevelStatesBySteps
+	for (HintState::PotentialLevelState* potentialLevelState : replacedPotentialLevelStates)
+		potentialLevelState->release();
+	replacedPotentialLevelStates.clear();
 
 	#ifdef TRACK_HINT_SEARCH_STATS
 		int timeAfterCleanup = SDL_GetTicks();
@@ -435,7 +464,7 @@ Hint* Level::generateHint(
 			<< "  searchTime " << (timeAfterSearchBeforeCleanup - timeBeforeSearch)
 			<< "  cleanupTime " << (timeAfterCleanup - timeAfterSearchBeforeCleanup)
 			<< "  found solution? " << (result != nullptr ? "true" : "false")
-			<< "  steps " << foundHintSearchTotalSteps;
+			<< "  steps " << foundHintSearchTotalSteps << "(" << foundHintSearchTotalHintSteps << ")";
 		Logger::debugLogger.logString(hintSearchPerformanceMessage.str());
 	#endif
 

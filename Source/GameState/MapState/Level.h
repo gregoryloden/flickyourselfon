@@ -40,9 +40,11 @@ namespace LevelTypes {
 			Plane* toPlane;
 			int railByteIndex;
 			unsigned int railTileOffsetByteMask;
+			int steps;
 			Hint hint;
 
-			Connection(Plane* pToPlane, int pRailByteIndex, int pRailTileOffsetByteMask, Rail* rail);
+			Connection(
+				Plane* pToPlane, int pRailByteIndex, int pRailTileOffsetByteMask, int pSteps, Rail* rail, Plane* hintPlane);
 			virtual ~Connection();
 		};
 
@@ -51,6 +53,7 @@ namespace LevelTypes {
 		vector<Tile> tiles;
 		vector<ConnectionSwitch> connectionSwitches;
 		vector<Connection> connections;
+		bool hasAction;
 		int renderLeftTileX;
 		int renderTopTileY;
 		int renderRightTileX;
@@ -62,6 +65,8 @@ namespace LevelTypes {
 
 		Level* getOwningLevel() { return owningLevel; }
 		int getIndexInOwningLevel() { return indexInOwningLevel; }
+		bool getHasAction() { return hasAction; }
+		void setHasAction() { hasAction = true; }
 		void addRailConnectionToSwitch(LevelTypes::RailByteMaskData* railByteMaskData, int connectionSwitchesIndex) {
 			connectionSwitches[connectionSwitchesIndex].affectedRailByteMaskData.push_back(railByteMaskData);
 		}
@@ -70,12 +75,16 @@ namespace LevelTypes {
 		//add a switch
 		//returns the index of the switch in this plane
 		int addConnectionSwitch(Switch* switch0);
-		//add a plane-plane connection to another plane, if we don't already have one
-		void addPlaneConnection(Plane* toPlane);
-		//add a rail connection to another plane
-		void addRailConnection(Plane* toPlane, LevelTypes::RailByteMaskData* railByteMaskData, Rail* rail);
-		//add a rail connection to another plane that is already connected to this plane
-		void addReverseRailConnection(Plane* toPlane, Rail* rail);
+		//add a plane-plane connection to another plane, whether directly connected or connected through other planes, if we
+		//	don't already have one
+		void addPlaneConnection(Plane* toPlane, int steps, Plane* hintPlane);
+		//add a rail connection to another plane, whether directly connected or connected through other planes
+		void addRailConnection(
+			Plane* toPlane, LevelTypes::RailByteMaskData* railByteMaskData, int steps, Rail* rail, Plane* hintPlane);
+		//add a rail connection to another plane that is already connected to the given fromPlane
+		//for direct connections, fromPlane is this
+		//for extended connections, fromPlane is the last plane reachable from this plane by plane-plane connections
+		void addReverseRailConnection(Plane* fromPlane, Plane* toPlane, int steps, Rail* rail, Plane* hintPlane);
 		//follow all possible actions, and see if any of them lead to reaching the victory plane
 		Hint* pursueSolution(HintState::PotentialLevelState* currentState);
 		//get the bounds of the hint to render for this plane
@@ -129,6 +138,7 @@ public:
 	static const unsigned int baseRailByteMask = (1 << railByteMaskBitCount) - 1;
 
 	static vector<PotentialLevelStatesByBucket> potentialLevelStatesByBucketByPlane;
+	static vector<HintState::PotentialLevelState*> replacedPotentialLevelStates;
 	static int currentPotentialLevelStateSteps;
 private:
 	static int maxPotentialLevelStateSteps;
@@ -139,6 +149,7 @@ public:
 		static int hintSearchActionsChecked;
 		static int hintSearchUniqueStates;
 		static int hintSearchComparisonsPerformed;
+		static int foundHintSearchTotalHintSteps;
 		static int foundHintSearchTotalSteps;
 	#endif
 

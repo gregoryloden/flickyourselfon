@@ -42,9 +42,14 @@ private:
 		//	when adding the connection to the plane, because the pointers into the list get invalidated as the list grows, since
 		//	it stores objects instead of pointers
 		int levelRailByteMaskDataIndex;
+		int steps;
+		LevelTypes::Plane* hintPlane;
 
-		PlaneConnection(int pToTile, Rail* pRail, int pLevelRailByteMaskDataIndex);
+		PlaneConnection(int pToTile, Rail* pRail, int pLevelRailByteMaskDataIndex, int pSteps, LevelTypes::Plane* pHintPlane);
 		virtual ~PlaneConnection();
+
+		//check if there is a non-rail connection to the given plane
+		static bool isConnectedByPlanes(vector<PlaneConnection>& planeConnections, LevelTypes::Plane* toPlane);
 	};
 	//Should only be allocated within an object, on the stack, or as a static object
 	class PlaneConnectionSwitch {

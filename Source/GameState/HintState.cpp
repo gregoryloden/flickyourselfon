@@ -5,8 +5,8 @@
 #include "Sprites/SpriteRegistry.h"
 #include "Sprites/SpriteSheet.h"
 
-#define newHintStatePotentialLevelState(priorStateAndDraftState, containingList) \
-	produceWithArgs(HintState::PotentialLevelState, priorStateAndDraftState, containingList)
+#define newHintStatePotentialLevelState(priorStateAndDraftState, steps) \
+	produceWithArgs(HintState::PotentialLevelState, priorStateAndDraftState, steps)
 
 //////////////////////////////// Hint ////////////////////////////////
 Hint Hint::none (Hint::Type::None);
@@ -28,6 +28,7 @@ HintState::PotentialLevelState::PotentialLevelState(objCounterParameters())
 , priorState(nullptr)
 , railByteMasks(new unsigned int[maxRailByteMaskCount])
 , railByteMasksHash(0)
+, steps(0)
 , plane(nullptr)
 , hint(nullptr) {
 }
@@ -38,14 +39,14 @@ HintState::PotentialLevelState::~PotentialLevelState() {
 	//don't delete the hint, something else owns it
 }
 HintState::PotentialLevelState* HintState::PotentialLevelState::produce(
-	objCounterParametersComma() PotentialLevelState* priorStateAndDraftState, vector<PotentialLevelState*>& containingList)
+	objCounterParametersComma() PotentialLevelState* priorStateAndDraftState, int pSteps)
 {
 	initializeWithNewFromPool(p, PotentialLevelState)
 	p->priorState = priorStateAndDraftState;
 	for (int i = currentRailByteMaskCount - 1; i >= 0; i--)
 		p->railByteMasks[i] = priorStateAndDraftState->railByteMasks[i];
 	p->railByteMasksHash = priorStateAndDraftState->railByteMasksHash;
-	containingList.push_back(p);
+	p->steps = pSteps;
 	p->retain();
 	return p;
 }
@@ -57,38 +58,51 @@ void HintState::PotentialLevelState::setHash() {
 	railByteMasksHash = val;
 }
 HintState::PotentialLevelState* HintState::PotentialLevelState::addNewState(
-	vector<PotentialLevelState*>& potentialLevelStates)
+	vector<PotentialLevelState*>& potentialLevelStates, int pSteps)
 {
 	//look through every other state, and see if it matches this one
-	for (PotentialLevelState* potentialLevelState : potentialLevelStates) {
+	int size = (int)potentialLevelStates.size();
+	for (int i = 0; i < size; i++) {
+		PotentialLevelState* potentialLevelState = potentialLevelStates[i];
 		#ifdef TRACK_HINT_SEARCH_STATS
 			Level::hintSearchComparisonsPerformed++;
 		#endif
 		//they can't be the same if their hashes don't match
 		if (railByteMasksHash != potentialLevelState->railByteMasksHash)
 			continue;
-		for (int i = currentRailByteMaskCount - 1; true; i--) {
+		for (int j = currentRailByteMaskCount - 1; true; j--) {
 			//the bytes are not the same, so the states are not the same, move on to check the next PotentialLevelState
-			if (railByteMasks[i] != potentialLevelState->railByteMasks[i])
+			if (railByteMasks[j] != potentialLevelState->railByteMasks[j])
 				break;
 			//if we've looked at every byte and they're all the same, this state is not new
-			if (i == 0)
+			if (j == 0) {
+				//however, if the new state takes fewer steps than the other state, replace it
+				//set the steps for the other state to -1, add it to Level's list of replaced states, and replace that state in
+				//	the list before returning the new state
+				if (pSteps < potentialLevelState->steps) {
+					potentialLevelState->steps = -1;
+					Level::replacedPotentialLevelStates.push_back(potentialLevelState);
+					return (potentialLevelStates[i] = newHintStatePotentialLevelState(this, pSteps));
+				}
 				return nullptr;
+			}
 		}
 	}
 
 	//all states have at least one byte difference, so this is a new state
-	return newHintStatePotentialLevelState(this, potentialLevelStates);
+	PotentialLevelState* newState = newHintStatePotentialLevelState(this, pSteps);
+	potentialLevelStates.push_back(newState);
+	return newState;
 }
 Hint* HintState::PotentialLevelState::getHint() {
 	PotentialLevelState* hintLevelState = this;
 	#ifdef TRACK_HINT_SEARCH_STATS
-		Level::foundHintSearchTotalSteps = 1;
+		Level::foundHintSearchTotalHintSteps = 1;
 	#endif
 	while (hintLevelState->priorState->priorState != nullptr) {
 		hintLevelState = hintLevelState->priorState;
 		#ifdef TRACK_HINT_SEARCH_STATS
-			Level::foundHintSearchTotalSteps++;
+			Level::foundHintSearchTotalHintSteps++;
 		#endif
 	}
 	return hintLevelState->hint;
