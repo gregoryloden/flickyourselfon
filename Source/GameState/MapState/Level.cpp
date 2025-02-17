@@ -401,6 +401,9 @@ Hint* Level::generateHint(
 
 	//go through all states and see if there's anything we could do to get closer to the victory plane
 	Hint* result = nullptr;
+	#ifdef LOG_SEARCH_STEPS_STATS
+		int* statesAtStepsByPlane = new int[planes.size()] {};
+	#endif
 	#ifdef TRACK_HINT_SEARCH_STATS
 		hintSearchActionsChecked = 0;
 		hintSearchUniqueStates = 0;
@@ -417,6 +420,22 @@ Hint* Level::generateHint(
 	{
 		deque<HintState::PotentialLevelState*>* nextPotentialLevelStates =
 			nextPotentialLevelStatesBySteps[currentPotentialLevelStateSteps];
+		#ifdef LOG_SEARCH_STEPS_STATS
+			stringstream stepsMessage;
+			stepsMessage << currentPotentialLevelStateSteps << " steps:";
+			Logger::debugLogger.logString(stepsMessage.str());
+			for (HintState::PotentialLevelState* potentialLevelState : *nextPotentialLevelStates)
+				statesAtStepsByPlane[potentialLevelState->plane->getIndexInOwningLevel()]++;
+			for (int planeI = 0; planeI < (int)planes.size(); planeI++) {
+				int statesAtSteps = statesAtStepsByPlane[planeI];
+				if (statesAtSteps > 0) {
+					stepsMessage.str("");
+					stepsMessage << "  plane " << planeI << ": " << statesAtSteps << " states";
+					Logger::debugLogger.logString(stepsMessage.str());
+					statesAtStepsByPlane[planeI] = 0;
+				}
+			}
+		#endif
 		while (!nextPotentialLevelStates->empty()) {
 			HintState::PotentialLevelState* potentialLevelState = nextPotentialLevelStates->front();
 			nextPotentialLevelStates->pop_front();
@@ -466,6 +485,9 @@ Hint* Level::generateHint(
 			<< "  found solution? " << (result != nullptr ? "true" : "false")
 			<< "  steps " << foundHintSearchTotalSteps << "(" << foundHintSearchTotalHintSteps << ")";
 		Logger::debugLogger.logString(hintSearchPerformanceMessage.str());
+	#endif
+	#ifdef LOG_SEARCH_STEPS_STATS
+		delete[] statesAtStepsByPlane;
 	#endif
 
 	return result != nullptr ? result : &Hint::undoReset;

@@ -4,6 +4,7 @@
 #ifdef DEBUG
 	#define TRACK_HINT_SEARCH_STATS
 	#define LOG_FOUND_HINT_STEPS
+	//#define LOG_SEARCH_STEPS_STATS
 #endif
 
 class Level;
