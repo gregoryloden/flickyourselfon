@@ -363,7 +363,7 @@ void Level::preAllocatePotentialLevelStates() {
 		minimumRailColor);
 }
 Hint* Level::generateHint(
-	LevelTypes::Plane* currentPlane,
+	Plane* currentPlane,
 	function<void(short railId, Rail* rail, char* outMovementDirection, char* outTileOffset)> getRailState,
 	char lastActivatedSwitchColor)
 {
@@ -379,7 +379,7 @@ Hint* Level::generateHint(
 	HintState::PotentialLevelState::currentRailByteMaskCount = getRailByteMaskCount();
 	for (int i = 0; i < HintState::PotentialLevelState::currentRailByteMaskCount; i++)
 		HintState::PotentialLevelState::draftState.railByteMasks[i] = 0;
-	for (LevelTypes::RailByteMaskData& railByteMaskData : allRailByteMaskData) {
+	for (RailByteMaskData& railByteMaskData : allRailByteMaskData) {
 		char movementDirection, tileOffset;
 		getRailState(railByteMaskData.railId, railByteMaskData.rail, &movementDirection, &tileOffset);
 		char movementDirectionBit = ((movementDirection + 1) / 2) << Level::railTileOffsetByteMaskBitCount;
