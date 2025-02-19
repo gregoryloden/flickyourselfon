@@ -442,7 +442,7 @@ Hint* Level::generateHint(
 				continue;
 			result = potentialLevelState->plane->pursueSolution(potentialLevelState);
 			if (result != nullptr) {
-				currentPotentialLevelStateSteps = (int)nextPotentialLevelStatesBySteps.size();
+				currentPotentialLevelStateSteps = maxPotentialLevelStateSteps;
 				break;
 			}
 		}
