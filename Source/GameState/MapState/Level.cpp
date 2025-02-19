@@ -137,9 +137,7 @@ Hint* LevelTypes::Plane::pursueSolution(HintState::PotentialLevelState* currentS
 			#ifdef LOG_FOUND_HINT_STEPS
 				logSteps(nextPotentialLevelState);
 			#endif
-			#ifdef TRACK_HINT_SEARCH_STATS
-				Level::foundHintSearchTotalSteps = nextPotentialLevelState->steps;
-			#endif
+			Level::foundHintSearchTotalSteps = nextPotentialLevelState->steps;
 			return nextPotentialLevelState->getHint();
 		}
 		//otherwise, track it
@@ -292,9 +290,9 @@ Plane* Level::cachedHintSearchVictoryPlane = nullptr;
 	int Level::hintSearchActionsChecked = 0;
 	int Level::hintSearchUniqueStates = 0;
 	int Level::hintSearchComparisonsPerformed = 0;
-	int Level::foundHintSearchTotalHintSteps = 0;
-	int Level::foundHintSearchTotalSteps = 0;
 #endif
+int Level::foundHintSearchTotalHintSteps = 0;
+int Level::foundHintSearchTotalSteps = 0;
 Level::Level(objCounterParametersComma() int pLevelN, int pStartTile)
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
 levelN(pLevelN)
@@ -408,12 +406,12 @@ Hint* Level::generateHint(
 		hintSearchActionsChecked = 0;
 		hintSearchUniqueStates = 0;
 		hintSearchComparisonsPerformed = 0;
-		foundHintSearchTotalHintSteps = 0;
-		stringstream beginHintSearchMessage;
-		beginHintSearchMessage << "begin level " << levelN << " hint search";
-		Logger::debugLogger.logString(beginHintSearchMessage.str());
-		int timeBeforeSearch = SDL_GetTicks();
 	#endif
+	foundHintSearchTotalHintSteps = 0;
+	stringstream beginHintSearchMessage;
+	beginHintSearchMessage << "begin level " << levelN << " hint search";
+	Logger::debugLogger.logString(beginHintSearchMessage.str());
+	int timeBeforeSearch = SDL_GetTicks();
 	for (currentPotentialLevelStateSteps = 0;
 		currentPotentialLevelStateSteps <= maxPotentialLevelStateSteps;
 		currentPotentialLevelStateSteps++)
@@ -451,9 +449,7 @@ Hint* Level::generateHint(
 	}
 
 	//cleanup
-	#ifdef TRACK_HINT_SEARCH_STATS
-		int timeAfterSearchBeforeCleanup = SDL_GetTicks();
-	#endif
+	int timeAfterSearchBeforeCleanup = SDL_GetTicks();
 	for (int i = 0; i <= maxPotentialLevelStateSteps; i++)
 		nextPotentialLevelStatesBySteps[i]->clear();
 	//only clear as many plane buckets as we used
@@ -471,21 +467,22 @@ Hint* Level::generateHint(
 		potentialLevelState->release();
 	replacedPotentialLevelStates.clear();
 
-	#ifdef TRACK_HINT_SEARCH_STATS
-		int timeAfterCleanup = SDL_GetTicks();
-		stringstream hintSearchPerformanceMessage;
-		hintSearchPerformanceMessage
-			<< "level " << levelN
-			<< " (" << planes.size() << "p, " << allRailByteMaskData.size() << "r, c" << (int)minimumRailColor << ")"
+	int timeAfterCleanup = SDL_GetTicks();
+	stringstream hintSearchPerformanceMessage;
+	hintSearchPerformanceMessage
+		<< "level " << levelN
+		<< " (" << planes.size() << "p, " << allRailByteMaskData.size() << "r, c" << (int)minimumRailColor << ")"
+		#ifdef TRACK_HINT_SEARCH_STATS
 			<< "  actionsChecked " << hintSearchActionsChecked
 			<< "  uniqueStates " << hintSearchUniqueStates
 			<< "  comparisonsPerformed " << hintSearchComparisonsPerformed
-			<< "  searchTime " << (timeAfterSearchBeforeCleanup - timeBeforeSearch)
-			<< "  cleanupTime " << (timeAfterCleanup - timeAfterSearchBeforeCleanup)
-			<< "  found solution? " << (result != nullptr ? "true" : "false")
-			<< "  steps " << foundHintSearchTotalSteps << "(" << foundHintSearchTotalHintSteps << ")";
-		Logger::debugLogger.logString(hintSearchPerformanceMessage.str());
-	#endif
+		#endif
+		<< "  searchTime " << (timeAfterSearchBeforeCleanup - timeBeforeSearch)
+		<< "  cleanupTime " << (timeAfterCleanup - timeAfterSearchBeforeCleanup)
+		<< "  found solution? " << (result != nullptr ? "true" : "false");
+	if (result != nullptr)
+		hintSearchPerformanceMessage << "  steps " << foundHintSearchTotalSteps << "(" << foundHintSearchTotalHintSteps << ")";
+	Logger::debugLogger.logString(hintSearchPerformanceMessage.str());
 	#ifdef LOG_SEARCH_STEPS_STATS
 		delete[] statesAtStepsByPlane;
 	#endif

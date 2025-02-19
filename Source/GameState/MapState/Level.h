@@ -150,9 +150,9 @@ public:
 		static int hintSearchActionsChecked;
 		static int hintSearchUniqueStates;
 		static int hintSearchComparisonsPerformed;
-		static int foundHintSearchTotalHintSteps;
-		static int foundHintSearchTotalSteps;
 	#endif
+	static int foundHintSearchTotalHintSteps;
+	static int foundHintSearchTotalSteps;
 
 private:
 	int levelN;

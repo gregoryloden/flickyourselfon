@@ -96,14 +96,10 @@ HintState::PotentialLevelState* HintState::PotentialLevelState::addNewState(
 }
 Hint* HintState::PotentialLevelState::getHint() {
 	PotentialLevelState* hintLevelState = this;
-	#ifdef TRACK_HINT_SEARCH_STATS
-		Level::foundHintSearchTotalHintSteps = 1;
-	#endif
+	Level::foundHintSearchTotalHintSteps = 1;
 	while (hintLevelState->priorState->priorState != nullptr) {
 		hintLevelState = hintLevelState->priorState;
-		#ifdef TRACK_HINT_SEARCH_STATS
-			Level::foundHintSearchTotalHintSteps++;
-		#endif
+		Level::foundHintSearchTotalHintSteps++;
 	}
 	return hintLevelState->hint;
 }
