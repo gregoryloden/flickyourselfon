@@ -415,7 +415,7 @@ Hint* Level::generateHint(
 		int timeBeforeSearch = SDL_GetTicks();
 	#endif
 	for (currentPotentialLevelStateSteps = 0;
-		currentPotentialLevelStateSteps < (int)nextPotentialLevelStatesBySteps.size();
+		currentPotentialLevelStateSteps <= maxPotentialLevelStateSteps;
 		currentPotentialLevelStateSteps++)
 	{
 		deque<HintState::PotentialLevelState*>* nextPotentialLevelStates =
