@@ -86,8 +86,10 @@ namespace LevelTypes {
 		//for direct connections, fromPlane is this
 		//for extended connections, fromPlane is the last plane reachable from this plane by plane-plane connections
 		void addReverseRailConnection(Plane* fromPlane, Plane* toPlane, int steps, Rail* rail, Plane* hintPlane);
-		//follow all possible actions, and see if any of them lead to reaching the victory plane
-		Hint* pursueSolution(HintState::PotentialLevelState* currentState);
+		//follow all possible paths to other planes, and return a hint if any of those other planes are the victory plane
+		Hint* pursueSolutionToPlanes(HintState::PotentialLevelState* currentState, int basePotentialLevelStateSteps);
+		//kick each switch in this plane, and then pursue solutions from those states
+		Hint* pursueSolutionAfterSwitches(HintState::PotentialLevelState* currentState);
 		//get the bounds of the hint to render for this plane
 		void getHintRenderBounds(int* outLeftWorldX, int* outTopWorldY, int* outRightWorldX, int* outBottomWorldY);
 		//render boxes over every tile in this plane
@@ -128,6 +130,18 @@ public:
 		PotentialLevelStatesByBucket();
 		virtual ~PotentialLevelStatesByBucket();
 	};
+	//Should only be allocated within an object, on the stack, or as a static object
+	class CheckedPlaneData {
+	public:
+		static const int maxStepsLimit = MAXINT32;
+
+		int steps;
+		int checkPlanesIndex;
+		Hint* hint;
+
+		CheckedPlaneData();
+		virtual ~CheckedPlaneData();
+	};
 
 	static const int absentRailByteIndex = -1;
 	static const int railTileOffsetByteMaskBitCount = 3;
@@ -140,6 +154,11 @@ public:
 
 	static vector<PotentialLevelStatesByBucket> potentialLevelStatesByBucketByPlane;
 	static vector<HintState::PotentialLevelState*> replacedPotentialLevelStates;
+	static LevelTypes::Plane*** allCheckPlanes;
+	static int* checkPlaneCounts;
+	static CheckedPlaneData* checkedPlaneDatas;
+	static int* checkedPlaneIndices;
+	static int checkedPlanesCount;
 	static int currentPotentialLevelStateSteps;
 private:
 	static int maxPotentialLevelStateSteps;
@@ -181,8 +200,8 @@ public:
 	//create a byte mask for a new rail
 	//returns the index into the internal byte mask vector for use in getRailByteMaskData()
 	int trackNextRail(short railId, Rail* rail);
-	//initialize PotentialLevelState helper objects to accomodate all of the given levels
-	static void setupPotentialLevelStateHelpers(vector<Level*>& allLevels);
+	//setup helper objects used by all levels in hint searching
+	static void setupHintSearchHelpers(vector<Level*>& allLevels);
 	//delete helpers used in hint searching
 	static void deleteHelpers();
 	//generate a hint to solve this level from the start, to save time in the future allocating PotentialLevelStates when

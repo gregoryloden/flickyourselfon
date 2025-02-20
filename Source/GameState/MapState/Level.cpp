@@ -105,46 +105,104 @@ void LevelTypes::Plane::addReverseRailConnection(Plane* fromPlane, Plane* toPlan
 			Connection(toPlane, connection.railByteIndex, connection.railTileOffsetByteMask, steps, rail, hintPlane));
 	}
 }
-Hint* LevelTypes::Plane::pursueSolution(HintState::PotentialLevelState* currentState) {
+Hint* LevelTypes::Plane::pursueSolutionToPlanes(
+	HintState::PotentialLevelState* currentState, int basePotentialLevelStateSteps)
+{
 	unsigned int bucket = currentState->railByteMasksHash % Level::PotentialLevelStatesByBucket::bucketSize;
-	//check connections
-	for (Connection& connection : connections) {
-		#ifdef TRACK_HINT_SEARCH_STATS
-			Level::hintSearchActionsChecked++;
-		#endif
-		//skip any connections with rails that are lowered
-		if (connection.railByteIndex >= 0
-				&& (currentState->railByteMasks[connection.railByteIndex] & connection.railTileOffsetByteMask) != 0)
-			continue;
+	Level::CheckedPlaneData* checkedPlaneData = Level::checkedPlaneDatas + indexInOwningLevel;
+	checkedPlaneData->steps = 0;
+	checkedPlaneData->checkPlanesIndex = 0;
+	Level::allCheckPlanes[0][0] = this;
+	Level::checkPlaneCounts[0] = 1;
+	Level::checkedPlaneIndices[0] = indexInOwningLevel;
+	Level::checkedPlanesCount = 1;
+	int maxStepsSeen = 0;
+	for (int steps = 0; steps <= maxStepsSeen; steps++) {
+		Plane** checkPlanes = Level::allCheckPlanes[steps];
+		for (int i = Level::checkPlaneCounts[steps] - 1; i >= 0; i--) {
+			Plane* checkPlane = checkPlanes[i];
+			for (Connection& connection : checkPlane->connections) {
+				//skip it if we can't pass
+				if (connection.railByteIndex >= 0
+						&& (currentState->railByteMasks[connection.railByteIndex] & connection.railTileOffsetByteMask) != 0)
+					continue;
 
-		//make sure we haven't seen this state before
-		vector<HintState::PotentialLevelState*>& potentialLevelStates =
-			Level::potentialLevelStatesByBucketByPlane[connection.toPlane->indexInOwningLevel].buckets[bucket];
-		HintState::PotentialLevelState* nextPotentialLevelState =
-			currentState->addNewState(potentialLevelStates, Level::currentPotentialLevelStateSteps + connection.steps);
-		if (nextPotentialLevelState == nullptr)
-			continue;
+				Plane* connectionToPlane = connection.toPlane;
+				int planeIndex = connectionToPlane->indexInOwningLevel;
+				int checkedPlaneSteps = (checkedPlaneData = Level::checkedPlaneDatas + planeIndex)->steps;
+				int connectionSteps = steps + connection.steps;
+				//skip it if it takes equal or more steps than the path we already found
+				//unvisited planes have a large number for steps so this will only be true for visited planes
+				if (connectionSteps >= checkedPlaneSteps)
+					continue;
 
-		//fill out the new PotentialLevelState
-		nextPotentialLevelState->plane = connection.toPlane;
-		nextPotentialLevelState->hint = &connection.hint;
-		#ifdef TRACK_HINT_SEARCH_STATS
-			Level::hintSearchUniqueStates++;
-		#endif
+				//if we haven't seen this plane before, add its index in the list to remember
+				if (checkedPlaneSteps == Level::CheckedPlaneData::maxStepsLimit)
+					Level::checkedPlaneIndices[Level::checkedPlanesCount++] = planeIndex;
+				//if we have seen this plane before, remove it from its spot in further steps
+				else {
+					int checkPlaneCount = --Level::checkPlaneCounts[checkedPlaneSteps];
+					if (checkedPlaneData->checkPlanesIndex < checkPlaneCount) {
+						Plane** replacedCheckPlanes = Level::allCheckPlanes[checkedPlaneSteps];
+						replacedCheckPlanes[checkedPlaneData->checkPlanesIndex] = replacedCheckPlanes[checkPlaneCount];
+					}
+				}
 
-		//if it goes to the victory plane, return the hint for the first transition
-		if (connection.toPlane == Level::cachedHintSearchVictoryPlane) {
-			#ifdef LOG_FOUND_HINT_STEPS
-				logSteps(nextPotentialLevelState);
-			#endif
-			Level::foundHintSearchTotalSteps = nextPotentialLevelState->steps;
-			return nextPotentialLevelState->getHint();
+				//track its data
+				checkedPlaneData->steps = connectionSteps;
+				checkedPlaneData->hint =
+					//use the hint from the connection for connections from the first plane, otherwise copy the hint that got to
+					//	this plane
+					steps == 0 ? &connection.hint : Level::checkedPlaneDatas[checkPlane->indexInOwningLevel].hint;
+				int checkPlanesIndex = (checkedPlaneData->checkPlanesIndex = Level::checkPlaneCounts[connectionSteps]++);
+				Level::allCheckPlanes[connectionSteps][checkPlanesIndex] = connectionToPlane;
+				if (connectionSteps > maxStepsSeen)
+					maxStepsSeen = connectionSteps;
+				//we're done if the state isn't hasAction
+				if (!connectionToPlane->hasAction)
+					continue;
+
+				//if it is hasAction, add a state to it
+				vector<HintState::PotentialLevelState*>& potentialLevelStates =
+					Level::potentialLevelStatesByBucketByPlane[planeIndex].buckets[bucket];
+				HintState::PotentialLevelState* nextPotentialLevelState =
+					currentState->addNewState(potentialLevelStates, basePotentialLevelStateSteps + connectionSteps);
+				if (nextPotentialLevelState == nullptr)
+					continue;
+
+				//fill out the new PotentialLevelState
+				nextPotentialLevelState->plane = connectionToPlane;
+				nextPotentialLevelState->hint = checkedPlaneData->hint;
+				#ifdef TRACK_HINT_SEARCH_STATS
+					Level::hintSearchUniqueStates++;
+				#endif
+
+				//if it goes to the victory plane, return the hint for the first transition
+				if (connectionToPlane == Level::cachedHintSearchVictoryPlane) {
+					#ifdef LOG_FOUND_HINT_STEPS
+						logSteps(nextPotentialLevelState);
+					#endif
+					Level::foundHintSearchTotalSteps = nextPotentialLevelState->steps;
+					//reset checked plane data
+					while (Level::checkedPlanesCount > 0)
+						Level::checkedPlaneDatas[Level::checkedPlaneIndices[--Level::checkedPlanesCount]].steps =
+							Level::CheckedPlaneData::maxStepsLimit;
+					return nextPotentialLevelState->getHint();
+				}
+				//otherwise, track it
+				Level::getNextPotentialLevelStatesForSteps(nextPotentialLevelState->steps)->push_back(nextPotentialLevelState);
+			}
 		}
-		//otherwise, track it
-		Level::getNextPotentialLevelStatesForSteps(nextPotentialLevelState->steps)->push_back(nextPotentialLevelState);
+		Level::checkPlaneCounts[steps] = 0;
 	}
-
-	//check switches
+	//reset checked plane data
+	while (Level::checkedPlanesCount > 0)
+		Level::checkedPlaneDatas[Level::checkedPlaneIndices[--Level::checkedPlanesCount]].steps =
+			Level::CheckedPlaneData::maxStepsLimit;
+	return nullptr;
+}
+Hint* LevelTypes::Plane::pursueSolutionAfterSwitches(HintState::PotentialLevelState* currentState) {
+	int nextPotentialLevelStateSteps = Level::currentPotentialLevelStateSteps + 1;
 	for (ConnectionSwitch& connectionSwitch : connectionSwitches) {
 		#ifdef TRACK_HINT_SEARCH_STATS
 			Level::hintSearchActionsChecked++;
@@ -171,13 +229,14 @@ Hint* LevelTypes::Plane::pursueSolution(HintState::PotentialLevelState* currentS
 					| ((unsigned int)resultRailState << railByteMaskData->railBitShift);
 		}
 		HintState::PotentialLevelState::draftState.setHash();
-		bucket = HintState::PotentialLevelState::draftState.railByteMasksHash % Level::PotentialLevelStatesByBucket::bucketSize;
+		unsigned int bucket =
+			HintState::PotentialLevelState::draftState.railByteMasksHash % Level::PotentialLevelStatesByBucket::bucketSize;
 
 		//make sure we haven't seen this state before
 		vector<HintState::PotentialLevelState*>& potentialLevelStates =
 			Level::potentialLevelStatesByBucketByPlane[indexInOwningLevel].buckets[bucket];
-		HintState::PotentialLevelState* nextPotentialLevelState = HintState::PotentialLevelState::draftState.addNewState(
-			potentialLevelStates, Level::currentPotentialLevelStateSteps + 1);
+		HintState::PotentialLevelState* nextPotentialLevelState =
+			HintState::PotentialLevelState::draftState.addNewState(potentialLevelStates, nextPotentialLevelStateSteps);
 		if (nextPotentialLevelState == nullptr)
 			continue;
 		//also don't bother with any states that lower the only rail of a single-rail switch
@@ -194,7 +253,12 @@ Hint* LevelTypes::Plane::pursueSolution(HintState::PotentialLevelState* currentS
 		#ifdef TRACK_HINT_SEARCH_STATS
 			Level::hintSearchUniqueStates++;
 		#endif
-		Level::getNextPotentialLevelStatesForSteps(nextPotentialLevelState->steps)->push_back(nextPotentialLevelState);
+		Level::getNextPotentialLevelStatesForSteps(nextPotentialLevelStateSteps)->push_back(nextPotentialLevelState);
+
+		//then afterwards, travel to all planes possible, and check to see if they yielded a hint
+		Hint* result = pursueSolutionToPlanes(nextPotentialLevelState, nextPotentialLevelStateSteps);
+		if (result != nullptr)
+			return result;
 	}
 
 	return nullptr;
@@ -279,9 +343,24 @@ Level::PotentialLevelStatesByBucket::PotentialLevelStatesByBucket()
 }
 Level::PotentialLevelStatesByBucket::~PotentialLevelStatesByBucket() {}
 
+//////////////////////////////// Level::CheckedPlaneData ////////////////////////////////
+Level::CheckedPlaneData::CheckedPlaneData()
+: steps(maxStepsLimit)
+, checkPlanesIndex(-1)
+, hint(nullptr) {
+}
+Level::CheckedPlaneData::~CheckedPlaneData() {
+	//don't delete hint, it's owned by something else
+}
+
 //////////////////////////////// Level ////////////////////////////////
 vector<Level::PotentialLevelStatesByBucket> Level::potentialLevelStatesByBucketByPlane;
 vector<HintState::PotentialLevelState*> Level::replacedPotentialLevelStates;
+Plane*** Level::allCheckPlanes = nullptr;
+int* Level::checkPlaneCounts = nullptr;
+Level::CheckedPlaneData* Level::checkedPlaneDatas = nullptr;
+int* Level::checkedPlaneIndices = nullptr;
+int Level::checkedPlanesCount = 0;
 int Level::currentPotentialLevelStateSteps = 0;
 int Level::maxPotentialLevelStateSteps = -1;
 vector<deque<HintState::PotentialLevelState*>*> Level::nextPotentialLevelStatesBySteps;
@@ -332,7 +411,7 @@ int Level::trackNextRail(short railId, Rail* rail) {
 	allRailByteMaskData.push_back(RailByteMaskData(railId, railByteIndex, railBitShift, rail));
 	return (int)allRailByteMaskData.size() - 1;
 }
-void Level::setupPotentialLevelStateHelpers(vector<Level*>& allLevels) {
+void Level::setupHintSearchHelpers(vector<Level*>& allLevels) {
 	for (Level* level : allLevels) {
 		//add one PotentialLevelStatesByBucket per plane, which includes the victory plane
 		while (potentialLevelStatesByBucketByPlane.size() < level->planes.size())
@@ -344,9 +423,25 @@ void Level::setupPotentialLevelStateHelpers(vector<Level*>& allLevels) {
 	delete[] HintState::PotentialLevelState::draftState.railByteMasks;
 	HintState::PotentialLevelState::draftState.railByteMasks =
 		new unsigned int[HintState::PotentialLevelState::maxRailByteMaskCount];
+	//setup plane-search helpers
+	int maxPlaneCount = (int)potentialLevelStatesByBucketByPlane.size();
+	//for checkPlanes, it's impossible for a path to take more than planes-count steps, so use that as the size of the array
+	allCheckPlanes = new Plane**[maxPlaneCount];
+	for (int i = 0; i < maxPlaneCount; i++)
+		allCheckPlanes[i] = new Plane*[maxPlaneCount];
+	checkPlaneCounts = new int[maxPlaneCount] {};
+	checkedPlaneDatas = new CheckedPlaneData[maxPlaneCount];
+	checkedPlaneIndices = new int[maxPlaneCount];
 }
 void Level::deleteHelpers() {
+	int maxPlaneCount = (int)potentialLevelStatesByBucketByPlane.size();
 	potentialLevelStatesByBucketByPlane.clear();
+	for (int i = 0; i < maxPlaneCount; i++)
+		delete[] allCheckPlanes[i];
+	delete[] allCheckPlanes;
+	delete[] checkPlaneCounts;
+	delete[] checkedPlaneDatas;
+	delete[] checkedPlaneIndices;
 	for (deque<HintState::PotentialLevelState*>* nextPotentialLevelStates : nextPotentialLevelStatesBySteps)
 		delete nextPotentialLevelStates;
 	nextPotentialLevelStatesBySteps.clear();
@@ -395,7 +490,11 @@ Hint* Level::generateHint(
 	baseLevelState->plane = currentPlane;
 	baseLevelState->hint = nullptr;
 	maxPotentialLevelStateSteps = -1;
-	getNextPotentialLevelStatesForSteps(0)->push_back(baseLevelState);
+	//make sure we only have hasAction states in the queues
+	if (currentPlane->getHasAction())
+		getNextPotentialLevelStatesForSteps(0)->push_back(baseLevelState);
+	else
+		currentPlane->pursueSolutionToPlanes(baseLevelState, 0);
 
 	//go through all states and see if there's anything we could do to get closer to the victory plane
 	Hint* result = nullptr;
@@ -440,7 +539,7 @@ Hint* Level::generateHint(
 			//skip any states that were replaced with shorter routes
 			if (potentialLevelState->steps == -1)
 				continue;
-			result = potentialLevelState->plane->pursueSolution(potentialLevelState);
+			result = potentialLevelState->plane->pursueSolutionAfterSwitches(potentialLevelState);
 			if (result != nullptr) {
 				currentPotentialLevelStateSteps = maxPotentialLevelStateSteps;
 				break;

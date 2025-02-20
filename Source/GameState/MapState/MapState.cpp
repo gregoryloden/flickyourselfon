@@ -484,7 +484,7 @@ void MapState::buildLevels() {
 		level->logStats();
 
 	//initialize utilities for hints
-	Level::setupPotentialLevelStateHelpers(levels);
+	Level::setupHintSearchHelpers(levels);
 	for (Level* level : levels)
 		level->preAllocatePotentialLevelStates();
 }
