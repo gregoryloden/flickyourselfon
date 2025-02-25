@@ -220,7 +220,7 @@ public:
 		char lastActivatedSwitchColor);
 private:
 	//begin the hint search after all the helpers have been set up
-	static Hint* performHintSearch();
+	static Hint* performHintSearch(LevelTypes::Plane* currentPlane);
 public:
 	//get the queue of next potential level states corresponding to the given steps
 	static deque<HintState::PotentialLevelState*>* getNextPotentialLevelStatesForSteps(int nextPotentialLevelStateSteps);

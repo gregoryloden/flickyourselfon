@@ -473,7 +473,7 @@ Hint* Level::generateHint(
 	//save the victory plane so Plane can use it
 	cachedHintSearchVictoryPlane = victoryPlane;
 
-	//setup the base potential level state
+	//setup the draft state to use for the base potential level state
 	HintState::PotentialLevelState::currentRailByteMaskCount = getRailByteMaskCount();
 	for (int i = 0; i < HintState::PotentialLevelState::currentRailByteMaskCount; i++)
 		HintState::PotentialLevelState::draftState.railByteMasks[i] = 0;
@@ -486,19 +486,6 @@ Hint* Level::generateHint(
 	}
 	HintState::PotentialLevelState::draftState.setHash();
 
-	//load it into the potential level state structures
-	HintState::PotentialLevelState* baseLevelState = HintState::PotentialLevelState::draftState.addNewState(
-		potentialLevelStatesByBucketByPlane[currentPlane->getIndexInOwningLevel()]
-			.buckets[HintState::PotentialLevelState::draftState.railByteMasksHash % PotentialLevelStatesByBucket::bucketSize],
-		0);
-	baseLevelState->priorState = nullptr;
-	baseLevelState->plane = currentPlane;
-	baseLevelState->hint = nullptr;
-	maxPotentialLevelStateSteps = -1;
-	//make sure we only have hasAction states in the queues
-	if (currentPlane->getHasAction())
-		getNextPotentialLevelStatesForSteps(0)->push_back(baseLevelState);
-	currentPlane->pursueSolutionToPlanes(baseLevelState, 0);
 
 	//prepare some logging helpers before we start the search
 	#ifdef LOG_SEARCH_STEPS_STATS
@@ -517,7 +504,7 @@ Hint* Level::generateHint(
 
 	//search for a hint
 	int timeBeforeSearch = SDL_GetTicks();
-	Hint* result = performHintSearch();
+	Hint* result = performHintSearch(currentPlane);
 
 	//cleanup
 	int timeAfterSearchBeforeCleanup = SDL_GetTicks();
@@ -560,7 +547,27 @@ Hint* Level::generateHint(
 
 	return result != nullptr ? result : &Hint::undoReset;
 }
-Hint* Level::performHintSearch() {
+Hint* Level::performHintSearch(Plane* currentPlane) {
+	maxPotentialLevelStateSteps = -1;
+
+	//load the base potential level state
+	HintState::PotentialLevelState* baseLevelState = HintState::PotentialLevelState::draftState.addNewState(
+		potentialLevelStatesByBucketByPlane[currentPlane->getIndexInOwningLevel()]
+			.buckets[HintState::PotentialLevelState::draftState.railByteMasksHash % PotentialLevelStatesByBucket::bucketSize],
+		0);
+	baseLevelState->priorState = nullptr;
+	baseLevelState->plane = currentPlane;
+	baseLevelState->hint = nullptr;
+
+	//find all hasAction planes reachable from the current plane to start the search
+	Hint* result = currentPlane->pursueSolutionToPlanes(baseLevelState, 0);
+	//if we can get to the victory plane without kicking any switches, we're done
+	if (result != nullptr)
+		return result;
+	//include the current plane to search if it's hasAction
+	if (currentPlane->getHasAction())
+		getNextPotentialLevelStatesForSteps(0)->push_back(baseLevelState);
+
 	//go through all states and see if there's anything we could do to get closer to the victory plane
 	for (currentPotentialLevelStateSteps = 0;
 		currentPotentialLevelStateSteps <= maxPotentialLevelStateSteps;
@@ -590,7 +597,7 @@ Hint* Level::performHintSearch() {
 			//skip any states that were replaced with shorter routes
 			if (potentialLevelState->steps == -1)
 				continue;
-			Hint* result = potentialLevelState->plane->pursueSolutionAfterSwitches(
+			result = potentialLevelState->plane->pursueSolutionAfterSwitches(
 				potentialLevelState, Level::currentPotentialLevelStateSteps + 1);
 			if (result != nullptr)
 				return result;
