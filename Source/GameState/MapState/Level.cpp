@@ -187,6 +187,8 @@ Hint* LevelTypes::Plane::pursueSolutionToPlanes(
 					while (Level::checkedPlanesCount > 0)
 						Level::checkedPlaneDatas[Level::checkedPlaneIndices[--Level::checkedPlanesCount]].steps =
 							Level::CheckedPlaneData::maxStepsLimit;
+					for (; steps <= maxStepsSeen; steps++)
+						Level::checkPlaneCounts[steps] = 0;
 					return nextPotentialLevelState->getHint();
 				}
 				//otherwise, track it
