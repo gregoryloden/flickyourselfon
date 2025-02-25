@@ -366,6 +366,10 @@ int Level::currentPotentialLevelStateSteps = 0;
 int Level::maxPotentialLevelStateSteps = -1;
 vector<deque<HintState::PotentialLevelState*>*> Level::nextPotentialLevelStatesBySteps;
 Plane* Level::cachedHintSearchVictoryPlane = nullptr;
+#ifdef LOG_SEARCH_STEPS_STATS
+	int* Level::statesAtStepsByPlane = nullptr;
+	int Level::statesAtStepsByPlaneCount = 0;
+#endif
 #ifdef TRACK_HINT_SEARCH_STATS
 	int Level::hintSearchActionsChecked = 0;
 	int Level::hintSearchUniqueStates = 0;
@@ -496,10 +500,10 @@ Hint* Level::generateHint(
 		getNextPotentialLevelStatesForSteps(0)->push_back(baseLevelState);
 	currentPlane->pursueSolutionToPlanes(baseLevelState, 0);
 
-	//go through all states and see if there's anything we could do to get closer to the victory plane
-	Hint* result = nullptr;
+	//prepare some logging helpers before we start the search
 	#ifdef LOG_SEARCH_STEPS_STATS
-		int* statesAtStepsByPlane = new int[planes.size()] {};
+		statesAtStepsByPlaneCount = planes.size();
+		statesAtStepsByPlane = new int[statesAtStepsByPlaneCount] {};
 	#endif
 	#ifdef TRACK_HINT_SEARCH_STATS
 		hintSearchActionsChecked = 0;
@@ -510,43 +514,10 @@ Hint* Level::generateHint(
 	stringstream beginHintSearchMessage;
 	beginHintSearchMessage << "begin level " << levelN << " hint search";
 	Logger::debugLogger.logString(beginHintSearchMessage.str());
+
+	//search for a hint
 	int timeBeforeSearch = SDL_GetTicks();
-	for (currentPotentialLevelStateSteps = 0;
-		currentPotentialLevelStateSteps <= maxPotentialLevelStateSteps;
-		currentPotentialLevelStateSteps++)
-	{
-		deque<HintState::PotentialLevelState*>* nextPotentialLevelStates =
-			nextPotentialLevelStatesBySteps[currentPotentialLevelStateSteps];
-		#ifdef LOG_SEARCH_STEPS_STATS
-			stringstream stepsMessage;
-			stepsMessage << currentPotentialLevelStateSteps << " steps:";
-			Logger::debugLogger.logString(stepsMessage.str());
-			for (HintState::PotentialLevelState* potentialLevelState : *nextPotentialLevelStates)
-				statesAtStepsByPlane[potentialLevelState->plane->getIndexInOwningLevel()]++;
-			for (int planeI = 0; planeI < (int)planes.size(); planeI++) {
-				int statesAtSteps = statesAtStepsByPlane[planeI];
-				if (statesAtSteps > 0) {
-					stepsMessage.str("");
-					stepsMessage << "  plane " << planeI << ": " << statesAtSteps << " states";
-					Logger::debugLogger.logString(stepsMessage.str());
-					statesAtStepsByPlane[planeI] = 0;
-				}
-			}
-		#endif
-		while (!nextPotentialLevelStates->empty()) {
-			HintState::PotentialLevelState* potentialLevelState = nextPotentialLevelStates->front();
-			nextPotentialLevelStates->pop_front();
-			//skip any states that were replaced with shorter routes
-			if (potentialLevelState->steps == -1)
-				continue;
-			result = potentialLevelState->plane->pursueSolutionAfterSwitches(
-				potentialLevelState, Level::currentPotentialLevelStateSteps + 1);
-			if (result != nullptr) {
-				currentPotentialLevelStateSteps = maxPotentialLevelStateSteps;
-				break;
-			}
-		}
-	}
+	Hint* result = performHintSearch();
 
 	//cleanup
 	int timeAfterSearchBeforeCleanup = SDL_GetTicks();
@@ -588,6 +559,44 @@ Hint* Level::generateHint(
 	#endif
 
 	return result != nullptr ? result : &Hint::undoReset;
+}
+Hint* Level::performHintSearch() {
+	//go through all states and see if there's anything we could do to get closer to the victory plane
+	for (currentPotentialLevelStateSteps = 0;
+		currentPotentialLevelStateSteps <= maxPotentialLevelStateSteps;
+		currentPotentialLevelStateSteps++)
+	{
+		deque<HintState::PotentialLevelState*>* nextPotentialLevelStates =
+			nextPotentialLevelStatesBySteps[currentPotentialLevelStateSteps];
+		#ifdef LOG_SEARCH_STEPS_STATS
+			stringstream stepsMessage;
+			stepsMessage << currentPotentialLevelStateSteps << " steps:";
+			Logger::debugLogger.logString(stepsMessage.str());
+			for (HintState::PotentialLevelState* potentialLevelState : *nextPotentialLevelStates)
+				statesAtStepsByPlane[potentialLevelState->plane->getIndexInOwningLevel()]++;
+			for (int planeI = 0; planeI < (int)statesAtStepsByPlaneCount; planeI++) {
+				int statesAtSteps = statesAtStepsByPlane[planeI];
+				if (statesAtSteps > 0) {
+					stepsMessage.str("");
+					stepsMessage << "  plane " << planeI << ": " << statesAtSteps << " states";
+					Logger::debugLogger.logString(stepsMessage.str());
+					statesAtStepsByPlane[planeI] = 0;
+				}
+			}
+		#endif
+		while (!nextPotentialLevelStates->empty()) {
+			HintState::PotentialLevelState* potentialLevelState = nextPotentialLevelStates->front();
+			nextPotentialLevelStates->pop_front();
+			//skip any states that were replaced with shorter routes
+			if (potentialLevelState->steps == -1)
+				continue;
+			Hint* result = potentialLevelState->plane->pursueSolutionAfterSwitches(
+				potentialLevelState, Level::currentPotentialLevelStateSteps + 1);
+			if (result != nullptr)
+				return result;
+		}
+	}
+	return nullptr;
 }
 deque<HintState::PotentialLevelState*>* Level::getNextPotentialLevelStatesForSteps(int nextPotentialLevelStateSteps) {
 	while (maxPotentialLevelStateSteps < nextPotentialLevelStateSteps) {

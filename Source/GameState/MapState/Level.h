@@ -165,6 +165,12 @@ private:
 	static vector<deque<HintState::PotentialLevelState*>*> nextPotentialLevelStatesBySteps;
 public:
 	static LevelTypes::Plane* cachedHintSearchVictoryPlane;
+private:
+	#ifdef LOG_SEARCH_STEPS_STATS
+		static int* statesAtStepsByPlane;
+		static int statesAtStepsByPlaneCount;
+	#endif
+public:
 	#ifdef TRACK_HINT_SEARCH_STATS
 		static int hintSearchActionsChecked;
 		static int hintSearchUniqueStates;
@@ -212,6 +218,10 @@ public:
 		LevelTypes::Plane* currentPlane,
 		function<void(short railId, Rail* rail, char* outMovementDirection, char* outTileOffset)> getRailState,
 		char lastActivatedSwitchColor);
+private:
+	//begin the hint search after all the helpers have been set up
+	static Hint* performHintSearch();
+public:
 	//get the queue of next potential level states corresponding to the given steps
 	static deque<HintState::PotentialLevelState*>* getNextPotentialLevelStatesForSteps(int nextPotentialLevelStateSteps);
 	//log basic information about this level
