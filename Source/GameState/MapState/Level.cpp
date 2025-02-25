@@ -201,8 +201,7 @@ Hint* LevelTypes::Plane::pursueSolutionToPlanes(
 			Level::CheckedPlaneData::maxStepsLimit;
 	return nullptr;
 }
-Hint* LevelTypes::Plane::pursueSolutionAfterSwitches(HintState::PotentialLevelState* currentState) {
-	int nextPotentialLevelStateSteps = Level::currentPotentialLevelStateSteps + 1;
+Hint* LevelTypes::Plane::pursueSolutionAfterSwitches(HintState::PotentialLevelState* currentState, int stepsAfterSwitchKick) {
 	for (ConnectionSwitch& connectionSwitch : connectionSwitches) {
 		#ifdef TRACK_HINT_SEARCH_STATS
 			Level::hintSearchActionsChecked++;
@@ -236,7 +235,7 @@ Hint* LevelTypes::Plane::pursueSolutionAfterSwitches(HintState::PotentialLevelSt
 		vector<HintState::PotentialLevelState*>& potentialLevelStates =
 			Level::potentialLevelStatesByBucketByPlane[indexInOwningLevel].buckets[bucket];
 		HintState::PotentialLevelState* nextPotentialLevelState =
-			HintState::PotentialLevelState::draftState.addNewState(potentialLevelStates, nextPotentialLevelStateSteps);
+			HintState::PotentialLevelState::draftState.addNewState(potentialLevelStates, stepsAfterSwitchKick);
 		if (nextPotentialLevelState == nullptr)
 			continue;
 		//also don't bother with any states that lower the only rail of a single-rail switch
@@ -253,10 +252,10 @@ Hint* LevelTypes::Plane::pursueSolutionAfterSwitches(HintState::PotentialLevelSt
 		#ifdef TRACK_HINT_SEARCH_STATS
 			Level::hintSearchUniqueStates++;
 		#endif
-		Level::getNextPotentialLevelStatesForSteps(nextPotentialLevelStateSteps)->push_back(nextPotentialLevelState);
+		Level::getNextPotentialLevelStatesForSteps(stepsAfterSwitchKick)->push_back(nextPotentialLevelState);
 
 		//then afterwards, travel to all planes possible, and check to see if they yielded a hint
-		Hint* result = pursueSolutionToPlanes(nextPotentialLevelState, nextPotentialLevelStateSteps);
+		Hint* result = pursueSolutionToPlanes(nextPotentialLevelState, stepsAfterSwitchKick);
 		if (result != nullptr)
 			return result;
 	}

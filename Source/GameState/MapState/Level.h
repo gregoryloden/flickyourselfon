@@ -89,7 +89,7 @@ namespace LevelTypes {
 		//follow all possible paths to other planes, and return a hint if any of those other planes are the victory plane
 		Hint* pursueSolutionToPlanes(HintState::PotentialLevelState* currentState, int basePotentialLevelStateSteps);
 		//kick each switch in this plane, and then pursue solutions from those states
-		Hint* pursueSolutionAfterSwitches(HintState::PotentialLevelState* currentState);
+		Hint* pursueSolutionAfterSwitches(HintState::PotentialLevelState* currentState, int stepsAfterSwitchKick);
 		//get the bounds of the hint to render for this plane
 		void getHintRenderBounds(int* outLeftWorldX, int* outTopWorldY, int* outRightWorldX, int* outBottomWorldY);
 		//render boxes over every tile in this plane
@@ -159,8 +159,8 @@ public:
 	static CheckedPlaneData* checkedPlaneDatas;
 	static int* checkedPlaneIndices;
 	static int checkedPlanesCount;
-	static int currentPotentialLevelStateSteps;
 private:
+	static int currentPotentialLevelStateSteps;
 	static int maxPotentialLevelStateSteps;
 	static vector<deque<HintState::PotentialLevelState*>*> nextPotentialLevelStatesBySteps;
 public:
