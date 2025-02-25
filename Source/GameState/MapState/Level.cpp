@@ -494,8 +494,7 @@ Hint* Level::generateHint(
 	//make sure we only have hasAction states in the queues
 	if (currentPlane->getHasAction())
 		getNextPotentialLevelStatesForSteps(0)->push_back(baseLevelState);
-	else
-		currentPlane->pursueSolutionToPlanes(baseLevelState, 0);
+	currentPlane->pursueSolutionToPlanes(baseLevelState, 0);
 
 	//go through all states and see if there's anything we could do to get closer to the victory plane
 	Hint* result = nullptr;
