@@ -128,8 +128,8 @@ Hint* LevelTypes::Plane::pursueSolutionToPlanes(
 					continue;
 
 				Plane* connectionToPlane = connection.toPlane;
-				int planeIndex = connectionToPlane->indexInOwningLevel;
-				int checkedPlaneSteps = (checkedPlaneData = Level::checkedPlaneDatas + planeIndex)->steps;
+				int toPlaneIndex = connectionToPlane->indexInOwningLevel;
+				int checkedPlaneSteps = (checkedPlaneData = Level::checkedPlaneDatas + toPlaneIndex)->steps;
 				int connectionSteps = steps + connection.steps;
 				//skip it if it takes equal or more steps than the path we already found
 				//unvisited planes have a large number for steps so this will only be true for visited planes
@@ -138,7 +138,7 @@ Hint* LevelTypes::Plane::pursueSolutionToPlanes(
 
 				//if we haven't seen this plane before, add its index in the list to remember
 				if (checkedPlaneSteps == Level::CheckedPlaneData::maxStepsLimit)
-					Level::checkedPlaneIndices[Level::checkedPlanesCount++] = planeIndex;
+					Level::checkedPlaneIndices[Level::checkedPlanesCount++] = toPlaneIndex;
 				//if we have seen this plane before, remove it from its spot in further steps
 				else {
 					int checkPlaneCount = --Level::checkPlaneCounts[checkedPlaneSteps];
@@ -164,7 +164,7 @@ Hint* LevelTypes::Plane::pursueSolutionToPlanes(
 
 				//if it is hasAction, add a state to it
 				vector<HintState::PotentialLevelState*>& potentialLevelStates =
-					Level::potentialLevelStatesByBucketByPlane[planeIndex].buckets[bucket];
+					Level::potentialLevelStatesByBucketByPlane[toPlaneIndex].buckets[bucket];
 				HintState::PotentialLevelState* nextPotentialLevelState =
 					currentState->addNewState(potentialLevelStates, basePotentialLevelStateSteps + connectionSteps);
 				if (nextPotentialLevelState == nullptr)
