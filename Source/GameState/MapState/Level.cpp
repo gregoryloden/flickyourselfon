@@ -539,7 +539,8 @@ Hint* Level::generateHint(
 			//skip any states that were replaced with shorter routes
 			if (potentialLevelState->steps == -1)
 				continue;
-			result = potentialLevelState->plane->pursueSolutionAfterSwitches(potentialLevelState);
+			result = potentialLevelState->plane->pursueSolutionAfterSwitches(
+				potentialLevelState, Level::currentPotentialLevelStateSteps + 1);
 			if (result != nullptr) {
 				currentPotentialLevelStateSteps = maxPotentialLevelStateSteps;
 				break;
