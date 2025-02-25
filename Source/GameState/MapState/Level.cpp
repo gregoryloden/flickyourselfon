@@ -521,7 +521,7 @@ Hint* Level::generateHint(
 
 	//cleanup
 	int timeAfterSearchBeforeCleanup = SDL_GetTicks();
-	for (int i = 0; i <= maxPotentialLevelStateSteps; i++)
+	for (int i = currentPotentialLevelStateSteps; i <= maxPotentialLevelStateSteps; i++)
 		nextPotentialLevelStatesBySteps[i]->clear();
 	//only clear as many plane buckets as we used
 	for (int i = 0; i < (int)planes.size(); i++) {
