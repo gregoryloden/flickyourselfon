@@ -497,7 +497,6 @@ Hint* Level::generateHint(
 		hintSearchUniqueStates = 0;
 		hintSearchComparisonsPerformed = 0;
 	#endif
-	foundHintSearchTotalHintSteps = 0;
 	stringstream beginHintSearchMessage;
 	beginHintSearchMessage << "begin level " << levelN << " hint search";
 	Logger::debugLogger.logString(beginHintSearchMessage.str());
