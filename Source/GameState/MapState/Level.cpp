@@ -17,7 +17,8 @@ LevelTypes::Plane::Tile::~Tile() {}
 //////////////////////////////// LevelTypes::Plane::ConnectionSwitch ////////////////////////////////
 LevelTypes::Plane::ConnectionSwitch::ConnectionSwitch(Switch* switch0)
 : affectedRailByteMaskData()
-, hint(Hint::Type::Switch) {
+, hint(Hint::Type::Switch)
+, isMilestone(false) {
 	hint.data.switch0 = switch0;
 }
 LevelTypes::Plane::ConnectionSwitch::~ConnectionSwitch() {}
@@ -104,6 +105,85 @@ void LevelTypes::Plane::addReverseRailConnection(Plane* fromPlane, Plane* toPlan
 		connections.push_back(
 			Connection(toPlane, connection.railByteIndex, connection.railTileOffsetByteMask, steps, rail, hintPlane));
 	}
+}
+void LevelTypes::Plane::findMilestones(vector<Plane*>& levelPlanes) {
+	//DFS to find a path to the end
+	bool* seenPlanes = new bool[levelPlanes.size()] {};
+	Plane* nextPlane = levelPlanes[0];
+	vector<Plane*> pathPlanes ({ nextPlane });
+	vector<Connection*> pathConnections;
+	while (true) {
+		Plane* lastPlane = nextPlane;
+		for (Connection& connection : nextPlane->connections) {
+			Plane* toPlane = connection.toPlane;
+			if (!seenPlanes[toPlane->indexInOwningLevel]) {
+				nextPlane = toPlane;
+				pathConnections.push_back(&connection);
+				pathPlanes.push_back(nextPlane);
+				seenPlanes[toPlane->indexInOwningLevel] = true;
+				break;
+			}
+		}
+		if (nextPlane == lastPlane) {
+			//since we're assuming that the level has a victory plane, we can assume there is a path to get there (which is how
+			//	we found that victory plane), which means that there is another plane/connection to try, which means that these
+			//	lists won't be empty, and pathPlanes will still not be empty after popping
+			pathPlanes.pop_back();
+			pathConnections.pop_back();
+			nextPlane = pathPlanes.back();
+		} else if (nextPlane == nextPlane->owningLevel->getVictoryPlane())
+			break;
+	}
+	//tally total number of rail connections to each plane
+	int* inboundRailConnections = new int[levelPlanes.size()] {};
+	for (Plane* plane : levelPlanes) {
+		for (Connection& connection : plane->connections) {
+			//skip any extended connections and non-rail connections
+			//we can group these in the same conditional because if there is a 1-step plane connection, there won't be any
+			//	1-step rail connections so we can still break
+			if (connection.steps > 1 || connection.railByteIndex == Level::absentRailByteIndex)
+				break;
+			inboundRailConnections[connection.toPlane->indexInOwningLevel]++;
+		}
+	}
+	//find milestones
+	for (int i = pathConnections.size() - 1; i >= 0; i--) {
+		Plane* fromPlane = pathPlanes[i];
+		Connection* connection = pathConnections[i];
+		//skip plane-plane connections
+		if (connection->railByteIndex == Level::absentRailByteIndex)
+			continue;
+		//since we're iterating backwards, if we only find to-planes with only one inbound rail connection, we know their
+		//	connections are required to get to the victory plane
+		//once we find a to-plane with more than one inbound rail connection, we can no longer be sure that all connections are
+		//	required to reach the victory plane, which means we won't find any more milestones
+		if (inboundRailConnections[i + 1] > 1)
+			break;
+		//if we get here, this rail connection is the only way to get to the victory plane
+		//look for a switch that only controls this rail
+		bool foundMilestoneSwitch = false;
+		for (Plane* plane : levelPlanes) {
+			for (ConnectionSwitch& connectionSwitch : plane->connectionSwitches) {
+				//it's not a milestone if it controls more than one rail
+				if (connectionSwitch.affectedRailByteMaskData.size() > 1)
+					continue;
+				//it only controls one rail, it's a milestone if it matches this rail
+				RailByteMaskData* railByteMaskData = connectionSwitch.affectedRailByteMaskData[0];
+				if (railByteMaskData->railByteIndex == connection->railByteIndex
+					&& Level::baseRailTileOffsetByteMask << railByteMaskData->railBitShift
+						== connection->railTileOffsetByteMask)
+				{
+					foundMilestoneSwitch = true;
+					connectionSwitch.isMilestone = true;
+					break;
+				}
+			}
+			if (foundMilestoneSwitch)
+				break;
+		}
+	}
+	delete[] seenPlanes;
+	delete[] inboundRailConnections;
 }
 Hint* LevelTypes::Plane::pursueSolutionToPlanes(
 	HintState::PotentialLevelState* currentState, int basePotentialLevelStateSteps)
@@ -247,6 +327,10 @@ Hint* LevelTypes::Plane::pursueSolutionAfterSwitches(HintState::PotentialLevelSt
 			continue;
 		}
 
+		//if this was a milestone switch, restart the hint search from here
+		if (connectionSwitch.isMilestone)
+			Level::pushMilestone();
+
 		//fill out the new PotentialLevelState and track it
 		nextPotentialLevelState->priorState = currentState;
 		nextPotentialLevelState->plane = this;
@@ -363,8 +447,13 @@ Level::CheckedPlaneData* Level::checkedPlaneDatas = nullptr;
 int* Level::checkedPlaneIndices = nullptr;
 int Level::checkedPlanesCount = 0;
 int Level::currentPotentialLevelStateSteps = 0;
+vector<int> Level::currentPotentialLevelStateStepsForMilestones;
 int Level::maxPotentialLevelStateSteps = -1;
-vector<deque<HintState::PotentialLevelState*>*> Level::nextPotentialLevelStatesBySteps;
+vector<int> Level::maxPotentialLevelStateStepsForMilestones;
+int Level::currentMilestones = 0;
+deque<HintState::PotentialLevelState*>* Level::currentNextPotentialLevelStates = nullptr;
+vector<deque<HintState::PotentialLevelState*>*>* Level::currentNextPotentialLevelStatesBySteps = nullptr;
+vector<vector<deque<HintState::PotentialLevelState*>*>> Level::nextPotentialLevelStatesByStepsByMilestone;
 Plane* Level::cachedHintSearchVictoryPlane = nullptr;
 #ifdef LOG_SEARCH_STEPS_STATS
 	int* Level::statesAtStepsByPlane = nullptr;
@@ -423,7 +512,10 @@ void Level::setupHintSearchHelpers(vector<Level*>& allLevels) {
 			potentialLevelStatesByBucketByPlane.push_back(PotentialLevelStatesByBucket());
 		HintState::PotentialLevelState::maxRailByteMaskCount =
 			MathUtils::max(HintState::PotentialLevelState::maxRailByteMaskCount, level->getRailByteMaskCount());
+		if (level->victoryPlane != nullptr)
+			Plane::findMilestones(level->planes);
 	}
+	nextPotentialLevelStatesByStepsByMilestone.push_back(vector<deque<HintState::PotentialLevelState*>*>());
 	//just once, fix the draft state byte list
 	delete[] HintState::PotentialLevelState::draftState.railByteMasks;
 	HintState::PotentialLevelState::draftState.railByteMasks =
@@ -447,9 +539,14 @@ void Level::deleteHelpers() {
 	delete[] checkPlaneCounts;
 	delete[] checkedPlaneDatas;
 	delete[] checkedPlaneIndices;
-	for (deque<HintState::PotentialLevelState*>* nextPotentialLevelStates : nextPotentialLevelStatesBySteps)
-		delete nextPotentialLevelStates;
-	nextPotentialLevelStatesBySteps.clear();
+	for (vector<deque<HintState::PotentialLevelState*>*>& deleteNextPotentialLevelStatesBySteps
+		: nextPotentialLevelStatesByStepsByMilestone)
+	{
+		for (deque<HintState::PotentialLevelState*>* deleteNextPotentialLevelStates : deleteNextPotentialLevelStatesBySteps)
+			delete deleteNextPotentialLevelStates;
+		deleteNextPotentialLevelStatesBySteps.clear();
+	}
+	nextPotentialLevelStatesByStepsByMilestone.clear();
 }
 void Level::preAllocatePotentialLevelStates() {
 	generateHint(
@@ -507,8 +604,10 @@ Hint* Level::generateHint(
 
 	//cleanup
 	int timeAfterSearchBeforeCleanup = SDL_GetTicks();
-	for (int i = currentPotentialLevelStateSteps; i <= maxPotentialLevelStateSteps; i++)
-		nextPotentialLevelStatesBySteps[i]->clear();
+	do {
+		for (int i = currentPotentialLevelStateSteps; i <= maxPotentialLevelStateSteps; i++)
+			(*currentNextPotentialLevelStatesBySteps)[i]->clear();
+	} while (popMilestone());
 	//only clear as many plane buckets as we used
 	for (int i = 0; i < (int)planes.size(); i++) {
 		for (vector<HintState::PotentialLevelState*>& potentialLevelStates : potentialLevelStatesByBucketByPlane[i].buckets) {
@@ -547,7 +646,10 @@ Hint* Level::generateHint(
 	return result != nullptr ? result : &Hint::undoReset;
 }
 Hint* Level::performHintSearch(Plane* currentPlane) {
+	currentPotentialLevelStateSteps = 0;
 	maxPotentialLevelStateSteps = -1;
+	currentMilestones = 0;
+	currentNextPotentialLevelStatesBySteps = &nextPotentialLevelStatesByStepsByMilestone[0];
 
 	//load the base potential level state
 	HintState::PotentialLevelState* baseLevelState = HintState::PotentialLevelState::draftState.addNewState(
@@ -568,17 +670,13 @@ Hint* Level::performHintSearch(Plane* currentPlane) {
 		getNextPotentialLevelStatesForSteps(0)->push_back(baseLevelState);
 
 	//go through all states and see if there's anything we could do to get closer to the victory plane
-	for (currentPotentialLevelStateSteps = 0;
-		currentPotentialLevelStateSteps <= maxPotentialLevelStateSteps;
-		currentPotentialLevelStateSteps++)
-	{
-		deque<HintState::PotentialLevelState*>* nextPotentialLevelStates =
-			nextPotentialLevelStatesBySteps[currentPotentialLevelStateSteps];
+	do {
+		currentNextPotentialLevelStates = (*currentNextPotentialLevelStatesBySteps)[currentPotentialLevelStateSteps];
 		#ifdef LOG_SEARCH_STEPS_STATS
 			stringstream stepsMessage;
 			stepsMessage << currentPotentialLevelStateSteps << " steps:";
 			Logger::debugLogger.logString(stepsMessage.str());
-			for (HintState::PotentialLevelState* potentialLevelState : *nextPotentialLevelStates)
+			for (HintState::PotentialLevelState* potentialLevelState : *currentNextPotentialLevelStates)
 				statesAtStepsByPlane[potentialLevelState->plane->getIndexInOwningLevel()]++;
 			for (int planeI = 0; planeI < (int)statesAtStepsByPlaneCount; planeI++) {
 				int statesAtSteps = statesAtStepsByPlane[planeI];
@@ -590,9 +688,9 @@ Hint* Level::performHintSearch(Plane* currentPlane) {
 				}
 			}
 		#endif
-		while (!nextPotentialLevelStates->empty()) {
-			HintState::PotentialLevelState* potentialLevelState = nextPotentialLevelStates->front();
-			nextPotentialLevelStates->pop_front();
+		while (!currentNextPotentialLevelStates->empty()) {
+			HintState::PotentialLevelState* potentialLevelState = currentNextPotentialLevelStates->front();
+			currentNextPotentialLevelStates->pop_front();
 			//skip any states that were replaced with shorter routes
 			if (potentialLevelState->steps == -1)
 				continue;
@@ -601,16 +699,50 @@ Hint* Level::performHintSearch(Plane* currentPlane) {
 			if (result != nullptr)
 				return result;
 		}
-	}
+		currentPotentialLevelStateSteps++;
+	} while (currentPotentialLevelStateSteps <= maxPotentialLevelStateSteps || popMilestone());
 	return nullptr;
+}
+void Level::pushMilestone() {
+	#ifdef LOG_SEARCH_STEPS_STATS
+		stringstream milestoneMessage;
+		milestoneMessage << "milestone+ : " << currentMilestones << " > " << (currentMilestones + 1);
+		Logger::debugLogger.logString(milestoneMessage.str());
+	#endif
+	currentPotentialLevelStateStepsForMilestones.push_back(currentPotentialLevelStateSteps);
+	maxPotentialLevelStateStepsForMilestones.push_back(maxPotentialLevelStateSteps);
+	currentMilestones++;
+	if ((int)nextPotentialLevelStatesByStepsByMilestone.size() == currentMilestones)
+		nextPotentialLevelStatesByStepsByMilestone.push_back(vector<deque<HintState::PotentialLevelState*>*>());
+	maxPotentialLevelStateSteps = -1;
+	currentNextPotentialLevelStatesBySteps = &nextPotentialLevelStatesByStepsByMilestone[currentMilestones];
+	//we need to set this here because pushMilestone() is called in the middle of iterating this queue
+	currentNextPotentialLevelStates = getNextPotentialLevelStatesForSteps(currentPotentialLevelStateSteps);
+}
+bool Level::popMilestone() {
+	#ifdef LOG_SEARCH_STEPS_STATS
+		stringstream milestoneMessage;
+		milestoneMessage << "milestone- : " << currentMilestones << " > " << (currentMilestones - 1);
+		Logger::debugLogger.logString(milestoneMessage.str());
+	#endif
+	currentMilestones--;
+	if (currentMilestones < 0)
+		return false;
+	currentPotentialLevelStateSteps = currentPotentialLevelStateStepsForMilestones.back();
+	currentPotentialLevelStateStepsForMilestones.pop_back();
+	maxPotentialLevelStateSteps = maxPotentialLevelStateStepsForMilestones.back();
+	maxPotentialLevelStateStepsForMilestones.pop_back();
+	currentNextPotentialLevelStatesBySteps = &nextPotentialLevelStatesByStepsByMilestone[currentMilestones];
+	//we don't need to set nextPotentialLevelStates here because popMilestone() is only called when it's not being used
+	return true;
 }
 deque<HintState::PotentialLevelState*>* Level::getNextPotentialLevelStatesForSteps(int nextPotentialLevelStateSteps) {
 	while (maxPotentialLevelStateSteps < nextPotentialLevelStateSteps) {
 		maxPotentialLevelStateSteps++;
-		if ((int)nextPotentialLevelStatesBySteps.size() == maxPotentialLevelStateSteps)
-			nextPotentialLevelStatesBySteps.push_back(new deque<HintState::PotentialLevelState*>());
+		if ((int)currentNextPotentialLevelStatesBySteps->size() == maxPotentialLevelStateSteps)
+			currentNextPotentialLevelStatesBySteps->push_back(new deque<HintState::PotentialLevelState*>());
 	}
-	return nextPotentialLevelStatesBySteps[nextPotentialLevelStateSteps];
+	return (*currentNextPotentialLevelStatesBySteps)[nextPotentialLevelStateSteps];
 }
 void Level::logStats() {
 	int switchCounts[4] = {};

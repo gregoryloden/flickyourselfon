@@ -31,6 +31,7 @@ namespace LevelTypes {
 		public:
 			vector<RailByteMaskData*> affectedRailByteMaskData;
 			Hint hint;
+			bool isMilestone;
 
 			ConnectionSwitch(Switch* switch0);
 			virtual ~ConnectionSwitch();
@@ -86,6 +87,10 @@ namespace LevelTypes {
 		//for direct connections, fromPlane is this
 		//for extended connections, fromPlane is the last plane reachable from this plane by plane-plane connections
 		void addReverseRailConnection(Plane* fromPlane, Plane* toPlane, int steps, Rail* rail, Plane* hintPlane);
+		//start from the first plane, go through all connections and planes, find planes and rails that are required to get to
+		//	the end, see which of them have single-use switches, and mark those switch connections as milestones
+		//assumes that the level for the given planes has a victory plane
+		static void findMilestones(vector<Plane*>& levelPlanes);
 		//follow all possible paths to other planes, and return a hint if any of those other planes are the victory plane
 		Hint* pursueSolutionToPlanes(HintState::PotentialLevelState* currentState, int basePotentialLevelStateSteps);
 		//kick each switch in this plane, and then pursue solutions from those states
@@ -161,8 +166,13 @@ public:
 	static int checkedPlanesCount;
 private:
 	static int currentPotentialLevelStateSteps;
+	static vector<int> currentPotentialLevelStateStepsForMilestones;
 	static int maxPotentialLevelStateSteps;
-	static vector<deque<HintState::PotentialLevelState*>*> nextPotentialLevelStatesBySteps;
+	static vector<int> maxPotentialLevelStateStepsForMilestones;
+	static int currentMilestones;
+	static deque<HintState::PotentialLevelState*>* currentNextPotentialLevelStates;
+	static vector<deque<HintState::PotentialLevelState*>*>* currentNextPotentialLevelStatesBySteps;
+	static vector<vector<deque<HintState::PotentialLevelState*>*>> nextPotentialLevelStatesByStepsByMilestone;
 public:
 	static LevelTypes::Plane* cachedHintSearchVictoryPlane;
 private:
@@ -221,6 +231,13 @@ public:
 private:
 	//begin the hint search after all the helpers have been set up
 	static Hint* performHintSearch(LevelTypes::Plane* currentPlane);
+public:
+	//save away the current states to check, and start over with a new set
+	static void pushMilestone();
+private:
+	//restore states to check from a previous milestone
+	//returns whether there was a previous milestone to restore to
+	static bool popMilestone();
 public:
 	//get the queue of next potential level states corresponding to the given steps
 	static deque<HintState::PotentialLevelState*>* getNextPotentialLevelStatesForSteps(int nextPotentialLevelStateSteps);
