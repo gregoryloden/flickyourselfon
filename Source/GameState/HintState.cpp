@@ -1,5 +1,6 @@
 #include "HintState.h"
 #include "GameState/MapState/Level.h"
+#include "GameState/MapState/MapState.h"
 #include "GameState/MapState/Rail.h"
 #include "GameState/MapState/Switch.h"
 #include "Sprites/SpriteRegistry.h"
@@ -11,6 +12,7 @@
 //////////////////////////////// Hint ////////////////////////////////
 Hint Hint::none (Hint::Type::None);
 Hint Hint::undoReset (Hint::Type::UndoReset);
+Hint Hint::searchCanceledEarly (Hint::Type::SearchCanceledEarly);
 Hint::Hint(Type pType)
 : type(pType)
 , data() {
@@ -141,24 +143,29 @@ HintState* HintState::produce(objCounterParametersComma() Hint* pHint, int anima
 	return h;
 }
 pooledReferenceCounterDefineRelease(HintState)
-void HintState::render(int screenLeftWorldX, int screenTopWorldY, bool belowRails, int ticksTime) {
+void HintState::render(int screenLeftWorldX, int screenTopWorldY, int ticksTime) {
 	//animation is over, don't render the hint or offscreen arrow
 	if (ticksTime >= animationEndTicksTime) {
 		offscreenArrowAlpha = 0;
 		return;
-	//only render planes below rails, and only rails and switches above rails
-	} else if (belowRails
-			? hint->type != Hint::Type::Plane
-			: hint->type != Hint::Type::Rail && hint->type != Hint::Type::Switch)
-		return;
+	}
 	int progressTicks = ticksTime + totalDisplayTicks - animationEndTicksTime;
+	float progress = (float)progressTicks / totalDisplayTicks;
+	float alpha = 0.5f - (progress + progress * progress) * 0.25f;
+	//if we couldn't find a hint, show a tutorial-area message
+	if (hint->type == Hint::Type::SearchCanceledEarly) {
+		glColor4f(1.0f, 1.0f, 1.0f, alpha * 1.5f);
+		MapState::renderControlsTutorial("(unable to calculate hint)", {});
+		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+		//text doesn't have an offscreen arrow
+		offscreenArrowAlpha = 0;
+		return;
+	}
 	bool isOn = (progressTicks % flashOnOffTotalTicks) < flashOnOffTicks;
 	if (!isOn) {
 		offscreenArrowAlpha = 0;
 		return;
 	}
-	float progress = (float)progressTicks / totalDisplayTicks;
-	float alpha = 0.5f - (progress + progress * progress) * 0.25f;
 	switch (hint->type) {
 		case Hint::Type::Plane:
 			hint->data.plane->renderHint(screenLeftWorldX, screenTopWorldY, alpha);
@@ -170,7 +177,7 @@ void HintState::render(int screenLeftWorldX, int screenTopWorldY, bool belowRail
 			hint->data.switch0->renderHint(screenLeftWorldX, screenTopWorldY, alpha);
 			break;
 		default:
-			break;
+			return;
 	}
 	offscreenArrowAlpha = alpha;
 }

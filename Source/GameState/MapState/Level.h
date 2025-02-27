@@ -156,7 +156,15 @@ public:
 	static const unsigned int baseRailMovementDirectionByteMask =
 		((1 << railMovementDirectionByteMaskBitCount) - 1) << railTileOffsetByteMaskBitCount;
 	static const unsigned int baseRailByteMask = (1 << railByteMaskBitCount) - 1;
+private:
+	#ifdef DEBUG
+		static const int maxHintSearchTicks = 5000;
+	#else
+		static const int maxHintSearchTicks = 500;
+	#endif
+			
 
+public:
 	static vector<PotentialLevelStatesByBucket> potentialLevelStatesByBucketByPlane;
 	static vector<HintState::PotentialLevelState*> replacedPotentialLevelStates;
 	static LevelTypes::Plane*** allCheckPlanes;
@@ -230,7 +238,7 @@ public:
 		char lastActivatedSwitchColor);
 private:
 	//begin the hint search after all the helpers have been set up
-	static Hint* performHintSearch(LevelTypes::Plane* currentPlane);
+	static Hint* performHintSearch(LevelTypes::Plane* currentPlane, int startTime);
 public:
 	//save away the current states to check, and start over with a new set
 	static void pushMilestone();

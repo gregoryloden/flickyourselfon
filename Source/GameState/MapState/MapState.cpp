@@ -1052,7 +1052,9 @@ void MapState::renderBelowPlayer(EntityState* camera, float playerWorldGroundY, 
 	}
 
 	//draw hints below rails, if applicable
-	hintState.get()->render(screenLeftWorldX, screenTopWorldY, true, ticksTime);
+	Hint::Type hintType = hintState.get()->getHintType();
+	if (hintType == Hint::Type::Plane)
+		hintState.get()->render(screenLeftWorldX, screenTopWorldY, ticksTime);
 
 	//draw rail shadows, rails (that are below the player), and switches
 	renderRailStates.clear();
@@ -1097,7 +1099,8 @@ void MapState::renderBelowPlayer(EntityState* camera, float playerWorldGroundY, 
 	}
 
 	//draw hints above rails, if applicable
-	hintState.get()->render(screenLeftWorldX, screenTopWorldY, false, ticksTime);
+	if (hintType == Hint::Type::Rail || hintType == Hint::Type::Switch)
+		hintState.get()->render(screenLeftWorldX, screenTopWorldY, ticksTime);
 }
 void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int ticksTime) {
 	if (Editor::isActive && editorHideNonTiles)
@@ -1184,7 +1187,10 @@ void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int 
 	}
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 
-	hintState.get()->renderOffscreenArrow(screenLeftWorldX, screenTopWorldY);
+	if (hintState.get()->getHintType() == Hint::Type::SearchCanceledEarly)
+		hintState.get()->render(screenLeftWorldX, screenTopWorldY, ticksTime);
+	else
+		hintState.get()->renderOffscreenArrow(screenLeftWorldX, screenTopWorldY);
 
 	if (Config::showActivatedSwitchWaves.isOn()) {
 		GLint wavesActivatedX =

@@ -19,6 +19,7 @@ public:
 		Rail,
 		Switch,
 		UndoReset,
+		SearchCanceledEarly,
 	};
 	union Data {
 		bool none; //not necessary but it gives the None type a data counterpart and it's used in the constructor
@@ -29,12 +30,15 @@ public:
 
 	static Hint none;
 	static Hint undoReset;
+	static Hint searchCanceledEarly;
 
 	Type type;
 	Data data;
 
 	Hint(Type pType);
 	virtual ~Hint();
+
+	bool isAdvancement() { return type == Type::Plane || type == Type::Rail || type == Type::Switch; }
 };
 class HintState: public PooledReferenceCounter {
 public:
@@ -96,12 +100,13 @@ public:
 	HintState(objCounterParameters());
 	virtual ~HintState();
 
+	Hint::Type getHintType() { return hint->type; }
 	//initialize and return a HintState
 	static HintState* produce(objCounterParametersComma() Hint* pHint, int animationStartTicksTime);
 	//release a reference to this HintState and return it to the pool if applicable
 	virtual void release();
 	//render this hint
-	void render(int screenLeftWorldX, int screenTopWorldY, bool belowRails, int ticksTime);
+	void render(int screenLeftWorldX, int screenTopWorldY, int ticksTime);
 	//render an arrow pointing to this hint which is offscreen, using the alpha saved from render()
 	void renderOffscreenArrow(int screenLeftWorldX, int screenTopWorldY);
 };

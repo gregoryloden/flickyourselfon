@@ -600,7 +600,7 @@ Hint* Level::generateHint(
 
 	//search for a hint
 	int timeBeforeSearch = SDL_GetTicks();
-	Hint* result = performHintSearch(currentPlane);
+	Hint* result = performHintSearch(currentPlane, timeBeforeSearch);
 
 	//cleanup
 	int timeAfterSearchBeforeCleanup = SDL_GetTicks();
@@ -635,17 +635,17 @@ Hint* Level::generateHint(
 		#endif
 		<< "  searchTime " << (timeAfterSearchBeforeCleanup - timeBeforeSearch)
 		<< "  cleanupTime " << (timeAfterCleanup - timeAfterSearchBeforeCleanup)
-		<< "  found solution? " << (result != nullptr ? "true" : "false");
-	if (result != nullptr)
+		<< "  found solution? " << (result->isAdvancement() ? "true" : "false");
+	if (result->isAdvancement())
 		hintSearchPerformanceMessage << "  steps " << foundHintSearchTotalSteps << "(" << foundHintSearchTotalHintSteps << ")";
 	Logger::debugLogger.logString(hintSearchPerformanceMessage.str());
 	#ifdef LOG_SEARCH_STEPS_STATS
 		delete[] statesAtStepsByPlane;
 	#endif
 
-	return result != nullptr ? result : &Hint::undoReset;
+	return result;
 }
-Hint* Level::performHintSearch(Plane* currentPlane) {
+Hint* Level::performHintSearch(Plane* currentPlane, int startTime) {
 	currentPotentialLevelStateSteps = 0;
 	maxPotentialLevelStateSteps = -1;
 	currentMilestones = 0;
@@ -700,8 +700,11 @@ Hint* Level::performHintSearch(Plane* currentPlane) {
 				return result;
 		}
 		currentPotentialLevelStateSteps++;
+		if (SDL_GetTicks() - startTime >= maxHintSearchTicks)
+			return &Hint::searchCanceledEarly;
 	} while (currentPotentialLevelStateSteps <= maxPotentialLevelStateSteps || popMilestone());
-	return nullptr;
+	//at this point, we've exhausted all states at all steps regardless of milestones, there is no solution
+	return &Hint::undoReset;
 }
 void Level::pushMilestone() {
 	#ifdef LOG_SEARCH_STEPS_STATS
