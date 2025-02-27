@@ -124,6 +124,7 @@ namespace LevelTypes {
 }
 class Level onlyInDebug(: public ObjCounter) {
 public:
+	typedef function<void(short railId, Rail* rail, char* outMovementDirection, char* outTileOffset)> GetRailState;
 	//Should only be allocated within an object, on the stack, or as a static object
 	class PotentialLevelStatesByBucket {
 	public:
@@ -232,13 +233,13 @@ public:
 	//	generating hints
 	void preAllocatePotentialLevelStates();
 	//generate a hint based on the initial state in this level
-	Hint* generateHint(
-		LevelTypes::Plane* currentPlane,
-		function<void(short railId, Rail* rail, char* outMovementDirection, char* outTileOffset)> getRailState,
-		char lastActivatedSwitchColor);
+	Hint* generateHint(LevelTypes::Plane* currentPlane, GetRailState getRailState, char lastActivatedSwitchColor);
 private:
+	//create a potential level state set with the given state retriever, loading it into potentialLevelStatesByBucketByPlane
+	HintState::PotentialLevelState* loadBasePotentialLevelState(LevelTypes::Plane* currentPlane, GetRailState getRailState);
 	//begin the hint search after all the helpers have been set up
-	static Hint* performHintSearch(LevelTypes::Plane* currentPlane, int startTime);
+	static Hint* performHintSearch(
+		HintState::PotentialLevelState* baseLevelState, LevelTypes::Plane* currentPlane, int startTime);
 public:
 	//save away the current states to check, and start over with a new set
 	static void pushMilestone();

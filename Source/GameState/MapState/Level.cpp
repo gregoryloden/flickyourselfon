@@ -563,31 +563,11 @@ void Level::preAllocatePotentialLevelStates() {
 		},
 		minimumRailColor);
 }
-Hint* Level::generateHint(
-	Plane* currentPlane,
-	function<void(short railId, Rail* rail, char* outMovementDirection, char* outTileOffset)> getRailState,
-	char lastActivatedSwitchColor)
-{
+Hint* Level::generateHint(Plane* currentPlane, GetRailState getRailState, char lastActivatedSwitchColor) {
 	if (lastActivatedSwitchColor < minimumRailColor)
 		return &radioTowerHint;
 	else if (victoryPlane == nullptr)
 		return &Hint::none;
-
-	//save the victory plane so Plane can use it
-	cachedHintSearchVictoryPlane = victoryPlane;
-
-	//setup the draft state to use for the base potential level state
-	HintState::PotentialLevelState::currentRailByteMaskCount = getRailByteMaskCount();
-	for (int i = 0; i < HintState::PotentialLevelState::currentRailByteMaskCount; i++)
-		HintState::PotentialLevelState::draftState.railByteMasks[i] = 0;
-	for (RailByteMaskData& railByteMaskData : allRailByteMaskData) {
-		char movementDirection, tileOffset;
-		getRailState(railByteMaskData.railId, railByteMaskData.rail, &movementDirection, &tileOffset);
-		char movementDirectionBit = ((movementDirection + 1) / 2) << Level::railTileOffsetByteMaskBitCount;
-		HintState::PotentialLevelState::draftState.railByteMasks[railByteMaskData.railByteIndex] |=
-			(unsigned int)(movementDirectionBit | tileOffset) << railByteMaskData.railBitShift;
-	}
-	HintState::PotentialLevelState::draftState.setHash();
 
 	//prepare some logging helpers before we start the search
 	#ifdef LOG_SEARCH_STEPS_STATS
@@ -603,9 +583,17 @@ Hint* Level::generateHint(
 	beginHintSearchMessage << "begin level " << levelN << " hint search";
 	Logger::debugLogger.logString(beginHintSearchMessage.str());
 
+	//prepare search helpers including the base level state
+	cachedHintSearchVictoryPlane = victoryPlane;
+	currentPotentialLevelStateSteps = 0;
+	maxPotentialLevelStateSteps = -1;
+	currentMilestones = 0;
+	currentNextPotentialLevelStatesBySteps = &nextPotentialLevelStatesByStepsByMilestone[0];
+	HintState::PotentialLevelState* baseLevelState = loadBasePotentialLevelState(currentPlane, getRailState);
+
 	//search for a hint
 	int timeBeforeSearch = SDL_GetTicks();
-	Hint* result = performHintSearch(currentPlane, timeBeforeSearch);
+	Hint* result = performHintSearch(baseLevelState, currentPlane, timeBeforeSearch);
 
 	//cleanup
 	int timeAfterSearchBeforeCleanup = SDL_GetTicks();
@@ -650,11 +638,19 @@ Hint* Level::generateHint(
 
 	return result;
 }
-Hint* Level::performHintSearch(Plane* currentPlane, int startTime) {
-	currentPotentialLevelStateSteps = 0;
-	maxPotentialLevelStateSteps = -1;
-	currentMilestones = 0;
-	currentNextPotentialLevelStatesBySteps = &nextPotentialLevelStatesByStepsByMilestone[0];
+HintState::PotentialLevelState* Level::loadBasePotentialLevelState(LevelTypes::Plane* currentPlane, GetRailState getRailState) {
+	//setup the draft state to use for the base potential level state
+	HintState::PotentialLevelState::currentRailByteMaskCount = getRailByteMaskCount();
+	for (int i = 0; i < HintState::PotentialLevelState::currentRailByteMaskCount; i++)
+		HintState::PotentialLevelState::draftState.railByteMasks[i] = 0;
+	for (RailByteMaskData& railByteMaskData : allRailByteMaskData) {
+		char movementDirection, tileOffset;
+		getRailState(railByteMaskData.railId, railByteMaskData.rail, &movementDirection, &tileOffset);
+		char movementDirectionBit = ((movementDirection + 1) / 2) << Level::railTileOffsetByteMaskBitCount;
+		HintState::PotentialLevelState::draftState.railByteMasks[railByteMaskData.railByteIndex] |=
+			(unsigned int)(movementDirectionBit | tileOffset) << railByteMaskData.railBitShift;
+	}
+	HintState::PotentialLevelState::draftState.setHash();
 
 	//load the base potential level state
 	HintState::PotentialLevelState* baseLevelState = HintState::PotentialLevelState::draftState.addNewState(
@@ -665,6 +661,9 @@ Hint* Level::performHintSearch(Plane* currentPlane, int startTime) {
 	baseLevelState->plane = currentPlane;
 	baseLevelState->hint = nullptr;
 
+	return baseLevelState;
+}
+Hint* Level::performHintSearch(HintState::PotentialLevelState* baseLevelState, Plane* currentPlane, int startTime) {
 	//find all hasAction planes reachable from the current plane to start the search
 	Hint* result = currentPlane->pursueSolutionToPlanes(baseLevelState, 0);
 	//if we can get to the victory plane without kicking any switches, we're done
