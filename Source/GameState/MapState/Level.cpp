@@ -475,7 +475,7 @@ levelN(pLevelN)
 , railByteMaskBitsTracked(0)
 , victoryPlane(nullptr)
 , minimumRailColor(0)
-, radioTowerHint(Hint::Type::Switch) {
+, radioTowerHint(Hint::Type::None) {
 }
 Level::~Level() {
 	for (Plane* plane : planes)
@@ -490,6 +490,10 @@ Plane* Level::addNewPlane() {
 void Level::addVictoryPlane() {
 	victoryPlane = addNewPlane();
 	victoryPlane->setHasAction();
+}
+void Level::assignRadioTowerSwitch(Switch* radioTowerSwitch) {
+	radioTowerHint.type = Hint::Type::Switch;
+	radioTowerHint.data.switch0 = radioTowerSwitch;
 }
 int Level::trackNextRail(short railId, Rail* rail) {
 	minimumRailColor = MathUtils::max(rail->getColor(), minimumRailColor);

@@ -213,7 +213,6 @@ public:
 
 	int getLevelN() { return levelN; }
 	int getStartTile() { return startTile; }
-	void assignRadioTowerSwitch(Switch* radioTowerSwitch) { radioTowerHint.data.switch0 = radioTowerSwitch; }
 	LevelTypes::RailByteMaskData* getRailByteMaskData(int i) { return &allRailByteMaskData[i]; }
 	int getRailByteMaskCount() { return (railByteMaskBitsTracked + 31) / 32; }
 	LevelTypes::Plane* getVictoryPlane() { return victoryPlane; }
@@ -221,6 +220,8 @@ public:
 	LevelTypes::Plane* addNewPlane();
 	//add a special plane for use as the victory plane
 	void addVictoryPlane();
+	//set the switch for the radio tower hint
+	void assignRadioTowerSwitch(Switch* radioTowerSwitch);
 	//create a byte mask for a new rail
 	//returns the index into the internal byte mask vector for use in getRailByteMaskData()
 	int trackNextRail(short railId, Rail* rail);
