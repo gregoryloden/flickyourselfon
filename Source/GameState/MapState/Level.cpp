@@ -107,9 +107,12 @@ void LevelTypes::Plane::addReverseRailConnection(Plane* fromPlane, Plane* toPlan
 	}
 }
 void LevelTypes::Plane::findMilestones(vector<Plane*>& levelPlanes) {
+	Plane* nextPlane = levelPlanes[0];
+	Plane* victoryPlane = nextPlane->owningLevel->getVictoryPlane();
+	if (victoryPlane == nullptr)
+		return;
 	//DFS to find a path to the end
 	bool* seenPlanes = new bool[levelPlanes.size()] {};
-	Plane* nextPlane = levelPlanes[0];
 	vector<Plane*> pathPlanes ({ nextPlane });
 	vector<Connection*> pathConnections;
 	while (true) {
@@ -125,13 +128,13 @@ void LevelTypes::Plane::findMilestones(vector<Plane*>& levelPlanes) {
 			}
 		}
 		if (nextPlane == lastPlane) {
-			//since we're assuming that the level has a victory plane, we can assume there is a path to get there (which is how
-			//	we found that victory plane), which means that there is another plane/connection to try, which means that these
+			//since we know that the level has a victory plane, we can assume there is a path to get there (which is how we
+			//	found that victory plane), which means that there is another plane/connection to try, which means that these
 			//	lists won't be empty, and pathPlanes will still not be empty after popping
 			pathPlanes.pop_back();
 			pathConnections.pop_back();
 			nextPlane = pathPlanes.back();
-		} else if (nextPlane == nextPlane->owningLevel->getVictoryPlane())
+		} else if (nextPlane == victoryPlane)
 			break;
 	}
 	//tally total number of rail connections to each plane
@@ -516,8 +519,7 @@ void Level::setupHintSearchHelpers(vector<Level*>& allLevels) {
 			potentialLevelStatesByBucketByPlane.push_back(PotentialLevelStatesByBucket());
 		HintState::PotentialLevelState::maxRailByteMaskCount =
 			MathUtils::max(HintState::PotentialLevelState::maxRailByteMaskCount, level->getRailByteMaskCount());
-		if (level->victoryPlane != nullptr)
-			Plane::findMilestones(level->planes);
+		Plane::findMilestones(level->planes);
 	}
 	nextPotentialLevelStatesByStepsByMilestone.push_back(vector<deque<HintState::PotentialLevelState*>*>());
 	//just once, fix the draft state byte list
