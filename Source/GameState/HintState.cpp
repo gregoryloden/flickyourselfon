@@ -109,7 +109,7 @@ HintState::HintState(objCounterParameters())
 : PooledReferenceCounter(objCounterArguments())
 , hint(nullptr)
 , animationEndTicksTime(0)
-, renderAlpha(0)
+, offscreenArrowAlpha(0)
 , renderLeftWorldX(0)
 , renderTopWorldY(0)
 , renderRightWorldX(0)
@@ -144,7 +144,7 @@ pooledReferenceCounterDefineRelease(HintState)
 void HintState::render(int screenLeftWorldX, int screenTopWorldY, bool belowRails, int ticksTime) {
 	//animation is over, don't render the hint or offscreen arrow
 	if (ticksTime >= animationEndTicksTime) {
-		renderAlpha = 0;
+		offscreenArrowAlpha = 0;
 		return;
 	//only render planes below rails, and only rails and switches above rails
 	} else if (belowRails
@@ -154,7 +154,7 @@ void HintState::render(int screenLeftWorldX, int screenTopWorldY, bool belowRail
 	int progressTicks = ticksTime + totalDisplayTicks - animationEndTicksTime;
 	bool isOn = (progressTicks % flashOnOffTotalTicks) < flashOnOffTicks;
 	if (!isOn) {
-		renderAlpha = 0;
+		offscreenArrowAlpha = 0;
 		return;
 	}
 	float progress = (float)progressTicks / totalDisplayTicks;
@@ -172,10 +172,10 @@ void HintState::render(int screenLeftWorldX, int screenTopWorldY, bool belowRail
 		default:
 			break;
 	}
-	renderAlpha = alpha;
+	offscreenArrowAlpha = alpha;
 }
 void HintState::renderOffscreenArrow(int screenLeftWorldX, int screenTopWorldY) {
-	if (renderAlpha == 0)
+	if (offscreenArrowAlpha == 0)
 		return;
 	int renderScreenLeftX = renderLeftWorldX - screenLeftWorldX;
 	int renderScreenTopY = renderTopWorldY - screenTopWorldY;
@@ -219,7 +219,7 @@ void HintState::renderOffscreenArrow(int screenLeftWorldX, int screenTopWorldY) 
 			Config::gameScreenHeight - offscreenArrowMaxEdgeSpacing - SpriteRegistry::borderArrows->getSpriteHeight();
 		drawArrowTopY = (GLint)(MathUtils::max(offscreenArrowMaxEdgeSpacing, MathUtils::min(maxArrowTopY, baseArrowTopY)));
 	}
-	glColor4f(1.0f, 1.0f, 1.0f, renderAlpha);
+	glColor4f(1.0f, 1.0f, 1.0f, offscreenArrowAlpha);
 	SpriteRegistry::borderArrows->renderSpriteAtScreenPosition(
 		arrowSpriteHorizontalIndex, arrowSpriteVerticalIndex, drawArrowLeftX, drawArrowTopY);
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);

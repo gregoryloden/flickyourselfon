@@ -86,7 +86,7 @@ private:
 
 	Hint* hint;
 	int animationEndTicksTime;
-	float renderAlpha;
+	float offscreenArrowAlpha;
 	int renderLeftWorldX;
 	int renderTopWorldY;
 	int renderRightWorldX;
