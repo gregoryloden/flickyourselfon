@@ -583,7 +583,6 @@ Hint* Level::generateHint(
 	}
 	HintState::PotentialLevelState::draftState.setHash();
 
-
 	//prepare some logging helpers before we start the search
 	#ifdef LOG_SEARCH_STEPS_STATS
 		statesAtStepsByPlaneCount = planes.size();
