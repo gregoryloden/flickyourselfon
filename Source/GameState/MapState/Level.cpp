@@ -579,9 +579,7 @@ Hint* Level::generateHint(Plane* currentPlane, GetRailState getRailState, char l
 		hintSearchUniqueStates = 0;
 		hintSearchComparisonsPerformed = 0;
 	#endif
-	stringstream beginHintSearchMessage;
-	beginHintSearchMessage << "begin level " << levelN << " hint search";
-	Logger::debugLogger.logString(beginHintSearchMessage.str());
+	Logger::debugLogger.logString("begin level " + to_string(levelN) + " hint search");
 
 	//prepare search helpers including the base level state
 	cachedHintSearchVictoryPlane = victoryPlane;
@@ -677,17 +675,13 @@ Hint* Level::performHintSearch(HintState::PotentialLevelState* baseLevelState, P
 	do {
 		currentNextPotentialLevelStates = (*currentNextPotentialLevelStatesBySteps)[currentPotentialLevelStateSteps];
 		#ifdef LOG_SEARCH_STEPS_STATS
-			stringstream stepsMessage;
-			stepsMessage << currentPotentialLevelStateSteps << " steps:";
-			Logger::debugLogger.logString(stepsMessage.str());
+			Logger::debugLogger.logString(to_string(currentPotentialLevelStateSteps) + " steps:");
 			for (HintState::PotentialLevelState* potentialLevelState : *currentNextPotentialLevelStates)
 				statesAtStepsByPlane[potentialLevelState->plane->getIndexInOwningLevel()]++;
 			for (int planeI = 0; planeI < (int)statesAtStepsByPlaneCount; planeI++) {
 				int statesAtSteps = statesAtStepsByPlane[planeI];
 				if (statesAtSteps > 0) {
-					stepsMessage.str("");
-					stepsMessage << "  plane " << planeI << ": " << statesAtSteps << " states";
-					Logger::debugLogger.logString(stepsMessage.str());
+					Logger::debugLogger.logString("  plane " + to_string(planeI) + ": " + to_string(statesAtSteps) + " states");
 					statesAtStepsByPlane[planeI] = 0;
 				}
 			}
@@ -712,9 +706,8 @@ Hint* Level::performHintSearch(HintState::PotentialLevelState* baseLevelState, P
 }
 void Level::pushMilestone() {
 	#ifdef LOG_SEARCH_STEPS_STATS
-		stringstream milestoneMessage;
-		milestoneMessage << "milestone+ : " << currentMilestones << " > " << (currentMilestones + 1);
-		Logger::debugLogger.logString(milestoneMessage.str());
+		Logger::debugLogger.logString(
+			"milestone+ : " + to_string(currentMilestones) + " > " + to_string(currentMilestones + 1));
 	#endif
 	currentPotentialLevelStateStepsForMilestones.push_back(currentPotentialLevelStateSteps);
 	maxPotentialLevelStateStepsForMilestones.push_back(maxPotentialLevelStateSteps);
@@ -728,9 +721,8 @@ void Level::pushMilestone() {
 }
 bool Level::popMilestone() {
 	#ifdef LOG_SEARCH_STEPS_STATS
-		stringstream milestoneMessage;
-		milestoneMessage << "milestone- : " << currentMilestones << " > " << (currentMilestones - 1);
-		Logger::debugLogger.logString(milestoneMessage.str());
+		Logger::debugLogger.logString(
+			"milestone- : " + to_string(currentMilestones) + " > " + to_string(currentMilestones - 1));
 	#endif
 	currentMilestones--;
 	if (currentMilestones < 0)

@@ -933,9 +933,8 @@ Hint* MapState::generateHint(float playerX, float playerY) {
 	//should never happen with an umodified save file once the game is released
 	short planeId = planeIds[(int)playerY / tileSize * mapWidth + (int)playerX / tileSize];
 	if (planeId == 0) {
-		stringstream message;
-		message << "ERROR: no plane found to generate hint at " << playerX << "," << playerY;
-		Logger::debugLogger.logString(message.str());
+		Logger::debugLogger.logString(
+			"ERROR: no plane found to generate hint at " + to_string(playerX) + "," + to_string(playerY));
 		return &Hint::none;
 	}
 	LevelTypes::Plane* currentPlane = planes[planeId - 1];
@@ -1318,9 +1317,7 @@ void MapState::logSwitchDescriptor(Switch* switch0, stringstream* message) {
 }
 void MapState::logResetSwitchKick(short resetSwitchId) {
 	short resetSwitchIndex = resetSwitchId & railSwitchIndexBitmask;
-	stringstream message;
-	message << "  reset switch " << resetSwitchIndex;
-	Logger::gameplayLogger.logString(message.str());
+	Logger::gameplayLogger.logString("  reset switch " + to_string(resetSwitchIndex));
 }
 void MapState::logRailRide(short railId, int playerX, int playerY) {
 	short railIndex = railId & railSwitchIndexBitmask;

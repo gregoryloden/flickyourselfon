@@ -265,11 +265,8 @@ void renderLoop(CircularStateQueue<GameState>* gameStateQueue) {
 			break;
 
 		int renderTime = (int)SDL_GetTicks() - preRenderTicksTime;
-		if (renderTime > lagFrameMs) {
-			stringstream message;
-			message << "lag frame took " << renderTime << "ms";
-			Logger::debugLogger.logString(message.str());
-		}
+		if (renderTime > lagFrameMs)
+			Logger::debugLogger.logString("lag frame took " + to_string(renderTime) + "ms");
 
 		//sleep if we don't expect to render for at least 2 more milliseconds
 		int remainingDelay = minMsPerFrame - renderTime;

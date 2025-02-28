@@ -13,7 +13,7 @@
 //////////////////////////////// AudioTypes::Sound ////////////////////////////////
 AudioTypes::Sound::Sound(objCounterParametersComma() string pFilename, int pChannel)
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
-filepath(string("audio/") + pFilename)
+filepath("audio/" + pFilename)
 , chunk(nullptr)
 , channel(pChannel) {
 }
@@ -425,9 +425,7 @@ void Audio::loadSounds() {
 }
 void Audio::loadSoundSet(const char* prefix, int count, AudioTypes::Sound** soundSet) {
 	for (int i = 0; i < count; i++) {
-		stringstream s;
-		s << prefix << (i + 1) << ".wav";
-		soundSet[i] = newSound(s.str().c_str(), -1);
+		soundSet[i] = newSound(prefix + to_string(i + 1) + ".wav", -1);
 		soundSet[i]->load();
 	}
 }

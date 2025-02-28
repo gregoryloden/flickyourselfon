@@ -558,11 +558,8 @@ PauseState::PauseOption* PauseState::buildOptionsMenuOption() {
 PauseState::PauseOption* PauseState::buildLevelSelectMenuOption(LevelSelectMenu** outLevelSelectMenu) {
 	int levelCount = MapState::getLevelCount();
 	vector<PauseOption*> options;
-	for (int levelN = 1; levelN <= levelCount; levelN++) {
-		stringstream s;
-		s << "level " << levelN;
-		options.push_back(newLevelSelectOption(s.str(), levelN));
-	}
+	for (int levelN = 1; levelN <= levelCount; levelN++)
+		options.push_back(newLevelSelectOption("level " + to_string(levelN), levelN));
 	options.push_back(newNavigationOption("back", nullptr));
 	return newNavigationOption("level select", *outLevelSelectMenu = newLevelSelectMenu("Level Select", options));
 }

@@ -76,11 +76,9 @@ ConfigTypes::ValueSelectionSetting::ValueSelectionSetting(
 }
 ConfigTypes::ValueSelectionSetting::~ValueSelectionSetting() {}
 string ConfigTypes::ValueSelectionSetting::getSelectedValueName() {
-	if (selectedValueIndex == customValueIndex) {
-		stringstream selectedValueName;
-		selectedValueName << selectedValue << customValueNameSuffix;
-		return selectedValueName.str();
-	} else
+	if (selectedValueIndex == customValueIndex)
+		return to_string(selectedValue) + customValueNameSuffix;
+	else
 		return values[selectedValueIndex].name;
 }
 void ConfigTypes::ValueSelectionSetting::changeSelection(int direction) {
