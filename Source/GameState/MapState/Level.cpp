@@ -704,6 +704,14 @@ Hint* Level::performHintSearch(HintState::PotentialLevelState* baseLevelState, P
 	//at this point, we've exhausted all states at all steps regardless of milestones, there is no solution
 	return &Hint::undoReset;
 }
+deque<HintState::PotentialLevelState*>* Level::getNextPotentialLevelStatesForSteps(int nextPotentialLevelStateSteps) {
+	while (maxPotentialLevelStateSteps < nextPotentialLevelStateSteps) {
+		maxPotentialLevelStateSteps++;
+		if ((int)currentNextPotentialLevelStatesBySteps->size() == maxPotentialLevelStateSteps)
+			currentNextPotentialLevelStatesBySteps->push_back(new deque<HintState::PotentialLevelState*>());
+	}
+	return (*currentNextPotentialLevelStatesBySteps)[nextPotentialLevelStateSteps];
+}
 void Level::pushMilestone() {
 	#ifdef LOG_SEARCH_STEPS_STATS
 		Logger::debugLogger.logString(
@@ -734,14 +742,6 @@ bool Level::popMilestone() {
 	currentNextPotentialLevelStatesBySteps = &nextPotentialLevelStatesByStepsByMilestone[currentMilestones];
 	//we don't need to set nextPotentialLevelStates here because popMilestone() is only called when it's not being used
 	return true;
-}
-deque<HintState::PotentialLevelState*>* Level::getNextPotentialLevelStatesForSteps(int nextPotentialLevelStateSteps) {
-	while (maxPotentialLevelStateSteps < nextPotentialLevelStateSteps) {
-		maxPotentialLevelStateSteps++;
-		if ((int)currentNextPotentialLevelStatesBySteps->size() == maxPotentialLevelStateSteps)
-			currentNextPotentialLevelStatesBySteps->push_back(new deque<HintState::PotentialLevelState*>());
-	}
-	return (*currentNextPotentialLevelStatesBySteps)[nextPotentialLevelStateSteps];
 }
 void Level::logStats() {
 	int switchCounts[4] = {};

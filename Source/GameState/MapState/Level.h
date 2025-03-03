@@ -241,6 +241,8 @@ private:
 	static Hint* performHintSearch(
 		HintState::PotentialLevelState* baseLevelState, LevelTypes::Plane* currentPlane, int startTime);
 public:
+	//get the queue of next potential level states corresponding to the given steps
+	static deque<HintState::PotentialLevelState*>* getNextPotentialLevelStatesForSteps(int nextPotentialLevelStateSteps);
 	//save away the current states to check, and start over with a new set
 	static void pushMilestone();
 private:
@@ -248,8 +250,6 @@ private:
 	//returns whether there was a previous milestone to restore to
 	static bool popMilestone();
 public:
-	//get the queue of next potential level states corresponding to the given steps
-	static deque<HintState::PotentialLevelState*>* getNextPotentialLevelStatesForSteps(int nextPotentialLevelStateSteps);
 	//log basic information about this level
 	void logStats();
 };
