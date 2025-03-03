@@ -1285,17 +1285,9 @@ float MapState::waveformY(char color, float periodX) {
 	}
 }
 void MapState::logGroup(char group, stringstream* message) {
+	static constexpr char* groupSegmentColors[8] = { "black", "red", "green", "yellow", "blue", "magenta", "cyan", "white" };
 	for (int i = 0; true; i++) {
-		switch (group % 8) {
-			case 1: *message << "red"; break;
-			case 2: *message << "green"; break;
-			case 3: *message << "yellow"; break;
-			case 4: *message << "blue"; break;
-			case 5: *message << "magenta"; break;
-			case 6: *message << "cyan"; break;
-			case 7: *message << "white"; break;
-			default: *message << "black"; break;
-		}
+		*message << groupSegmentColors[group % 8];
 		if (i >= 1)
 			return;
 		*message << " ";
