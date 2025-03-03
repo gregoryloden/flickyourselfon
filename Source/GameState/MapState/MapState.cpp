@@ -1359,7 +1359,7 @@ void MapState::saveState(ofstream& file) {
 	for (int i = 0; i < (int)railStates.size(); i++) {
 		RailState* railState = railStates[i];
 		if (!railState->isInDefaultState())
-			file << railOffsetFilePrefix << i << ' '
+			file << railStateFilePrefix << i << ' '
 				<< (int)railState->getTargetTileOffset() << ' ' << (int)railState->getNextMovementDirection() << "\n";
 	}
 }
@@ -1372,8 +1372,8 @@ bool MapState::loadState(string& line) {
 		finishedMapCameraTutorial = true;
 	else if (StringUtils::startsWith(line, showConnectionsFileValue))
 		showConnectionsEnabled = true;
-	else if (StringUtils::startsWith(line, railOffsetFilePrefix)) {
-		const char* dataString = line.c_str() + StringUtils::strlenConst(railOffsetFilePrefix);
+	else if (StringUtils::startsWith(line, railStateFilePrefix)) {
+		const char* dataString = line.c_str() + StringUtils::strlenConst(railStateFilePrefix);
 		int railIndex, tileOffset, movementDirection;
 		dataString = StringUtils::parseNextInt(dataString, &railIndex);
 		dataString = StringUtils::parseNextInt(dataString, &tileOffset);

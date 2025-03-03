@@ -169,7 +169,7 @@ private:
 	static constexpr char* finishedConnectionsTutorialFileValue = "finishedConnectionsTutorial";
 	static constexpr char* finishedMapCameraTutorialFileValue = "finishedMapCameraTutorial";
 	static constexpr char* showConnectionsFileValue = "showConnections";
-	static constexpr char* railOffsetFilePrefix = "rail ";
+	static constexpr char* railStateFilePrefix = "rail ";
 
 	static char* tiles;
 	static char* tileBorders;
