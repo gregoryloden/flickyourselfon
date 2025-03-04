@@ -1,3 +1,5 @@
+#original
+start
 blue: red-black
 blue: green-black
 blue: green-black
@@ -10,3 +12,17 @@ blue: yellow-black
 blue: yellow-black
 blue: blue-black
 blue: blue-black
+end
+
+#hint-found
+start
+blue: red-black
+blue: green-black
+blue: red-black
+blue: blue-black
+blue: magenta-black
+blue: blue-black
+blue: blue-black
+blue: yellow-black
+blue: yellow-black
+end

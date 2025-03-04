@@ -1,3 +1,5 @@
+#original
+start
 green: red-black
 green: green-black
 green: yellow-black
@@ -6,3 +8,18 @@ green: yellow-black
 green: green-black
 green: red-black
 green: cyan-black
+end
+
+#hint-found
+start
+green: red-black
+green: green-black
+green: green-black
+green: green-black
+green: green-black
+green: blue-black
+green: yellow-black
+green: yellow-black
+green: red-black
+green: cyan-black
+end

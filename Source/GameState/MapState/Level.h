@@ -253,8 +253,10 @@ private:
 	//release all potential level states used and clear the structures that held them
 	void clearPotentialLevelStateHolders();
 	#ifdef TEST_SOLUTIONS
-		//load the solution file for this level and test that it follows a valid path to the victory plane
-		void testSolution(GetRailState getRailState);
+		//load the solution file for this level and test that the solutions in it follow a valid path to the victory plane
+		void testSolutions(GetRailState getRailState);
+		//read steps from the input and test that they follow a valid path to the victory plane
+		void testSolution(GetRailState getRailState, ifstream& file, int& lineN);
 	#endif
 public:
 	//get the queue of next potential level states corresponding to the given steps

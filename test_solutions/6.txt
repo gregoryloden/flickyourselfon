@@ -1,3 +1,5 @@
+#red-black path
+start
 white: yellow-black
 white: red-black
 white: yellow-black
@@ -8,3 +10,32 @@ white: blue-black
 white: blue-black
 white: cyan-black
 white: white-black
+end
+
+#magenta-black path
+start
+white: yellow-black
+white: green-black
+white: cyan-black
+white: blue-black
+white: blue-black
+white: blue-black
+white: magenta-black
+white: green-black
+white: yellow-black
+white: white-black
+end
+
+#hint-found == magenta-black path
+start
+white: green-black
+white: cyan-black
+white: yellow-black
+white: blue-black
+white: blue-black
+white: blue-black
+white: magenta-black
+white: green-black
+white: yellow-black
+white: white-black
+end

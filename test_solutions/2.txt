@@ -1,3 +1,5 @@
+#original
+start
 red: yellow-black
 red: blue-black
 red: magenta-black
@@ -8,3 +10,16 @@ red: yellow-black
 red: magenta-black
 red: blue-black
 red: yellow-black
+end
+
+#improved
+start
+red: yellow-black
+red: blue-black
+red: magenta-black
+red: yellow-black
+red: blue-black
+red: cyan-black
+red: blue-black
+red: yellow-black
+end

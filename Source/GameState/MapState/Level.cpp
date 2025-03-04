@@ -597,7 +597,7 @@ void Level::preAllocatePotentialLevelStates() {
 		};
 	generateHint(planes[0], getRailState, minimumRailColor);
 	#ifdef TEST_SOLUTIONS
-		testSolution(getRailState);
+		testSolutions(getRailState);
 	#endif
 }
 Hint* Level::generateHint(Plane* currentPlane, GetRailState getRailState, char lastActivatedSwitchColor) {
@@ -748,28 +748,42 @@ void Level::clearPotentialLevelStateHolders() {
 	replacedPotentialLevelStates.clear();
 }
 #ifdef TEST_SOLUTIONS
-	void Level::testSolution(GetRailState getRailState) {
+	void Level::testSolutions(GetRailState getRailState) {
 		if (victoryPlane == nullptr)
 			return;
+		string filename = "test_solutions/" + to_string(levelN) + ".txt";
+		ifstream file;
+		FileUtils::openFileForRead(&file, filename.c_str(), FileUtils::FileReadLocation::Installation);
+		string line;
+		for (int lineN = 1; getline(file, line); lineN++) {
+			if (line.empty() || StringUtils::startsWith(line, "#"))
+				continue;
+			if (line == "start")
+				testSolution(getRailState, file, lineN);
+			else
+				Logger::debugLogger.logString(
+					"ERROR: level " + to_string(levelN) + " solution line " + to_string(lineN)
+						+ ": expected \"start\" but got \"" + line + "\"");
+		}
+	}
+	void Level::testSolution(GetRailState getRailState, ifstream& file, int& lineN) {
 		//start by finding the initial set of planes
 		resetPlaneSearchHelpers();
 		HintState::PotentialLevelState* baseLevelState = loadBasePotentialLevelState(planes[0], getRailState);
 		getNextPotentialLevelStatesForSteps(0)->push_back(baseLevelState);
 		baseLevelState->plane->pursueSolutionToPlanes(baseLevelState, 0);
 
-		//load the file
-		string filename = "test_solutions/" + to_string(levelN) + ".txt";
-		ifstream file;
-		FileUtils::openFileForRead(&file, filename.c_str(), FileUtils::FileReadLocation::Installation);
-
 		//go through each step in the file and make sure we can activate that switch
 		vector<HintState::PotentialLevelState*> statesAtSolutionStep;
 		vector<Plane*> singleSwitchPlanes;
 		Hint* result = nullptr;
 		string line;
-		for (int lineN = 1; getline(file, line); lineN++) {
+		while (getline(file, line)) {
+			lineN++;
 			if (line.empty() || StringUtils::startsWith(line, "#"))
 				continue;
+			if (line == "end")
+				break;
 			//find switch color and then group
 			static const char* switchColorPrefixes[MapState::colorCount] = { "red: ", "blue: ", "green: ", "white: " };
 			int color = 0;
@@ -808,7 +822,10 @@ void Level::clearPotentialLevelStateHolders() {
 			statesAtSolutionStep.clear();
 		}
 
-		if (result == nullptr)
+		if (line != "end")
+			Logger::debugLogger.logString(
+				"ERROR: level " + to_string(levelN) + " solution: missing \"end\"");
+		else if (result == nullptr)
 			Logger::debugLogger.logString(
 				"ERROR: level " + to_string(levelN) + " solution: unable to reach victory plane after all steps");
 		else
