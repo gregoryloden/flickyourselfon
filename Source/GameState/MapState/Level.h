@@ -5,6 +5,7 @@
 	#define TRACK_HINT_SEARCH_STATS
 	#define LOG_FOUND_HINT_STEPS
 	//#define LOG_SEARCH_STEPS_STATS
+	#define TEST_SOLUTIONS
 #endif
 
 class Level;
@@ -94,6 +95,13 @@ namespace LevelTypes {
 		Hint* pursueSolutionToPlanes(HintState::PotentialLevelState* currentState, int basePotentialLevelStateSteps);
 		//kick each switch in this plane, and then pursue solutions from those states
 		Hint* pursueSolutionAfterSwitches(HintState::PotentialLevelState* currentState, int stepsAfterSwitchKick);
+		#ifdef TEST_SOLUTIONS
+			//go through all the given states and see if one has a switch matching the given description
+			//if there is one, the Plane on it will be a clone of the matching plane with only the matching switch connection
+			//callers are reponsible for tracking and deleting this plane
+			static HintState::PotentialLevelState* findStateAtSwitch(
+				vector<HintState::PotentialLevelState*>& states, char color, const char* switchGroupName);
+		#endif
 		//get the bounds of the hint to render for this plane
 		void getHintRenderBounds(int* outLeftWorldX, int* outTopWorldY, int* outRightWorldX, int* outBottomWorldY);
 		//render boxes over every tile in this plane
@@ -235,11 +243,19 @@ public:
 	//generate a hint based on the initial state in this level
 	Hint* generateHint(LevelTypes::Plane* currentPlane, GetRailState getRailState, char lastActivatedSwitchColor);
 private:
+	//setup some state to be used during plane searches
+	void resetPlaneSearchHelpers();
 	//create a potential level state set with the given state retriever, loading it into potentialLevelStatesByBucketByPlane
 	HintState::PotentialLevelState* loadBasePotentialLevelState(LevelTypes::Plane* currentPlane, GetRailState getRailState);
 	//begin the hint search after all the helpers have been set up
 	static Hint* performHintSearch(
 		HintState::PotentialLevelState* baseLevelState, LevelTypes::Plane* currentPlane, int startTime);
+	//release all potential level states used and clear the structures that held them
+	void clearPotentialLevelStateHolders();
+	#ifdef TEST_SOLUTIONS
+		//load the solution file for this level and test that it follows a valid path to the victory plane
+		void testSolution(GetRailState getRailState);
+	#endif
 public:
 	//get the queue of next potential level states corresponding to the given steps
 	static deque<HintState::PotentialLevelState*>* getNextPotentialLevelStatesForSteps(int nextPotentialLevelStateSteps);

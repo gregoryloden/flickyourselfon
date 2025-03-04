@@ -1,0 +1,12 @@
+blue: red-black
+blue: green-black
+blue: green-black
+blue: green-black
+blue: red-black
+blue: blue-black
+blue: cyan-black
+blue: magenta-black
+blue: yellow-black
+blue: yellow-black
+blue: blue-black
+blue: blue-black

@@ -3,7 +3,13 @@
 #include "GameState/MapState/Rail.h"
 #include "GameState/MapState/Switch.h"
 #include "Sprites/SpriteSheet.h"
+#ifdef TEST_SOLUTIONS
+	#include "Util/FileUtils.h"
+#endif
 #include "Util/Logger.h"
+#ifdef TEST_SOLUTIONS
+	#include "Util/StringUtils.h"
+#endif
 
 #define newPlane(owningLevel, indexInOwningLevel) newWithArgs(Plane, owningLevel, indexInOwningLevel)
 
@@ -351,6 +357,35 @@ Hint* LevelTypes::Plane::pursueSolutionAfterSwitches(HintState::PotentialLevelSt
 
 	return nullptr;
 }
+#ifdef TEST_SOLUTIONS
+	HintState::PotentialLevelState* LevelTypes::Plane::findStateAtSwitch(
+		vector<HintState::PotentialLevelState*>& states, char color, const char* switchGroupName)
+	{
+		stringstream checkGroupName;
+		for (HintState::PotentialLevelState* state : states) {
+			Plane* plane = state->plane;
+			for (ConnectionSwitch& connectionSwitch : plane->connectionSwitches) {
+				Switch* switch0 = connectionSwitch.hint.data.switch0;
+				if (switch0->getColor() != color)
+					continue;
+				MapState::logGroup(switch0->getGroup(), &checkGroupName);
+				if (strcmp(checkGroupName.str().c_str(), switchGroupName) != 0) {
+					checkGroupName.str(string());
+					continue;
+				}
+				//we found a matching switch, return the state at it before kicking it, with a plane that only contains that
+				//	single switch
+				Plane* singleSwitchPlane = newPlane(plane->owningLevel, plane->indexInOwningLevel);
+				singleSwitchPlane->connectionSwitches.push_back(connectionSwitch);
+				singleSwitchPlane->connections = plane->connections;
+				singleSwitchPlane->hasAction = true;
+				state->plane = singleSwitchPlane;
+				return state;
+			}
+		}
+		return nullptr;
+	}
+#endif
 void LevelTypes::Plane::getHintRenderBounds(int* outLeftWorldX, int* outTopWorldY, int* outRightWorldX, int* outBottomWorldY) {
 	*outLeftWorldX = renderLeftTileX * MapState::tileSize;
 	*outTopWorldY = renderTopTileY * MapState::tileSize;
@@ -555,13 +590,15 @@ void Level::deleteHelpers() {
 	nextPotentialLevelStatesByStepsByMilestone.clear();
 }
 void Level::preAllocatePotentialLevelStates() {
-	generateHint(
-		planes[0],
+	auto getRailState =
 		[](short railId, Rail* rail, char* outMovementDirection, char* outTileOffset) {
 			*outMovementDirection = rail->getInitialMovementDirection();
 			*outTileOffset = rail->getInitialTileOffset();
-		},
-		minimumRailColor);
+		};
+	generateHint(planes[0], getRailState, minimumRailColor);
+	#ifdef TEST_SOLUTIONS
+		testSolution(getRailState);
+	#endif
 }
 Hint* Level::generateHint(Plane* currentPlane, GetRailState getRailState, char lastActivatedSwitchColor) {
 	if (lastActivatedSwitchColor < minimumRailColor)
@@ -581,12 +618,8 @@ Hint* Level::generateHint(Plane* currentPlane, GetRailState getRailState, char l
 	#endif
 	Logger::debugLogger.logString("begin level " + to_string(levelN) + " hint search");
 
-	//prepare search helpers including the base level state
-	cachedHintSearchVictoryPlane = victoryPlane;
-	currentPotentialLevelStateSteps = 0;
-	maxPotentialLevelStateSteps = -1;
-	currentMilestones = 0;
-	currentNextPotentialLevelStatesBySteps = &nextPotentialLevelStatesByStepsByMilestone[0];
+	//prepare search helpers and load the base level state
+	resetPlaneSearchHelpers();
 	HintState::PotentialLevelState* baseLevelState = loadBasePotentialLevelState(currentPlane, getRailState);
 
 	//search for a hint
@@ -595,24 +628,7 @@ Hint* Level::generateHint(Plane* currentPlane, GetRailState getRailState, char l
 
 	//cleanup
 	int timeAfterSearchBeforeCleanup = SDL_GetTicks();
-	do {
-		for (int i = currentPotentialLevelStateSteps; i <= maxPotentialLevelStateSteps; i++)
-			(*currentNextPotentialLevelStatesBySteps)[i]->clear();
-	} while (popMilestone());
-	//only clear as many plane buckets as we used
-	for (int i = 0; i < (int)planes.size(); i++) {
-		for (vector<HintState::PotentialLevelState*>& potentialLevelStates : potentialLevelStatesByBucketByPlane[i].buckets) {
-			//these were all retained once before by PotentialLevelState::addNewState, so release them here
-			for (HintState::PotentialLevelState* potentialLevelState : potentialLevelStates)
-				potentialLevelState->release();
-			potentialLevelStates.clear();
-		}
-	}
-	//release all PotentialLevelStates that were taken out of potentialLevelStatesByBucketByPlane, but couldn't be released
-	//	because they were still in nextPotentialLevelStatesBySteps
-	for (HintState::PotentialLevelState* potentialLevelState : replacedPotentialLevelStates)
-		potentialLevelState->release();
-	replacedPotentialLevelStates.clear();
+	clearPotentialLevelStateHolders();
 
 	int timeAfterCleanup = SDL_GetTicks();
 	stringstream hintSearchPerformanceMessage;
@@ -635,6 +651,13 @@ Hint* Level::generateHint(Plane* currentPlane, GetRailState getRailState, char l
 	#endif
 
 	return result;
+}
+void Level::resetPlaneSearchHelpers() {
+	cachedHintSearchVictoryPlane = victoryPlane;
+	currentPotentialLevelStateSteps = 0;
+	maxPotentialLevelStateSteps = -1;
+	currentMilestones = 0;
+	currentNextPotentialLevelStatesBySteps = &nextPotentialLevelStatesByStepsByMilestone[0];
 }
 HintState::PotentialLevelState* Level::loadBasePotentialLevelState(LevelTypes::Plane* currentPlane, GetRailState getRailState) {
 	//setup the draft state to use for the base potential level state
@@ -704,6 +727,99 @@ Hint* Level::performHintSearch(HintState::PotentialLevelState* baseLevelState, P
 	//at this point, we've exhausted all states at all steps regardless of milestones, there is no solution
 	return &Hint::undoReset;
 }
+void Level::clearPotentialLevelStateHolders() {
+	do {
+		for (int i = currentPotentialLevelStateSteps; i <= maxPotentialLevelStateSteps; i++)
+			(*currentNextPotentialLevelStatesBySteps)[i]->clear();
+	} while (popMilestone());
+	//only clear as many plane buckets as we used
+	for (int i = 0; i < (int)planes.size(); i++) {
+		for (vector<HintState::PotentialLevelState*>& potentialLevelStates : potentialLevelStatesByBucketByPlane[i].buckets) {
+			//these were all retained once before by PotentialLevelState::addNewState, so release them here
+			for (HintState::PotentialLevelState* potentialLevelState : potentialLevelStates)
+				potentialLevelState->release();
+			potentialLevelStates.clear();
+		}
+	}
+	//release all PotentialLevelStates that were taken out of potentialLevelStatesByBucketByPlane, but couldn't be released
+	//	because they were still in nextPotentialLevelStatesBySteps
+	for (HintState::PotentialLevelState* potentialLevelState : replacedPotentialLevelStates)
+		potentialLevelState->release();
+	replacedPotentialLevelStates.clear();
+}
+#ifdef TEST_SOLUTIONS
+	void Level::testSolution(GetRailState getRailState) {
+		if (victoryPlane == nullptr)
+			return;
+		//start by finding the initial set of planes
+		resetPlaneSearchHelpers();
+		HintState::PotentialLevelState* baseLevelState = loadBasePotentialLevelState(planes[0], getRailState);
+		getNextPotentialLevelStatesForSteps(0)->push_back(baseLevelState);
+		baseLevelState->plane->pursueSolutionToPlanes(baseLevelState, 0);
+
+		//load the file
+		string filename = "test_solutions/" + to_string(levelN) + ".txt";
+		ifstream file;
+		FileUtils::openFileForRead(&file, filename.c_str(), FileUtils::FileReadLocation::Installation);
+
+		//go through each step in the file and make sure we can activate that switch
+		vector<HintState::PotentialLevelState*> statesAtSolutionStep;
+		vector<Plane*> singleSwitchPlanes;
+		Hint* result = nullptr;
+		string line;
+		for (int lineN = 1; getline(file, line); lineN++) {
+			if (line.empty() || StringUtils::startsWith(line, "#"))
+				continue;
+			//find switch color and then group
+			static const char* switchColorPrefixes[MapState::colorCount] = { "red: ", "blue: ", "green: ", "white: " };
+			int color = 0;
+			for (; color < MapState::colorCount; color++) {
+				if (StringUtils::startsWith(line, switchColorPrefixes[color]))
+					break;
+			}
+			if (color == MapState::colorCount) {
+				Logger::debugLogger.logString(
+					"ERROR: level " + to_string(levelN) + " solution line " + to_string(lineN)
+						+ ": missing color prefix: \"" + line + "\"");
+				break;
+			}
+			const char* switchGroupName = line.c_str() + strlen(switchColorPrefixes[color]);
+
+			//collect all the states and then check that we can reach the specified switch
+			for (int i = currentPotentialLevelStateSteps; i <= maxPotentialLevelStateSteps; i++) {
+				deque<HintState::PotentialLevelState*>* nextPotentialLevelStates = (*currentNextPotentialLevelStatesBySteps)[i];
+				statesAtSolutionStep.insert(
+					statesAtSolutionStep.end(), nextPotentialLevelStates->begin(), nextPotentialLevelStates->end());
+				nextPotentialLevelStates->clear();
+			}
+			HintState::PotentialLevelState* stateAtSwitch =
+				Plane::findStateAtSwitch(statesAtSolutionStep, color, switchGroupName);
+			if (stateAtSwitch == nullptr) {
+				Logger::debugLogger.logString(
+					"ERROR: level " + to_string(levelN) + " solution line " + to_string(lineN)
+						+ ": unable to reach switch, or state has already been seen: \"" + line + "\"");
+				break;
+			}
+
+			//we found the switch, so kick it and advance to the next step
+			singleSwitchPlanes.push_back(stateAtSwitch->plane);
+			currentPotentialLevelStateSteps = stateAtSwitch->steps;
+			result = stateAtSwitch->plane->pursueSolutionAfterSwitches(stateAtSwitch, currentPotentialLevelStateSteps + 1);
+			statesAtSolutionStep.clear();
+		}
+
+		if (result == nullptr)
+			Logger::debugLogger.logString(
+				"ERROR: level " + to_string(levelN) + " solution: unable to reach victory plane after all steps");
+		else
+			Logger::debugLogger.logString(
+				"level " + to_string(levelN) + " solution verified, "
+					+ to_string(foundHintSearchTotalSteps) + "(" + to_string(foundHintSearchTotalHintSteps) + ")" + " steps");
+		clearPotentialLevelStateHolders();
+		for (Plane* singleSwitchPlane : singleSwitchPlanes)
+			delete singleSwitchPlane;
+	}
+#endif
 deque<HintState::PotentialLevelState*>* Level::getNextPotentialLevelStatesForSteps(int nextPotentialLevelStateSteps) {
 	while (maxPotentialLevelStateSteps < nextPotentialLevelStateSteps) {
 		maxPotentialLevelStateSteps++;

@@ -1,0 +1,10 @@
+white: yellow-black
+white: red-black
+white: yellow-black
+white: green-black
+white: cyan-black
+white: blue-black
+white: blue-black
+white: blue-black
+white: cyan-black
+white: white-black

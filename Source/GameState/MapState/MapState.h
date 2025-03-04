@@ -360,9 +360,9 @@ private:
 	//get the corresponding waveform value based on which waveform it is, converted to 0 at the top and 1 at the bottom
 	//assumes 0 <= periodX < 1
 	static float waveformY(char color, float periodX);
+public:
 	//log the colors of the group to the message
 	static void logGroup(char group, stringstream* message);
-public:
 	//log that the switch was kicked
 	static void logSwitchKick(short switchId);
 	//log the color and group of a switch

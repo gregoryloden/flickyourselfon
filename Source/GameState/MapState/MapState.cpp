@@ -1290,7 +1290,7 @@ void MapState::logGroup(char group, stringstream* message) {
 		*message << groupSegmentColors[group % 8];
 		if (i >= 1)
 			return;
-		*message << " ";
+		*message << "-";
 		group /= 8;
 	}
 }
