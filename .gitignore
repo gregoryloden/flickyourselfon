@@ -21,3 +21,5 @@ Source/Windows/flickyourselfon.aps
 Source/Windows/flickyourselfon.rc
 Source/Windows/resource.h
 audio/*.wav
+audio/unused/*
+macos/*
