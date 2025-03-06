@@ -7,7 +7,7 @@ blue: black-red
 blue: black-red
 blue: red-red
 red: blue-red
-red: cyan-red
+red: white-red
 red: magenta-red
 red: red-cyan
 
