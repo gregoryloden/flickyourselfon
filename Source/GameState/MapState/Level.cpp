@@ -765,6 +765,7 @@ void Level::clearPotentialLevelStateHolders() {
 					"ERROR: level " + to_string(levelN) + " solution line " + to_string(lineN)
 						+ ": expected \"start\" but got \"" + line + "\"");
 		}
+		file.close();
 	}
 	void Level::testSolution(GetRailState getRailState, ifstream& file, int& lineN) {
 		//start by finding the initial set of planes
