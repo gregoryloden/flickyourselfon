@@ -80,8 +80,6 @@ private:
 	static constexpr char* goalExplanationMessageLine1 = "Can you";
 	static constexpr char* goalExplanationMessageLine2 = "guide this person";
 	static constexpr char* goalExplanationMessageLine3 = "to turn it on?";
-	//tutorials
-	static constexpr char* pauseTutorialText = "Pause: ";
 	//save file names and values
 	#ifdef DEBUG
 		static constexpr char* replayFileName = "kyo_replay.log";
@@ -89,7 +87,6 @@ private:
 	static constexpr char* savedGameFileName = "kyo.sav";
 	static constexpr char* levelsUnlockedFilePrefix = "levelsUnlocked ";
 	static constexpr char* perpetualHintsFileValue = "perpetualHints";
-	static constexpr char* finishedPauseTutorialFileValue = "finishedPauseTutorial";
 	//render constants
 	static const int saveIconEdgeSpacing = 10;
 	static constexpr float saveIconMaxAlpha = 7.0f / 8.0f;
@@ -102,7 +99,6 @@ private:
 	ReferenceCounterHolder<MapState> mapState;
 	ReferenceCounterHolder<DynamicCameraAnchor> dynamicCameraAnchor;
 	EntityState* camera;
-	bool finishedPauseTutorial;
 	int lastSaveTicksTime;
 	ReferenceCounterHolder<PauseState> pauseState;
 	int pauseStartTicksTime;
@@ -134,9 +130,6 @@ public:
 private:
 	//render the title animation at the given time
 	void renderTextDisplay(int gameTicksTime);
-	//render any applicable tutorials
-	//returns whether a tutorial was rendered
-	bool renderTutorials();
 	//render the save icon if applicable
 	void renderSaveIcon(int gameTicksTime);
 	//save the state to a file

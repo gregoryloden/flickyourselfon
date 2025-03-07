@@ -40,7 +40,6 @@ levelsUnlocked(0)
 , mapState(nullptr)
 , dynamicCameraAnchor(nullptr)
 , camera(nullptr)
-, finishedPauseTutorial(false)
 , lastSaveTicksTime(0)
 , pauseState(nullptr)
 , pauseStartTicksTime(-1)
@@ -62,7 +61,6 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 	perpetualHints = prev->perpetualHints;
 	textDisplayType = prev->textDisplayType;
 	titleAnimationStartTicksTime = prev->titleAnimationStartTicksTime;
-	finishedPauseTutorial = prev->finishedPauseTutorial;
 	lastSaveTicksTime = prev->lastSaveTicksTime;
 
 	//don't update any state if we're paused
@@ -167,7 +165,6 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 					pauseState.set(PauseState::produceBasePauseScreen(levelsUnlocked));
 					pauseStartTicksTime = ticksTime;
 					playerState.get()->savePauseState();
-					finishedPauseTutorial = true;
 				} else if (gameEvent.key.keysym.scancode == Config::kickKeyBinding.value) {
 					if (playerHasKeyboardControl && !Editor::isActive)
 						playerState.get()->beginKicking(gameTicksTime);
@@ -368,7 +365,7 @@ void GameState::render(int ticksTime) {
 	playerState.get()->renderKickAction(camera, hasRailsToReset, gameTicksTime);
 
 	if (levelsUnlocked > 0 && !camera->hasAnimation())
-		playerState.get()->renderTutorials() || mapState.get()->renderTutorials(showConnections) || renderTutorials();
+		playerState.get()->renderTutorials() || mapState.get()->renderTutorials(showConnections);
 	if (camera == dynamicCameraAnchor.get())
 		dynamicCameraAnchor.get()->render(gameTicksTime);
 	if (textDisplayType != TextDisplayType::None)
@@ -489,13 +486,6 @@ void GameState::renderTextDisplay(int gameTicksTime) {
 	Text::renderLines(textDisplayStrings, textDisplayMetrics);
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 }
-bool GameState::renderTutorials() {
-	if (!finishedPauseTutorial)
-		MapState::renderControlsTutorial(pauseTutorialText, { SDL_SCANCODE_ESCAPE });
-	else
-		return false;
-	return true;
-}
 void GameState::renderSaveIcon(int gameTicksTime) {
 	float baseAlpha = 1.0f - MathUtils::fsqr((float)(gameTicksTime - lastSaveTicksTime) / saveIconShowDuration);
 	glColor4f(1.0f, 1.0f, 1.0f, saveIconMaxAlpha * baseAlpha);
@@ -511,8 +501,6 @@ void GameState::saveState(int gameTicksTime) {
 		file << levelsUnlockedFilePrefix << levelsUnlocked << "\n";
 	if (perpetualHints)
 		file << perpetualHintsFileValue << "\n";
-	if (finishedPauseTutorial)
-		file << finishedPauseTutorialFileValue << "\n";
 	playerState.get()->saveState(file);
 	mapState.get()->saveState(file);
 	file.close();
@@ -575,8 +563,6 @@ void GameState::loadSaveFile() {
 			levelsUnlocked = atoi(line.c_str() + StringUtils::strlenConst(levelsUnlockedFilePrefix));
 		else if (StringUtils::startsWith(line, perpetualHintsFileValue))
 			perpetualHints = true;
-		else if (StringUtils::startsWith(line, finishedPauseTutorialFileValue))
-			finishedPauseTutorial = true;
 		else
 			playerState.get()->loadState(line) || mapState.get()->loadState(line);
 	}
@@ -966,7 +952,6 @@ void GameState::resetGame(int ticksTime) {
 	playerState.get()->reset();
 	dynamicCameraAnchor.set(nullptr);
 	dynamicCameraAnchor.set(newDynamicCameraAnchor());
-	finishedPauseTutorial = false;
 
 	beginIntroAnimation(ticksTime);
 }
