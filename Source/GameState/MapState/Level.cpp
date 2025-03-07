@@ -173,8 +173,9 @@ void LevelTypes::Plane::findMilestones(vector<Plane*>& levelPlanes) {
 		bool foundMilestoneSwitch = false;
 		for (Plane* plane : levelPlanes) {
 			for (ConnectionSwitch& connectionSwitch : plane->connectionSwitches) {
-				//it's not a milestone if it controls more than one rail
-				if (connectionSwitch.affectedRailByteMaskData.size() > 1)
+				//it's not a milestone if it controls more than one rail (or less than one rail, which should never happen here
+				//	with an unomdified floor file once the game is released)
+				if (connectionSwitch.affectedRailByteMaskData.size() != 1)
 					continue;
 				//it only controls one rail, it's a milestone if it matches this rail
 				RailByteMaskData* railByteMaskData = connectionSwitch.affectedRailByteMaskData[0];
