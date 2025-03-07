@@ -547,7 +547,7 @@ void GameState::loadInitialState(int ticksTime) {
 	pauseState.set(PauseState::produceHomeScreen(levelsUnlocked));
 	if (levelsUnlocked > 0) {
 		playerState.get()->setInitialZ();
-		playerState.get()->generateHint(nullptr, ticksTime);
+		playerState.get()->generateHint(&Hint::none, ticksTime);
 		playerState.get()->savePauseState();
 	} else {
 		playerState.get()->setHomeScreenState();
@@ -682,7 +682,7 @@ void GameState::loadSaveFile() {
 					(float)startX,
 					(float)startY,
 					PlayerState::RideRailSpeed::Forward,
-					nullptr,
+					&Hint::none,
 					&lastX,
 					&lastY,
 					nullptr);
@@ -705,7 +705,7 @@ void GameState::loadSaveFile() {
 						newEntityAnimationSetDirection(SpriteDirection::Down)
 					});
 				PlayerState::addKickSwitchComponents(
-					MapState::getIdFromSwitchIndex(switchIndex), &replayComponents, true, false, nullptr);
+					MapState::getIdFromSwitchIndex(switchIndex), &replayComponents, true, false, &Hint::none);
 				replayComponents.push_back(newEntityAnimationSetSpriteAnimation(nullptr));
 				lastX = moveX;
 				lastY = moveY;
@@ -727,7 +727,7 @@ void GameState::loadSaveFile() {
 						newEntityAnimationSetDirection(SpriteDirection::Down)
 					});
 				PlayerState::addKickResetSwitchComponents(
-					MapState::getIdFromResetSwitchIndex(resetSwitchIndex), &replayComponents, nullptr, nullptr);
+					MapState::getIdFromResetSwitchIndex(resetSwitchIndex), &replayComponents, nullptr, &Hint::none);
 				replayComponents.push_back(newEntityAnimationSetSpriteAnimation(nullptr));
 				lastX = moveX;
 				lastY = moveY;
@@ -853,7 +853,7 @@ void GameState::beginIntroAnimation(int ticksTime) {
 			newEntityAnimationDelay(SpriteRegistry::playerLegLiftAnimation->getTotalTicksDuration()),
 			stopMoving,
 			clearSpriteAnimation,
-			newEntityAnimationGenerateHint(nullptr),
+			newEntityAnimationGenerateHint(&Hint::none),
 			newEntityAnimationPlaySound(Audio::stepOffRailSound, 0),
 		});
 	playerState.get()->beginEntityAnimation(&playerAnimationComponents, ticksTime);

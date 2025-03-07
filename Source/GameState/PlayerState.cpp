@@ -197,9 +197,8 @@ void PlayerState::spawnParticle(
 		particleStartTicksTime);
 }
 void PlayerState::generateHint(Hint* useHint, int ticksTime) {
-	if (useHint != nullptr)
-		hint = useHint;
-	else {
+	hint = useHint;
+	if (useHint == &Hint::none) {
 		int timeDiff = lastUpdateTicksTime - ticksTime;
 		float hintX = x.get()->getValue(timeDiff);
 		float hintY = y.get()->getValue(timeDiff) + boundingBoxCenterYOffset;
@@ -258,7 +257,7 @@ void PlayerState::setLevelSelectState(int levelN) {
 void PlayerState::confirmSelectLevel(int levelN, int ticksTime) {
 	char ignoreZ;
 	MapState::getLevelStartPosition(levelN, &lastGoalX, &lastGoalY, &ignoreZ);
-	generateHint(nullptr, ticksTime);
+	generateHint(&Hint::none, ticksTime);
 }
 void PlayerState::updateWithPreviousPlayerState(PlayerState* prev, bool hasKeyboardControl, int ticksTime) {
 	bool previousStateHadEntityAnimation = prev->entityAnimation.get() != nullptr;
@@ -1042,7 +1041,7 @@ void PlayerState::kickClimb(float currentX, float currentY, float targetX, float
 		//then delay for the rest of the animation and stop the player
 		newEntityAnimationDelay(moveDuration),
 		newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f)),
-		newEntityAnimationGenerateHint(nullptr),
+		newEntityAnimationGenerateHint(&Hint::none),
 	});
 
 	tryAddNoOpUndoState();
@@ -1134,7 +1133,7 @@ void PlayerState::kickFall(float currentX, float currentY, float targetX, float 
 		newEntityAnimationDelay(moveDuration),
 		newEntityAnimationPlaySound(Audio::landSound, 0),
 		newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f)),
-		newEntityAnimationGenerateHint(nullptr),
+		newEntityAnimationGenerateHint(&Hint::none),
 	});
 
 	tryAddNoOpUndoState();
@@ -1160,7 +1159,7 @@ void PlayerState::kickRail(short railId, float xPosition, float yPosition, int t
 		xPosition,
 		yPosition,
 		RideRailSpeed::Forward,
-		nullptr,
+		&Hint::none,
 		nullptr,
 		nullptr,
 		nullptr);
@@ -1373,7 +1372,7 @@ void PlayerState::addRailRideComponents(
 void PlayerState::kickSwitch(short switchId, int ticksTime) {
 	MapState::logSwitchKick(switchId);
 	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> kickAnimationComponents;
-	addKickSwitchComponents(switchId, &kickAnimationComponents, true, true, nullptr);
+	addKickSwitchComponents(switchId, &kickAnimationComponents, true, true, &Hint::none);
 	beginEntityAnimation(&kickAnimationComponents, ticksTime);
 	tryAddNoOpUndoState();
 	stackNewKickSwitchUndoState(undoState, switchId, spriteDirection, hint);
@@ -1403,7 +1402,7 @@ void PlayerState::addKickSwitchComponents(
 void PlayerState::kickResetSwitch(short resetSwitchId, int ticksTime) {
 	MapState::logResetSwitchKick(resetSwitchId);
 	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> kickAnimationComponents;
-	addKickResetSwitchComponents(resetSwitchId, &kickAnimationComponents, nullptr, nullptr);
+	addKickResetSwitchComponents(resetSwitchId, &kickAnimationComponents, nullptr, &Hint::none);
 	beginEntityAnimation(&kickAnimationComponents, ticksTime);
 	tryAddNoOpUndoState();
 	mapState.get()->writeCurrentRailStates(
