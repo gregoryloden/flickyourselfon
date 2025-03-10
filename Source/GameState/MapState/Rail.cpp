@@ -418,8 +418,10 @@ void Rail::editorAdjustMovementMagnitude(int x, int y, char magnitudeAdd) {
 	if (color == MapState::sineColor)
 		movementMagnitude = MathUtils::min(3, movementMagnitude);
 }
-void Rail::editorToggleMovementDirection() {
-	if (color != MapState::sawColor)
+void Rail::editorToggleMovementDirection(int x, int y) {
+	Segment& start = segments->front();
+	Segment& end = segments->back();
+	if (((x == start.x && y == start.y) || (x == end.x && y == end.y)) && color != MapState::sawColor)
 		initialMovementDirection = -initialMovementDirection;
 }
 void Rail::editorAdjustInitialTileOffset(int x, int y, char tileOffset) {

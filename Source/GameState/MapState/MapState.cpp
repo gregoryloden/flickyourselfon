@@ -1666,7 +1666,7 @@ void MapState::editorAdjustRailMovementMagnitude(int x, int y, char magnitudeAdd
 }
 void MapState::editorToggleRailMovementDirection(int x, int y) {
 	if (tileHasRail(x, y))
-		rails[getRailSwitchId(x, y) & railSwitchIndexBitmask]->editorToggleMovementDirection();
+		rails[getRailSwitchId(x, y) & railSwitchIndexBitmask]->editorToggleMovementDirection(x, y);
 }
 void MapState::editorAdjustRailInitialTileOffset(int x, int y, char tileOffset) {
 	if (tileHasRail(x, y))

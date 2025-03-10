@@ -124,8 +124,8 @@ public:
 	bool editorAddSegment(int x, int y, char pColor, char group, char tileHeight);
 	//adjust the movement magnitude of this rail if we're clicking on one of its end segments
 	void editorAdjustMovementMagnitude(int x, int y, char magnitudeAdd);
-	//toggle the movement direction for this rail
-	void editorToggleMovementDirection();
+	//toggle the movement direction for this rail if we're clicking on one of its end segments
+	void editorToggleMovementDirection(int x, int y);
 	//adjust the initial tile offset of this rail if we're clicking on one of its end segments
 	void editorAdjustInitialTileOffset(int x, int y, char tileOffset);
 	//we're saving this rail to the floor file, get the data we need at this tile
