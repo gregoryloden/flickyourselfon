@@ -270,8 +270,9 @@ bool Rail::triggerMovement(char movementDirection, char* inOutTileOffset) {
 		//higher movement magnitudes will move more than one position at a time
 		case MapState::sineColor: {
 			char newTileOffset = sineWaveNextOffset[movementMagnitude - 1][movementDirection + 1][*inOutTileOffset];
+			//bit-flipped values need to be restored, and result in a bounce
 			if (newTileOffset < 0)
-				*inOutTileOffset = -1 - newTileOffset;
+				*inOutTileOffset = ~newTileOffset;
 			else {
 				*inOutTileOffset = newTileOffset;
 				return false;

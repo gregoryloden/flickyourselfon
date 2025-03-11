@@ -41,10 +41,10 @@ private:
 		//movement direction index is (movement direction + 1)
 		//tile offset index is (tile offset)
 		//certain tile offset inputs will be unused, but put values for them anyways to advance to the next valid tile offset
-		//for tile offset negative values, the real target is -N - 1
-		{ { -2, 0, 1, 1, 3 }, { 0, 0, 0, 0, 0 }, { 1, 3, 3, 4, -4 } },
-		{ { -4, 0, 0, 0, 3 }, { 0, 0, 0, 0, 0 }, { 3, 3, 3, -4, -4 } },
-		{ { -5, 0, 0, 0, 0 }, { 0, 0, 0, 0, 0 }, { 4, 4, 4, 4, -1 } },
+		//bit flipped tile offset values are negative, for those values the real target is ~N (after a bounce)
+		{ { ~1, 0, 1, 1, 3 }, { 0, 0, 0, 0, 0 }, { 1, 3, 3, 4, ~3 } },
+		{ { ~3, 0, 0, 0, 3 }, { 0, 0, 0, 0, 0 }, { 3, 3, 3, ~3, ~3 } },
+		{ { ~4, 0, 0, 0, 0 }, { 0, 0, 0, 0, 0 }, { 4, 4, 4, 4, ~0 } },
 	};
 
 	char baseHeight;
