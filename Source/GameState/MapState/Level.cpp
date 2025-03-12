@@ -263,9 +263,6 @@ Hint* LevelTypes::Plane::pursueSolutionToPlanes(
 				//fill out the new PotentialLevelState
 				nextPotentialLevelState->plane = connectionToPlane;
 				nextPotentialLevelState->hint = checkedPlaneData->hint;
-				#ifdef TRACK_HINT_SEARCH_STATS
-					Level::hintSearchUniqueStates++;
-				#endif
 
 				//if it goes to the victory plane, return the hint for the first transition
 				if (connectionToPlane == Level::cachedHintSearchVictoryPlane) {
@@ -342,9 +339,6 @@ Hint* LevelTypes::Plane::pursueSolutionAfterSwitches(HintState::PotentialLevelSt
 		nextPotentialLevelState->priorState = currentState;
 		nextPotentialLevelState->plane = this;
 		nextPotentialLevelState->hint = &connectionSwitch.hint;
-		#ifdef TRACK_HINT_SEARCH_STATS
-			Level::hintSearchUniqueStates++;
-		#endif
 		Level::getNextPotentialLevelStatesForSteps(stepsAfterSwitchKick)->push_back(nextPotentialLevelState);
 
 		//then afterwards, travel to all planes possible, and check to see if they yielded a hint
@@ -497,7 +491,6 @@ Plane* Level::cachedHintSearchVictoryPlane = nullptr;
 #endif
 #ifdef TRACK_HINT_SEARCH_STATS
 	int Level::hintSearchActionsChecked = 0;
-	int Level::hintSearchUniqueStates = 0;
 	int Level::hintSearchComparisonsPerformed = 0;
 #endif
 int Level::foundHintSearchTotalHintSteps = 0;
@@ -611,7 +604,6 @@ Hint* Level::generateHint(Plane* currentPlane, GetRailState getRailState, char l
 	#endif
 	#ifdef TRACK_HINT_SEARCH_STATS
 		hintSearchActionsChecked = 0;
-		hintSearchUniqueStates = 0;
 		hintSearchComparisonsPerformed = 0;
 	#endif
 	Logger::debugLogger.logString("begin level " + to_string(levelN) + " hint search");
@@ -626,15 +618,15 @@ Hint* Level::generateHint(Plane* currentPlane, GetRailState getRailState, char l
 
 	//cleanup
 	int timeAfterSearchBeforeCleanup = SDL_GetTicks();
-	clearPotentialLevelStateHolders();
+	int totalUniqueStates = clearPotentialLevelStateHolders();
 
 	int timeAfterCleanup = SDL_GetTicks();
 	stringstream hintSearchPerformanceMessage;
 	hintSearchPerformanceMessage
 		<< "level " << levelN << " hint search:"
+		<< "  uniqueStates " << totalUniqueStates
 		#ifdef TRACK_HINT_SEARCH_STATS
 			<< "  actionsChecked " << hintSearchActionsChecked
-			<< "  uniqueStates " << hintSearchUniqueStates
 			<< "  comparisonsPerformed " << hintSearchComparisonsPerformed
 		#endif
 		<< "  searchTime " << (timeAfterSearchBeforeCleanup - timeBeforeSearch)
@@ -724,17 +716,19 @@ Hint* Level::performHintSearch(HintState::PotentialLevelState* baseLevelState, P
 	//at this point, we've exhausted all states at all steps regardless of milestones, there is no solution
 	return &Hint::undoReset;
 }
-void Level::clearPotentialLevelStateHolders() {
+int Level::clearPotentialLevelStateHolders() {
 	do {
 		for (int i = currentPotentialLevelStateSteps; i <= maxPotentialLevelStateSteps; i++)
 			(*currentNextPotentialLevelStatesBySteps)[i]->clear();
 	} while (popMilestone());
 	//only clear as many plane buckets as we used
+	int totalStates = 0;
 	for (int i = 0; i < (int)planes.size(); i++) {
 		for (vector<HintState::PotentialLevelState*>& potentialLevelStates : potentialLevelStatesByBucketByPlane[i].buckets) {
 			//these were all retained once before by PotentialLevelState::addNewState, so release them here
 			for (HintState::PotentialLevelState* potentialLevelState : potentialLevelStates)
 				potentialLevelState->release();
+			totalStates += (int)potentialLevelStates.size();
 			potentialLevelStates.clear();
 		}
 	}
@@ -743,6 +737,7 @@ void Level::clearPotentialLevelStateHolders() {
 	for (HintState::PotentialLevelState* potentialLevelState : replacedPotentialLevelStates)
 		potentialLevelState->release();
 	replacedPotentialLevelStates.clear();
+	return totalStates;
 }
 #ifdef TEST_SOLUTIONS
 	void Level::testSolutions(GetRailState getRailState) {

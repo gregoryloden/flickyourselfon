@@ -199,7 +199,6 @@ private:
 public:
 	#ifdef TRACK_HINT_SEARCH_STATS
 		static int hintSearchActionsChecked;
-		static int hintSearchUniqueStates;
 		static int hintSearchComparisonsPerformed;
 	#endif
 	static int foundHintSearchTotalHintSteps;
@@ -251,7 +250,8 @@ private:
 	static Hint* performHintSearch(
 		HintState::PotentialLevelState* baseLevelState, LevelTypes::Plane* currentPlane, int startTime);
 	//release all potential level states used and clear the structures that held them
-	void clearPotentialLevelStateHolders();
+	//returns how many unique states were held
+	int clearPotentialLevelStateHolders();
 	#ifdef TEST_SOLUTIONS
 		//load the solution file for this level and test that the solutions in it follow a valid path to the victory plane
 		void testSolutions(GetRailState getRailState);
