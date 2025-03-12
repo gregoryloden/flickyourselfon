@@ -8,6 +8,7 @@
 #include "GameState/HintState.h"
 #include "GameState/KickAction.h"
 #include "GameState/UndoState.h"
+#include "GameState/MapState/Level.h"
 #include "GameState/MapState/MapState.h"
 #include "GameState/MapState/Rail.h"
 #include "GameState/MapState/Switch.h"
@@ -927,6 +928,7 @@ void PlayerState::tryCollectCompletedHint(PlayerState* other) {
 void PlayerState::waitForHintThreadToFinish() {
 	if (hintSearchThread == nullptr)
 		return;
+	Level::cancelHintSearch();
 	hintSearchThread->join();
 	delete hintSearchThread;
 	hintSearchThread = nullptr;

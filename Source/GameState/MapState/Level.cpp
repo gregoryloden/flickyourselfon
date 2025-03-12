@@ -469,6 +469,7 @@ Level::CheckedPlaneData::~CheckedPlaneData() {
 }
 
 //////////////////////////////// Level ////////////////////////////////
+bool Level::hintSearchIsRunning = false;
 vector<Level::PotentialLevelStatesByBucket> Level::potentialLevelStatesByBucketByPlane;
 vector<HintState::PotentialLevelState*> Level::replacedPotentialLevelStates;
 Plane*** Level::allCheckPlanes = nullptr;
@@ -592,6 +593,7 @@ void Level::preAllocatePotentialLevelStates() {
 	#endif
 }
 Hint* Level::generateHint(Plane* currentPlane, GetRailState getRailState, char lastActivatedSwitchColor) {
+	hintSearchIsRunning = true;
 	if (lastActivatedSwitchColor < minimumRailColor)
 		return &radioTowerHint;
 	else if (victoryPlane == nullptr)
@@ -639,6 +641,7 @@ Hint* Level::generateHint(Plane* currentPlane, GetRailState getRailState, char l
 		delete[] statesAtStepsByPlane;
 	#endif
 
+	hintSearchIsRunning = false;
 	return result;
 }
 void Level::resetPlaneSearchHelpers() {
@@ -710,8 +713,13 @@ Hint* Level::performHintSearch(HintState::PotentialLevelState* baseLevelState, P
 				return result;
 		}
 		currentPotentialLevelStateSteps++;
-		if (SDL_GetTicks() - startTime >= maxHintSearchTicks)
+		if (!hintSearchIsRunning) {
+			Logger::debugLogger.logString("hint search canceled");
 			return &Hint::searchCanceledEarly;
+		} else if (SDL_GetTicks() - startTime >= maxHintSearchTicks) {
+			Logger::debugLogger.logString("hint search timed out");
+			return &Hint::searchCanceledEarly;
+		}
 	} while (currentPotentialLevelStateSteps <= maxPotentialLevelStateSteps || popMilestone());
 	//at this point, we've exhausted all states at all steps regardless of milestones, there is no solution
 	return &Hint::undoReset;

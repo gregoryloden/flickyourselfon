@@ -166,12 +166,13 @@ public:
 	static const unsigned int baseRailByteMask = (1 << railByteMaskBitCount) - 1;
 private:
 	#ifdef DEBUG
-		static const int maxHintSearchTicks = 5000;
+		static const int maxHintSearchTicks = 30000;
 	#else
-		static const int maxHintSearchTicks = 500;
+		static const int maxHintSearchTicks = 5000;
 	#endif
 			
 
+	static bool hintSearchIsRunning;
 public:
 	static vector<PotentialLevelStatesByBucket> potentialLevelStatesByBucketByPlane;
 	static vector<HintState::PotentialLevelState*> replacedPotentialLevelStates;
@@ -223,6 +224,7 @@ public:
 	LevelTypes::RailByteMaskData* getRailByteMaskData(int i) { return &allRailByteMaskData[i]; }
 	int getRailByteMaskCount() { return (railByteMaskBitsTracked + 31) / 32; }
 	LevelTypes::Plane* getVictoryPlane() { return victoryPlane; }
+	static void cancelHintSearch() { hintSearchIsRunning = false; }
 	//add a new plane to this level
 	LevelTypes::Plane* addNewPlane();
 	//add a special plane for use as the victory plane
