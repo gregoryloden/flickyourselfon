@@ -631,8 +631,7 @@ Hint* Level::generateHint(Plane* currentPlane, GetRailState getRailState, char l
 	int timeAfterCleanup = SDL_GetTicks();
 	stringstream hintSearchPerformanceMessage;
 	hintSearchPerformanceMessage
-		<< "level " << levelN
-		<< " (" << planes.size() << "p, " << allRailByteMaskData.size() << "r, c" << (int)minimumRailColor << ")"
+		<< "level " << levelN << " hint search:"
 		#ifdef TRACK_HINT_SEARCH_STATS
 			<< "  actionsChecked " << hintSearchActionsChecked
 			<< "  uniqueStates " << hintSearchUniqueStates
