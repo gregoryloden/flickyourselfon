@@ -408,14 +408,15 @@ void MapState::buildLevels() {
 					//with the editor, it's possible to have switches which aren't on any plane accessible from the start, so
 					//	skip rails for those switches
 					//should never happen with an umodified floor file once the game is released
-					if (group >= (int)planeConnectionSwitchesByGroup.size()) {
+					PlaneConnectionSwitch* planeConnectionSwitch =
+						group < (int)planeConnectionSwitchesByGroup.size() ? planeConnectionSwitchesByGroup[group] : nullptr;
+					if (planeConnectionSwitch == nullptr) {
 						stringstream message;
 						message << "ERROR: no switch found for rail c" << (int)planeConnection.rail->getColor() << " ";
 						logGroup(group, &message);
 						Logger::debugLogger.logString(message.str());
 						continue;
 					}
-					PlaneConnectionSwitch* planeConnectionSwitch = planeConnectionSwitchesByGroup[group];
 					planeConnectionSwitch->plane->addRailConnectionToSwitch(
 						railByteMaskData, planeConnectionSwitch->planeConnectionSwitchIndex);
 				}
