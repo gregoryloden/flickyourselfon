@@ -62,6 +62,9 @@ void HintState::PotentialLevelState::setHash() {
 HintState::PotentialLevelState* HintState::PotentialLevelState::addNewState(
 	vector<PotentialLevelState*>& potentialLevelStates, int pSteps)
 {
+	#ifdef TRACK_HINT_SEARCH_STATS
+		Level::hintSearchActionsChecked++;
+	#endif
 	//look through every other state, and see if it matches this one
 	int size = (int)potentialLevelStates.size();
 	for (int i = 0; i < size; i++) {

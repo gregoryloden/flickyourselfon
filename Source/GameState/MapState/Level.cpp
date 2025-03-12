@@ -295,9 +295,6 @@ Hint* LevelTypes::Plane::pursueSolutionToPlanes(
 }
 Hint* LevelTypes::Plane::pursueSolutionAfterSwitches(HintState::PotentialLevelState* currentState, int stepsAfterSwitchKick) {
 	for (ConnectionSwitch& connectionSwitch : connectionSwitches) {
-		#ifdef TRACK_HINT_SEARCH_STATS
-			Level::hintSearchActionsChecked++;
-		#endif
 		//first, reset the draft rail byte masks
 		for (int i = HintState::PotentialLevelState::currentRailByteMaskCount - 1; i >= 0; i--)
 			HintState::PotentialLevelState::draftState.railByteMasks[i] = currentState->railByteMasks[i];
