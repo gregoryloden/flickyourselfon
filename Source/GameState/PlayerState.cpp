@@ -199,7 +199,7 @@ void PlayerState::spawnParticle(
 }
 void PlayerState::generateHint(Hint* useHint, int ticksTime) {
 	hint = useHint;
-	if (useHint == &Hint::none) {
+	if (!useHint->isAdvancement()) {
 		int timeDiff = lastUpdateTicksTime - ticksTime;
 		float hintX = x.get()->getValue(timeDiff);
 		float hintY = y.get()->getValue(timeDiff) + boundingBoxCenterYOffset;
