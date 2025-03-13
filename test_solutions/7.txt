@@ -30,6 +30,12 @@ white: red-red
 white: black-red
 white: green-red
 white: green-red
+red: blue-green
+red: magenta-red
+red: white-red
+red: black-green
+red: white-red
+red: black-green
 green: magenta-green
 
 #fourth milestone white
