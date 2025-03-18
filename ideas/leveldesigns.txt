@@ -28,6 +28,7 @@ Level 7:
 	certain switches can be reached by more than one rail, but only one rail gets you there at a time
 	treat the level like a maze, having to connect paths to get through
 	blue area: re-use the first part with the first two red-black rails raised (via lowering the white-black rail 1x and kicking red-black 2x), for part 2 solution
+	green area: the green yellow-red switch is used for milestone 1, and then later for milestone 3
 	order: green, blue, red + ladder, white, green, blue + ladder, white, red, green + ladder, red, blue, white + ladder
 Level 8:
 	level 8 starting area/level 7 victory area is at the bottom left platform of level 1 area, has switch
