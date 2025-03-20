@@ -2,6 +2,10 @@ start
 #first milestone red
 green: magenta-black
 green: white-black
+green: yellow-red
+green: white-black
+green: magenta-black
+green: magenta-black
 blue: white-black
 blue: black-red
 blue: black-red
@@ -36,6 +40,8 @@ red: white-red
 red: black-green
 red: white-red
 red: black-green
+green: white-red
+green: yellow-red
 green: magenta-green
 
 #fourth milestone white
