@@ -80,8 +80,7 @@ namespace LevelTypes {
 		//	don't already have one
 		void addPlaneConnection(Plane* toPlane, int steps, Plane* hintPlane);
 		//add a rail connection to another plane, whether directly connected or connected through other planes
-		void addRailConnection(
-			Plane* toPlane, LevelTypes::RailByteMaskData* railByteMaskData, int steps, Rail* rail, Plane* hintPlane);
+		void addRailConnection(Plane* toPlane, RailByteMaskData* railByteMaskData, int steps, Rail* rail, Plane* hintPlane);
 		//add a rail connection to another plane that is already connected to the given fromPlane
 		//for direct connections, fromPlane is this
 		//for extended connections, fromPlane is the last plane reachable from this plane by plane-plane connections
