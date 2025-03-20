@@ -24,6 +24,7 @@ LevelTypes::Plane::Tile::~Tile() {}
 LevelTypes::Plane::ConnectionSwitch::ConnectionSwitch(Switch* switch0)
 : affectedRailByteMaskData()
 , hint(Hint::Type::Switch)
+, isSingleUse(true)
 , isMilestone(false) {
 	hint.data.switch0 = switch0;
 }
@@ -112,6 +113,17 @@ void LevelTypes::Plane::addReverseRailConnection(Plane* fromPlane, Plane* toPlan
 			Connection(toPlane, connection.railByteIndex, connection.railTileOffsetByteMask, steps, rail, hintPlane));
 	}
 }
+void LevelTypes::Plane::addRailConnectionToSwitch(RailByteMaskData* railByteMaskData, int connectionSwitchesIndex) {
+	ConnectionSwitch& connectionSwitch = connectionSwitches[connectionSwitchesIndex];
+	connectionSwitch.affectedRailByteMaskData.push_back(railByteMaskData);
+
+	//check for single-use
+	Rail* rail = railByteMaskData->rail;
+	char tileOffset = rail->getInitialTileOffset();
+	rail->triggerMovement(rail->getInitialMovementDirection(), &tileOffset);
+	if (rail->getGroups().size() > 1 || tileOffset != 0)
+		connectionSwitch.isSingleUse = false;
+}
 void LevelTypes::Plane::findMilestones(vector<Plane*>& levelPlanes) {
 	Plane* nextPlane = levelPlanes[0];
 	Plane* victoryPlane = nextPlane->owningLevel->getVictoryPlane();
@@ -173,20 +185,22 @@ void LevelTypes::Plane::findMilestones(vector<Plane*>& levelPlanes) {
 		bool foundMilestoneSwitch = false;
 		for (Plane* plane : levelPlanes) {
 			for (ConnectionSwitch& connectionSwitch : plane->connectionSwitches) {
-				//it's not a milestone if it controls more than one rail (or less than one rail, which should never happen here
-				//	with an unomdified floor file once the game is released)
-				if (connectionSwitch.affectedRailByteMaskData.size() != 1)
+				//only single-use switches can be milestone switches
+				if (!connectionSwitch.isSingleUse)
 					continue;
-				//it only controls one rail, it's a milestone if it matches this rail
-				RailByteMaskData* railByteMaskData = connectionSwitch.affectedRailByteMaskData[0];
-				if (railByteMaskData->railByteIndex == connection->railByteIndex
-					&& Level::baseRailTileOffsetByteMask << railByteMaskData->railBitShift
-						== connection->railTileOffsetByteMask)
-				{
-					foundMilestoneSwitch = true;
-					connectionSwitch.isMilestone = true;
-					break;
+				//it's a single-use switch, it's a milestone if it matches this rail
+				for (RailByteMaskData* railByteMaskData : connectionSwitch.affectedRailByteMaskData) {
+					if (railByteMaskData->railByteIndex == connection->railByteIndex
+						&& Level::baseRailTileOffsetByteMask << railByteMaskData->railBitShift
+							== connection->railTileOffsetByteMask)
+					{
+						foundMilestoneSwitch = true;
+						connectionSwitch.isMilestone = true;
+						break;
+					}
 				}
+				if (foundMilestoneSwitch)
+					break;
 			}
 			if (foundMilestoneSwitch)
 				break;
@@ -324,8 +338,8 @@ Hint* LevelTypes::Plane::pursueSolutionAfterSwitches(HintState::PotentialLevelSt
 			HintState::PotentialLevelState::draftState.addNewState(potentialLevelStates, stepsAfterSwitchKick);
 		if (nextPotentialLevelState == nullptr)
 			continue;
-		//also don't bother with any states that lower the only rail of a single-rail switch
-		if (connectionSwitch.affectedRailByteMaskData.size() == 1 && lastTileOffset == 0) {
+		//also don't bother with any states that lower the rail(s) of a single-rail switch
+		if (connectionSwitch.isSingleUse && lastTileOffset == 0) {
 			potentialLevelStates.pop_back();
 			nextPotentialLevelState->release();
 			continue;
@@ -398,7 +412,7 @@ void LevelTypes::Plane::renderHint(int screenLeftWorldX, int screenTopWorldY, fl
 void LevelTypes::Plane::countSwitches(int outSwitchCounts[4], int* outSingleUseSwitches) {
 	for (ConnectionSwitch& connectionSwitch : connectionSwitches) {
 		outSwitchCounts[connectionSwitch.hint.data.switch0->getColor()]++;
-		if (connectionSwitch.affectedRailByteMaskData.size() == 1)
+		if (connectionSwitch.isSingleUse)
 			(*outSingleUseSwitches)++;
 	}
 }

@@ -32,6 +32,7 @@ namespace LevelTypes {
 		public:
 			vector<RailByteMaskData*> affectedRailByteMaskData;
 			Hint hint;
+			bool isSingleUse;
 			bool isMilestone;
 
 			ConnectionSwitch(Switch* switch0);
@@ -70,9 +71,6 @@ namespace LevelTypes {
 		int getIndexInOwningLevel() { return indexInOwningLevel; }
 		bool getHasAction() { return hasAction; }
 		void setHasAction() { hasAction = true; }
-		void addRailConnectionToSwitch(LevelTypes::RailByteMaskData* railByteMaskData, int connectionSwitchesIndex) {
-			connectionSwitches[connectionSwitchesIndex].affectedRailByteMaskData.push_back(railByteMaskData);
-		}
 		//add a tile
 		void addTile(int x, int y);
 		//add a switch
@@ -88,6 +86,8 @@ namespace LevelTypes {
 		//for direct connections, fromPlane is this
 		//for extended connections, fromPlane is the last plane reachable from this plane by plane-plane connections
 		void addReverseRailConnection(Plane* fromPlane, Plane* toPlane, int steps, Rail* rail, Plane* hintPlane);
+		//add the data of a rail connection to the switch for the given index
+		void addRailConnectionToSwitch(RailByteMaskData* railByteMaskData, int connectionSwitchesIndex);
 		//start from the first plane, go through all connections and planes, find planes and rails that are required to get to
 		//	the end, see which of them have single-use switches, and mark those switch connections as milestones
 		static void findMilestones(vector<Plane*>& levelPlanes);
