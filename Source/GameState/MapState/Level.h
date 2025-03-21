@@ -175,7 +175,6 @@ private:
 	#else
 		static const int maxHintSearchTicks = 5000;
 	#endif
-			
 
 	static bool hintSearchIsRunning;
 public:
