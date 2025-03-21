@@ -125,10 +125,15 @@ void LevelTypes::Plane::addRailConnectionToSwitch(RailByteMaskData* railByteMask
 		connectionSwitch.isSingleUse = false;
 }
 void LevelTypes::Plane::findMilestones(vector<Plane*>& levelPlanes) {
-	Plane* nextPlane = levelPlanes[0];
-	Plane* victoryPlane = nextPlane->owningLevel->getVictoryPlane();
+	Plane* victoryPlane = levelPlanes[0]->owningLevel->getVictoryPlane();
 	if (victoryPlane == nullptr)
 		return;
+	vector<Plane*> destinationPlanes ({ victoryPlane });
+	for (int i = 0; i < (int)destinationPlanes.size(); i++)
+		destinationPlanes[i]->findMilestonesToThisPlane(levelPlanes, destinationPlanes);
+}
+void LevelTypes::Plane::findMilestonesToThisPlane(vector<Plane*>& levelPlanes, vector<Plane*>& outDestinationPlanes) {
+	Plane* nextPlane = levelPlanes[0];
 	//DFS to find a path to the end through direct connections
 	bool* seenPlanes = new bool[levelPlanes.size()] {};
 	vector<Plane*> pathPlanes ({ nextPlane });
@@ -148,13 +153,13 @@ void LevelTypes::Plane::findMilestones(vector<Plane*>& levelPlanes) {
 			}
 		}
 		if (nextPlane == lastPlane) {
-			//since we know that the level has a victory plane, we can assume there is a path to get there (which is how we
-			//	found that victory plane), which means that there is another plane/connection to try, which means that these
-			//	lists won't be empty, and pathPlanes will still not be empty after popping
+			//since we know that the level has this plane, we can assume there is a path to get there (which is how we found
+			//	this plane), which means that there is another plane/connection to try, which means that these lists won't be
+			//	empty, and pathPlanes will still not be empty after popping
 			pathPlanes.pop_back();
 			pathRailConnections.pop_back();
 			nextPlane = pathPlanes.back();
-		} else if (nextPlane == victoryPlane)
+		} else if (nextPlane == this)
 			break;
 	}
 	//tally total number of direct connections to each plane
@@ -215,6 +220,16 @@ void LevelTypes::Plane::findMilestones(vector<Plane*>& levelPlanes) {
 					{
 						foundMilestoneSwitch = true;
 						connectionSwitch.isMilestone = true;
+						//track its plane if it isn't already tracked
+						bool destinationPlaneAlreadyIncluded = false;
+						for (Plane* destinationPlane : outDestinationPlanes) {
+							if (destinationPlane == plane) {
+								destinationPlaneAlreadyIncluded = true;
+								break;
+							}
+						}
+						if (!destinationPlaneAlreadyIncluded)
+							outDestinationPlanes.push_back(plane);
 						break;
 					}
 				}

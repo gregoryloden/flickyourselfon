@@ -90,7 +90,12 @@ namespace LevelTypes {
 		void addRailConnectionToSwitch(RailByteMaskData* railByteMaskData, int connectionSwitchesIndex);
 		//start from the first plane, go through all connections and planes, find planes and rails that are required to get to
 		//	the end, see which of them have single-use switches, and mark those switch connections as milestones
+		//then recursively repeat the process, instead ending at the planes of those milestone switches
 		static void findMilestones(vector<Plane*>& levelPlanes);
+	private:
+		//find milestones that enable access to this plane, and record their planes in outDestinationPlanes
+		void findMilestonesToThisPlane(vector<Plane*>& levelPlanes, vector<Plane*>& outDestinationPlanes);
+	public:
 		//follow all possible paths to other planes, and return a hint if any of those other planes are the victory plane
 		Hint* pursueSolutionToPlanes(HintState::PotentialLevelState* currentState, int basePotentialLevelStateSteps);
 		//kick each switch in this plane, and then pursue solutions from those states
