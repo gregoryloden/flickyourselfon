@@ -50,6 +50,7 @@ namespace LevelTypes {
 			Connection(
 				Plane* pToPlane, int pRailByteIndex, int pRailTileOffsetByteMask, int pSteps, Rail* rail, Plane* hintPlane);
 			virtual ~Connection();
+			Plane* getDirectToPlane() { return hint.type == Hint::Type::Plane ? hint.data.plane : toPlane; }
 		};
 
 		Level* owningLevel;

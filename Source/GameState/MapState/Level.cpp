@@ -129,17 +129,19 @@ void LevelTypes::Plane::findMilestones(vector<Plane*>& levelPlanes) {
 	Plane* victoryPlane = nextPlane->owningLevel->getVictoryPlane();
 	if (victoryPlane == nullptr)
 		return;
-	//DFS to find a path to the end
+	//DFS to find a path to the end through direct connections
 	bool* seenPlanes = new bool[levelPlanes.size()] {};
 	vector<Plane*> pathPlanes ({ nextPlane });
-	vector<Connection*> pathConnections;
+	vector<Connection*> pathRailConnections;
 	while (true) {
 		Plane* lastPlane = nextPlane;
 		for (Connection& connection : nextPlane->connections) {
-			Plane* toPlane = connection.toPlane;
+			Plane* toPlane = connection.getDirectToPlane();
 			if (!seenPlanes[toPlane->indexInOwningLevel]) {
 				nextPlane = toPlane;
-				pathConnections.push_back(&connection);
+				//only track pointers to direct rail connections, but ensure there's an entry for this connection either way
+				pathRailConnections.push_back(
+					connection.steps == 1 && connection.railByteIndex != Level::absentRailByteIndex ? &connection : nullptr);
 				pathPlanes.push_back(nextPlane);
 				seenPlanes[toPlane->indexInOwningLevel] = true;
 				break;
@@ -150,37 +152,54 @@ void LevelTypes::Plane::findMilestones(vector<Plane*>& levelPlanes) {
 			//	found that victory plane), which means that there is another plane/connection to try, which means that these
 			//	lists won't be empty, and pathPlanes will still not be empty after popping
 			pathPlanes.pop_back();
-			pathConnections.pop_back();
+			pathRailConnections.pop_back();
 			nextPlane = pathPlanes.back();
 		} else if (nextPlane == victoryPlane)
 			break;
 	}
-	//tally total number of rail connections to each plane
-	int* inboundRailConnections = new int[levelPlanes.size()] {};
+	//tally total number of direct connections to each plane
+	int* inboundConnections = new int[levelPlanes.size()] {};
 	for (Plane* plane : levelPlanes) {
+		//find all planes that this plane connects to directly
+		vector<Plane*> outboundPlanes;
 		for (Connection& connection : plane->connections) {
-			//skip any extended connections and non-rail connections
-			//we can group these in the same conditional because if there is a 1-step plane connection, there won't be any
-			//	1-step rail connections so we can still break
-			if (connection.steps > 1 || connection.railByteIndex == Level::absentRailByteIndex)
-				break;
-			inboundRailConnections[connection.toPlane->indexInOwningLevel]++;
+			Plane* toPlane = connection.getDirectToPlane();
+			bool alreadyIncluded = false;
+			for (Plane* outboundPlane : outboundPlanes) {
+				if (outboundPlane == toPlane) {
+					alreadyIncluded = true;
+					break;
+				}
+			}
+			if (!alreadyIncluded)
+				outboundPlanes.push_back(toPlane);
 		}
+		//go through all the outbound planes and track an inbound connection
+		for (Plane* outboundPlane : outboundPlanes)
+			inboundConnections[outboundPlane->indexInOwningLevel]++;
 	}
 	//find milestones
-	for (int i = pathConnections.size() - 1; i >= 0; i--) {
+	for (int i = pathRailConnections.size() - 1; i >= 0; i--) {
 		Plane* fromPlane = pathPlanes[i];
-		Connection* connection = pathConnections[i];
-		//skip plane-plane connections
-		if (connection->railByteIndex == Level::absentRailByteIndex)
-			continue;
-		//since we're iterating backwards, if we only find to-planes with only one inbound rail connection, we know their
+		Plane* toPlane = pathPlanes[i + 1];
+		//first step, if there is a direct connection from the to-plane to the from-plane, remove it as an inbound connection
+		for (Connection& connection : toPlane->connections) {
+			if (connection.getDirectToPlane() == fromPlane) {
+				inboundConnections[fromPlane->indexInOwningLevel]--;
+				break;
+			}
+		}
+		//since we're iterating backwards, if we only find to-planes with only one direct inbound connection, we know their
 		//	connections are required to get to the victory plane
-		//once we find a to-plane with more than one inbound rail connection, we can no longer be sure that all connections are
-		//	required to reach the victory plane, which means we won't find any more milestones
-		if (inboundRailConnections[i + 1] > 1)
+		//once we find a to-plane with more than one direct inbound connection, we can no longer be sure that all connections
+		//	are required to reach the victory plane, which means we won't find any more milestones
+		if (inboundConnections[toPlane->indexInOwningLevel] > 1)
 			break;
-		//if we get here, this rail connection is the only way to get to the victory plane
+		Connection* railConnection = pathRailConnections[i];
+		//skip plane-plane connections
+		if (railConnection == nullptr)
+			continue;
+		//if we get here, this connection is the only way to get to this plane, and it is a rail connection
 		//look for a switch that only controls this rail
 		bool foundMilestoneSwitch = false;
 		for (Plane* plane : levelPlanes) {
@@ -190,9 +209,9 @@ void LevelTypes::Plane::findMilestones(vector<Plane*>& levelPlanes) {
 					continue;
 				//it's a single-use switch, it's a milestone if it matches this rail
 				for (RailByteMaskData* railByteMaskData : connectionSwitch.affectedRailByteMaskData) {
-					if (railByteMaskData->railByteIndex == connection->railByteIndex
+					if (railByteMaskData->railByteIndex == railConnection->railByteIndex
 						&& Level::baseRailTileOffsetByteMask << railByteMaskData->railBitShift
-							== connection->railTileOffsetByteMask)
+							== railConnection->railTileOffsetByteMask)
 					{
 						foundMilestoneSwitch = true;
 						connectionSwitch.isMilestone = true;
@@ -207,7 +226,7 @@ void LevelTypes::Plane::findMilestones(vector<Plane*>& levelPlanes) {
 		}
 	}
 	delete[] seenPlanes;
-	delete[] inboundRailConnections;
+	delete[] inboundConnections;
 }
 Hint* LevelTypes::Plane::pursueSolutionToPlanes(
 	HintState::PotentialLevelState* currentState, int basePotentialLevelStateSteps)
