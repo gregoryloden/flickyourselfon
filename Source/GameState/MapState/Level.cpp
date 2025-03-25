@@ -111,6 +111,7 @@ void LevelTypes::Plane::addReverseRailConnection(Plane* fromPlane, Plane* toPlan
 			continue;
 		connections.push_back(
 			Connection(toPlane, connection.railByteIndex, connection.railTileOffsetByteMask, steps, rail, hintPlane));
+		break;
 	}
 }
 void LevelTypes::Plane::addRailConnectionToSwitch(RailByteMaskData* railByteMaskData, int connectionSwitchesIndex) {
