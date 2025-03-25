@@ -85,7 +85,7 @@ int LevelTypes::Plane::addConnectionSwitch(Switch* switch0) {
 void LevelTypes::Plane::addPlaneConnection(Plane* toPlane, int steps, Plane* hintPlane) {
 	//add a plane-plane connection to a plane if we don't already have one
 	for (Connection& connection : connections) {
-		if (connection.toPlane == toPlane && connection.hint.type == Hint::Type::Plane)
+		if (connection.toPlane == toPlane && connection.railByteIndex == Level::absentRailByteIndex)
 			return;
 	}
 	connections.push_back(Connection(toPlane, Level::absentRailByteIndex, 0, steps, nullptr, hintPlane));
