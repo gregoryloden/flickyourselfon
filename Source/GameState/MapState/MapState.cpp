@@ -25,22 +25,12 @@
 	newEntityAnimationDelay(animation->getTotalTicksDuration())
 
 //////////////////////////////// MapState::PlaneConnection ////////////////////////////////
-MapState::PlaneConnection::PlaneConnection(
-	int pToTile, Rail* pRail, int pLevelRailByteMaskDataIndex, int pSteps, LevelTypes::Plane* pHintPlane)
+MapState::PlaneConnection::PlaneConnection(int pToTile, Rail* pRail, int pLevelRailByteMaskDataIndex)
 : toTile(pToTile)
 , rail(pRail)
-, levelRailByteMaskDataIndex(pLevelRailByteMaskDataIndex)
-, steps(pSteps)
-, hintPlane(pHintPlane) {
+, levelRailByteMaskDataIndex(pLevelRailByteMaskDataIndex) {
 }
 MapState::PlaneConnection::~PlaneConnection() {}
-bool MapState::PlaneConnection::isConnectedByPlanes(vector<PlaneConnection>& planeConnections, LevelTypes::Plane* toPlane) {
-	for (PlaneConnection& planeConnection : planeConnections) {
-		if (MapState::planes[MapState::planeIds[planeConnection.toTile] - 1] == toPlane && planeConnection.rail == nullptr)
-			return true;
-	}
-	return false;
-}
 
 //////////////////////////////// MapState::PlaneConnectionSwitch ////////////////////////////////
 MapState::PlaneConnectionSwitch::PlaneConnectionSwitch(
@@ -388,34 +378,21 @@ void MapState::buildLevels() {
 		planeConnectionSwitchesByGroup[group] = &planeConnectionSwitch;
 	}
 
-	//add direct connections to planes, if they're rail connections or connections to hasAction planes
+	//add direct connections to planes
 	for (int planeI = 0; planeI < (int)planes.size(); planeI++) {
 		LevelTypes::Plane* fromPlane = planes[planeI];
 		vector<PlaneConnection>& fromPlaneConnections = allPlaneConnections[planeI];
 		for (int fromPlaneConnectionI = 0; fromPlaneConnectionI < (int)fromPlaneConnections.size(); fromPlaneConnectionI++) {
 			PlaneConnection& planeConnection = fromPlaneConnections[fromPlaneConnectionI];
 			LevelTypes::Plane* toPlane = planes[planeIds[planeConnection.toTile] - 1];
-			//plane-plane connection; add it if it's hasAction
-			if (planeConnection.rail == nullptr) {
-				//prune this plane connection if there is already an earlier one to the same plane
-				bool alreadySeen = false;
-				for (int checkI = 0; checkI < fromPlaneConnectionI; checkI++) {
-					PlaneConnection& check = fromPlaneConnections[checkI];
-					if (check.rail == nullptr && planes[planeIds[check.toTile] - 1] == toPlane) {
-						alreadySeen = true;
-						break;
-					}
-				}
-				if (alreadySeen) {
-					fromPlaneConnections.erase(fromPlaneConnections.begin() + fromPlaneConnectionI);
-					fromPlaneConnectionI--;
-				} else if (toPlane->getHasAction())
-					fromPlane->addPlaneConnection(toPlane, 1, toPlane);
+			//plane-plane connection
+			if (planeConnection.rail == nullptr)
+				fromPlane->addPlaneConnection(toPlane);
 			//we have a new rail - add a connection to it and add the data to all applicable switches
-			} else if (planeConnection.levelRailByteMaskDataIndex >= 0) {
+			else if (planeConnection.levelRailByteMaskDataIndex >= 0) {
 				LevelTypes::RailByteMaskData* railByteMaskData =
 					fromPlane->getOwningLevel()->getRailByteMaskData(planeConnection.levelRailByteMaskDataIndex);
-				fromPlane->addRailConnection(toPlane, railByteMaskData, 1, planeConnection.rail, nullptr);
+				fromPlane->addRailConnection(toPlane, railByteMaskData, planeConnection.rail);
 				vector<PlaneConnectionSwitch*>& planeConnectionSwitchesByGroup =
 					planeConnectionSwitchesByGroupByColor[planeConnection.rail->getColor()];
 				for (char group : planeConnection.rail->getGroups()) {
@@ -438,62 +415,13 @@ void MapState::buildLevels() {
 			//because these PlaneConnections are only added when connecting to an already-existing plane, which has already
 			//	added all its connections, we can assume that there is a corresponding reverse rail connection to copy from
 			} else
-				fromPlane->addReverseRailConnection(fromPlane, toPlane, 1, planeConnection.rail, nullptr);
+				fromPlane->addReverseRailConnection(toPlane, planeConnection.rail);
 		}
 	}
 
 	//add extended connections between planes
-	//BFS and track all planes accessible from this plane via direct plane-plane connections, and add any rail connections
-	//	and hasAction plane-plane connections to the plane
-	for (int planeI = 0; planeI < (int)planes.size(); planeI++) {
-		LevelTypes::Plane* fromPlane = planes[planeI];
-		vector<PlaneConnection>& planeConnections = allPlaneConnections[planeI];
-		//look at the (growing) list of planes reachable from this plane (directly or indirectly), and see if there are any
-		//	other planes we can reach from them
-		for (int connectionI = 0; connectionI < (int)planeConnections.size(); connectionI++) {
-			PlaneConnection& connection = planeConnections[connectionI];
-			//don't try to extend connections through rail connections
-			if (connection.rail != nullptr)
-				continue;
-			int otherPlaneI = planeIds[connection.toTile] - 1;
-			LevelTypes::Plane* otherPlane = planes[otherPlaneI];
-			//the hint for an extended connection is the first plane that approaches there
-			//to extend from an extended connection, copy its hint plane which is already stored
-			//to extend from a direct connection, use its to-plane
-			LevelTypes::Plane* hintPlane = connection.hintPlane != nullptr ? connection.hintPlane : otherPlane;
-			int steps = connection.steps + 1;
-			//look through all the planes this other plane can reach (directly), and add connections to them if we don't already
-			//	have them
-			for (PlaneConnection& otherConnection : allPlaneConnections[otherPlaneI]) {
-				LevelTypes::Plane* toPlane = planes[planeIds[otherConnection.toTile] - 1];
-				//don't attempt to follow non-direct connections
-				if (otherConnection.steps > 1)
-					//because all the direct connections come first, we can stop looking for connections from this plane
-					break;
-				//don't connect to this plane or a plane we're already connected to by planes
-				//even if the new connection is a rail connection, all new connections take equal or more steps than previous
-				//	connections
-				if (toPlane == fromPlane || PlaneConnection::isConnectedByPlanes(planeConnections, toPlane))
-					continue;
-				//plane-plane connection; track it, and add it if it's hasAction
-				if (otherConnection.rail == nullptr) {
-					planeConnections.push_back(PlaneConnection(otherConnection.toTile, nullptr, -1, steps, hintPlane));
-					if (toPlane->getHasAction())
-						fromPlane->addPlaneConnection(toPlane, steps, hintPlane);
-				//rail connection, add it without tracking it because we can't have extended connections through rails
-				} else if (otherConnection.levelRailByteMaskDataIndex >= 0)
-					fromPlane->addRailConnection(
-						toPlane,
-						fromPlane->getOwningLevel()->getRailByteMaskData(otherConnection.levelRailByteMaskDataIndex),
-						steps,
-						otherConnection.rail,
-						hintPlane);
-				//reverse rail connection, add it without tracking it because we can't have extended connections through rails
-				else
-					fromPlane->addReverseRailConnection(otherPlane, toPlane, steps, otherConnection.rail, hintPlane);
-			}
-		}
-	}
+	for (Level* level : levels)
+		level->extendConnections();
 
 	for (Level* level : levels)
 		level->logStats();
@@ -564,7 +492,7 @@ LevelTypes::Plane* MapState::buildPlane(
 			//we have a neighboring tile that we can climb or fall to, but if it belongs to a plane on a previous level, drop it
 			if (planeIds[neighbor] != 0 && planes[planeIds[neighbor] - 1]->getOwningLevel() != activeLevel)
 				continue;
-			planeConnections.push_back(PlaneConnection(neighbor, nullptr, -1, 1, nullptr));
+			planeConnections.push_back(PlaneConnection(neighbor, nullptr, -1));
 			tileChecks.push_back(neighbor);
 		}
 
@@ -596,7 +524,7 @@ void MapState::addRailPlaneConnection(
 	deque<int>& tileChecks)
 {
 	if (planeIds[toTile] == 0) {
-		planeConnections.push_back(PlaneConnection(toTile, rail, activeLevel->trackNextRail(railId, rail), 1, nullptr));
+		planeConnections.push_back(PlaneConnection(toTile, rail, activeLevel->trackNextRail(railId, rail)));
 		Rail::Segment* toAdjacentSegment = rail->getSegment(adjacentRailSegmentIndex);
 		int toAdjacentTile = toTile * 2 - toAdjacentSegment->y * mapWidth - toAdjacentSegment->x;
 		if (tiles[toAdjacentTile] == tilePuzzleEnd)
@@ -605,7 +533,7 @@ void MapState::addRailPlaneConnection(
 			tileChecks.push_back(toTile);
 	//only add reverse rail connections to planes in the same level
 	} else if (planes[planeIds[toTile] - 1]->getOwningLevel() == activeLevel)
-		planeConnections.push_back(PlaneConnection(toTile, rail, -1, 1, nullptr));
+		planeConnections.push_back(PlaneConnection(toTile, rail, -1));
 }
 void MapState::deleteMap() {
 	delete[] tiles;

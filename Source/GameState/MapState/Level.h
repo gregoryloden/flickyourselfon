@@ -77,17 +77,21 @@ namespace LevelTypes {
 		//add a switch
 		//returns the index of the switch in this plane
 		int addConnectionSwitch(Switch* switch0);
-		//add a plane-plane connection to another plane, whether directly connected or connected through other planes, if we
-		//	don't already have one
-		void addPlaneConnection(Plane* toPlane, int steps, Plane* hintPlane);
-		//add a rail connection to another plane, whether directly connected or connected through other planes
-		void addRailConnection(Plane* toPlane, RailByteMaskData* railByteMaskData, int steps, Rail* rail, Plane* hintPlane);
-		//add a rail connection to another plane that is already connected to the given fromPlane
-		//for direct connections, fromPlane is this
-		//for extended connections, fromPlane is the last plane reachable from this plane by plane-plane connections
-		void addReverseRailConnection(Plane* fromPlane, Plane* toPlane, int steps, Rail* rail, Plane* hintPlane);
+		//add a direct plane-plane connection to another plane, if we don't already have a plane-plane connection
+		void addPlaneConnection(Plane* toPlane);
+	private:
+		//check if this plane has any direct or extended plane-plane connection to the given plane
+		bool isConnectedByPlanes(Plane* toPlane);
+	public:
+		//add a direct rail connection to another plane
+		void addRailConnection(Plane* toPlane, RailByteMaskData* railByteMaskData, Rail* rail);
+		//add a direct rail connection to another plane that is already connected to this plane
+		void addReverseRailConnection(Plane* toPlane, Rail* rail);
 		//add the data of a rail connection to the switch for the given index
 		void addRailConnectionToSwitch(RailByteMaskData* railByteMaskData, int connectionSwitchesIndex);
+		//copy and add plane-plane and rail connections from all planes that are reachable through plane-plane connections from
+		//	this plane
+		void extendConnections();
 		//start from the first plane, go through all connections and planes, find planes and rails that are required to get to
 		//	the end, see which of them have single-use switches, and mark those switch connections as milestones
 		//then recursively repeat the process, instead ending at the planes of those milestone switches
@@ -96,6 +100,8 @@ namespace LevelTypes {
 		//find milestones that enable access to this plane, and record their planes in outDestinationPlanes
 		void findMilestonesToThisPlane(vector<Plane*>& levelPlanes, vector<Plane*>& outDestinationPlanes);
 	public:
+		//remove plane-plane connections to planes that aren't hasAction
+		void removeNonActionPlaneConnections();
 		//follow all possible paths to other planes, and return a hint if any of those other planes are the victory plane
 		Hint* pursueSolutionToPlanes(HintState::PotentialLevelState* currentState, int basePotentialLevelStateSteps);
 		//kick each switch in this plane, and then pursue solutions from those states
@@ -238,6 +244,8 @@ public:
 	//create a byte mask for a new rail
 	//returns the index into the internal byte mask vector for use in getRailByteMaskData()
 	int trackNextRail(short railId, Rail* rail);
+	//add extended connections to the planes of this level, and remove plane-plane connections to planes without switches
+	void extendConnections();
 	//setup helper objects used by all levels in hint searching
 	static void setupHintSearchHelpers(vector<Level*>& allLevels);
 	//delete helpers used in hint searching
