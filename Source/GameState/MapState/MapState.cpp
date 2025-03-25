@@ -391,11 +391,25 @@ void MapState::buildLevels() {
 	//add direct connections to planes, if they're rail connections or connections to hasAction planes
 	for (int planeI = 0; planeI < (int)planes.size(); planeI++) {
 		LevelTypes::Plane* fromPlane = planes[planeI];
-		for (PlaneConnection& planeConnection : allPlaneConnections[planeI]) {
+		vector<PlaneConnection>& fromPlaneConnections = allPlaneConnections[planeI];
+		for (int fromPlaneConnectionI = 0; fromPlaneConnectionI < (int)fromPlaneConnections.size(); fromPlaneConnectionI++) {
+			PlaneConnection& planeConnection = fromPlaneConnections[fromPlaneConnectionI];
 			LevelTypes::Plane* toPlane = planes[planeIds[planeConnection.toTile] - 1];
 			//plane-plane connection; add it if it's hasAction
 			if (planeConnection.rail == nullptr) {
-				if (toPlane->getHasAction())
+				//prune this plane connection if there is already an earlier one to the same plane
+				bool alreadySeen = false;
+				for (int checkI = 0; checkI < fromPlaneConnectionI; checkI++) {
+					PlaneConnection& check = fromPlaneConnections[checkI];
+					if (check.rail == nullptr && planes[planeIds[check.toTile] - 1] == toPlane) {
+						alreadySeen = true;
+						break;
+					}
+				}
+				if (alreadySeen) {
+					fromPlaneConnections.erase(fromPlaneConnections.begin() + fromPlaneConnectionI);
+					fromPlaneConnectionI--;
+				} else if (toPlane->getHasAction())
 					fromPlane->addPlaneConnection(toPlane, 1, toPlane);
 			//we have a new rail - add a connection to it and add the data to all applicable switches
 			} else if (planeConnection.levelRailByteMaskDataIndex >= 0) {
