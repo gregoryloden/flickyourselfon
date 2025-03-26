@@ -639,7 +639,8 @@ int Level::trackNextRail(short railId, Rail* rail) {
 	allRailByteMaskData.push_back(RailByteMaskData(railId, railByteIndex, railBitShift, rail));
 	return (int)allRailByteMaskData.size() - 1;
 }
-void Level::extendConnections() {
+void Level::findMilestonesAndExtendConnections() {
+	Plane::findMilestones(planes);
 	for (Plane* plane : planes)
 		plane->extendConnections();
 	for (Plane* plane : planes)
@@ -652,7 +653,6 @@ void Level::setupHintSearchHelpers(vector<Level*>& allLevels) {
 			potentialLevelStatesByBucketByPlane.push_back(PotentialLevelStatesByBucket());
 		HintState::PotentialLevelState::maxRailByteMaskCount =
 			MathUtils::max(HintState::PotentialLevelState::maxRailByteMaskCount, level->getRailByteMaskCount());
-		Plane::findMilestones(level->planes);
 	}
 	nextPotentialLevelStatesByStepsByMilestone.push_back(vector<deque<HintState::PotentialLevelState*>*>());
 	//just once, fix the draft state byte list

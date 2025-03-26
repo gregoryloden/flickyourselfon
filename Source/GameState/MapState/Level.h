@@ -244,8 +244,9 @@ public:
 	//create a byte mask for a new rail
 	//returns the index into the internal byte mask vector for use in getRailByteMaskData()
 	int trackNextRail(short railId, Rail* rail);
-	//add extended connections to the planes of this level, and remove plane-plane connections to planes without switches
-	void extendConnections();
+	//find planes with milestone switches, add extended connections to the planes of this level, and remove plane-plane
+	//	connections to planes without switches
+	void findMilestonesAndExtendConnections();
 	//setup helper objects used by all levels in hint searching
 	static void setupHintSearchHelpers(vector<Level*>& allLevels);
 	//delete helpers used in hint searching
