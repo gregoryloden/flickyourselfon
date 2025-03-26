@@ -118,7 +118,7 @@ namespace LevelTypes {
 		//render boxes over every tile in this plane
 		void renderHint(int screenLeftWorldX, int screenTopWorldY, float alpha);
 		//track the switches in this plane
-		void countSwitches(int outSwitchCounts[4], int* outSingleUseSwitches);
+		void countSwitches(int outSwitchCounts[4], int* outSingleUseSwitches, int* outMilestoneSwitches);
 		#ifdef LOG_FOUND_HINT_STEPS
 			//log all the steps of a hint state
 			void logSteps(HintState::PotentialLevelState* hintState);

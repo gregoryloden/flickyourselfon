@@ -495,11 +495,13 @@ void LevelTypes::Plane::renderHint(int screenLeftWorldX, int screenTopWorldY, fl
 	}
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 }
-void LevelTypes::Plane::countSwitches(int outSwitchCounts[4], int* outSingleUseSwitches) {
+void LevelTypes::Plane::countSwitches(int outSwitchCounts[4], int* outSingleUseSwitches, int* outMilestoneSwitches) {
 	for (ConnectionSwitch& connectionSwitch : connectionSwitches) {
 		outSwitchCounts[connectionSwitch.hint.data.switch0->getColor()]++;
 		if (connectionSwitch.isSingleUse)
 			(*outSingleUseSwitches)++;
+		if (connectionSwitch.isMilestone)
+			(*outMilestoneSwitches)++;
 	}
 }
 #ifdef LOG_FOUND_HINT_STEPS
@@ -986,8 +988,9 @@ bool Level::popMilestone() {
 void Level::logStats() {
 	int switchCounts[4] = {};
 	int singleUseSwitches = 0;
+	int milestoneSwitches = 0;
 	for (Plane* plane : planes)
-		plane->countSwitches(switchCounts, &singleUseSwitches);
+		plane->countSwitches(switchCounts, &singleUseSwitches, &milestoneSwitches);
 	int totalSwitches = 0;
 	for (int switchCount : switchCounts)
 		totalSwitches += switchCount;
@@ -999,6 +1002,6 @@ void Level::logStats() {
 		<< totalSwitches << " switches (";
 	for (int i = 0; i < 4; i++)
 		message << switchCounts[i] << (i == 3 ? ", " : " ");
-	message << singleUseSwitches << " single-use)";
+	message << singleUseSwitches << " single-use, " << milestoneSwitches << " milestone)";
 	Logger::debugLogger.logString(message.str());
 }
