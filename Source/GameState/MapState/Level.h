@@ -89,19 +89,20 @@ namespace LevelTypes {
 		void addReverseRailConnection(Plane* toPlane, Rail* rail);
 		//add the data of a rail connection to the switch for the given index
 		void addRailConnectionToSwitch(RailByteMaskData* railByteMaskData, int connectionSwitchesIndex);
-		//copy and add plane-plane and rail connections from all planes that are reachable through plane-plane connections from
-		//	this plane
-		void extendConnections();
 		//start from the first plane, go through all connections and planes, find planes and rails that are required to get to
 		//	the end, see which of them have single-use switches, and mark those switch connections as milestones
 		//then recursively repeat the process, instead ending at the planes of those milestone switches
+		//must be called before extending connections or removing non-hasAction plane connections
 		static void findMilestones(vector<Plane*>& levelPlanes);
 	private:
 		//find milestones that enable access to this plane, and record their planes in outDestinationPlanes
 		void findMilestonesToThisPlane(vector<Plane*>& levelPlanes, vector<Plane*>& outDestinationPlanes);
 	public:
+		//copy and add plane-plane and rail connections from all planes that are reachable through plane-plane connections from
+		//	this plane
+		void extendConnections();
 		//remove plane-plane connections to planes that aren't hasAction
-		void removeNonActionPlaneConnections();
+		void removeNonHasActionPlaneConnections();
 		//follow all possible paths to other planes, and return a hint if any of those other planes are the victory plane
 		Hint* pursueSolutionToPlanes(HintState::PotentialLevelState* currentState, int basePotentialLevelStateSteps);
 		//kick each switch in this plane, and then pursue solutions from those states

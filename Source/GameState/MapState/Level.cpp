@@ -127,48 +127,6 @@ void LevelTypes::Plane::addRailConnectionToSwitch(RailByteMaskData* railByteMask
 	if (rail->getGroups().size() > 1 || tileOffset != 0)
 		connectionSwitch.isSingleUse = false;
 }
-void LevelTypes::Plane::extendConnections() {
-	//look at the (growing) list of planes reachable from this plane (directly or indirectly), and see if there are any other
-	//	planes we can reach from them
-	for (int connectionI = 0; connectionI < (int)connections.size(); connectionI++) {
-		Connection& connection = connections[connectionI];
-		//don't try to extend connections through rail connections
-		if (connection.railByteIndex != Level::absentRailByteIndex)
-			continue;
-		LevelTypes::Plane* otherPlane = connection.toPlane;
-		//since all connections at this point are plane-plane connections, we know the hint type is Plane, and points to the
-		//	first plane that approaches the to-plane
-		LevelTypes::Plane* hintPlane = connection.hint.data.plane;
-		int steps = connection.steps + 1;
-		//look through all the planes this other plane can reach (directly), and add connections to them if we don't already
-		//	have them
-		for (Connection& otherConnection : otherPlane->connections) {
-			LevelTypes::Plane* toPlane = otherConnection.toPlane;
-			//don't attempt to follow non-direct connections
-			if (otherConnection.steps > 1)
-				//because all the direct connections come first, we can stop looking for connections from this plane
-				break;
-			//don't connect to this plane or a plane we're already connected to by planes
-			//even if the new connection is a rail connection, all new connections take equal or more steps than previous
-			//	connections
-			if (toPlane == this || isConnectedByPlanes(toPlane))
-				continue;
-			//plane-plane connection
-			if (otherConnection.railByteIndex == Level::absentRailByteIndex)
-				connections.push_back(Connection(toPlane, Level::absentRailByteIndex, 0, steps, nullptr, hintPlane));
-			//rail connection
-			else
-				connections.push_back(
-					Connection(
-						toPlane,
-						otherConnection.railByteIndex,
-						otherConnection.railTileOffsetByteMask,
-						steps,
-						nullptr,
-						hintPlane));
-		}
-	}
-}
 void LevelTypes::Plane::findMilestones(vector<Plane*>& levelPlanes) {
 	Plane* victoryPlane = levelPlanes[0]->owningLevel->getVictoryPlane();
 	if (victoryPlane == nullptr)
@@ -288,7 +246,49 @@ void LevelTypes::Plane::findMilestonesToThisPlane(vector<Plane*>& levelPlanes, v
 	delete[] seenPlanes;
 	delete[] inboundConnections;
 }
-void LevelTypes::Plane::removeNonActionPlaneConnections() {
+void LevelTypes::Plane::extendConnections() {
+	//look at the (growing) list of planes reachable from this plane (directly or indirectly), and see if there are any other
+	//	planes we can reach from them
+	for (int connectionI = 0; connectionI < (int)connections.size(); connectionI++) {
+		Connection& connection = connections[connectionI];
+		//don't try to extend connections through rail connections
+		if (connection.railByteIndex != Level::absentRailByteIndex)
+			continue;
+		LevelTypes::Plane* otherPlane = connection.toPlane;
+		//since all connections at this point are plane-plane connections, we know the hint type is Plane, and points to the
+		//	first plane that approaches the to-plane
+		LevelTypes::Plane* hintPlane = connection.hint.data.plane;
+		int steps = connection.steps + 1;
+		//look through all the planes this other plane can reach (directly), and add connections to them if we don't already
+		//	have them
+		for (Connection& otherConnection : otherPlane->connections) {
+			LevelTypes::Plane* toPlane = otherConnection.toPlane;
+			//don't attempt to follow non-direct connections
+			if (otherConnection.steps > 1)
+				//because all the direct connections come first, we can stop looking for connections from this plane
+				break;
+			//don't connect to this plane or a plane we're already connected to by planes
+			//even if the new connection is a rail connection, all new connections take equal or more steps than previous
+			//	connections
+			if (toPlane == this || isConnectedByPlanes(toPlane))
+				continue;
+			//plane-plane connection
+			if (otherConnection.railByteIndex == Level::absentRailByteIndex)
+				connections.push_back(Connection(toPlane, Level::absentRailByteIndex, 0, steps, nullptr, hintPlane));
+			//rail connection
+			else
+				connections.push_back(
+					Connection(
+						toPlane,
+						otherConnection.railByteIndex,
+						otherConnection.railTileOffsetByteMask,
+						steps,
+						nullptr,
+						hintPlane));
+		}
+	}
+}
+void LevelTypes::Plane::removeNonHasActionPlaneConnections() {
 	for (auto iter = connections.end(); iter != connections.begin(); ) {
 		Connection& connection = *(--iter);
 		if (connection.railByteIndex == Level::absentRailByteIndex && !connection.toPlane->hasAction)
@@ -646,7 +646,7 @@ void Level::findMilestonesAndExtendConnections() {
 	for (Plane* plane : planes)
 		plane->extendConnections();
 	for (Plane* plane : planes)
-		plane->removeNonActionPlaneConnections();
+		plane->removeNonHasActionPlaneConnections();
 }
 void Level::setupHintSearchHelpers(vector<Level*>& allLevels) {
 	for (Level* level : allLevels) {
