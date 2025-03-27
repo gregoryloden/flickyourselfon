@@ -98,13 +98,7 @@ void LevelTypes::Plane::addRailConnection(Plane* toPlane, RailByteMaskData* rail
 	if (toPlane->owningLevel != owningLevel)
 		toPlane = owningLevel->getVictoryPlane();
 	connections.push_back(
-		Connection(
-			toPlane,
-			railByteMaskData->railByteIndex,
-			Level::baseRailTileOffsetByteMask << railByteMaskData->railBitShift,
-			1,
-			rail,
-			nullptr));
+		Connection(toPlane, railByteMaskData->railByteIndex, railByteMaskData->getRailTileOffsetByteMask(), 1, rail, nullptr));
 }
 void LevelTypes::Plane::addReverseRailConnection(Plane* toPlane, Rail* rail) {
 	//add a rail connection to a plane that is already connected to this plane by the given rail
@@ -217,8 +211,7 @@ void LevelTypes::Plane::findMilestonesToThisPlane(vector<Plane*>& levelPlanes, v
 				//it's a single-use switch, it's a milestone if it matches this rail
 				for (RailByteMaskData* railByteMaskData : connectionSwitch.affectedRailByteMaskData) {
 					if (railByteMaskData->railByteIndex == railConnection->railByteIndex
-						&& Level::baseRailTileOffsetByteMask << railByteMaskData->railBitShift
-							== railConnection->railTileOffsetByteMask)
+						&& railByteMaskData->getRailTileOffsetByteMask() == railConnection->railTileOffsetByteMask)
 					{
 						foundMilestoneSwitch = true;
 						connectionSwitch.isMilestone = true;
@@ -551,6 +544,9 @@ LevelTypes::RailByteMaskData::RailByteMaskData(short pRailId, int pRailByteIndex
 , inverseRailByteMask(~(Level::baseRailByteMask << pRailBitShift)) {
 }
 LevelTypes::RailByteMaskData::~RailByteMaskData() {}
+int LevelTypes::RailByteMaskData::getRailTileOffsetByteMask() {
+	return Level::baseRailTileOffsetByteMask << railBitShift;
+}
 using namespace LevelTypes;
 
 //////////////////////////////// Level::PotentialLevelStatesByBucket ////////////////////////////////

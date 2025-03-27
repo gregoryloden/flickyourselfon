@@ -139,6 +139,9 @@ namespace LevelTypes {
 
 		RailByteMaskData(short railId, int pRailByteIndex, int pRailBitShift, Rail* pRail);
 		virtual ~RailByteMaskData();
+
+		//get the rail tile offset byte mask corresponding to the bit shift
+		int getRailTileOffsetByteMask();
 	};
 }
 class Level onlyInDebug(: public ObjCounter) {
