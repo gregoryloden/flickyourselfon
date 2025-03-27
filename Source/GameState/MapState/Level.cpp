@@ -506,13 +506,34 @@ void LevelTypes::Plane::renderHint(int screenLeftWorldX, int screenTopWorldY, fl
 	}
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 }
-void LevelTypes::Plane::countSwitches(int outSwitchCounts[4], int* outSingleUseSwitches, int* outMilestoneSwitches) {
+void LevelTypes::Plane::countSwitchesAndConnections(
+	int outSwitchCounts[4],
+	int* outSingleUseSwitches,
+	int* outMilestoneSwitches,
+	int* outDirectPlaneConnections,
+	int* outDirectRailConnections,
+	int* outExtendedPlaneConnections,
+	int* outExtendedRailConnections)
+{
 	for (ConnectionSwitch& connectionSwitch : connectionSwitches) {
 		outSwitchCounts[connectionSwitch.hint.data.switch0->getColor()]++;
 		if (connectionSwitch.isSingleUse)
 			(*outSingleUseSwitches)++;
 		if (connectionSwitch.isMilestone)
 			(*outMilestoneSwitches)++;
+	}
+	for (Connection& connection : connections) {
+		if (connection.steps == 1) {
+			if (connection.railByteIndex == Level::absentRailByteIndex)
+				(*outDirectPlaneConnections)++;
+			else
+				(*outDirectRailConnections)++;
+		} else {
+			if (connection.railByteIndex == Level::absentRailByteIndex)
+				(*outExtendedPlaneConnections)++;
+			else
+				(*outExtendedRailConnections)++;
+		}
 	}
 }
 #ifdef LOG_FOUND_HINT_STEPS
@@ -1003,11 +1024,24 @@ void Level::logStats() {
 	int switchCounts[4] = {};
 	int singleUseSwitches = 0;
 	int milestoneSwitches = 0;
+	int directPlaneConnections = 0;
+	int directRailConnections = 0;
+	int extendedPlaneConnections = 0;
+	int extendedRailConnections = 0;
 	for (Plane* plane : planes)
-		plane->countSwitches(switchCounts, &singleUseSwitches, &milestoneSwitches);
+		plane->countSwitchesAndConnections(
+			switchCounts,
+			&singleUseSwitches,
+			&milestoneSwitches,
+			&directPlaneConnections,
+			&directRailConnections,
+			&extendedPlaneConnections,
+			&extendedRailConnections);
 	int totalSwitches = 0;
 	for (int switchCount : switchCounts)
 		totalSwitches += switchCount;
+	int directConnections = directPlaneConnections + directRailConnections;
+	int extendedConnections = extendedPlaneConnections + extendedRailConnections;
 	stringstream message;
 	message
 		<< "level " << levelN << " detected: "
@@ -1016,6 +1050,11 @@ void Level::logStats() {
 		<< totalSwitches << " switches (";
 	for (int i = 0; i < 4; i++)
 		message << switchCounts[i] << (i == 3 ? ", " : " ");
-	message << singleUseSwitches << " single-use, " << milestoneSwitches << " milestone)";
+	message
+		<< singleUseSwitches << " single-use, " << milestoneSwitches << " milestone), "
+		<< directConnections << " direct connections ("
+		<< directPlaneConnections << " plane, " << directRailConnections << " rail), "
+		<< extendedConnections << " extended connections ("
+		<< extendedPlaneConnections << " plane, " << extendedRailConnections << " rail)";
 	Logger::debugLogger.logString(message.str());
 }
