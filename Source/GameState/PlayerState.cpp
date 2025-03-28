@@ -1697,6 +1697,8 @@ void PlayerState::reset() {
 	ghostSpriteY.set(nullptr);
 	autoKickStartTicksTime = -1;
 	canImmediatelyAutoKick = false;
+	lastControlledX = 0;
+	lastControlledY = 0;
 	finishedMoveTutorial = false;
 	finishedKickTutorial = false;
 	undoRedoTutorialUnlocked = false;
