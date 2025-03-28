@@ -957,7 +957,7 @@ void MapState::renderBelowPlayer(EntityState* camera, float playerWorldGroundY, 
 	//	enabled
 	} else if (Config::heightBasedShading.state != Config::heightBasedShadingOffValue) {
 		glEnable(GL_BLEND);
-		constexpr int nearHeightsEnd = 4;
+		static constexpr int nearHeightsEnd = 4;
 		//even distribution from 0%-50% across floor height differences 0-7
 		float maxAlpha = 0.5f;
 		float nearHeightsMaxAlpha = maxAlpha * nearHeightsEnd / highestFloorHeight;

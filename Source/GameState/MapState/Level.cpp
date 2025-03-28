@@ -934,7 +934,7 @@ int Level::clearPotentialLevelStateHolders() {
 			if (line == "end")
 				break;
 			//find switch color and then group
-			static const char* switchColorPrefixes[MapState::colorCount] = { "red: ", "blue: ", "green: ", "white: " };
+			static constexpr char* switchColorPrefixes[MapState::colorCount] = { "red: ", "blue: ", "green: ", "white: " };
 			int color = 0;
 			for (; color < MapState::colorCount; color++) {
 				if (StringUtils::startsWith(line, switchColorPrefixes[color]))

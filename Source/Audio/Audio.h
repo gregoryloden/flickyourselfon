@@ -101,11 +101,11 @@ namespace AudioTypes {
 }
 class Audio {
 private:
-	static const int musicChannel = 0;
+	static constexpr int musicChannel = 0;
 public:
-	static const int stepSoundsCount = 6;
-	static const int rideRailSoundsCount = 6;
-	static const int rideRailOutSoundsCount = 3;
+	static constexpr int stepSoundsCount = 6;
+	static constexpr int rideRailSoundsCount = 6;
+	static constexpr int rideRailOutSoundsCount = 3;
 
 	static int sampleRate;
 	static Uint16 format;

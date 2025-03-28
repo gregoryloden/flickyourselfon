@@ -120,7 +120,7 @@ private:
 	};
 	class TileButton: public Button {
 	public:
-		static const int buttonSize = MapState::tileSize + 2;
+		static constexpr int buttonSize = MapState::tileSize + 2;
 
 	private:
 		char tile;
@@ -139,8 +139,8 @@ private:
 	};
 	class HeightButton: public Button {
 	public:
-		static const int buttonWidth = MapState::tileSize + 2;
-		static const int buttonHeight = 10;
+		static constexpr int buttonWidth = MapState::tileSize + 2;
+		static constexpr int buttonHeight = 10;
 
 	private:
 		char height;
@@ -159,8 +159,8 @@ private:
 	};
 	class PaintBoxRadiusButton: public Button {
 	public:
-		static const int maxRadius = 7;
-		static const int buttonSize = maxRadius + 2;
+		static constexpr int maxRadius = 7;
+		static constexpr int buttonSize = maxRadius + 2;
 	private:
 		static const RGB boxRGB;
 
@@ -179,7 +179,7 @@ private:
 	};
 	class EvenPaintBoxRadiusButton: public Button {
 	private:
-		static const int buttonSize = PaintBoxRadiusButton::maxRadius + 2;
+		static constexpr int buttonSize = PaintBoxRadiusButton::maxRadius + 2;
 		static const RGB boxRGB;
 		static const RGB lineRGB;
 
@@ -205,8 +205,8 @@ private:
 	};
 	class NoiseTileButton: public Button {
 	public:
-		static const int buttonWidth = MapState::tileSize + 2;
-		static const int buttonHeight = MapState::tileSize + 4;
+		static constexpr int buttonWidth = MapState::tileSize + 2;
+		static constexpr int buttonHeight = MapState::tileSize + 4;
 
 		char tile;
 		int count;
@@ -221,8 +221,8 @@ private:
 	};
 	class RaiseLowerTileButton: public Button {
 	private:
-		static const int buttonWidth = 13;
-		static const int buttonHeight = 10;
+		static constexpr int buttonWidth = 13;
+		static constexpr int buttonHeight = 10;
 
 		bool isRaiseTileButton;
 
@@ -242,8 +242,8 @@ private:
 	};
 	class ShuffleTileButton: public Button {
 	private:
-		static const int buttonWidth = 14;
-		static const int buttonHeight = 11;
+		static constexpr int buttonWidth = 14;
+		static constexpr int buttonHeight = 11;
 		static const RGB arrowRGB;
 
 	public:
@@ -260,8 +260,8 @@ private:
 	};
 	class ExtendPlatformButton: public Button {
 	private:
-		static const int buttonWidth = 15;
-		static const int buttonHeight = 13;
+		static constexpr int buttonWidth = 15;
+		static constexpr int buttonHeight = 13;
 		static const RGB arrowRGB;
 
 		bool collapse;
@@ -277,7 +277,7 @@ private:
 	};
 	class SwitchButton: public Button {
 	public:
-		static const int buttonSize = MapState::switchSize + 2;
+		static constexpr int buttonSize = MapState::switchSize + 2;
 
 	private:
 		char color;
@@ -300,7 +300,7 @@ private:
 	};
 	class RailButton: public Button {
 	public:
-		static const int buttonSize = MapState::tileSize + 2;
+		static constexpr int buttonSize = MapState::tileSize + 2;
 
 	private:
 		char color;
@@ -322,7 +322,7 @@ private:
 	};
 	class RailMovementMagnitudeButton: public Button {
 	public:
-		static const int buttonSize = MapState::tileSize + 2;
+		static constexpr int buttonSize = MapState::tileSize + 2;
 	private:
 		static const RGB arrowRGB;
 
@@ -342,7 +342,7 @@ private:
 	};
 	class RailToggleMovementDirectionButton: public Button {
 	public:
-		static const int buttonSize = MapState::tileSize + 2;
+		static constexpr int buttonSize = MapState::tileSize + 2;
 	private:
 		static const RGB arrowRGB;
 
@@ -360,7 +360,7 @@ private:
 	};
 	class RailTileOffsetButton: public Button {
 	public:
-		static const int buttonSize = MapState::tileSize + 2;
+		static constexpr int buttonSize = MapState::tileSize + 2;
 	private:
 		static const RGB arrowRGB;
 
@@ -380,8 +380,8 @@ private:
 	};
 	class ResetSwitchButton: public Button {
 	private:
-		static const int buttonWidth = MapState::tileSize + 2;
-		static const int buttonHeight = MapState::tileSize * 2 + 2;
+		static constexpr int buttonWidth = MapState::tileSize + 2;
+		static constexpr int buttonHeight = MapState::tileSize * 2 + 2;
 
 	public:
 		ResetSwitchButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY);
@@ -398,8 +398,8 @@ private:
 	};
 	class RailSwitchGroupButton: public Button {
 	public:
-		static const int groupSquareSize = 6;
-		static const int buttonSize = groupSquareSize + 2;
+		static constexpr int groupSquareSize = 6;
+		static constexpr int buttonSize = groupSquareSize + 2;
 
 	private:
 		char railSwitchGroup;
@@ -415,7 +415,7 @@ private:
 		virtual void onClick();
 	};
 
-	static const int noiseTileButtonMaxCount = 16;
+	static constexpr int noiseTileButtonMaxCount = 16;
 	static const RGB blackRGB;
 	static const RGB whiteRGB;
 	static const RGB backgroundRGB;

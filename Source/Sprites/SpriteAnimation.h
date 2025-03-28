@@ -23,7 +23,7 @@ public:
 		int getTicksDuration() { return ticksDuration; }
 	};
 
-	static const int absentSpriteIndex = -1;
+	static constexpr int absentSpriteIndex = -1;
 
 private:
 	SpriteSheet* sprite;

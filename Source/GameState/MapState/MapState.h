@@ -59,87 +59,88 @@ private:
 
 public:
 	//map state
-	static const int tileCount = 64; // tile = green / 4
-	static const int tileDivisor = 256 / tileCount;
-	static const int heightCount = 16; // height = blue / 16
-	static const int heightDivisor = 256 / heightCount;
-	static const int emptySpaceHeight = heightCount - 1;
-	static const int highestFloorHeight = heightCount - 2;
-	static const int tileSize = 6;
-	static const int halfTileSize = tileSize / 2;
-	static const int switchSize = 12;
-	static const int switchSideInset = 2;
-	static const int switchTopInset = 1;
-	static const int switchBottomInset = 2;
-	static const char invalidHeight = -1;
+	static constexpr int tileCount = 64; // tile = green / 4
+	static constexpr int tileDivisor = 256 / tileCount;
+	static constexpr int heightCount = 16; // height = blue / 16
+	static constexpr int heightDivisor = 256 / heightCount;
+	static constexpr int emptySpaceHeight = heightCount - 1;
+	static constexpr int highestFloorHeight = heightCount - 2;
+	static constexpr int tileSize = 6;
+	static constexpr int halfTileSize = tileSize / 2;
+	static constexpr int switchSize = 12;
+	static constexpr int switchSideInset = 2;
+	static constexpr int switchTopInset = 1;
+	static constexpr int switchBottomInset = 2;
+	static constexpr char invalidHeight = -1;
 	//animations
-	static const int firstLevelTileOffsetX = 40;
-	static const int firstLevelTileOffsetY = 113;
+	static constexpr int firstLevelTileOffsetX = 40;
+	static constexpr int firstLevelTileOffsetY = 113;
 private:
-	static const int radioTowerLeftXOffset = 324 + firstLevelTileOffsetX * tileSize;
-	static const int radioTowerTopYOffset = -106 + firstLevelTileOffsetY * tileSize;
-	static const int introAnimationBootTileX = 29 + firstLevelTileOffsetX;
-	static const int introAnimationBootTileY = 26 + firstLevelTileOffsetY;
-	static const int waveformStartEndBufferTicks = 500;
+	static constexpr int radioTowerLeftXOffset = 324 + firstLevelTileOffsetX * tileSize;
+	static constexpr int radioTowerTopYOffset = -106 + firstLevelTileOffsetY * tileSize;
+	static constexpr int introAnimationBootTileX = 29 + firstLevelTileOffsetX;
+	static constexpr int introAnimationBootTileY = 26 + firstLevelTileOffsetY;
+	static constexpr int waveformStartEndBufferTicks = 500;
 public:
-	static const int switchesFadeInDuration = 1000;
-	static const int switchFlipDuration = 600;
+	static constexpr int switchesFadeInDuration = 1000;
+	static constexpr int switchFlipDuration = 600;
 	static constexpr float introAnimationCameraCenterX = (float)(tileSize * introAnimationBootTileX) + 4.5f;
 	static constexpr float introAnimationCameraCenterY = (float)(tileSize * introAnimationBootTileY) - 4.5f;
 	//tile sections
-	static const char tileFloorFirst = 0;
-	static const char tileFloorLast = 8;
-	static const char tileWallFirst = 9;
-	static const char tileWallLast = 14;
-	static const char tilePlatformRightFloorFirst = 15;
-	static const char tilePlatformRightFloorLast = 18;
-	static const char tilePlatformLeftFloorFirst = 19;
-	static const char tilePlatformLeftFloorLast = 22;
-	static const char tilePlatformTopFloorFirst = 23;
-	static const char tilePlatformTopFloorLast = 26;
-	static const char tilePlatformTopLeftFloor = 27;
-	static const char tilePlatformTopRightFloor = 28;
-	static const char tileGroundLeftFloorFirst = 29;
-	static const char tileGroundLeftFloorLast = 32;
-	static const char tileGroundRightFloorFirst = 33;
-	static const char tileGroundRightFloorLast = 36;
-	static const char tileBoot = 37;
-	static const char tilePuzzleEnd = 38;
-	static const char tilePlatformTopGroundLeftFloor = 39;
-	static const char tilePlatformTopGroundRightFloor = 40;
+	static constexpr char tileFloorFirst = 0;
+	static constexpr char tileFloorLast = 8;
+	static constexpr char tileWallFirst = 9;
+	static constexpr char tileWallLast = 14;
+	static constexpr char tilePlatformRightFloorFirst = 15;
+	static constexpr char tilePlatformRightFloorLast = 18;
+	static constexpr char tilePlatformLeftFloorFirst = 19;
+	static constexpr char tilePlatformLeftFloorLast = 22;
+	static constexpr char tilePlatformTopFloorFirst = 23;
+	static constexpr char tilePlatformTopFloorLast = 26;
+	static constexpr char tilePlatformTopLeftFloor = 27;
+	static constexpr char tilePlatformTopRightFloor = 28;
+	static constexpr char tileGroundLeftFloorFirst = 29;
+	static constexpr char tileGroundLeftFloorLast = 32;
+	static constexpr char tileGroundRightFloorFirst = 33;
+	static constexpr char tileGroundRightFloorLast = 36;
+	static constexpr char tileBoot = 37;
+	static constexpr char tilePuzzleEnd = 38;
+	static constexpr char tilePlatformTopGroundLeftFloor = 39;
+	static constexpr char tilePlatformTopGroundRightFloor = 40;
 	//switch colors
-	static const char squareColor = 0;
-	static const char triangleColor = 1;
-	static const char sawColor = 2;
-	static const char sineColor = 3;
-	static const char colorCount = 4;
+	static constexpr char squareColor = 0;
+	static constexpr char triangleColor = 1;
+	static constexpr char sawColor = 2;
+	static constexpr char sineColor = 3;
+	static constexpr char colorCount = 4;
 	//rail/switch state serialization
 	static constexpr char* floorFileName = "floor.png";
-	static const short absentRailSwitchId = 0;
+	static constexpr short absentRailSwitchId = 0;
 private:
-	static const short railSwitchIdBitmask = 3 << 12;
-	static const short railIdValue = 1 << 12;
-	static const short switchIdValue = 2 << 12;
-	static const short resetSwitchIdValue = 3 << 12;
-	static const short railSwitchIndexBitmask = railIdValue - 1;
+	static constexpr short railSwitchIndexBits = 12;
+	static constexpr short railSwitchIdBitmask = 3 << railSwitchIndexBits;
+	static constexpr short railIdValue = 1 << railSwitchIndexBits;
+	static constexpr short switchIdValue = 2 << railSwitchIndexBits;
+	static constexpr short resetSwitchIdValue = 3 << railSwitchIndexBits;
+	static constexpr short railSwitchIndexBitmask = (1 << railSwitchIndexBits) - 1;
 public:
 	//see MapState::buildMap() in MapState.cpp for an explanation of the bitmask layout
-	static const int floorIsRailSwitchBitmask = 1;
-	static const int floorIsRailSwitchHeadBitmask = 2;
-	static const int floorIsRailSwitchAndHeadBitmask = floorIsRailSwitchHeadBitmask | floorIsRailSwitchBitmask;
-	static const int floorRailSwitchAndHeadValue = floorIsRailSwitchHeadBitmask | floorIsRailSwitchBitmask;
-	static const int floorRailSwitchTailValue = floorIsRailSwitchBitmask;
-	static const int floorIsSwitchBitmask = 4;
-	static const int floorIsResetSwitchBitmask = 0x20;
-	static const char floorRailSwitchColorPostShiftBitmask = 3;
-	static const char floorRailSwitchGroupPostShiftBitmask = 0x3F;
-	static const int floorRailSwitchColorDataShift = 3;
-	static const int floorRailSwitchGroupDataShift = 2;
-	static const int floorRailInitialTileOffsetDataShift = 5;
-	static const int floorRailByte2DataShift = 2;
-	static const int floorRailHeadValue = floorRailSwitchAndHeadValue;
-	static const int floorSwitchHeadValue = floorRailSwitchAndHeadValue | floorIsSwitchBitmask;
-	static const int floorResetSwitchHeadValue = floorSwitchHeadValue | floorIsResetSwitchBitmask;
+	static constexpr int floorIsRailSwitchBitmask = 1;
+	static constexpr int floorIsRailSwitchHeadBitmask = 2;
+	static constexpr int floorIsRailSwitchAndHeadBitmask = floorIsRailSwitchHeadBitmask | floorIsRailSwitchBitmask;
+	static constexpr int floorRailSwitchAndHeadValue = floorIsRailSwitchHeadBitmask | floorIsRailSwitchBitmask;
+	static constexpr int floorRailSwitchTailValue = floorIsRailSwitchBitmask;
+	static constexpr int floorIsSwitchBitmask = 4;
+	static constexpr int floorIsResetSwitchBitmask = 0x20;
+	static constexpr char floorRailSwitchColorPostShiftBitmask = 3;
+	static constexpr char floorRailSwitchGroupPostShiftBitmask = 0x3F;
+	static constexpr int floorRailSwitchColorDataShift = 3;
+	static constexpr int floorRailSwitchGroupDataShift = 2;
+	static constexpr int floorRailInitialTileOffsetDataShift = 5;
+	static constexpr int floorRailByte2DataShift = 2;
+	static constexpr int floorRailHeadValue = floorRailSwitchAndHeadValue;
+	static constexpr int floorSwitchHeadValue = floorRailSwitchAndHeadValue | floorIsSwitchBitmask;
+	static constexpr int floorResetSwitchHeadValue = floorSwitchHeadValue | floorIsResetSwitchBitmask;
 private:
 	//tutorials and serialization
 	static constexpr float tutorialLeftX = 10.0f;

@@ -157,7 +157,7 @@ public:
 	//Should only be allocated within an object, on the stack, or as a static object
 	class PotentialLevelStatesByBucket {
 	public:
-		static const int bucketSize = 257;
+		static constexpr int bucketSize = 257;
 
 		vector<HintState::PotentialLevelState*> buckets[bucketSize];
 
@@ -167,7 +167,7 @@ public:
 	//Should only be allocated within an object, on the stack, or as a static object
 	class CheckedPlaneData {
 	public:
-		static const int maxStepsLimit = MAXINT32;
+		static constexpr int maxStepsLimit = MAXINT32;
 
 		int steps;
 		int checkPlanesIndex;
@@ -177,14 +177,14 @@ public:
 		virtual ~CheckedPlaneData();
 	};
 
-	static const int absentRailByteIndex = -1;
-	static const int railTileOffsetByteMaskBitCount = 3;
-	static const int railMovementDirectionByteMaskBitCount = 1;
-	static const int railByteMaskBitCount = railTileOffsetByteMaskBitCount + railMovementDirectionByteMaskBitCount;
-	static const unsigned int baseRailTileOffsetByteMask = (1 << railTileOffsetByteMaskBitCount) - 1;
-	static const unsigned int baseRailMovementDirectionByteMask =
+	static constexpr int absentRailByteIndex = -1;
+	static constexpr int railTileOffsetByteMaskBitCount = 3;
+	static constexpr int railMovementDirectionByteMaskBitCount = 1;
+	static constexpr int railByteMaskBitCount = railTileOffsetByteMaskBitCount + railMovementDirectionByteMaskBitCount;
+	static constexpr unsigned int baseRailTileOffsetByteMask = (1 << railTileOffsetByteMaskBitCount) - 1;
+	static constexpr unsigned int baseRailMovementDirectionByteMask =
 		((1 << railMovementDirectionByteMaskBitCount) - 1) << railTileOffsetByteMaskBitCount;
-	static const unsigned int baseRailByteMask = (1 << railByteMaskBitCount) - 1;
+	static constexpr unsigned int baseRailByteMask = (1 << railByteMaskBitCount) - 1;
 
 private:
 	static bool hintSearchIsRunning;

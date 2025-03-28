@@ -126,7 +126,7 @@ private:
 	};
 	class KeyBindingOption: public PauseOption {
 	private:
-		static const int interKeyActionAndKeyBackgroundSpacing = 4;
+		static constexpr int interKeyActionAndKeyBackgroundSpacing = 4;
 		static constexpr char* keySelectingText = "[press any key]";
 
 		static float cachedKeySelectingTextWidth;

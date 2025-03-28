@@ -5,14 +5,14 @@ class SpriteSheet;
 
 class SpriteRegistry {
 public:
-	static const int playerWalkingAnimationTicksPerFrame = 250;
-	static const int playerSprintingAnimationTicksPerFrame = playerWalkingAnimationTicksPerFrame / 2;
-	static const int playerFastWalkingAnimationTicksPerFrame = playerWalkingAnimationTicksPerFrame / 4;
-	static const int playerKickingAnimationTicksPerFrame = 300;
-	static const int playerFastKickingAnimationTicksPerFrame = 250;
-	static const int radioWaveAnimationTicksPerFrame = 80;
-	static const int sparksTicksPerFrame = 50;
-	static const int sparksSlowTicksPerFrame = 100;
+	static constexpr int playerWalkingAnimationTicksPerFrame = 250;
+	static constexpr int playerSprintingAnimationTicksPerFrame = playerWalkingAnimationTicksPerFrame / 2;
+	static constexpr int playerFastWalkingAnimationTicksPerFrame = playerWalkingAnimationTicksPerFrame / 4;
+	static constexpr int playerKickingAnimationTicksPerFrame = 300;
+	static constexpr int playerFastKickingAnimationTicksPerFrame = 250;
+	static constexpr int radioWaveAnimationTicksPerFrame = 80;
+	static constexpr int sparksTicksPerFrame = 50;
+	static constexpr int sparksSlowTicksPerFrame = 100;
 	static constexpr char* tilesFileName = "tiles.png";
 
 	static SpriteSheet* player;

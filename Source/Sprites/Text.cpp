@@ -210,11 +210,10 @@ Text::Metrics Text::getMetrics(const char* text, float fontScale) {
 	return metrics;
 }
 Text::Metrics Text::getKeyBackgroundMetrics(Metrics* textMetrics) {
-	const int belowBaselineSpacing = 5;
-
 	int textOriginalWidth = (int)(textMetrics->charactersWidth / textMetrics->fontScale);
 	int targetKeyBackgroundWidth = textOriginalWidth / 4 * 2 + textOriginalWidth + 6;
 
+	static constexpr int belowBaselineSpacing = 5;
 	Metrics metrics;
 	metrics.fontScale = textMetrics->fontScale;
 	metrics.charactersWidth =

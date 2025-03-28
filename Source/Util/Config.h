@@ -49,8 +49,8 @@ namespace ConfigTypes {
 	//Should only be allocated within an object, on the stack, or as a static object
 	class VolumeSetting {
 	public:
-		static const int maxVolume = 32;
-		static const int defaultVolume = maxVolume / 2;
+		static constexpr int maxVolume = 32;
+		static constexpr int defaultVolume = maxVolume / 2;
 
 		int volume;
 		const string filePrefix;
@@ -71,7 +71,7 @@ namespace ConfigTypes {
 			virtual ~SelectableValue();
 		};
 
-		static const int customValueIndex = -1;
+		static constexpr int customValueIndex = -1;
 
 		const vector<SelectableValue> values;
 		const int defaultSelectedValueIndex;
@@ -96,12 +96,12 @@ namespace ConfigTypes {
 }
 class Config {
 public:
-	static const int gameScreenWidth = 221;
-	static const int gameScreenHeight = 165;
-	static const int editorMarginRight = 150;
-	static const int editorMarginBottom = 60;
-	static const int ticksPerSecond = 1000;
-	static const int updatesPerSecond = 48;
+	static constexpr int gameScreenWidth = 221;
+	static constexpr int gameScreenHeight = 165;
+	static constexpr int editorMarginRight = 150;
+	static constexpr int editorMarginBottom = 60;
+	static constexpr int ticksPerSecond = 1000;
+	static constexpr int updatesPerSecond = 48;
 	static constexpr float defaultPixelWidth = 4.0f;
 	static constexpr float defaultPixelHeight = 4.0f;
 	static constexpr float editorDefaultPixelWidth = 3.0f;
@@ -110,8 +110,8 @@ public:
 	static constexpr float backgroundColorGreen = 0.0f;
 	static constexpr float backgroundColorBlue = 3.0f / 16.0f;
 	static constexpr char* optionsFileName = "kyo.options";
-	static const int heightBasedShadingOffValue = 1;
-	static const int heightBasedShadingExtraValue = 2;
+	static constexpr int heightBasedShadingOffValue = 1;
+	static constexpr int heightBasedShadingExtraValue = 2;
 
 	static float currentPixelWidth;
 	static float currentPixelHeight;

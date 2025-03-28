@@ -1105,12 +1105,12 @@ void PlayerState::kickFall(float currentX, float currentY, float targetX, float 
 		//	-i^3+3ci^2 = j(2-3c-3i+6ci) = 2j-3jc-3ji+6jci
 		//	2j-3ji+i^3 = 3ci^2+3jc-6jci = c(3i^2+3j-6ji)
 		//	c = (2j-3ji+i^3)/(3i^2+3j-6ji)
-		constexpr float midpointX = 2.0f / 3.0f;
-		constexpr float midpointY = 2.0f;
-		constexpr float troughX =
+		static constexpr float midpointX = 2.0f / 3.0f;
+		static constexpr float midpointY = 2.0f;
+		static constexpr float troughX =
 			(2.0f * midpointY - 3.0f * midpointY * midpointX + midpointX * midpointX * midpointX)
 				/ (3.0f * midpointX * midpointX + 3.0f * midpointY - 6.0f * midpointY * midpointX);
-		constexpr float unitYMultiplier = 6.0f / (2.0f - 3.0f * troughX - 3.0f * midpointX + 6.0f * troughX * midpointX);
+		static constexpr float unitYMultiplier = 6.0f / (2.0f - 3.0f * troughX - 3.0f * midpointX + 6.0f * troughX * midpointX);
 		float yMultiplier = unitYMultiplier * yMoveDistance;
 
 		float yLinearValuePerDuration = yMultiplier * troughX * midpointX;

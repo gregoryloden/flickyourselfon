@@ -64,7 +64,7 @@ public:
 	};
 
 private:
-	static const int defaultInterCharacterSpacing = 1;
+	static constexpr int defaultInterCharacterSpacing = 1;
 
 	static SpriteSheet* font;
 	static SpriteSheet* keyBackground;

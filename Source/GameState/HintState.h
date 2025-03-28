@@ -79,10 +79,10 @@ public:
 	};
 
 private:
-	static const int flashOnOffTicks = 350;
-	static const int flashOnOffTotalTicks = flashOnOffTicks * 2;
-	static const int flashTimes = 10;
-	static const int totalDisplayTicks = flashOnOffTotalTicks * flashTimes;
+	static constexpr int flashOnOffTicks = 350;
+	static constexpr int flashOnOffTotalTicks = flashOnOffTicks * 2;
+	static constexpr int flashTimes = 10;
+	static constexpr int totalDisplayTicks = flashOnOffTotalTicks * flashTimes;
 
 	Hint* hint;
 	int animationEndTicksTime;
