@@ -107,7 +107,7 @@ void ResetSwitch::renderGroups(int screenLeftWorldX, int screenTopWorldY) {
 		segment.renderGroup(screenLeftWorldX, screenTopWorldY);
 }
 bool ResetSwitch::editorRemoveEndSegment(int x, int y, char color, char group) {
-	vector<Segment>* allSegments[3] { &leftSegments, &bottomSegments, &rightSegments };
+	vector<Segment>* allSegments[] { &leftSegments, &bottomSegments, &rightSegments };
 	for (vector<Segment>* segments : allSegments) {
 		if (segments->empty())
 			continue;
@@ -122,7 +122,7 @@ bool ResetSwitch::editorRemoveEndSegment(int x, int y, char color, char group) {
 void ResetSwitch::editorRemoveSwitchSegment(char color, char group) {
 	if (group == 0)
 		return;
-	vector<Segment>* allSegments[3] { &leftSegments, &bottomSegments, &rightSegments };
+	vector<Segment>* allSegments[] { &leftSegments, &bottomSegments, &rightSegments };
 	for (vector<Segment>* segments : allSegments) {
 		if (segments->empty())
 			continue;
@@ -150,7 +150,7 @@ void ResetSwitch::editorRemoveSwitchSegment(char color, char group) {
 }
 bool ResetSwitch::editorAddSegment(int x, int y, char color, char group) {
 	//make sure this color/group combination doesn't already exist, except for group 0
-	vector<Segment>* allSegments[3] { &leftSegments, &bottomSegments, &rightSegments };
+	vector<Segment>* allSegments[] { &leftSegments, &bottomSegments, &rightSegments };
 	for (vector<Segment>* segments : allSegments) {
 		for (Segment& segment : *segments) {
 			if (segment.color == color && segment.group == group && group != 0)
@@ -207,7 +207,7 @@ bool ResetSwitch::editorAddSegment(int x, int y, char color, char group) {
 	return true;
 }
 void ResetSwitch::editorRewriteGroup(char color, char oldGroup, char group) {
-	vector<Segment>* allSegments[3] { &leftSegments, &bottomSegments, &rightSegments };
+	vector<Segment>* allSegments[] { &leftSegments, &bottomSegments, &rightSegments };
 	for (vector<Segment>* segments : allSegments) {
 		for (Segment& segment : *segments) {
 			if (segment.color == color && segment.group == oldGroup)
@@ -218,7 +218,7 @@ void ResetSwitch::editorRewriteGroup(char color, char oldGroup, char group) {
 char ResetSwitch::editorGetFloorSaveData(int x, int y) {
 	if (x == centerX && y == bottomY)
 		return MapState::floorResetSwitchHeadValue;
-	vector<Segment>* allSegments[3] { &leftSegments, &bottomSegments, &rightSegments };
+	vector<Segment>* allSegments[] { &leftSegments, &bottomSegments, &rightSegments };
 	for (vector<Segment>* segments : allSegments) {
 		char floorSaveData = editorGetSegmentFloorSaveData(x, y, *segments);
 		if (floorSaveData != 0)

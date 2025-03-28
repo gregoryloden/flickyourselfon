@@ -270,7 +270,7 @@ bool Rail::triggerMovement(char movementDirection, char* inOutTileOffset) {
 		//higher movement magnitudes will move more than one position at a time
 		case MapState::sineColor: {
 			//pick the next offset for the rail, based on knowing [movement magnitude][movement direction][tile offset]
-			static constexpr char sineWaveNextOffset[3][3][5] = {
+			static constexpr char sineWaveNextOffset[][3][5] = {
 				//movement magnitude index is (movement magnitude - 1)
 				//movement direction index is (movement direction + 1)
 				//tile offset index is (tile offset)
