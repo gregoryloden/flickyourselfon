@@ -232,8 +232,8 @@ void renderLoop(CircularStateQueue<GameState>* gameStateQueue) {
 	//begin the render loop
 	int lastWindowWidth = 0;
 	int lastWindowHeight = 0;
-	const int minMsPerFrame = Config::ticksPerSecond / Config::refreshRate;
-	const int lagFrameMs = minMsPerFrame * 3 / 2;
+	int minMsPerFrame = Config::ticksPerSecond / Config::refreshRate;
+	int lagFrameMs = minMsPerFrame * 3 / 2;
 	while (true) {
 		int preRenderTicksTime = (int)SDL_GetTicks();
 

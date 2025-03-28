@@ -1325,7 +1325,7 @@ void PlayerState::addRailRideComponents(
 							-yMoveDistance / railToRailTicksDurationSquared,
 							0.0f,
 							0.0f)));
-			const int halfRailToRailTicksDuration = railToRailTicksDuration / 2;
+			int halfRailToRailTicksDuration = railToRailTicksDuration / 2;
 			components->insert(
 				components->end(),
 				{
