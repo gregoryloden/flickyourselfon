@@ -127,14 +127,14 @@ void AudioTypes::Music::load() {
 	static constexpr float frequencyAS4 = frequencyA4 * (float)MathUtils::powConst(2.0, 1.0 / 12.0);
 	static constexpr float frequencyB4 = frequencyA4 * (float)MathUtils::powConst(2.0, 2.0 / 12.0);
 	//these are ordered by note name, rather than absolute frequency; they loop around at C
-	static constexpr float noteFrequencies[] = {
-		frequencyA4, frequencyAS4, frequencyGS4,
-		frequencyB4, frequencyC4, frequencyAS4,
-		frequencyC4, frequencyCS4, frequencyB4,
-		frequencyD4, frequencyDS4, frequencyCS4,
-		frequencyE4, frequencyF4, frequencyDS4,
-		frequencyF4, frequencyFS4, frequencyE4,
-		frequencyG4, frequencyGS4, frequencyFS4,
+	static constexpr float noteFrequencies[][3] = {
+		{ frequencyA4, frequencyAS4, frequencyGS4 },
+		{ frequencyB4, frequencyC4, frequencyAS4 },
+		{ frequencyC4, frequencyCS4, frequencyB4 },
+		{ frequencyD4, frequencyDS4, frequencyCS4 },
+		{ frequencyE4, frequencyF4, frequencyDS4 },
+		{ frequencyF4, frequencyFS4, frequencyE4 },
+		{ frequencyG4, frequencyGS4, frequencyFS4 },
 	};
 	int bytesPerSample = SDL_AUDIO_BITSIZE(Audio::format) / 8 * Audio::channels;
 
@@ -177,15 +177,15 @@ void AudioTypes::Music::load() {
 			nextNotes++;
 			c = *nextNotes;
 			if (c == '#') {
-				frequency = noteFrequencies[noteIndex * 3 + 1];
+				frequency = noteFrequencies[noteIndex][1];
 				nextNotes++;
 				c = *nextNotes;
 			} else if (c == 'b') {
-				frequency = noteFrequencies[noteIndex * 3 + 2];
+				frequency = noteFrequencies[noteIndex][2];
 				nextNotes++;
 				c = *nextNotes;
 			} else
-				frequency = noteFrequencies[noteIndex * 3];
+				frequency = noteFrequencies[noteIndex][0];
 			if (c != '4')
 				frequency *= pow(2.0f, c - '4');
 			notes.push_back(Note(frequency, 1));
