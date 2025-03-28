@@ -269,6 +269,18 @@ bool Rail::triggerMovement(char movementDirection, char* inOutTileOffset) {
 		//sine wave rail: move the rail to the next of the 3 static sine wave positions for this movement direction
 		//higher movement magnitudes will move more than one position at a time
 		case MapState::sineColor: {
+			//pick the next offset for the rail, based on knowing [movement magnitude][movement direction][tile offset]
+			static constexpr char sineWaveNextOffset[3][3][5] = {
+				//movement magnitude index is (movement magnitude - 1)
+				//movement direction index is (movement direction + 1)
+				//tile offset index is (tile offset)
+				//certain tile offset inputs will be unused, but put values for them anyways to advance to the next valid tile
+				//	offset
+				//bit flipped tile offset values are negative, for those values the real target is ~N (after a bounce)
+				{ { ~1, 0, 1, 1, 3 }, { 0, 0, 0, 0, 0 }, { 1, 3, 3, 4, ~3 } },
+				{ { ~3, 0, 0, 0, 3 }, { 0, 0, 0, 0, 0 }, { 3, 3, 3, ~3, ~3 } },
+				{ { ~4, 0, 0, 0, 0 }, { 0, 0, 0, 0, 0 }, { 4, 4, 4, 4, ~0 } },
+			};
 			char newTileOffset = sineWaveNextOffset[movementMagnitude - 1][movementDirection + 1][*inOutTileOffset];
 			//bit-flipped values need to be restored, and result in a bounce
 			if (newTileOffset < 0)
@@ -486,11 +498,11 @@ void RailState::updateWithPreviousRailState(RailState* prev, int ticksTime) {
 	//adjust speed/distance depending on the rail
 	switch (rail->getColor()) {
 		case MapState::squareColor:
-			tileOffsetDiff *= squareSpeedMultiplier;
+			tileOffsetDiff *= 2.0f;
 			break;
 		case MapState::sawColor:
 			if ((bouncesRemaining & 1) == 1)
-				tileOffsetDiff *= sawReverseSpeedMultiplier;
+				tileOffsetDiff *= 8.0f;
 			break;
 		case MapState::sineColor:
 			updateSineRailTileOffset(prev, ticksTime);

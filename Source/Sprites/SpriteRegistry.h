@@ -13,21 +13,7 @@ public:
 	static const int radioWaveAnimationTicksPerFrame = 80;
 	static const int sparksTicksPerFrame = 50;
 	static const int sparksSlowTicksPerFrame = 100;
-	static constexpr char* playerFileName = "player.png";
 	static constexpr char* tilesFileName = "tiles.png";
-	static constexpr char* tileBordersFileName = "tileborders.png";
-	static constexpr char* radioTowerFileName = "radiotower.png";
-	static constexpr char* railsFileName = "rails.png";
-	static constexpr char* switchesFileName = "switches.png";
-	static constexpr char* radioWavesFileName = "radiowaves.png";
-	static constexpr char* railWavesFileName = "railwaves.png";
-	static constexpr char* switchWavesFileName = "switchwaves.png";
-	static constexpr char* resetSwitchFileName = "resetswitch.png";
-	static constexpr char* kickIndicatorFileName = "kickindicator.png";
-	static constexpr char* sparksFileName = "sparks.png";
-	static constexpr char* borderArrowsFileName = "borderarrows.png";
-	static constexpr char* wavesActivatedFileName = "wavesactivated.png";
-	static constexpr char* saveFileName = "save.png";
 
 	static SpriteSheet* player;
 	static SpriteSheet* tiles;

@@ -57,9 +57,9 @@ SpriteSheet* Text::font = nullptr;
 SpriteSheet* Text::keyBackground = nullptr;
 vector<Text::GlyphRow*> Text::glyphRows;
 void Text::loadFont() {
-	SDL_Surface* fontSurface = FileUtils::loadImage(fontFileName);
+	SDL_Surface* fontSurface = FileUtils::loadImage("font.png");
 	font = newSpriteSheet(fontSurface, 1, 1, false);
-	keyBackground = newSpriteSheetWithImagePath(keyBackgroundFileName, 1, 1, false);
+	keyBackground = newSpriteSheetWithImagePath("keybackground.png", 1, 1, false);
 	int imageWidth = fontSurface->w;
 
 	int* pixels = static_cast<int*>(fontSurface->pixels);
@@ -198,6 +198,8 @@ Text::Metrics Text::getMetrics(const char* text, float fontScale) {
 	if (charactersWidth > 0)
 		charactersWidth -= defaultInterCharacterSpacing;
 
+	static constexpr int defaultTopPadding = 1;
+	static constexpr int defaultBottomPadding = 1;
 	Metrics metrics;
 	metrics.charactersWidth = (float)charactersWidth * fontScale;
 	metrics.aboveBaseline = (float)aboveBaseline * fontScale;

@@ -323,6 +323,8 @@ void PlayerState::updatePositionWithPreviousPlayerState(PlayerState* prev, const
 		xDirection = 0;
 		yDirection = 0;
 	}
+	static constexpr float diagonalSpeedPerTick = baseSpeedPerTick * (float)MathUtils::sqrtConst(0.5);
+	static constexpr float sprintModifier = 2.0f;
 	float speedPerTick = (xDirection & yDirection) != 0 ? diagonalSpeedPerTick : baseSpeedPerTick;
 	if (keyboardState == nullptr)
 		; //no adjustments to speedPerTick if we're not controlling the player
@@ -594,11 +596,13 @@ bool PlayerState::setRailKickAction(float xPosition, float yPosition) {
 bool PlayerState::setSwitchKickAction(float xPosition, float yPosition) {
 	short switchId = MapState::absentRailSwitchId;
 	if (spriteDirection == SpriteDirection::Up || spriteDirection == SpriteDirection::Down) {
+		//for down kicking, you have to be visually touching the switch
+		static constexpr float downSwitchKickingDistanceLimit = 0.5f;
 		int switchLeftMapX = (int)(xPosition + boundingBoxLeftOffset + MapState::switchSideInset) / MapState::tileSize;
 		int switchRightMapX = (int)(xPosition + boundingBoxRightOffset - MapState::switchSideInset) / MapState::tileSize;
 		int switchMapY = spriteDirection == SpriteDirection::Up
 			? (int)(yPosition + boundingBoxTopOffset + MapState::switchBottomInset - kickingDistanceLimit) / MapState::tileSize
-			: (int)(yPosition + boundingBoxBottomOffset - MapState::switchTopInset + downKickingDistanceLimit)
+			: (int)(yPosition + boundingBoxBottomOffset - MapState::switchTopInset + downSwitchKickingDistanceLimit)
 				/ MapState::tileSize;
 		for (int switchMapX = switchLeftMapX; switchMapX <= switchRightMapX; switchMapX++) {
 			if (MapState::tileHasSwitch(switchMapX, switchMapY)) {
@@ -867,6 +871,7 @@ void PlayerState::tryAutoKick(PlayerState* prev, int ticksTime) {
 			return;
 	}
 
+	static constexpr int autoKickTriggerDelay = 250;
 	autoKickStartTicksTime = ticksTime + autoKickTriggerDelay;
 	//we had a kick action before and it's the same climb/fall as we have now, copy its start time
 	if (prev->availableKickAction.get() != nullptr
@@ -1203,6 +1208,8 @@ void PlayerState::addRailRideComponents(
 		segmentIndexIncrement = -1;
 	}
 
+	static constexpr int baseRailToRailTicksDuration = 80;
+	static constexpr int railToRailFastTicksDuration = (int)(baseRailToRailTicksDuration / 2.5f);
 	int bootLiftDuration = rideRailSpeed == RideRailSpeed::Forward
 		? SpriteRegistry::playerKickingAnimationTicksPerFrame
 		: (int)(SpriteRegistry::playerKickingAnimationTicksPerFrame / 2.5f);
@@ -1491,6 +1498,8 @@ bool PlayerState::undoMove(float fromX, float fromY, char fromHeight, Hint* from
 		moveAnimation = SpriteRegistry::playerBootLiftAnimation;
 		z = fromHeight;
 	}
+	static constexpr int minUndoTicksDuration = 250;
+	static constexpr float undoSpeedPerTick = baseSpeedPerTick * 4;
 	float xDist = fromX - currentX;
 	float yDist = fromY - currentY;
 	int totalTicksDuration =
@@ -1607,7 +1616,7 @@ void PlayerState::renderKickAction(EntityState* camera, bool hasRailsToReset, in
 bool PlayerState::renderTutorials() {
 	if (!finishedMoveTutorial)
 		MapState::renderControlsTutorial(
-			moveTutorialText,
+			"Move: ",
 			{
 				Config::leftKeyBinding.value,
 				Config::upKeyBinding.value,
@@ -1615,16 +1624,16 @@ bool PlayerState::renderTutorials() {
 				Config::downKeyBinding.value,
 			});
 	else if (!finishedKickTutorial)
-		MapState::renderControlsTutorial(kickTutorialText, { Config::kickKeyBinding.value });
+		MapState::renderControlsTutorial("Kick: ", { Config::kickKeyBinding.value });
 	else if (!finishedUndoRedoTutorial && redoState.get() != nullptr)
-		MapState::renderControlsTutorial(redoTutorialText, { Config::redoKeyBinding.value });
+		MapState::renderControlsTutorial("Redo: ", { Config::redoKeyBinding.value });
 	else if (!finishedUndoRedoTutorial && undoState.get() != nullptr && undoRedoTutorialUnlocked)
-		MapState::renderControlsTutorial(undoRedoTutorialText, { Config::undoKeyBinding.value, Config::redoKeyBinding.value });
+		MapState::renderControlsTutorial("Undo/Redo: ", { Config::undoKeyBinding.value, Config::redoKeyBinding.value });
 	//not exactly a tutorial, but it goes where tutorials are rendered and replaces any other tutorial that would render
 	else if (hint->type == Hint::Type::UndoReset) {
 		glColor4f(1.0f, 1.0f, 1.0f, 0.75f);
-		float afterUndoX = MapState::renderControlsTutorial(undoTutorialText, { Config::undoKeyBinding.value });
-		Text::render(slashResetTutorialText, afterUndoX, MapState::tutorialBaselineY, 1.0f);
+		float afterUndoX = MapState::renderControlsTutorial("Undo: ", { Config::undoKeyBinding.value });
+		Text::render(" / Reset", afterUndoX, MapState::tutorialBaselineY, 1.0f);
 		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 	} else
 		return false;

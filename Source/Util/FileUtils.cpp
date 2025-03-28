@@ -16,9 +16,6 @@
 	}();
 #endif
 const string FileUtils::imagesFolder = "images/";
-#ifdef __APPLE__
-	const char* FileUtils::fileIoIntermediatePath = "/Library/Application Support/kickyourselfon";
-#endif
 SDL_Surface* FileUtils::loadImage(const char *imagePath) {
 	#ifdef WIN32
 		string fullPath = imagesFolder + imagePath;
@@ -67,6 +64,6 @@ void FileUtils::openFileForWrite(ofstream* file, const char* filePath, ios_base:
 #ifdef __APPLE__
 	string FileUtils::getExpandedFileIoPrefix() {
 		passwd* p = getpwuid(getuid());
-		return string(p->pw_dir) + fileIoIntermediatePath;
+		return string(p->pw_dir) + "/Library/Application Support/kickyourselfon";
 	}
 #endif

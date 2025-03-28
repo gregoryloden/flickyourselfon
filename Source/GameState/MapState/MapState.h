@@ -80,15 +80,7 @@ private:
 	static const int radioTowerTopYOffset = -106 + firstLevelTileOffsetY * tileSize;
 	static const int introAnimationBootTileX = 29 + firstLevelTileOffsetX;
 	static const int introAnimationBootTileY = 26 + firstLevelTileOffsetY;
-	static const int interRadioWavesAnimationTicks = 1500;
-	static constexpr float waveformAspectRatio = 2.5f;
-	static const int waveformHeight = 18;
-	static const int waveformWidth = (int)(waveformHeight * waveformAspectRatio);
-	static const int waveformBottomRadioWavesOffset = 4;
 	static const int waveformStartEndBufferTicks = 500;
-	static constexpr float waveformAnimationPeriods = 2.5f;
-	static const int waveformRailSpacing = 1;
-	static const int wavesActivatedEdgeSpacing = 10;
 public:
 	static const int switchesFadeInDuration = 1000;
 	static const int switchFlipDuration = 600;
@@ -139,12 +131,8 @@ public:
 	static const int floorRailSwitchTailValue = floorIsRailSwitchBitmask;
 	static const int floorIsSwitchBitmask = 4;
 	static const int floorIsResetSwitchBitmask = 0x20;
-	static const int floorIsSwitchAndResetSwitchBitmask = floorIsSwitchBitmask | floorIsResetSwitchBitmask;
 	static const char floorRailSwitchColorPostShiftBitmask = 3;
 	static const char floorRailSwitchGroupPostShiftBitmask = 0x3F;
-	static const char floorRailInitialTileOffsetPostShiftBitmask = 7;
-	static const char floorRailMovementDirectionPostShiftBitmask = 1;
-	static const char floorRailMovementMagnitudePostShiftBitmask = 7;
 	static const int floorRailSwitchColorDataShift = 3;
 	static const int floorRailSwitchGroupDataShift = 2;
 	static const int floorRailInitialTileOffsetDataShift = 5;
@@ -154,8 +142,6 @@ public:
 	static const int floorResetSwitchHeadValue = floorSwitchHeadValue | floorIsResetSwitchBitmask;
 private:
 	//tutorials and serialization
-	static constexpr char* showConnectionsTutorialText = "Show connections: ";
-	static constexpr char* mapCameraTutorialText = "Map camera: ";
 	static constexpr float tutorialLeftX = 10.0f;
 public:
 	static constexpr float tutorialBaselineY = 20.0f;

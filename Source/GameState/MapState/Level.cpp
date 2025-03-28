@@ -855,6 +855,11 @@ Hint* Level::performHintSearch(HintState::PotentialLevelState* baseLevelState, P
 			if (result != nullptr)
 				return result;
 		}
+		#ifdef DEBUG
+			static constexpr int maxHintSearchTicks = 30000;
+		#else
+			static constexpr int maxHintSearchTicks = 5000;
+		#endif
 		currentPotentialLevelStateSteps++;
 		if (!hintSearchIsRunning) {
 			Logger::debugLogger.logString("hint search canceled");

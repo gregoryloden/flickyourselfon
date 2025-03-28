@@ -236,27 +236,34 @@ void GameState::startRadioTowerAnimation(int ticksTime) {
 	float radioTowerAntennaX = MapState::antennaCenterWorldX();
 	float radioTowerAntennaY = MapState::antennaCenterWorldY();
 	EntityAnimation::SetVelocity* stopMoving = newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f));
-	float switchesAnimationCenterWorldX = squareSwitchesAnimationCenterWorldX;
-	float switchesAnimationCenterWorldY = squareSwitchesAnimationCenterWorldY;
+	float switchesAnimationCenterWorldX = 0;
+	float switchesAnimationCenterWorldY = 0;
 	char lastActivatedSwitchColor = mapState.get()->getLastActivatedSwitchColor();
 	switch (lastActivatedSwitchColor) {
+		case MapState::squareColor:
+			switchesAnimationCenterWorldX = MapState::firstLevelTileOffsetX * MapState::tileSize + 280;
+			switchesAnimationCenterWorldY = MapState::firstLevelTileOffsetY * MapState::tileSize + 80;
+			break;
 		case MapState::triangleColor:
-			switchesAnimationCenterWorldX = triangleSwitchesAnimationCenterWorldX;
-			switchesAnimationCenterWorldY = triangleSwitchesAnimationCenterWorldY;
+			switchesAnimationCenterWorldX = MapState::firstLevelTileOffsetX * MapState::tileSize + 180;
+			switchesAnimationCenterWorldY = MapState::firstLevelTileOffsetY * MapState::tileSize - 103;
 			break;
 		case MapState::sawColor:
-			switchesAnimationCenterWorldX = sawSwitchesAnimationCenterWorldX;
-			switchesAnimationCenterWorldY = sawSwitchesAnimationCenterWorldY;
+			switchesAnimationCenterWorldX = MapState::firstLevelTileOffsetX * MapState::tileSize + 780;
+			switchesAnimationCenterWorldY = MapState::firstLevelTileOffsetY * MapState::tileSize - 150;
 			break;
 		case MapState::sineColor:
-			switchesAnimationCenterWorldX = sineSwitchesAnimationCenterWorldX;
-			switchesAnimationCenterWorldY = sineSwitchesAnimationCenterWorldY;
+			switchesAnimationCenterWorldX = MapState::firstLevelTileOffsetX * MapState::tileSize + 524;
+			switchesAnimationCenterWorldY = MapState::firstLevelTileOffsetY * MapState::tileSize + 130;
 			break;
 		default:
 			break;
 	}
 
 	//build the animation until right before the radio waves animation
+	static constexpr int radioTowerInitialPauseAnimationTicks = 1500;
+	static constexpr int playerToRadioTowerAnimationTicks = 2000;
+	static constexpr int preRadioWavesAnimationTicks = 2000;
 	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> dynamicCameraAnchorAnimationComponents ({
 		newEntityAnimationSetPosition(playerX, playerY),
 		stopMoving,
@@ -273,6 +280,9 @@ void GameState::startRadioTowerAnimation(int ticksTime) {
 		EntityAnimation::getComponentTotalTicksDuration(dynamicCameraAnchorAnimationComponents), ticksTime);
 
 	//build the animation from after the radio waves animation until right before the switches animation
+	static constexpr int postRadioWavesAnimationTicks = 2000;
+	static constexpr int radioTowerToSwitchesAnimationTicks = 2000;
+	static constexpr int preSwitchesFadeInAnimationTicks = 1000;
 	dynamicCameraAnchorAnimationComponents.insert(
 		dynamicCameraAnchorAnimationComponents.end(),
 		{
@@ -292,6 +302,8 @@ void GameState::startRadioTowerAnimation(int ticksTime) {
 		EntityAnimation::getComponentTotalTicksDuration(dynamicCameraAnchorAnimationComponents), ticksTime);
 
 	//finish the animation by returning to the player
+	static constexpr int postSwitchesFadeInAnimationTicks = 1000;
+	static constexpr int switchesToPlayerAnimationTicks = 2000;
 	AudioTypes::Music* switchesFadeInSounds[] = {
 		Audio::switchesFadeInSoundSquare,
 		Audio::switchesFadeInSoundTriangle,
@@ -328,7 +340,7 @@ void GameState::startRadioTowerAnimation(int ticksTime) {
 	playerState.get()->beginEntityAnimation(&playerAnimationComponents, ticksTime);
 	playerState.get()->clearUndoRedoStates();
 
-	Audio::fadeOutAll(radioTowerMusicFadeOutMsDuration);
+	Audio::fadeOutAll(3000);
 }
 AudioTypes::Music* GameState::getMusic(int lastActivatedSwitchColor) {
 	AudioTypes::Music* musics[] = {
@@ -409,48 +421,28 @@ void GameState::renderTextDisplay(int gameTicksTime) {
 			nextTextDisplayType = TextDisplayType::BootExplanation;
 			break;
 		case TextDisplayType::BootExplanation:
-			textDisplayStrings = { bootExplanationMessage1, bootExplanationMessage2, " ", " ", " " };
-			textFadeInStartTicksTime = bootExplanationFadeInStartTicksTime;
-			textFadeInTicksDuration = bootExplanationFadeInTicksDuration;
-			textDisplayTicksDuration = bootExplanationDisplayTicksDuration;
-			textFadeOutTicksDuration = bootExplanationFadeOutTicksDuration;
+			textDisplayStrings = { "You are", "a boot.", " ", " ", " " };
+			textFadeInStartTicksTime = introAnimationStartTicksTime + 5900;
+			textFadeInTicksDuration = 500;
+			textDisplayTicksDuration = 1000;
+			textFadeOutTicksDuration = 500;
 			nextTextDisplayType = TextDisplayType::RadioTowerExplanation;
 			break;
 		case TextDisplayType::RadioTowerExplanation:
-			textDisplayStrings = {
-				radioTowerExplanationMessageLine1,
-				radioTowerExplanationMessageLine2,
-				radioTowerExplanationMessageLine3,
-				radioTowerExplanationMessageLine4,
-				" ",
-				" ",
-				" ",
-				" "
-			};
-			textFadeInStartTicksTime = radioTowerExplanationFadeInStartTicksTime;
-			textFadeInTicksDuration = radioTowerExplanationFadeInTicksDuration;
-			textDisplayTicksDuration = radioTowerExplanationDisplayTicksDuration;
-			textFadeOutTicksDuration = radioTowerExplanationFadeOutTicksDuration;
+			textDisplayStrings =
+				{ "Your local radio tower", "lost connection", "with its", "master transmitter relay.", " ", " ", " ", " " };
+			textFadeInStartTicksTime = introAnimationStartTicksTime + 11000;
+			textFadeInTicksDuration = 500;
+			textDisplayTicksDuration = 3500;
+			textFadeOutTicksDuration = 500;
 			nextTextDisplayType = TextDisplayType::GoalExplanation;
 			break;
 		case TextDisplayType::GoalExplanation:
-			textDisplayStrings = {
-				" ",
-				" ",
-				" ",
-				" ",
-				" ",
-				" ",
-				" ",
-				" ",
-				goalExplanationMessageLine1,
-				goalExplanationMessageLine2,
-				goalExplanationMessageLine3
-			};
-			textFadeInStartTicksTime = goalExplanationFadeInStartTicksTime;
-			textFadeInTicksDuration = goalExplanationFadeInTicksDuration;
-			textDisplayTicksDuration = goalExplanationDisplayTicksDuration;
-			textFadeOutTicksDuration = goalExplanationFadeOutTicksDuration;
+			textDisplayStrings = { " ", " ", " ", " ", " ", " ", " ", " ", "Can you", "guide this person", "to turn it on?" };
+			textFadeInStartTicksTime = introAnimationStartTicksTime + 18000;
+			textFadeInTicksDuration = 500;
+			textDisplayTicksDuration = 2500;
+			textFadeOutTicksDuration = 500;
 			nextTextDisplayType = TextDisplayType::None;
 			break;
 		case TextDisplayType::Outro:
@@ -487,6 +479,8 @@ void GameState::renderTextDisplay(int gameTicksTime) {
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 }
 void GameState::renderSaveIcon(int gameTicksTime) {
+	static constexpr int saveIconEdgeSpacing = 10;
+	static constexpr float saveIconMaxAlpha = 7.0f / 8.0f;
 	float baseAlpha = 1.0f - MathUtils::fsqr((float)(gameTicksTime - lastSaveTicksTime) / saveIconShowDuration);
 	glColor4f(1.0f, 1.0f, 1.0f, saveIconMaxAlpha * baseAlpha);
 	GLint drawLeftX = Config::gameScreenWidth - SpriteRegistry::save->getSpriteWidth() - saveIconEdgeSpacing;
@@ -570,7 +564,7 @@ void GameState::loadSaveFile() {
 #ifdef DEBUG
 	bool GameState::loadReplay() {
 		ifstream file;
-		FileUtils::openFileForRead(&file, replayFileName, FileUtils::FileReadLocation::ApplicationData);
+		FileUtils::openFileForRead(&file, "kyo_replay.log", FileUtils::FileReadLocation::ApplicationData);
 		string line;
 		bool beganGameplay = false;
 		int lastTimestamp = 0;

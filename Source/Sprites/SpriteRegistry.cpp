@@ -36,21 +36,21 @@ SpriteAnimation* SpriteRegistry::sparksAnimationB = nullptr;
 SpriteAnimation* SpriteRegistry::sparksSlowAnimationA = nullptr;
 SpriteAnimation* SpriteRegistry::sparksSlowAnimationB = nullptr;
 void SpriteRegistry::loadAll() {
-	player = newSpriteSheetWithImagePath(playerFileName, 10, 4, false);
+	player = newSpriteSheetWithImagePath("player.png", 10, 4, false);
 	loadTiles();
-	radioTower = newSpriteSheetWithImagePath(radioTowerFileName, 1, 1, false);
-	rails = newSpriteSheetWithImagePath(railsFileName, 22, 1, true);
-	switches = newSpriteSheetWithImagePath(switchesFileName, 9, 1, true);
-	radioWaves = newSpriteSheetWithImagePath(radioWavesFileName, 5, 1, false);
-	railWaves = newSpriteSheetWithImagePath(railWavesFileName, 4, 1, true);
+	radioTower = newSpriteSheetWithImagePath("radiotower.png", 1, 1, false);
+	rails = newSpriteSheetWithImagePath("rails.png", 22, 1, true);
+	switches = newSpriteSheetWithImagePath("switches.png", 9, 1, true);
+	radioWaves = newSpriteSheetWithImagePath("radiowaves.png", 5, 1, false);
+	railWaves = newSpriteSheetWithImagePath("railwaves.png", 4, 1, true);
 	railWaves->setBottomAnchorY();
-	switchWaves = newSpriteSheetWithImagePath(switchWavesFileName, 4, 1, true);
-	resetSwitch = newSpriteSheetWithImagePath(resetSwitchFileName, 2, 1, true);
-	kickIndicator = newSpriteSheetWithImagePath(kickIndicatorFileName, 13, 1, true);
-	sparks = newSpriteSheetWithImagePath(sparksFileName, 6, 4, true);
-	borderArrows = newSpriteSheetWithImagePath(borderArrowsFileName, 3, 3, false);
-	wavesActivated = newSpriteSheetWithImagePath(wavesActivatedFileName, 1, 4, false);
-	save = newSpriteSheetWithImagePath(saveFileName, 1, 1, false);
+	switchWaves = newSpriteSheetWithImagePath("switchwaves.png", 4, 1, true);
+	resetSwitch = newSpriteSheetWithImagePath("resetswitch.png", 2, 1, true);
+	kickIndicator = newSpriteSheetWithImagePath("kickindicator.png", 13, 1, true);
+	sparks = newSpriteSheetWithImagePath("sparks.png", 6, 4, true);
+	borderArrows = newSpriteSheetWithImagePath("borderarrows.png", 3, 3, false);
+	wavesActivated = newSpriteSheetWithImagePath("wavesactivated.png", 1, 4, false);
+	save = newSpriteSheetWithImagePath("save.png", 1, 1, false);
 	playerWalkingAnimation = newSpriteAnimation(
 		player,
 		{
@@ -180,7 +180,7 @@ void SpriteRegistry::loadAll() {
 }
 void SpriteRegistry::loadTiles() {
 	SDL_Surface* tilesSurface = FileUtils::loadImage(tilesFileName);
-	SDL_Surface* tileBordersSurface = FileUtils::loadImage(tileBordersFileName);
+	SDL_Surface* tileBordersSurface = FileUtils::loadImage("tileborders.png");
 	SDL_Surface* combinedSurface = SDL_CreateRGBSurface(
 		tilesSurface->flags,
 		tilesSurface->w - 1,

@@ -82,8 +82,6 @@ private:
 	};
 	class TextButton: public Button {
 	private:
-		static const int buttonMaxLeftRightPadding = 4;
-		static const int buttonTopBottomPadding = 2;
 		static constexpr float buttonFontScale = 1.0f;
 
 		string text;
@@ -111,9 +109,6 @@ private:
 		virtual void onClick();
 	};
 	class ExportMapButton: public TextButton {
-	private:
-		static constexpr char* mapFileName = "images/map.png";
-
 	public:
 		ExportMapButton(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY);
 		virtual ~ExportMapButton();
@@ -421,7 +416,6 @@ private:
 	};
 
 	static const int noiseTileButtonMaxCount = 16;
-	static const int railSwitchGroupCount = 64;
 	static const RGB blackRGB;
 	static const RGB whiteRGB;
 	static const RGB backgroundRGB;

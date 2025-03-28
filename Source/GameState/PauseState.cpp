@@ -115,6 +115,7 @@ void PauseState::PauseMenu::render(int selectedOption, KeyBindingOption* selecti
 			option->render(leftX, optionsBaseline);
 
 		if (i == selectedOption) {
+			static constexpr float selectedOptionAngleBracketPadding = 4.0f;
 			Text::Metrics angleBracketMetrics = Text::getMetrics("<", PauseOption::displayTextFontScale);
 			Text::render(
 				"<",

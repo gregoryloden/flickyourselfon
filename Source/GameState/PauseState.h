@@ -36,7 +36,6 @@ private:
 	class PauseMenu onlyInDebug(: public ObjCounter) {
 	private:
 		static constexpr float titleFontScale = 2.0f;
-		static constexpr float selectedOptionAngleBracketPadding = 4.0f;
 
 		string title;
 		Text::Metrics titleMetrics;

@@ -185,13 +185,8 @@ public:
 	static const unsigned int baseRailMovementDirectionByteMask =
 		((1 << railMovementDirectionByteMaskBitCount) - 1) << railTileOffsetByteMaskBitCount;
 	static const unsigned int baseRailByteMask = (1 << railByteMaskBitCount) - 1;
-private:
-	#ifdef DEBUG
-		static const int maxHintSearchTicks = 30000;
-	#else
-		static const int maxHintSearchTicks = 5000;
-	#endif
 
+private:
 	static bool hintSearchIsRunning;
 public:
 	static vector<PotentialLevelStatesByBucket> potentialLevelStatesByBucketByPlane;

@@ -31,39 +31,8 @@ private:
 			+ introTitleDisplayTicksDuration
 			+ introTitleFadeOutTicksDuration
 			+ 500;
-	static const int bootExplanationFadeInStartTicksTime = introAnimationStartTicksTime + 5900;
-	static const int bootExplanationFadeInTicksDuration = 500;
-	static const int bootExplanationDisplayTicksDuration = 1000;
-	static const int bootExplanationFadeOutTicksDuration = 500;
-	static const int radioTowerExplanationFadeInStartTicksTime = introAnimationStartTicksTime + 11000;
-	static const int radioTowerExplanationFadeInTicksDuration = 500;
-	static const int radioTowerExplanationDisplayTicksDuration = 3500;
-	static const int radioTowerExplanationFadeOutTicksDuration = 500;
-	static const int goalExplanationFadeInStartTicksTime = introAnimationStartTicksTime + 18000;
-	static const int goalExplanationFadeInTicksDuration = 500;
-	static const int goalExplanationDisplayTicksDuration = 2500;
-	static const int goalExplanationFadeOutTicksDuration = 500;
-	//switches color activation timing
-	static const int radioTowerMusicFadeOutMsDuration = 3000;
-	static const int radioTowerInitialPauseAnimationTicks = 1500;
-	static const int playerToRadioTowerAnimationTicks = 2000;
-	static const int preRadioWavesAnimationTicks = 2000;
-	static const int postRadioWavesAnimationTicks = 2000;
-	static const int radioTowerToSwitchesAnimationTicks = 2000;
-	static const int preSwitchesFadeInAnimationTicks = 1000;
-	static const int postSwitchesFadeInAnimationTicks = 1000;
-	static const int switchesToPlayerAnimationTicks = 2000;
 	//save icon timing
 	static const int saveIconShowDuration = 3000;
-	//switches color activation positions
-	static constexpr float squareSwitchesAnimationCenterWorldX = MapState::firstLevelTileOffsetX * MapState::tileSize + 280;
-	static constexpr float squareSwitchesAnimationCenterWorldY = MapState::firstLevelTileOffsetY * MapState::tileSize + 80;
-	static constexpr float triangleSwitchesAnimationCenterWorldX = MapState::firstLevelTileOffsetX * MapState::tileSize + 180;
-	static constexpr float triangleSwitchesAnimationCenterWorldY = MapState::firstLevelTileOffsetY * MapState::tileSize - 103;
-	static constexpr float sawSwitchesAnimationCenterWorldX = MapState::firstLevelTileOffsetX * MapState::tileSize + 780;
-	static constexpr float sawSwitchesAnimationCenterWorldY = MapState::firstLevelTileOffsetY * MapState::tileSize - 150;
-	static constexpr float sineSwitchesAnimationCenterWorldX = MapState::firstLevelTileOffsetX * MapState::tileSize + 524;
-	static constexpr float sineSwitchesAnimationCenterWorldY = MapState::firstLevelTileOffsetY * MapState::tileSize + 130;
 	//title screen and intro explanation text
 public:
 	static constexpr char* titleGameName = "Kick Yourself On";
@@ -71,25 +40,10 @@ private:
 	static constexpr char* titleCreditsLine1 = "A game by";
 	static constexpr char* titleCreditsLine2 = "Gregory Loden";
 	static constexpr char* titlePostCreditsMessage = "Thanks for playing!";
-	static constexpr char* bootExplanationMessage1 = "You are";
-	static constexpr char* bootExplanationMessage2 = "a boot.";
-	static constexpr char* radioTowerExplanationMessageLine1 = "Your local radio tower";
-	static constexpr char* radioTowerExplanationMessageLine2 = "lost connection";
-	static constexpr char* radioTowerExplanationMessageLine3 = "with its";
-	static constexpr char* radioTowerExplanationMessageLine4 = "master transmitter relay.";
-	static constexpr char* goalExplanationMessageLine1 = "Can you";
-	static constexpr char* goalExplanationMessageLine2 = "guide this person";
-	static constexpr char* goalExplanationMessageLine3 = "to turn it on?";
 	//save file names and values
-	#ifdef DEBUG
-		static constexpr char* replayFileName = "kyo_replay.log";
-	#endif
 	static constexpr char* savedGameFileName = "kyo.sav";
 	static constexpr char* levelsUnlockedFilePrefix = "levelsUnlocked ";
 	static constexpr char* perpetualHintsFileValue = "perpetualHints";
-	//render constants
-	static const int saveIconEdgeSpacing = 10;
-	static constexpr float saveIconMaxAlpha = 7.0f / 8.0f;
 
 	int levelsUnlocked;
 	bool perpetualHints;

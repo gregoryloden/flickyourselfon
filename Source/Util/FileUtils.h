@@ -12,9 +12,6 @@ public:
 	#endif
 private:
 	static const string imagesFolder;
-	#ifdef __APPLE__
-		static const char* fileIoIntermediatePath;
-	#endif
 
 public:
 	//Prevent allocation

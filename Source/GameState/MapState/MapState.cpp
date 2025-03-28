@@ -172,6 +172,7 @@ void MapState::buildMap() {
 		//	bits 2-7: group number
 		char color = (railSwitchValue >> floorRailSwitchColorDataShift) & floorRailSwitchColorPostShiftBitmask;
 		//this is a reset switch
+		static constexpr int floorIsSwitchAndResetSwitchBitmask = floorIsSwitchBitmask | floorIsResetSwitchBitmask;
 		if (HAS_BITMASK(railSwitchValue, floorIsSwitchAndResetSwitchBitmask)) {
 			short newResetSwitchId = (short)resetSwitches.size() | resetSwitchIdValue;
 			ResetSwitch* resetSwitch = newResetSwitch(headX, headY);
@@ -202,6 +203,9 @@ void MapState::buildMap() {
 			int railByte2Index = railIndices[0];
 			railIndices.erase(railIndices.begin());
 			//collect secondary data and build the rail
+			static constexpr char floorRailInitialTileOffsetPostShiftBitmask = 7;
+			static constexpr char floorRailMovementDirectionPostShiftBitmask = 1;
+			static constexpr char floorRailMovementMagnitudePostShiftBitmask = 7;
 			char initialTileOffset =
 				(railSwitchValue >> floorRailInitialTileOffsetDataShift) & floorRailInitialTileOffsetPostShiftBitmask;
 			char railByte2PostShift = (char)((pixels[railByte2Index] & redMask) >> (redShift + floorRailByte2DataShift));
@@ -815,6 +819,7 @@ int MapState::startRadioWavesAnimation(int initialTicksDelay, int ticksTime) {
 		Audio::radioWavesSoundSaw,
 		Audio::radioWavesSoundSine,
 	};
+	static constexpr int interRadioWavesAnimationTicks = 1500;
 	Particle* particle = queueParticle(
 		antennaCenterWorldX(),
 		antennaCenterWorldY(),
@@ -1084,6 +1089,8 @@ void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int 
 
 	//draw the waveform graphic if applicable
 	if (ticksTime < waveformEndTicksTime && ticksTime > waveformStartTicksTime) {
+		//find where we are in the animation
+		static constexpr float waveformAnimationPeriods = 2.5f;
 		float alpha = 0.625f;
 		if (ticksTime - waveformStartTicksTime < waveformStartEndBufferTicks)
 			alpha *= (float)(ticksTime - waveformStartTicksTime) / (float)waveformStartEndBufferTicks;
@@ -1094,6 +1101,12 @@ void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int 
 			(float)(ticksTime - waveformStartTicksTime)
 				/ (float)(waveformEndTicksTime - waveformStartTicksTime)
 				* waveformAnimationPeriods;
+
+		//draw the waveform
+		static constexpr float waveformAspectRatio = 2.5f;
+		static constexpr int waveformHeight = 18;
+		static constexpr int waveformWidth = (int)(waveformHeight * waveformAspectRatio);
+		static constexpr int waveformBottomRadioWavesOffset = 4;
 		GLint waveformLeft = (GLint)(antennaCenterWorldX() - screenLeftWorldX - waveformWidth / 2);
 		GLint waveformTop =
 			(GLint)(antennaCenterWorldY() - screenTopWorldY)
@@ -1112,6 +1125,9 @@ void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int 
 			lastPointTop = pointTop;
 			lastPointBottom = pointBottom;
 		}
+
+		//draw the edge rails
+		static constexpr int waveformRailSpacing = 1;
 		Rail::setSegmentColor(radioWavesColor, 1.0f, alpha);
 		GLint railBaseTopY = waveformTop - (GLint)SpriteRegistry::rails->getSpriteHeight() / 2;
 		SpriteRegistry::rails->renderSpriteAtScreenPosition(
@@ -1135,6 +1151,7 @@ void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int 
 		hintState.get()->renderOffscreenArrow(screenLeftWorldX, screenTopWorldY);
 
 	if (Config::showActivatedSwitchWaves.isOn()) {
+		static constexpr int wavesActivatedEdgeSpacing = 10;
 		GLint wavesActivatedX =
 			(GLint)(Config::gameScreenWidth - wavesActivatedEdgeSpacing - SpriteRegistry::wavesActivated->getSpriteWidth());
 		int wavesActivatedYSpacing = SpriteRegistry::wavesActivated->getSpriteHeight() + 2;
@@ -1188,9 +1205,9 @@ void MapState::renderGroupsForRailsFromSwitch(EntityState* camera, short switchI
 }
 bool MapState::renderTutorials(bool showConnections) {
 	if (showConnections && !finishedConnectionsTutorial)
-		renderControlsTutorial(showConnectionsTutorialText, { Config::showConnectionsKeyBinding.value });
+		renderControlsTutorial("Show connections: ", { Config::showConnectionsKeyBinding.value });
 	else if (!finishedMapCameraTutorial && lastActivatedSwitchColor >= 0)
-		renderControlsTutorial(mapCameraTutorialText, { Config::mapCameraKeyBinding.value });
+		renderControlsTutorial("Map camera: ", { Config::mapCameraKeyBinding.value });
 	else
 		return false;
 	return true;

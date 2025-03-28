@@ -70,20 +70,6 @@ namespace AudioTypes {
 			virtual ~Note();
 		};
 
-		static constexpr float fadeInOutDuration = 1.0f / 256.0f;
-		static constexpr float frequencyA4 = 440.0f;
-		static constexpr float frequencyC4 = frequencyA4 / 2 * (float)MathUtils::powConst(2.0, 3.0 / 12.0);
-		static constexpr float frequencyCS4 = frequencyA4 / 2 * (float)MathUtils::powConst(2.0, 4.0 / 12.0);
-		static constexpr float frequencyD4 = frequencyA4 / 2 * (float)MathUtils::powConst(2.0, 5.0 / 12.0);
-		static constexpr float frequencyDS4 = frequencyA4 / 2 * (float)MathUtils::powConst(2.0, 6.0 / 12.0);
-		static constexpr float frequencyE4 = frequencyA4 / 2 * (float)MathUtils::powConst(2.0, 7.0 / 12.0);
-		static constexpr float frequencyF4 = frequencyA4 / 2 * (float)MathUtils::powConst(2.0, 8.0 / 12.0);
-		static constexpr float frequencyFS4 = frequencyA4 / 2 * (float)MathUtils::powConst(2.0, 9.0 / 12.0);
-		static constexpr float frequencyG4 = frequencyA4 / 2 * (float)MathUtils::powConst(2.0, 10.0 / 12.0);
-		static constexpr float frequencyGS4 = frequencyA4 / 2 * (float)MathUtils::powConst(2.0, 11.0 / 12.0);
-		static constexpr float frequencyAS4 = frequencyA4 * (float)MathUtils::powConst(2.0, 1.0 / 12.0);
-		static constexpr float frequencyB4 = frequencyA4 * (float)MathUtils::powConst(2.0, 2.0 / 12.0);
-
 		Waveform waveform;
 		SoundEffectSpecs soundEffectSpecs;
 		#ifdef ENABLE_SKIP_BEATS
@@ -116,21 +102,6 @@ namespace AudioTypes {
 class Audio {
 private:
 	static const int musicChannel = 0;
-	static constexpr float musicSquareVolume = 3.0f / 64.0f;
-	static constexpr float musicTriangleVolume = 13.5f / 64.0f;
-	static constexpr float musicSawVolume = 3.0f / 64.0f;
-	static constexpr float musicSineVolume = 13.5f / 64.0f;
-	static constexpr float radioWavesSoundSquareVolume = 3.0f / 64.0f;
-	static constexpr float radioWavesSoundTriangleVolume = 12.0f / 64.0f;
-	static constexpr float radioWavesSoundSawVolume = 3.5f / 64.0f;
-	static constexpr float radioWavesSoundSineVolume = 21.0f / 64.0f;
-	static constexpr int radioWavesReverbRepetitions = 8;
-	static constexpr float radioWavesReverbSingleDelay = 1.0f / 32.0f;
-	static constexpr float radioWavesReverbFalloff = 3.0f / 8.0f;
-	static constexpr float victorySoundSquareVolume = 2.5f / 64.0f;
-	static constexpr float victorySoundTriangleVolume = 12.0f / 64.0f;
-	static constexpr float victorySoundSawVolume = 3.5f / 64.0f;
-	static constexpr float victorySoundSineVolume = 13.5f / 64.0f;
 public:
 	static const int stepSoundsCount = 6;
 	static const int rideRailSoundsCount = 6;

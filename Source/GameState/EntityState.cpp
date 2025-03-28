@@ -128,6 +128,9 @@ void DynamicCameraAnchor::updateWithPreviousDynamicCameraAnchor(
 			return;
 		entityAnimation.set(nullptr);
 	} else if (hasKeyboardControl) {
+		static constexpr float speedPerSecond = 120.0f;
+		static constexpr float diagonalSpeedPerSecond = speedPerSecond * (float)MathUtils::sqrtConst(0.5);
+		static constexpr float sprintModifier = 2.0f;
 		const Uint8* keyboardState = SDL_GetKeyboardState(nullptr);
 		char xDirection = (char)(keyboardState[Config::rightKeyBinding.value] - keyboardState[Config::leftKeyBinding.value]);
 		char yDirection = (char)(keyboardState[Config::downKeyBinding.value] - keyboardState[Config::upKeyBinding.value]);

@@ -83,10 +83,6 @@ private:
 	static const int flashOnOffTotalTicks = flashOnOffTicks * 2;
 	static const int flashTimes = 10;
 	static const int totalDisplayTicks = flashOnOffTotalTicks * flashTimes;
-	static const int offscreenEdgeSpacing = 12;
-	static const int offscreenArrowMinEdgeSpacing = 1;
-	static const int offscreenArrowMaxEdgeSpacing = offscreenArrowMinEdgeSpacing + offscreenEdgeSpacing;
-	static const int offscreenArrowToHintSpacing = 1;
 
 	Hint* hint;
 	int animationEndTicksTime;

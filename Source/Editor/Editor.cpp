@@ -103,6 +103,8 @@ Editor::TextButton::TextButton(objCounterParametersComma() Zone zone, int zoneLe
 , textMetrics(Text::getMetrics(pText.c_str(), buttonFontScale))
 , textLeftX(0)
 , textBaselineY(0) {
+	static constexpr int buttonMaxLeftRightPadding = 4;
+	static constexpr int buttonTopBottomPadding = 2;
 	int textWidth = (int)textMetrics.charactersWidth;
 	int leftRightPadding = MathUtils::min(textWidth / 5 + 1, buttonMaxLeftRightPadding);
 	setWidthAndHeight(
@@ -224,7 +226,7 @@ void Editor::ExportMapButton::onClick() {
 		}
 	}
 
-	FileUtils::saveImage(mapSurface, mapFileName);
+	FileUtils::saveImage(mapSurface, "images/map.png");
 	SDL_DestroyTexture(tilesTexture);
 	SDL_DestroyRenderer(mapRenderer);
 	SDL_FreeSurface(mapSurface);
@@ -822,6 +824,7 @@ void Editor::loadButtons() {
 	for (char i = -1; i <= 1; i += 2)
 		buttons.push_back(newRailTileOffsetButton(Zone::Right, 103 + RailTileOffsetButton::buttonSize * i / 2, 112, i));
 	buttons.push_back(newRailToggleMovementDirectionButton(Zone::Right, 137, 112));
+	static constexpr int railSwitchGroupCount = MapState::floorRailSwitchGroupPostShiftBitmask + 1;
 	for (char i = 0; i < (char)railSwitchGroupCount; i++) {
 		RailSwitchGroupButton* button = newRailSwitchGroupButton(
 			Zone::Right,

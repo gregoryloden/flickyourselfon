@@ -35,18 +35,6 @@ public:
 	};
 
 private:
-	//pick the next offset for the rail, based on knowing [movement magnitude][movement direction][tile offset]
-	static constexpr char sineWaveNextOffset[3][3][5] = {
-		//movement magnitude index is (movement magnitude - 1)
-		//movement direction index is (movement direction + 1)
-		//tile offset index is (tile offset)
-		//certain tile offset inputs will be unused, but put values for them anyways to advance to the next valid tile offset
-		//bit flipped tile offset values are negative, for those values the real target is ~N (after a bounce)
-		{ { ~1, 0, 1, 1, 3 }, { 0, 0, 0, 0, 0 }, { 1, 3, 3, 4, ~3 } },
-		{ { ~3, 0, 0, 0, 3 }, { 0, 0, 0, 0, 0 }, { 3, 3, 3, ~3, ~3 } },
-		{ { ~4, 0, 0, 0, 0 }, { 0, 0, 0, 0, 0 }, { 4, 4, 4, 4, ~0 } },
-	};
-
 	char baseHeight;
 	char color;
 	vector<Segment>* segments;
@@ -134,8 +122,6 @@ public:
 class RailState onlyInDebug(: public ObjCounter) {
 private:
 	static constexpr float fullMovementDurationTicks = 0.75f * Config::ticksPerSecond;
-	static constexpr float squareSpeedMultiplier = 2.0f;
-	static constexpr float sawReverseSpeedMultiplier = 8.0f;
 	static constexpr float nearlyRaisedAlphaIntensity = 11.0f / 16.0f;
 
 	Rail* rail;

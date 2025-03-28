@@ -25,9 +25,6 @@ public:
 
 private:
 	static constexpr float smallDistance = 1.0f / 256.0f;
-	static const int baseRailToRailTicksDuration = 80;
-	static const int railToRailFastTicksDuration = (int)(baseRailToRailTicksDuration / 2.5f);
-	static const int autoKickTriggerDelay = 250;
 	static constexpr float boundingBoxWidth = 11.0f;
 	static constexpr float boundingBoxHeight = 5.0f;
 	static constexpr float boundingBoxLeftOffset = boundingBoxWidth * -0.5f;
@@ -39,22 +36,10 @@ public:
 	static constexpr float introAnimationPlayerCenterX = 50.5f + (float)(MapState::firstLevelTileOffsetX * MapState::tileSize);
 	static constexpr float introAnimationPlayerCenterY = 106.5f + (float)(MapState::firstLevelTileOffsetY * MapState::tileSize);
 	static constexpr float baseSpeedPerTick = 40.0f / Config::ticksPerSecond;
-	static constexpr float diagonalSpeedPerTick = baseSpeedPerTick * (float)MathUtils::sqrtConst(0.5);
-	static constexpr float sprintModifier = 2.0f;
 private:
-	static const int minUndoTicksDuration = 250;
-	static constexpr float undoSpeedPerTick = baseSpeedPerTick * 4;
 	//only kick something if you're less than this distance from it
 	//visually, you have to be 1 pixel away or closer
 	static constexpr float kickingDistanceLimit = 1.5f;
-	//for down kicking, you have to be visually touching the switch
-	static constexpr float downKickingDistanceLimit = 0.5f;
-	static constexpr char* moveTutorialText = "Move: ";
-	static constexpr char* kickTutorialText = "Kick: ";
-	static constexpr char* undoRedoTutorialText = "Undo/Redo: ";
-	static constexpr char* undoTutorialText = "Undo: ";
-	static constexpr char* slashResetTutorialText = " / Reset";
-	static constexpr char* redoTutorialText = "Redo: ";
 	static constexpr char* playerXFilePrefix = "playerX ";
 	static constexpr char* playerYFilePrefix = "playerY ";
 	static constexpr char* playerDirectionFilePrefix = "playerDirection ";

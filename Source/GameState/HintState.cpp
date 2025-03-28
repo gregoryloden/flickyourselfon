@@ -187,6 +187,7 @@ void HintState::render(int screenLeftWorldX, int screenTopWorldY, int ticksTime)
 void HintState::renderOffscreenArrow(int screenLeftWorldX, int screenTopWorldY) {
 	if (offscreenArrowAlpha == 0)
 		return;
+	static constexpr int offscreenEdgeSpacing = 12;
 	int renderScreenLeftX = renderLeftWorldX - screenLeftWorldX;
 	int renderScreenTopY = renderTopWorldY - screenTopWorldY;
 	int renderScreenRightX = renderRightWorldX - screenLeftWorldX;
@@ -197,6 +198,9 @@ void HintState::renderOffscreenArrow(int screenLeftWorldX, int screenTopWorldY) 
 			&& renderScreenBottomY >= offscreenEdgeSpacing)
 		return;
 	//figure out where to place the arrow
+	static constexpr int offscreenArrowMinEdgeSpacing = 1;
+	static constexpr int offscreenArrowMaxEdgeSpacing = offscreenArrowMinEdgeSpacing + offscreenEdgeSpacing;
+	static constexpr int offscreenArrowToHintSpacing = 1;
 	int arrowSpriteHorizontalIndex = 1;
 	int arrowSpriteVerticalIndex = 1;
 	GLint drawArrowLeftX;
