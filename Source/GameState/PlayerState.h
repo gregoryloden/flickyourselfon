@@ -199,7 +199,7 @@ private:
 	//collect the completed hint if applicable
 	void tryCollectCompletedHint(PlayerState* other);
 	//wait for the hint thread to finish, and clear it
-	void waitForHintThreadToFinish();
+	static void waitForHintThreadToFinish();
 public:
 	//if we don't have a kicking animation, start one
 	//this should be called after the player has been updated
