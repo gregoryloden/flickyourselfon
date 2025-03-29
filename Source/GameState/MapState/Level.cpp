@@ -622,6 +622,7 @@ int Level::currentMilestones = 0;
 deque<HintState::PotentialLevelState*>* Level::currentNextPotentialLevelStates = nullptr;
 vector<deque<HintState::PotentialLevelState*>*>* Level::currentNextPotentialLevelStatesBySteps = nullptr;
 vector<vector<deque<HintState::PotentialLevelState*>*>> Level::nextPotentialLevelStatesByStepsByMilestone;
+int Level::hintSearchCheckStateI = 0;
 Plane* Level::cachedHintSearchVictoryPlane = nullptr;
 #ifdef LOG_SEARCH_STEPS_STATS
 	int* Level::statesAtStepsByPlane = nullptr;
@@ -830,21 +831,42 @@ Hint* Level::performHintSearch(HintState::PotentialLevelState* baseLevelState, P
 		getNextPotentialLevelStatesForSteps(0)->push_back(baseLevelState);
 
 	//go through all states and see if there's anything we could do to get closer to the victory plane
+	static constexpr int targetLoopTicks = 20;
+	static int loopMaxStateCount = 1;
+	int lastCheckStartTime = startTime;
+	#ifdef LOG_SEARCH_STEPS_STATS
+		bool loggedCurrentNextPotentialLevelStates = false;
+	#endif
 	do {
+		//find the next queue of states to look through, and if applicable, log it
 		currentNextPotentialLevelStates = (*currentNextPotentialLevelStatesBySteps)[currentPotentialLevelStateSteps];
 		#ifdef LOG_SEARCH_STEPS_STATS
-			Logger::debugLogger.logString(to_string(currentPotentialLevelStateSteps) + " steps:");
-			for (HintState::PotentialLevelState* potentialLevelState : *currentNextPotentialLevelStates)
-				statesAtStepsByPlane[potentialLevelState->plane->getIndexInOwningLevel()]++;
-			for (int planeI = 0; planeI < (int)statesAtStepsByPlaneCount; planeI++) {
-				int statesAtSteps = statesAtStepsByPlane[planeI];
-				if (statesAtSteps > 0) {
-					Logger::debugLogger.logString("  plane " + to_string(planeI) + ": " + to_string(statesAtSteps) + " states");
-					statesAtStepsByPlane[planeI] = 0;
+			if (!loggedCurrentNextPotentialLevelStates) {
+				Logger::debugLogger.logString(
+					to_string(currentPotentialLevelStateSteps) + " steps, "
+						+ to_string(currentNextPotentialLevelStates->size()) + " states:");
+				for (HintState::PotentialLevelState* potentialLevelState : *currentNextPotentialLevelStates)
+					statesAtStepsByPlane[potentialLevelState->plane->getIndexInOwningLevel()]++;
+				for (int planeI = 0; planeI < (int)statesAtStepsByPlaneCount; planeI++) {
+					int statesAtSteps = statesAtStepsByPlane[planeI];
+					if (statesAtSteps > 0) {
+						Logger::debugLogger.logString(
+							"  plane " + to_string(planeI) + ": " + to_string(statesAtSteps) + " states");
+						statesAtStepsByPlane[planeI] = 0;
+					}
 				}
-			}
+				loggedCurrentNextPotentialLevelStates = true;
+			} else
+				Logger::debugLogger.logString(
+					to_string(currentPotentialLevelStateSteps) + " steps, "
+						+ to_string(currentNextPotentialLevelStates->size()) + " states");
 		#endif
-		while (!currentNextPotentialLevelStates->empty()) {
+
+		//go through some or all of the states in the queue and see if any reach the victory plane
+		for (hintSearchCheckStateI = MathUtils::min((int)currentNextPotentialLevelStates->size(), loopMaxStateCount);
+			hintSearchCheckStateI > 0;
+			hintSearchCheckStateI--)
+		{
 			HintState::PotentialLevelState* potentialLevelState = currentNextPotentialLevelStates->front();
 			currentNextPotentialLevelStates->pop_front();
 			//skip any states that were replaced with shorter routes
@@ -855,19 +877,41 @@ Hint* Level::performHintSearch(HintState::PotentialLevelState* baseLevelState, P
 			if (result != nullptr)
 				return result;
 		}
+
+		//bail if the search was canceled or took too long
+		if (!hintSearchIsRunning) {
+			Logger::debugLogger.logString("hint search canceled");
+			return &Hint::searchCanceledEarly;
+		}
 		#ifdef DEBUG
 			static constexpr int maxHintSearchTicks = 30000;
 		#else
 			static constexpr int maxHintSearchTicks = 5000;
 		#endif
-		currentPotentialLevelStateSteps++;
-		if (!hintSearchIsRunning) {
-			Logger::debugLogger.logString("hint search canceled");
-			return &Hint::searchCanceledEarly;
-		} else if (SDL_GetTicks() - startTime >= maxHintSearchTicks) {
+		int now = SDL_GetTicks();
+		if (now - startTime >= maxHintSearchTicks) {
 			Logger::debugLogger.logString("hint search timed out");
 			return &Hint::searchCanceledEarly;
 		}
+
+		//the queue is empty, advance to the queue for the next step count
+		if (currentNextPotentialLevelStates->empty()) {
+			currentPotentialLevelStateSteps++;
+			#ifdef LOG_SEARCH_STEPS_STATS
+				loggedCurrentNextPotentialLevelStates = false;
+			#endif
+		//there are still states left in the queue to process, increase or decrease the max state count if needed so that the search
+		//	time approaches the target duration
+		} else {
+			int loopTicks = now - lastCheckStartTime;
+			if (loopTicks < targetLoopTicks - 1)
+				loopMaxStateCount = loopTicks == 0
+					? loopMaxStateCount * targetLoopTicks
+					: MathUtils::min(loopMaxStateCount * 2, loopMaxStateCount * targetLoopTicks / loopTicks);
+			else if (loopTicks > targetLoopTicks + 1)
+				loopMaxStateCount = MathUtils::max(1, loopMaxStateCount * targetLoopTicks / loopTicks);
+		}
+		lastCheckStartTime = now;
 	} while (currentPotentialLevelStateSteps <= maxPotentialLevelStateSteps || popMilestone());
 	//at this point, we've exhausted all states at all steps regardless of milestones, there is no solution
 	return &Hint::undoReset;
@@ -1006,8 +1050,9 @@ void Level::pushMilestone() {
 		nextPotentialLevelStatesByStepsByMilestone.push_back(vector<deque<HintState::PotentialLevelState*>*>());
 	maxPotentialLevelStateSteps = -1;
 	currentNextPotentialLevelStatesBySteps = &nextPotentialLevelStatesByStepsByMilestone[currentMilestones];
-	//we need to set this here because pushMilestone() is called in the middle of iterating this queue
+	//we need to set these here because pushMilestone() is called in the middle of iterating this queue
 	currentNextPotentialLevelStates = getNextPotentialLevelStatesForSteps(currentPotentialLevelStateSteps);
+	hintSearchCheckStateI = 0;
 }
 bool Level::popMilestone() {
 	#ifdef LOG_SEARCH_STEPS_STATS
