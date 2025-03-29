@@ -136,7 +136,6 @@ void AudioTypes::Music::load() {
 		{ frequencyF4, frequencyFS4, frequencyE4 },
 		{ frequencyG4, frequencyGS4, frequencyFS4 },
 	};
-	int bytesPerSample = SDL_AUDIO_BITSIZE(Audio::format) / 8 * Audio::channels;
 
 	ifstream file;
 	FileUtils::openFileForRead(&file, filepath.c_str(), FileUtils::FileReadLocation::Installation);
@@ -200,6 +199,7 @@ void AudioTypes::Music::load() {
 	float totalDuration = (float)totalBeats * 60 / bpm;
 
 	//allocate the samples
+	int bytesPerSample = SDL_AUDIO_BITSIZE(Audio::format) / 8 * Audio::channels;
 	int totalSampleCount = (int)(totalDuration * Audio::sampleRate);
 	int reverbExtraSamples = (int)(soundEffectSpecs.reverbRepetitions * soundEffectSpecs.reverbSingleDelay * Audio::sampleRate);
 	chunk = new Mix_Chunk();
