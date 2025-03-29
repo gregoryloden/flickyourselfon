@@ -896,7 +896,7 @@ void PlayerState::trySpawnGoalSparks(int ticksTime) {
 	SpriteDirection directions[] =
 		{ SpriteDirection::Right, SpriteDirection::Up, SpriteDirection::Left, SpriteDirection::Down };
 	for (SpriteDirection direction : directions) {
-		SpriteAnimation* animations[] = { SpriteRegistry::sparksSlowAnimationA, SpriteRegistry::sparksSlowAnimationA };
+		SpriteAnimation* animations[] { SpriteRegistry::sparksSlowAnimationA, SpriteRegistry::sparksSlowAnimationA };
 		animations[rand() % 2] = SpriteRegistry::sparksSlowAnimationB;
 		float sparkX = (float)(tileX * MapState::tileSize + MapState::halfTileSize);
 		float sparkY = (float)(tileY * MapState::tileSize + MapState::halfTileSize);

@@ -270,7 +270,7 @@ bool Rail::triggerMovement(char movementDirection, char* inOutTileOffset) {
 		//higher movement magnitudes will move more than one position at a time
 		case MapState::sineColor: {
 			//pick the next offset for the rail, based on knowing [movement magnitude][movement direction][tile offset]
-			static constexpr char sineWaveNextOffset[][3][5] = {
+			static constexpr char sineWaveNextOffset[][3][5] {
 				//movement magnitude index is (movement magnitude - 1)
 				//movement direction index is (movement direction + 1)
 				//tile offset index is (tile offset)
@@ -628,7 +628,7 @@ void RailState::renderMovementDirections(int screenLeftWorldX, int screenTopWorl
 	if ((Editor::isActive && rail->editorIsDeleted) || rail->getColor() == MapState::squareColor)
 		return;
 
-	Rail::Segment* endSegments[] = { rail->getSegment(0), rail->getSegment(rail->getSegmentCount() - 1) };
+	Rail::Segment* endSegments[] { rail->getSegment(0), rail->getSegment(rail->getSegmentCount() - 1) };
 	for (Rail::Segment* segment : endSegments) {
 		char movementMagnitude = rail->getMovementMagnitude();
 		GLint centerX = (GLint)(segment->x * MapState::tileSize - screenLeftWorldX + MapState::halfTileSize);

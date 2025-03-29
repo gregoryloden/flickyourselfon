@@ -934,7 +934,7 @@ int Level::clearPotentialLevelStateHolders() {
 			if (line == "end")
 				break;
 			//find switch color and then group
-			static constexpr char* switchColorPrefixes[] = { "red: ", "blue: ", "green: ", "white: " };
+			static constexpr char* switchColorPrefixes[] { "red: ", "blue: ", "green: ", "white: " };
 			int color = 0;
 			for (; color < MapState::colorCount; color++) {
 				if (StringUtils::startsWith(line, switchColorPrefixes[color]))
@@ -1026,7 +1026,7 @@ bool Level::popMilestone() {
 	return true;
 }
 void Level::logStats() {
-	int switchCounts[4] = {};
+	int switchCounts[MapState::colorCount] {};
 	int singleUseSwitches = 0;
 	int milestoneSwitches = 0;
 	int directPlaneConnections = 0;

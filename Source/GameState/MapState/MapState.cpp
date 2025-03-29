@@ -454,7 +454,7 @@ LevelTypes::Plane* MapState::buildPlane(
 		//planes never extend to the edge of the map, so we don't need to check whether we wrapped around the edge
 		int upNeighbor = tile - mapWidth;
 		int downNeighbor = tile + mapWidth;
-		int neighbors[] = { tile - 1, tile + 1, upNeighbor, downNeighbor };
+		int neighbors[] { tile - 1, tile + 1, upNeighbor, downNeighbor };
 
 		//check neighboring tiles of interest to add to this plane or a climb/fall plane
 		for (int neighbor : neighbors) {
@@ -776,7 +776,7 @@ void MapState::flipSwitch(short switchId, bool moveRailsForward, bool allowRadio
 
 		for (RailState* railState : *switchState->getConnectedRailStates()) {
 			Rail* rail = railState->getRail();
-			Rail::Segment* segments[] = { rail->getSegment(0), rail->getSegment(rail->getSegmentCount() - 1) };
+			Rail::Segment* segments[] { rail->getSegment(0), rail->getSegment(rail->getSegmentCount() - 1) };
 			for (Rail::Segment* segment : segments)
 				queueParticle(
 					segment->tileCenterX(),
@@ -813,7 +813,7 @@ void MapState::writeCurrentRailStates(short resetSwitchId, KickResetSwitchUndoSt
 }
 int MapState::startRadioWavesAnimation(int initialTicksDelay, int ticksTime) {
 	radioWavesColor = lastActivatedSwitchColor;
-	AudioTypes::Music* radioWavesSounds[] = {
+	AudioTypes::Music* radioWavesSounds[] {
 		Audio::radioWavesSoundSquare,
 		Audio::radioWavesSoundTriangle,
 		Audio::radioWavesSoundSaw,
@@ -1246,7 +1246,7 @@ float MapState::waveformY(char color, float periodX) {
 	}
 }
 void MapState::logGroup(char group, stringstream* message) {
-	static constexpr char* groupSegmentColors[] = { "black", "red", "green", "yellow", "blue", "magenta", "cyan", "white" };
+	static constexpr char* groupSegmentColors[] { "black", "red", "green", "yellow", "blue", "magenta", "cyan", "white" };
 	for (int i = 0; true; i++) {
 		*message << groupSegmentColors[group % 8];
 		if (i >= 1)

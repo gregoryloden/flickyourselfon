@@ -34,13 +34,13 @@ void AudioTypes::Sound::play(int loops) {
 		int bitSize = SDL_AUDIO_BITSIZE(Audio::format);
 		int bytesPerSample = Audio::channels * bitSize / 8;
 		int byteRate = Audio::sampleRate * bytesPerSample;
-		char chunk1Header[] = {
+		char chunk1Header[] {
 			//constant
 			'f', 'm', 't', ' ',
 			//chunk 1 size, 16 bytes
 			16, 0, 0, 0,
 		};
-		char chunk1[] = {
+		char chunk1[] {
 			//format: PCM == 1
 			1, 0,
 			//channels
@@ -55,14 +55,14 @@ void AudioTypes::Sound::play(int loops) {
 			//bits per sample per channel
 			(char)bitSize, (char)(bitSize >> 8),
 		};
-		char chunk2Header[] = {
+		char chunk2Header[] {
 			//constant
 			'd', 'a', 't', 'a',
 			//chunk 2 size
 			(char)chunk->alen, (char)(chunk->alen >> 8), (char)(chunk->alen >> 16), (char)(chunk->alen >> 24),
 		};
 		int chunkSizes = sizeof(chunk1Header) + sizeof(chunk1) + sizeof(chunk2Header) + chunk->alen;
-		char header[] = {
+		char header[] {
 			//constant
 			'R', 'I', 'F', 'F',
 			//chunk sizes
@@ -127,7 +127,7 @@ void AudioTypes::Music::load() {
 	static constexpr float frequencyAS4 = frequencyA4 * (float)MathUtils::powConst(2.0, 1.0 / 12.0);
 	static constexpr float frequencyB4 = frequencyA4 * (float)MathUtils::powConst(2.0, 2.0 / 12.0);
 	//these are ordered by note name, rather than absolute frequency; they loop around at C
-	static constexpr float noteFrequencies[][3] = {
+	static constexpr float noteFrequencies[][3] {
 		{ frequencyA4, frequencyAS4, frequencyGS4 },
 		{ frequencyB4, frequencyC4, frequencyAS4 },
 		{ frequencyC4, frequencyCS4, frequencyB4 },
@@ -329,7 +329,7 @@ Music* Audio::switchesFadeInSoundTriangle = nullptr;
 Music* Audio::switchesFadeInSoundSaw = nullptr;
 Music* Audio::switchesFadeInSoundSine = nullptr;
 Music* Audio::victorySound = nullptr;
-Sound* Audio::stepSounds[Audio::stepSoundsCount] = {};
+Sound* Audio::stepSounds[Audio::stepSoundsCount] {};
 Sound* Audio::climbSound = nullptr;
 Sound* Audio::jumpSound = nullptr;
 Sound* Audio::landSound = nullptr;
@@ -338,8 +338,8 @@ Sound* Audio::kickAirSound = nullptr;
 Sound* Audio::switchOnSound = nullptr;
 Sound* Audio::stepOnRailSound = nullptr;
 Sound* Audio::stepOffRailSound = nullptr;
-Sound* Audio::rideRailSounds[Audio::rideRailSoundsCount] = {};
-Sound* Audio::rideRailOutSounds[Audio::rideRailOutSoundsCount] = {};
+Sound* Audio::rideRailSounds[Audio::rideRailSoundsCount] {};
+Sound* Audio::rideRailOutSounds[Audio::rideRailOutSoundsCount] {};
 Sound* Audio::railSlideSound = nullptr;
 Sound* Audio::railSlideSquareSound = nullptr;
 Sound* Audio::selectSound = nullptr;

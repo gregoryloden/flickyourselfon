@@ -304,7 +304,7 @@ void GameState::startRadioTowerAnimation(int ticksTime) {
 	//finish the animation by returning to the player
 	static constexpr int postSwitchesFadeInAnimationTicks = 1000;
 	static constexpr int switchesToPlayerAnimationTicks = 2000;
-	AudioTypes::Music* switchesFadeInSounds[] = {
+	AudioTypes::Music* switchesFadeInSounds[] {
 		Audio::switchesFadeInSoundSquare,
 		Audio::switchesFadeInSoundTriangle,
 		Audio::switchesFadeInSoundSaw,
@@ -343,7 +343,7 @@ void GameState::startRadioTowerAnimation(int ticksTime) {
 	Audio::fadeOutAll(3000);
 }
 AudioTypes::Music* GameState::getMusic(int lastActivatedSwitchColor) {
-	AudioTypes::Music* musics[] = {
+	AudioTypes::Music* musics[] {
 		Audio::musicSquare,
 		Audio::musicTriangle,
 		Audio::musicSaw,
