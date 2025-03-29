@@ -141,8 +141,15 @@ int gameMain(int argc, char* argv[]) {
 	Audio::stopAudio();
 	//the render thread will quit once it reaches the game state that signalled that we should quit
 	renderLoopThread.join();
-	//stop the logging thread but keep the files open
 	Logger::gameplayLogger.log("----   end gameplay ----");
+
+	//cleanup anything that might have run a separate thread
+	#ifdef DEBUG
+		delete gameStateQueue;
+		ObjectPool<PlayerState>::clearPool();
+	#endif
+
+	//stop the logging thread but keep the files open
 	Logger::endMultiThreadedLogging();
 
 	//cleanup
@@ -152,13 +159,11 @@ int gameMain(int argc, char* argv[]) {
 		PauseState::unloadMenus();
 		SpriteRegistry::unloadAll();
 		Text::unloadFont();
-		delete gameStateQueue;
 		MapState::deleteMap();
 		Audio::unloadSounds();
 		Audio::tearDown();
 		//the order that these object pools are cleared matters since some earlier classes in this list may have retained
 		//	objects from classes later in this list
-		ObjectPool<PlayerState>::clearPool();
 		ObjectPool<MapState>::clearPool();
 		ObjectPool<PauseState>::clearPool();
 		ObjectPool<DynamicCameraAnchor>::clearPool();
