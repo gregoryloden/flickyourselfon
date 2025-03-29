@@ -136,7 +136,7 @@ void ResetSwitch::editorRemoveSwitchSegment(char color, char group) {
 			//if this is the only segment of the color, mark group 0 for removal too
 			if ((*segments)[i - 2].group == 0 && (i == segments->size() || (*segments)[i].color != color))
 				removeCount++;
-			//shift the colors and groups back to preserve the positions + sprite indices
+			//shift only the colors and groups back to preserve the positions + sprite indices
 			for (; i < (int)segments->size(); i++) {
 				Segment& deleteSegment = (*segments)[i - removeCount];
 				Segment& remainingSegment = (*segments)[i];
