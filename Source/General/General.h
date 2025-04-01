@@ -13,6 +13,7 @@
 	#include <SDL2_mixer/SDL_mixer.h>
 	#include <OpenGL/OpenGL.h>
 #endif
+#include <array>
 #include <deque>
 #include <fstream>
 #include <functional>
