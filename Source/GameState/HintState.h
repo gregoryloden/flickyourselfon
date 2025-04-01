@@ -19,6 +19,7 @@ public:
 		Rail,
 		Switch,
 		UndoReset,
+		CalculatingHint,
 		SearchCanceledEarly,
 	};
 	union Data {
@@ -30,6 +31,7 @@ public:
 
 	static Hint none;
 	static Hint undoReset;
+	static Hint calculatingHint;
 	static Hint searchCanceledEarly;
 
 	Type type;

@@ -1142,7 +1142,8 @@ void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int 
 	}
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 
-	if (hintState.get()->getHintType() == Hint::Type::SearchCanceledEarly)
+	Hint::Type hintType = hintState.get()->getHintType();
+	if (hintType == Hint::Type::CalculatingHint || hintType == Hint::Type::SearchCanceledEarly)
 		hintState.get()->render(screenLeftWorldX, screenTopWorldY, ticksTime);
 	else
 		hintState.get()->renderOffscreenArrow(screenLeftWorldX, screenTopWorldY);

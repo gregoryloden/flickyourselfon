@@ -12,6 +12,7 @@
 //////////////////////////////// Hint ////////////////////////////////
 Hint Hint::none (Hint::Type::None);
 Hint Hint::undoReset (Hint::Type::UndoReset);
+Hint Hint::calculatingHint (Hint::Type::CalculatingHint);
 Hint Hint::searchCanceledEarly (Hint::Type::SearchCanceledEarly);
 Hint::Hint(Type pType)
 : type(pType)
@@ -156,9 +157,12 @@ void HintState::render(int screenLeftWorldX, int screenTopWorldY, int ticksTime)
 	float progress = (float)progressTicks / totalDisplayTicks;
 	float alpha = 0.5f - (progress + progress * progress) * 0.25f;
 	//if we couldn't find a hint, show a tutorial-area message
-	if (hint->type == Hint::Type::SearchCanceledEarly) {
-		glColor4f(1.0f, 1.0f, 1.0f, alpha * 1.5f);
-		MapState::renderControlsTutorial("(unable to calculate hint)", {});
+	if (hint->type == Hint::Type::CalculatingHint || hint->type == Hint::Type::SearchCanceledEarly) {
+		glColor4f(1.0f, 1.0f, 1.0f, alpha * 2.0f);
+		if (hint->type == Hint::Type::CalculatingHint)
+			MapState::renderControlsTutorial("(calculating hint...)", {});
+		else
+			MapState::renderControlsTutorial("(unable to calculate hint)", {});
 		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 		//text doesn't have an offscreen arrow
 		offscreenArrowAlpha = 0;
