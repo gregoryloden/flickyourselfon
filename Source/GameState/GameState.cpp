@@ -101,7 +101,8 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 			if ((endPauseDecision & (int)PauseState::EndPauseDecision::Reset) != 0 && !Editor::isActive) {
 				Logger::gameplayLogger.log("  reset game");
 				resetGame(ticksTime);
-				//don't check for Exit, just return here
+				//don't check for Exit, just return here, after ensuring we release nextPauseState
+				ReferenceCounterHolder<PauseState> nextPauseStateHolder (nextPauseState);
 				return;
 			}
 			if ((endPauseDecision & (int)PauseState::EndPauseDecision::Exit) != 0)
