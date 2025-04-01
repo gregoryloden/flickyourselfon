@@ -316,22 +316,10 @@ using namespace AudioTypes;
 int Audio::sampleRate = 44100;
 Uint16 Audio::format = AUDIO_S16SYS;
 int Audio::channels = 1;
-Music* Audio::musicSquare = nullptr;
-Music* Audio::musicTriangle = nullptr;
-Music* Audio::musicSaw = nullptr;
-Music* Audio::musicSine = nullptr;
-Music* Audio::radioWavesSoundSquare = nullptr;
-Music* Audio::radioWavesSoundTriangle = nullptr;
-Music* Audio::radioWavesSoundSaw = nullptr;
-Music* Audio::radioWavesSoundSine = nullptr;
-Music* Audio::switchesFadeInSoundSquare = nullptr;
-Music* Audio::switchesFadeInSoundTriangle = nullptr;
-Music* Audio::switchesFadeInSoundSaw = nullptr;
-Music* Audio::switchesFadeInSoundSine = nullptr;
-Music* Audio::railSwitchWavesSoundSquare = nullptr;
-Music* Audio::railSwitchWavesSoundTriangle = nullptr;
-Music* Audio::railSwitchWavesSoundSaw = nullptr;
-Music* Audio::railSwitchWavesSoundSine = nullptr;
+Music::WaveformMusicSet Audio::musics;
+Music::WaveformMusicSet Audio::radioWavesSounds;
+Music::WaveformMusicSet Audio::switchesFadeInSounds;
+Music::WaveformMusicSet Audio::railSwitchWavesSounds;
 Music* Audio::victorySound = nullptr;
 Sound* Audio::stepSounds[Audio::stepSoundsCount] {};
 Sound* Audio::climbSound = nullptr;
@@ -399,59 +387,8 @@ void Audio::loadSounds() {
 		railSwitchWavesReverbRepetitions,
 		railSwitchWavesReverbSingleDelay,
 		railSwitchWavesReverbFalloff);
-	Music *victorySoundTriangle, *victorySoundSaw, *victorySoundSine;
+	Music::WaveformMusicSet victorySounds;
 	vector<Sound*> sounds ({
-		musicSquare =
-			newMusic("musicsquare", musicChannel, Music::Waveform::Square, musicSoundEffectSpecs.withVolume(musicSquareVolume)),
-		musicTriangle = newMusic(
-			"musictriangle", musicChannel, Music::Waveform::Triangle, musicSoundEffectSpecs.withVolume(musicTriangleVolume)),
-		musicSaw = newMusic("musicsaw", musicChannel, Music::Waveform::Saw, musicSoundEffectSpecs.withVolume(musicSawVolume)),
-		musicSine =
-			newMusic("musicsine", musicChannel, Music::Waveform::Sine, musicSoundEffectSpecs.withVolume(musicSineVolume)),
-		radioWavesSoundSquare = newMusic(
-			"radiowaves", -1, Music::Waveform::Square, radioWavesSoundEffectSpecs.withVolume(radioWavesSoundSquareVolume)),
-		radioWavesSoundTriangle = newMusic(
-			"radiowaves", -1, Music::Waveform::Triangle, radioWavesSoundEffectSpecs.withVolume(radioWavesSoundTriangleVolume)),
-		radioWavesSoundSaw =
-			newMusic("radiowaves", -1, Music::Waveform::Saw, radioWavesSoundEffectSpecs.withVolume(radioWavesSoundSawVolume)),
-		radioWavesSoundSine =
-			newMusic("radiowaves", -1, Music::Waveform::Sine, radioWavesSoundEffectSpecs.withVolume(radioWavesSoundSineVolume)),
-		switchesFadeInSoundSquare = newMusic(
-			"switchesfadein", -1, Music::Waveform::Square, switchesFadeInSoundEffectSpecs.withVolume(musicSquareVolume)),
-		switchesFadeInSoundTriangle = newMusic(
-			"switchesfadein", -1, Music::Waveform::Triangle, switchesFadeInSoundEffectSpecs.withVolume(musicTriangleVolume)),
-		switchesFadeInSoundSaw =
-			newMusic("switchesfadein", -1, Music::Waveform::Saw, switchesFadeInSoundEffectSpecs.withVolume(musicSawVolume)),
-		switchesFadeInSoundSine =
-			newMusic("switchesfadein", -1, Music::Waveform::Sine, switchesFadeInSoundEffectSpecs.withVolume(musicSineVolume)),
-		railSwitchWavesSoundSquare = newMusic(
-			"railswitchwaves",
-			-1,
-			Music::Waveform::Square,
-			railSwitchWavesSoundEffectSpecs.withVolume(railSwitchWavesSoundSquareVolume)),
-		railSwitchWavesSoundTriangle = newMusic(
-			"railswitchwaves",
-			-1,
-			Music::Waveform::Triangle,
-			railSwitchWavesSoundEffectSpecs.withVolume(railSwitchWavesSoundTriangleVolume)),
-		railSwitchWavesSoundSaw = newMusic(
-			"railswitchwaves",
-			-1,
-			Music::Waveform::Saw,
-			railSwitchWavesSoundEffectSpecs.withVolume(railSwitchWavesSoundSawVolume)),
-		railSwitchWavesSoundSine = newMusic(
-			"railswitchwaves",
-			-1,
-			Music::Waveform::Sine,
-			railSwitchWavesSoundEffectSpecs.withVolume(railSwitchWavesSoundSineVolume)),
-		victorySound =
-			newMusic("victorysquare", -1, Music::Waveform::Square, musicSoundEffectSpecs.withVolume(victorySoundSquareVolume)),
-		victorySoundTriangle = newMusic(
-			"victorytriangle", -1, Music::Waveform::Triangle, musicSoundEffectSpecs.withVolume(victorySoundTriangleVolume)),
-		victorySoundSaw =
-			newMusic("victorysaw", -1, Music::Waveform::Saw, musicSoundEffectSpecs.withVolume(victorySoundSawVolume)),
-		victorySoundSine =
-			newMusic("victorysine", -1, Music::Waveform::Sine, musicSoundEffectSpecs.withVolume(victorySoundSineVolume)),
 		climbSound = newSound("climb.wav", -1),
 		jumpSound = newSound("jump.wav", -1),
 		landSound = newSound("land.wav", -1),
@@ -469,25 +406,82 @@ void Audio::loadSounds() {
 	for (Sound* sound : sounds)
 		sound->load();
 
+	loadWaveformMusicSet(
+		"music",
+		true,
+		musicChannel,
+		musicSoundEffectSpecs,
+		{ musicSquareVolume, musicTriangleVolume, musicSawVolume, musicSineVolume },
+		musics);
+	loadWaveformMusicSet(
+		"radiowaves",
+		false,
+		-1,
+		radioWavesSoundEffectSpecs,
+		{ radioWavesSoundSquareVolume, radioWavesSoundTriangleVolume, radioWavesSoundSawVolume, radioWavesSoundSineVolume },
+		radioWavesSounds);
+	loadWaveformMusicSet(
+		"switchesfadein",
+		false,
+		-1,
+		switchesFadeInSoundEffectSpecs,
+		{ musicSquareVolume, musicTriangleVolume, musicSawVolume, musicSineVolume },
+		switchesFadeInSounds);
+	loadWaveformMusicSet(
+		"railswitchwaves",
+		false,
+		-1,
+		railSwitchWavesSoundEffectSpecs,
+		{
+			railSwitchWavesSoundSquareVolume,
+			railSwitchWavesSoundTriangleVolume,
+			railSwitchWavesSoundSawVolume,
+			railSwitchWavesSoundSineVolume,
+		},
+		railSwitchWavesSounds);
+	loadWaveformMusicSet(
+		"victory",
+		true,
+		-1,
+		musicSoundEffectSpecs,
+		{ victorySoundSquareVolume, victorySoundTriangleVolume, victorySoundSawVolume, victorySoundSineVolume },
+		victorySounds);
+
 	loadSoundSet("step", stepSoundsCount, stepSounds);
 	loadSoundSet("ride rail", rideRailSoundsCount, rideRailSounds);
 	loadSoundSet("ride rail out", rideRailOutSoundsCount, rideRailOutSounds);
 
-	musicTriangle->overlay(musicSquare);
-	musicSaw->overlay(musicTriangle);
-	musicSine->overlay(musicSaw);
-	victorySound->overlay(victorySoundTriangle);
-	victorySound->overlay(victorySoundSaw);
-	victorySound->overlay(victorySoundSine);
-	delete victorySoundTriangle;
-	delete victorySoundSaw;
-	delete victorySoundSine;
+	musics[(int)Music::Waveform::Triangle]->overlay(musics[(int)Music::Waveform::Square]);
+	musics[(int)Music::Waveform::Saw]->overlay(musics[(int)Music::Waveform::Triangle]);
+	musics[(int)Music::Waveform::Sine]->overlay(musics[(int)Music::Waveform::Saw]);
+	victorySound = victorySounds[(int)Music::Waveform::Square];
+	victorySound->overlay(victorySounds[(int)Music::Waveform::Triangle]);
+	victorySound->overlay(victorySounds[(int)Music::Waveform::Saw]);
+	victorySound->overlay(victorySounds[(int)Music::Waveform::Sine]);
+	delete victorySounds[(int)Music::Waveform::Triangle];
+	delete victorySounds[(int)Music::Waveform::Saw];
+	delete victorySounds[(int)Music::Waveform::Sine];
 	#ifdef ENABLE_SKIP_BEATS
-		musicSquare->skipBeats();
-		musicTriangle->skipBeats();
-		musicSaw->skipBeats();
-		musicSine->skipBeats();
+		musics[(int)Music::Waveform::Square]->skipBeats();
+		musics[(int)Music::Waveform::Triangle]->skipBeats();
+		musics[(int)Music::Waveform::Saw]->skipBeats();
+		musics[(int)Music::Waveform::Sine]->skipBeats();
 	#endif
+}
+void Audio::loadWaveformMusicSet(
+	const char* prefix,
+	bool includeSuffix,
+	int channel,
+	Music::SoundEffectSpecs soundEffectSpecs,
+	array<float, (int)Music::Waveform::Count> volumes,
+	Music::WaveformMusicSet& waveformMusicSet)
+{
+	static constexpr char* suffixes[] = { "square", "triangle", "saw", "sine" };
+	for (int i = 0; i < (int)Music::Waveform::Count; i++) {
+		string filename = string(prefix) + (includeSuffix ? suffixes[i] : "");
+		waveformMusicSet[i] = newMusic(filename, channel, (Music::Waveform)i, soundEffectSpecs.withVolume(volumes[i]));
+		waveformMusicSet[i]->load();
+	}
 }
 void Audio::loadSoundSet(const char* prefix, int count, Sound** soundSet) {
 	for (int i = 0; i < count; i++) {
@@ -496,18 +490,10 @@ void Audio::loadSoundSet(const char* prefix, int count, Sound** soundSet) {
 	}
 }
 void Audio::unloadSounds() {
-	delete musicSquare;
-	delete musicTriangle;
-	delete musicSaw;
-	delete musicSine;
-	delete radioWavesSoundSquare;
-	delete radioWavesSoundTriangle;
-	delete radioWavesSoundSaw;
-	delete radioWavesSoundSine;
-	delete switchesFadeInSoundSquare;
-	delete switchesFadeInSoundTriangle;
-	delete switchesFadeInSoundSaw;
-	delete switchesFadeInSoundSine;
+	unloadWaveformMusicSet(musics);
+	unloadWaveformMusicSet(radioWavesSounds);
+	unloadWaveformMusicSet(switchesFadeInSounds);
+	unloadWaveformMusicSet(railSwitchWavesSounds);
 	delete victorySound;
 	unloadSoundSet(stepSoundsCount, stepSounds);
 	delete climbSound;
@@ -524,6 +510,10 @@ void Audio::unloadSounds() {
 	delete railSlideSquareSound;
 	delete selectSound;
 	delete confirmSound;
+}
+void Audio::unloadWaveformMusicSet(Music::WaveformMusicSet& waveformMusicSet) {
+	for (int i = 0; i < (int)Music::Waveform::Count; i++)
+		delete waveformMusicSet[i];
 }
 void Audio::unloadSoundSet(int count, Sound** soundSet) {
 	for (int i = 0; i < count; i++)

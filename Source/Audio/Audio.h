@@ -32,7 +32,9 @@ namespace AudioTypes {
 			Triangle,
 			Saw,
 			Sine,
+			Count,
 		};
+		typedef array<Music*, (int)Waveform::Count> WaveformMusicSet;
 		//Should only be allocated within an object, on the stack, or as a static object
 		class SoundEffectSpecs {
 		public:
@@ -110,22 +112,10 @@ public:
 	static int sampleRate;
 	static Uint16 format;
 	static int channels;
-	static AudioTypes::Music* musicSquare;
-	static AudioTypes::Music* musicTriangle;
-	static AudioTypes::Music* musicSaw;
-	static AudioTypes::Music* musicSine;
-	static AudioTypes::Music* radioWavesSoundSquare;
-	static AudioTypes::Music* radioWavesSoundTriangle;
-	static AudioTypes::Music* radioWavesSoundSaw;
-	static AudioTypes::Music* radioWavesSoundSine;
-	static AudioTypes::Music* switchesFadeInSoundSquare;
-	static AudioTypes::Music* switchesFadeInSoundTriangle;
-	static AudioTypes::Music* switchesFadeInSoundSaw;
-	static AudioTypes::Music* switchesFadeInSoundSine;
-	static AudioTypes::Music* railSwitchWavesSoundSquare;
-	static AudioTypes::Music* railSwitchWavesSoundTriangle;
-	static AudioTypes::Music* railSwitchWavesSoundSaw;
-	static AudioTypes::Music* railSwitchWavesSoundSine;
+	static AudioTypes::Music::WaveformMusicSet musics;
+	static AudioTypes::Music::WaveformMusicSet radioWavesSounds;
+	static AudioTypes::Music::WaveformMusicSet switchesFadeInSounds;
+	static AudioTypes::Music::WaveformMusicSet railSwitchWavesSounds;
 	static AudioTypes::Music* victorySound;
 	static AudioTypes::Sound* stepSounds[stepSoundsCount];
 	static AudioTypes::Sound* climbSound;
@@ -154,13 +144,23 @@ public:
 	//load the sound files
 	static void loadSounds();
 private:
+	//load the same music for each waveform
+	static void loadWaveformMusicSet(
+		const char* prefix,
+		bool includeSuffix,
+		int channel,
+		AudioTypes::Music::SoundEffectSpecs soundEffectSpecs,
+		array<float, (int)AudioTypes::Music::Waveform::Count> volumes,
+		AudioTypes::Music::WaveformMusicSet& waveformMusicSet);
 	//load multiple sound files with the same name prefix
 	static void loadSoundSet(const char* prefix, int count, AudioTypes::Sound** soundSet);
 public:
 	//clean up the sound files
 	static void unloadSounds();
 private:
-	//clean up sound files from a sound set
+	//clean up musics from a music set
+	static void unloadWaveformMusicSet(AudioTypes::Music::WaveformMusicSet& waveformMusicSet);
+	//clean up sounds from a sound set
 	static void unloadSoundSet(int count, AudioTypes::Sound** soundSet);
 public:
 	//apply audio volume settings for all channels

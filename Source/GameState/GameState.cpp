@@ -304,16 +304,10 @@ void GameState::startRadioTowerAnimation(int ticksTime) {
 	//finish the animation by returning to the player
 	static constexpr int postSwitchesFadeInAnimationTicks = 1000;
 	static constexpr int switchesToPlayerAnimationTicks = 2000;
-	AudioTypes::Music* switchesFadeInSounds[] {
-		Audio::switchesFadeInSoundSquare,
-		Audio::switchesFadeInSoundTriangle,
-		Audio::switchesFadeInSoundSaw,
-		Audio::switchesFadeInSoundSine,
-	};
 	dynamicCameraAnchorAnimationComponents.insert(
 		dynamicCameraAnchorAnimationComponents.end(),
 		{
-			newEntityAnimationPlaySound(switchesFadeInSounds[lastActivatedSwitchColor], 0),
+			newEntityAnimationPlaySound(Audio::switchesFadeInSounds[lastActivatedSwitchColor], 0),
 			newEntityAnimationDelay(MapState::switchesFadeInDuration + postSwitchesFadeInAnimationTicks),
 			EntityAnimation::SetVelocity::cubicInterpolation(
 				playerX - switchesAnimationCenterWorldX,
@@ -322,7 +316,7 @@ void GameState::startRadioTowerAnimation(int ticksTime) {
 			newEntityAnimationDelay(switchesToPlayerAnimationTicks),
 			stopMoving,
 			newEntityAnimationSwitchToPlayerCamera(),
-			newEntityAnimationPlaySound(getMusic(lastActivatedSwitchColor), -1),
+			newEntityAnimationPlaySound(Audio::musics[lastActivatedSwitchColor], -1),
 	});
 	dynamicCameraAnchor.get()->beginEntityAnimation(&dynamicCameraAnchorAnimationComponents, ticksTime);
 
@@ -342,19 +336,10 @@ void GameState::startRadioTowerAnimation(int ticksTime) {
 
 	Audio::fadeOutAll(3000);
 }
-AudioTypes::Music* GameState::getMusic(int lastActivatedSwitchColor) {
-	AudioTypes::Music* musics[] {
-		Audio::musicSquare,
-		Audio::musicTriangle,
-		Audio::musicSaw,
-		Audio::musicSine,
-	};
-	return musics[lastActivatedSwitchColor];
-}
 void GameState::startMusic() {
 	char lastActivatedSwitchColor = mapState.get()->getLastActivatedSwitchColor();
 	if (lastActivatedSwitchColor >= 0 && lastActivatedSwitchColor < 4)
-		getMusic(lastActivatedSwitchColor)->play(-1);
+		Audio::musics[lastActivatedSwitchColor]->play(-1);
 }
 void GameState::render(int ticksTime) {
 	Editor::EditingMutexLocker editingMutexLocker;

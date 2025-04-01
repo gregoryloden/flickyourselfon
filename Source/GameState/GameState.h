@@ -74,8 +74,6 @@ public:
 private:
 	//begin a radio tower animation for the various states
 	void startRadioTowerAnimation(int ticksTime);
-	//get the music for the given switch color
-	AudioTypes::Music* getMusic(int lastActivatedSwitchColor);
 	//start the music as indicated by the map state
 	void startMusic();
 public:

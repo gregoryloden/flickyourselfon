@@ -789,13 +789,7 @@ void MapState::flipSwitch(short switchId, bool moveRailsForward, bool allowRadio
 					ticksTime);
 		}
 
-		AudioTypes::Music* railSwitchWavesSounds[] {
-			Audio::railSwitchWavesSoundSquare,
-			Audio::railSwitchWavesSoundTriangle,
-			Audio::railSwitchWavesSoundSaw,
-			Audio::railSwitchWavesSoundSine,
-		};
-		railSwitchWavesSounds[radioWavesColor]->play(0);
+		Audio::railSwitchWavesSounds[radioWavesColor]->play(0);
 	}
 }
 void MapState::flipResetSwitch(short resetSwitchId, KickResetSwitchUndoState* kickResetSwitchUndoState, int ticksTime) {
@@ -821,12 +815,6 @@ void MapState::writeCurrentRailStates(short resetSwitchId, KickResetSwitchUndoSt
 }
 int MapState::startRadioWavesAnimation(int initialTicksDelay, int ticksTime) {
 	radioWavesColor = lastActivatedSwitchColor;
-	AudioTypes::Music* radioWavesSounds[] {
-		Audio::radioWavesSoundSquare,
-		Audio::radioWavesSoundTriangle,
-		Audio::radioWavesSoundSaw,
-		Audio::radioWavesSoundSine,
-	};
 	static constexpr int interRadioWavesAnimationTicks = 1500;
 	Particle* particle = queueParticle(
 		antennaCenterWorldX(),
@@ -834,7 +822,7 @@ int MapState::startRadioWavesAnimation(int initialTicksDelay, int ticksTime) {
 		true,
 		{
 			newEntityAnimationDelay(initialTicksDelay),
-			newEntityAnimationPlaySound(radioWavesSounds[radioWavesColor], 0),
+			newEntityAnimationPlaySound(Audio::radioWavesSounds[radioWavesColor], 0),
 			entityAnimationSpriteAnimationWithDelay(SpriteRegistry::radioWavesAnimation),
 			newEntityAnimationSetSpriteAnimation(nullptr),
 			newEntityAnimationDelay(interRadioWavesAnimationTicks),
