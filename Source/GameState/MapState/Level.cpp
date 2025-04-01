@@ -904,8 +904,8 @@ Hint* Level::performHintSearch(HintState::PotentialLevelState* baseLevelState, P
 			#ifdef LOG_SEARCH_STEPS_STATS
 				loggedCurrentNextPotentialLevelStates = false;
 			#endif
-		//there are still states left in the queue to process, increase or decrease the max state count if needed so that the search
-		//	time approaches the target duration
+		//there are still states left in the queue to process, increase or decrease the max state count if needed so that the
+		//	search time approaches the target duration
 		} else {
 			int loopTicks = now - lastCheckStartTime;
 			if (loopTicks < targetLoopTicks - 1)

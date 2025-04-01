@@ -295,6 +295,7 @@ public:
 	static void pushMilestone();
 private:
 	//restore states to check from a previous milestone
+	//should only be called when there are no states in the currentNextPotentialLevelStatesBySteps queues
 	//returns whether there was a previous milestone to restore to
 	static bool popMilestone();
 public:
