@@ -328,6 +328,10 @@ Music* Audio::switchesFadeInSoundSquare = nullptr;
 Music* Audio::switchesFadeInSoundTriangle = nullptr;
 Music* Audio::switchesFadeInSoundSaw = nullptr;
 Music* Audio::switchesFadeInSoundSine = nullptr;
+Music* Audio::railSwitchWavesSoundSquare = nullptr;
+Music* Audio::railSwitchWavesSoundTriangle = nullptr;
+Music* Audio::railSwitchWavesSoundSaw = nullptr;
+Music* Audio::railSwitchWavesSoundSine = nullptr;
 Music* Audio::victorySound = nullptr;
 Sound* Audio::stepSounds[Audio::stepSoundsCount] {};
 Sound* Audio::climbSound = nullptr;
@@ -368,6 +372,13 @@ void Audio::loadSounds() {
 	static constexpr int radioWavesReverbRepetitions = 8;
 	static constexpr float radioWavesReverbSingleDelay = 1.0f / 32.0f;
 	static constexpr float radioWavesReverbFalloff = 3.0f / 8.0f;
+	static constexpr float railSwitchWavesSoundSquareVolume = 2.0f / 64.0f;
+	static constexpr float railSwitchWavesSoundTriangleVolume = 9.0f / 64.0f;
+	static constexpr float railSwitchWavesSoundSawVolume = 3.0f / 64.0f;
+	static constexpr float railSwitchWavesSoundSineVolume = 8.0f / 64.0f;
+	static constexpr int railSwitchWavesReverbRepetitions = 16;
+	static constexpr float railSwitchWavesReverbSingleDelay = 1.0f / 32.0f;
+	static constexpr float railSwitchWavesReverbFalloff = 1.5f / 8.0f;
 	static constexpr float victorySoundSquareVolume = 2.5f / 64.0f;
 	static constexpr float victorySoundTriangleVolume = 12.0f / 64.0f;
 	static constexpr float victorySoundSawVolume = 3.5f / 64.0f;
@@ -382,6 +393,12 @@ void Audio::loadSounds() {
 		radioWavesReverbFalloff);
 	Music::SoundEffectSpecs switchesFadeInSoundEffectSpecs (
 		1, Music::SoundEffectSpecs::VolumeEffect::SquareInSquareOut, 0, 0, 0);
+	Music::SoundEffectSpecs railSwitchWavesSoundEffectSpecs (
+		1,
+		Music::SoundEffectSpecs::VolumeEffect::SquareDecay,
+		railSwitchWavesReverbRepetitions,
+		railSwitchWavesReverbSingleDelay,
+		railSwitchWavesReverbFalloff);
 	Music *victorySoundTriangle, *victorySoundSaw, *victorySoundSine;
 	vector<Sound*> sounds ({
 		musicSquare =
@@ -407,6 +424,26 @@ void Audio::loadSounds() {
 			newMusic("switchesfadein", -1, Music::Waveform::Saw, switchesFadeInSoundEffectSpecs.withVolume(musicSawVolume)),
 		switchesFadeInSoundSine =
 			newMusic("switchesfadein", -1, Music::Waveform::Sine, switchesFadeInSoundEffectSpecs.withVolume(musicSineVolume)),
+		railSwitchWavesSoundSquare = newMusic(
+			"railswitchwaves",
+			-1,
+			Music::Waveform::Square,
+			railSwitchWavesSoundEffectSpecs.withVolume(railSwitchWavesSoundSquareVolume)),
+		railSwitchWavesSoundTriangle = newMusic(
+			"railswitchwaves",
+			-1,
+			Music::Waveform::Triangle,
+			railSwitchWavesSoundEffectSpecs.withVolume(railSwitchWavesSoundTriangleVolume)),
+		railSwitchWavesSoundSaw = newMusic(
+			"railswitchwaves",
+			-1,
+			Music::Waveform::Saw,
+			railSwitchWavesSoundEffectSpecs.withVolume(railSwitchWavesSoundSawVolume)),
+		railSwitchWavesSoundSine = newMusic(
+			"railswitchwaves",
+			-1,
+			Music::Waveform::Sine,
+			railSwitchWavesSoundEffectSpecs.withVolume(railSwitchWavesSoundSineVolume)),
 		victorySound =
 			newMusic("victorysquare", -1, Music::Waveform::Square, musicSoundEffectSpecs.withVolume(victorySoundSquareVolume)),
 		victorySoundTriangle = newMusic(

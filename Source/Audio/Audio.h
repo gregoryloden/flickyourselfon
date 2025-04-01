@@ -122,6 +122,10 @@ public:
 	static AudioTypes::Music* switchesFadeInSoundTriangle;
 	static AudioTypes::Music* switchesFadeInSoundSaw;
 	static AudioTypes::Music* switchesFadeInSoundSine;
+	static AudioTypes::Music* railSwitchWavesSoundSquare;
+	static AudioTypes::Music* railSwitchWavesSoundTriangle;
+	static AudioTypes::Music* railSwitchWavesSoundSaw;
+	static AudioTypes::Music* railSwitchWavesSoundSine;
 	static AudioTypes::Music* victorySound;
 	static AudioTypes::Sound* stepSounds[stepSoundsCount];
 	static AudioTypes::Sound* climbSound;

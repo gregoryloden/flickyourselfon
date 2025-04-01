@@ -788,6 +788,14 @@ void MapState::flipSwitch(short switchId, bool moveRailsForward, bool allowRadio
 					},
 					ticksTime);
 		}
+
+		AudioTypes::Music* railSwitchWavesSounds[] {
+			Audio::railSwitchWavesSoundSquare,
+			Audio::railSwitchWavesSoundTriangle,
+			Audio::railSwitchWavesSoundSaw,
+			Audio::railSwitchWavesSoundSine,
+		};
+		railSwitchWavesSounds[radioWavesColor]->play(0);
 	}
 }
 void MapState::flipResetSwitch(short resetSwitchId, KickResetSwitchUndoState* kickResetSwitchUndoState, int ticksTime) {
