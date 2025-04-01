@@ -489,7 +489,7 @@ void Audio::loadSounds() {
 		musicSine->skipBeats();
 	#endif
 }
-void Audio::loadSoundSet(const char* prefix, int count, AudioTypes::Sound** soundSet) {
+void Audio::loadSoundSet(const char* prefix, int count, Sound** soundSet) {
 	for (int i = 0; i < count; i++) {
 		soundSet[i] = newSound(prefix + to_string(i + 1) + ".wav", -1);
 		soundSet[i]->load();
@@ -525,7 +525,7 @@ void Audio::unloadSounds() {
 	delete selectSound;
 	delete confirmSound;
 }
-void Audio::unloadSoundSet(int count, AudioTypes::Sound** soundSet) {
+void Audio::unloadSoundSet(int count, Sound** soundSet) {
 	for (int i = 0; i < count; i++)
 		delete soundSet[i];
 }
