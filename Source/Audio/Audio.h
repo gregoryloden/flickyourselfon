@@ -117,7 +117,7 @@ public:
 	static AudioTypes::Music::WaveformMusicSet switchesFadeInSounds;
 	static AudioTypes::Music::WaveformMusicSet railSwitchWavesSounds;
 	static AudioTypes::Music* victorySound;
-	static AudioTypes::Sound* stepSounds[stepSoundsCount];
+	static array<AudioTypes::Sound*, stepSoundsCount> stepSounds;
 	static AudioTypes::Sound* climbSound;
 	static AudioTypes::Sound* jumpSound;
 	static AudioTypes::Sound* landSound;
@@ -126,8 +126,8 @@ public:
 	static AudioTypes::Sound* switchOnSound;
 	static AudioTypes::Sound* stepOnRailSound;
 	static AudioTypes::Sound* stepOffRailSound;
-	static AudioTypes::Sound* rideRailSounds[rideRailSoundsCount];
-	static AudioTypes::Sound* rideRailOutSounds[rideRailOutSoundsCount];
+	static array<AudioTypes::Sound*, rideRailSoundsCount> rideRailSounds;
+	static array<AudioTypes::Sound*, rideRailOutSoundsCount> rideRailOutSounds;
 	static AudioTypes::Sound* railSlideSound;
 	static AudioTypes::Sound* railSlideSquareSound;
 	static AudioTypes::Sound* selectSound;
@@ -153,7 +153,7 @@ private:
 		array<float, (int)AudioTypes::Music::Waveform::Count> volumes,
 		AudioTypes::Music::WaveformMusicSet& waveformMusicSet);
 	//load multiple sound files with the same name prefix
-	static void loadSoundSet(const char* prefix, int count, AudioTypes::Sound** soundSet);
+	template <int count> static void loadSoundSet(const char* prefix, array<AudioTypes::Sound*, count>& soundSet);
 public:
 	//clean up the sound files
 	static void unloadSounds();
@@ -161,7 +161,7 @@ private:
 	//clean up musics from a music set
 	static void unloadWaveformMusicSet(AudioTypes::Music::WaveformMusicSet& waveformMusicSet);
 	//clean up sounds from a sound set
-	static void unloadSoundSet(int count, AudioTypes::Sound** soundSet);
+	template <int count> static void unloadSoundSet(array<AudioTypes::Sound*, count>& soundSet);
 public:
 	//apply audio volume settings for all channels
 	static void applyVolume();

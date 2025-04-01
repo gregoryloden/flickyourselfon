@@ -321,7 +321,7 @@ Music::WaveformMusicSet Audio::radioWavesSounds;
 Music::WaveformMusicSet Audio::switchesFadeInSounds;
 Music::WaveformMusicSet Audio::railSwitchWavesSounds;
 Music* Audio::victorySound = nullptr;
-Sound* Audio::stepSounds[Audio::stepSoundsCount] {};
+array<Sound*, Audio::stepSoundsCount> Audio::stepSounds;
 Sound* Audio::climbSound = nullptr;
 Sound* Audio::jumpSound = nullptr;
 Sound* Audio::landSound = nullptr;
@@ -330,8 +330,8 @@ Sound* Audio::kickAirSound = nullptr;
 Sound* Audio::switchOnSound = nullptr;
 Sound* Audio::stepOnRailSound = nullptr;
 Sound* Audio::stepOffRailSound = nullptr;
-Sound* Audio::rideRailSounds[Audio::rideRailSoundsCount] {};
-Sound* Audio::rideRailOutSounds[Audio::rideRailOutSoundsCount] {};
+array<Sound*, Audio::rideRailSoundsCount> Audio::rideRailSounds;
+array<Sound*, Audio::rideRailOutSoundsCount> Audio::rideRailOutSounds;
 Sound* Audio::railSlideSound = nullptr;
 Sound* Audio::railSlideSquareSound = nullptr;
 Sound* Audio::selectSound = nullptr;
@@ -447,9 +447,9 @@ void Audio::loadSounds() {
 		{ victorySoundSquareVolume, victorySoundTriangleVolume, victorySoundSawVolume, victorySoundSineVolume },
 		victorySounds);
 
-	loadSoundSet("step", stepSoundsCount, stepSounds);
-	loadSoundSet("ride rail", rideRailSoundsCount, rideRailSounds);
-	loadSoundSet("ride rail out", rideRailOutSoundsCount, rideRailOutSounds);
+	loadSoundSet("step", stepSounds);
+	loadSoundSet("ride rail", rideRailSounds);
+	loadSoundSet("ride rail out", rideRailOutSounds);
 
 	musics[(int)Music::Waveform::Triangle]->overlay(musics[(int)Music::Waveform::Square]);
 	musics[(int)Music::Waveform::Saw]->overlay(musics[(int)Music::Waveform::Triangle]);
@@ -483,7 +483,7 @@ void Audio::loadWaveformMusicSet(
 		waveformMusicSet[i]->load();
 	}
 }
-void Audio::loadSoundSet(const char* prefix, int count, Sound** soundSet) {
+template <int count> void Audio::loadSoundSet(const char* prefix, array<Sound*, count>& soundSet) {
 	for (int i = 0; i < count; i++) {
 		soundSet[i] = newSound(prefix + to_string(i + 1) + ".wav", -1);
 		soundSet[i]->load();
@@ -495,7 +495,7 @@ void Audio::unloadSounds() {
 	unloadWaveformMusicSet(switchesFadeInSounds);
 	unloadWaveformMusicSet(railSwitchWavesSounds);
 	delete victorySound;
-	unloadSoundSet(stepSoundsCount, stepSounds);
+	unloadSoundSet(stepSounds);
 	delete climbSound;
 	delete jumpSound;
 	delete landSound;
@@ -504,8 +504,8 @@ void Audio::unloadSounds() {
 	delete switchOnSound;
 	delete stepOnRailSound;
 	delete stepOffRailSound;
-	unloadSoundSet(rideRailSoundsCount, rideRailSounds);
-	unloadSoundSet(rideRailOutSoundsCount, rideRailOutSounds);
+	unloadSoundSet(rideRailSounds);
+	unloadSoundSet(rideRailOutSounds);
 	delete railSlideSound;
 	delete railSlideSquareSound;
 	delete selectSound;
@@ -515,7 +515,7 @@ void Audio::unloadWaveformMusicSet(Music::WaveformMusicSet& waveformMusicSet) {
 	for (int i = 0; i < (int)Music::Waveform::Count; i++)
 		delete waveformMusicSet[i];
 }
-void Audio::unloadSoundSet(int count, Sound** soundSet) {
+template <int count> void Audio::unloadSoundSet(array<Sound*, count>& soundSet) {
 	for (int i = 0; i < count; i++)
 		delete soundSet[i];
 }
