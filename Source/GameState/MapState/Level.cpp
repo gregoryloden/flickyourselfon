@@ -54,9 +54,6 @@ LevelTypes::Plane::Connection::~Connection() {
 }
 
 //////////////////////////////// LevelTypes::Plane ////////////////////////////////
-#ifdef TEST_SOLUTIONS
-	newInPlaceWithArgs(LevelTypes::Plane, LevelTypes::Plane::testSolutionSingleSwitchPlane, nullptr, -1);
-#endif
 LevelTypes::Plane::Plane(objCounterParametersComma() Level* pOwningLevel, int pIndexInOwningLevel)
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
 owningLevel(pOwningLevel)
@@ -465,7 +462,10 @@ Hint* LevelTypes::Plane::pursueSolutionAfterSwitches(HintState::PotentialLevelSt
 }
 #ifdef TEST_SOLUTIONS
 	HintState::PotentialLevelState* LevelTypes::Plane::findStateAtSwitch(
-		vector<HintState::PotentialLevelState*>& states, char color, const char* switchGroupName, Plane** outSingleSwitchPlane)
+		vector<HintState::PotentialLevelState*>& states,
+		char color,
+		const char* switchGroupName,
+		Plane** outPlaneWithAllSwitches)
 	{
 		stringstream checkGroupName;
 		for (HintState::PotentialLevelState* state : states) {
@@ -479,14 +479,13 @@ Hint* LevelTypes::Plane::pursueSolutionAfterSwitches(HintState::PotentialLevelSt
 					checkGroupName.str(string());
 					continue;
 				}
-				//we found a matching switch, write a clone of its plane to outSingleSwitchPlane containing only that single
-				//	switch and return the state at it before kicking it
-				testSolutionSingleSwitchPlane.owningLevel = plane->owningLevel;
-				testSolutionSingleSwitchPlane.indexInOwningLevel = plane->indexInOwningLevel;
-				testSolutionSingleSwitchPlane.connectionSwitches = { connectionSwitch };
-				testSolutionSingleSwitchPlane.connections = plane->connections;
-				testSolutionSingleSwitchPlane.hasAction = true;
-				*outSingleSwitchPlane = &testSolutionSingleSwitchPlane;
+				//we found a matching switch, write the original plane to outPlaneWithAllSwitches, clone it to contain only that
+				//	single switch, and then return the state at that plane before kicking it, with the cloned plane
+				*outPlaneWithAllSwitches = state->plane;
+				state->plane = newPlane(plane->owningLevel, plane->indexInOwningLevel);
+				state->plane->connectionSwitches.push_back(connectionSwitch);
+				state->plane->connections = plane->connections;
+				state->plane->hasAction = true;
 				return state;
 			}
 		}
@@ -972,6 +971,7 @@ int Level::clearPotentialLevelStateHolders() {
 
 		//go through each step in the file and make sure we can activate that switch
 		vector<HintState::PotentialLevelState*> statesAtSolutionStep;
+		vector<Plane*> singleSwitchPlanes;
 		Hint* result = nullptr;
 		string line;
 		while (getline(file, line)) {
@@ -1002,9 +1002,9 @@ int Level::clearPotentialLevelStateHolders() {
 					statesAtSolutionStep.end(), nextPotentialLevelStates->begin(), nextPotentialLevelStates->end());
 				nextPotentialLevelStates->clear();
 			}
-			Plane* singleSwitchPlane;
+			Plane* planeWithAllSwitches;
 			HintState::PotentialLevelState* stateAtSwitch =
-				Plane::findStateAtSwitch(statesAtSolutionStep, color, switchGroupName, &singleSwitchPlane);
+				Plane::findStateAtSwitch(statesAtSolutionStep, color, switchGroupName, &planeWithAllSwitches);
 			if (stateAtSwitch == nullptr) {
 				Logger::debugLogger.logString(
 					"ERROR: level " + to_string(levelN) + " solution line " + to_string(lineN)
@@ -1013,8 +1013,7 @@ int Level::clearPotentialLevelStateHolders() {
 			}
 
 			//we found the switch, so kick it and advance to the next step
-			Plane* planeWithAllSwitches = stateAtSwitch->plane;
-			stateAtSwitch->plane = singleSwitchPlane;
+			singleSwitchPlanes.push_back(stateAtSwitch->plane);
 			currentPotentialLevelStateSteps = stateAtSwitch->steps;
 			result = stateAtSwitch->plane->pursueSolutionAfterSwitches(stateAtSwitch, currentPotentialLevelStateSteps + 1);
 			statesAtSolutionStep.clear();
@@ -1044,6 +1043,8 @@ int Level::clearPotentialLevelStateHolders() {
 				"level " + to_string(levelN) + " solution verified, "
 					+ to_string(foundHintSearchTotalSteps) + "(" + to_string(foundHintSearchTotalHintSteps) + ")" + " steps");
 		clearPotentialLevelStateHolders();
+		for (Plane* singleSwitchPlane : singleSwitchPlanes)
+			delete singleSwitchPlane;
 	}
 #endif
 deque<HintState::PotentialLevelState*>* Level::getNextPotentialLevelStatesForSteps(int nextPotentialLevelStateSteps) {
