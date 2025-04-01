@@ -21,6 +21,7 @@
 #endif
 #define newWithArgs(className, ...) new className(objCounterLocalArgumentsComma(className) __VA_ARGS__)
 #define newWithoutArgs(className) new className(objCounterLocalArguments(className))
+#define newInPlaceWithArgs(className, varName, ...) className varName (objCounterLocalArgumentsComma(className) __VA_ARGS__)
 #define produceWithArgs(className, ...) className::produce(objCounterLocalArgumentsComma(className) __VA_ARGS__)
 #define produceWithoutArgs(className) className::produce(objCounterLocalArguments(className))
 

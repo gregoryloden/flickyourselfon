@@ -52,6 +52,10 @@ namespace LevelTypes {
 			virtual ~Connection();
 		};
 
+		#ifdef TEST_SOLUTIONS
+			static Plane testSolutionSingleSwitchPlane;
+		#endif
+
 		Level* owningLevel;
 		int indexInOwningLevel;
 		vector<Tile> tiles;
@@ -107,11 +111,16 @@ namespace LevelTypes {
 		//kick each switch in this plane, and then pursue solutions from those states
 		Hint* pursueSolutionAfterSwitches(HintState::PotentialLevelState* currentState, int stepsAfterSwitchKick);
 		#ifdef TEST_SOLUTIONS
-			//go through all the given states and see if one has a switch matching the given description
-			//if there is one, the Plane on it will be a clone of the matching plane with only the matching switch connection
-			//callers are reponsible for tracking and deleting this plane
+			//go through all the given states and see if one has a plane with a switch matching the given description
+			//if there is one, clone the plane to only contain that matching switch, and write it to outSingleSwitchPlane
+			//callers should not store this plane beyond using it for pursueSolutionAfterSwitches, and it is invalid after the
+			//	next call to findStateAtSwitch
+			//returns the state with the matching plane if one was found
 			static HintState::PotentialLevelState* findStateAtSwitch(
-				vector<HintState::PotentialLevelState*>& states, char color, const char* switchGroupName);
+				vector<HintState::PotentialLevelState*>& states,
+				char color,
+				const char* switchGroupName,
+				Plane** outSingleSwitchPlane);
 		#endif
 		//get the bounds of the hint to render for this plane
 		void getHintRenderBounds(int* outLeftWorldX, int* outTopWorldY, int* outRightWorldX, int* outBottomWorldY);

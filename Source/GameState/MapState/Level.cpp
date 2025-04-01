@@ -54,6 +54,9 @@ LevelTypes::Plane::Connection::~Connection() {
 }
 
 //////////////////////////////// LevelTypes::Plane ////////////////////////////////
+#ifdef TEST_SOLUTIONS
+	newInPlaceWithArgs(LevelTypes::Plane, LevelTypes::Plane::testSolutionSingleSwitchPlane, nullptr, -1);
+#endif
 LevelTypes::Plane::Plane(objCounterParametersComma() Level* pOwningLevel, int pIndexInOwningLevel)
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
 owningLevel(pOwningLevel)
@@ -462,7 +465,7 @@ Hint* LevelTypes::Plane::pursueSolutionAfterSwitches(HintState::PotentialLevelSt
 }
 #ifdef TEST_SOLUTIONS
 	HintState::PotentialLevelState* LevelTypes::Plane::findStateAtSwitch(
-		vector<HintState::PotentialLevelState*>& states, char color, const char* switchGroupName)
+		vector<HintState::PotentialLevelState*>& states, char color, const char* switchGroupName, Plane** outSingleSwitchPlane)
 	{
 		stringstream checkGroupName;
 		for (HintState::PotentialLevelState* state : states) {
@@ -476,13 +479,14 @@ Hint* LevelTypes::Plane::pursueSolutionAfterSwitches(HintState::PotentialLevelSt
 					checkGroupName.str(string());
 					continue;
 				}
-				//we found a matching switch, return the state at it before kicking it, with a plane that only contains that
-				//	single switch
-				Plane* singleSwitchPlane = newPlane(plane->owningLevel, plane->indexInOwningLevel);
-				singleSwitchPlane->connectionSwitches.push_back(connectionSwitch);
-				singleSwitchPlane->connections = plane->connections;
-				singleSwitchPlane->hasAction = true;
-				state->plane = singleSwitchPlane;
+				//we found a matching switch, write a clone of its plane to outSingleSwitchPlane containing only that single
+				//	switch and return the state at it before kicking it
+				testSolutionSingleSwitchPlane.owningLevel = plane->owningLevel;
+				testSolutionSingleSwitchPlane.indexInOwningLevel = plane->indexInOwningLevel;
+				testSolutionSingleSwitchPlane.connectionSwitches = { connectionSwitch };
+				testSolutionSingleSwitchPlane.connections = plane->connections;
+				testSolutionSingleSwitchPlane.hasAction = true;
+				*outSingleSwitchPlane = &testSolutionSingleSwitchPlane;
 				return state;
 			}
 		}
@@ -968,7 +972,6 @@ int Level::clearPotentialLevelStateHolders() {
 
 		//go through each step in the file and make sure we can activate that switch
 		vector<HintState::PotentialLevelState*> statesAtSolutionStep;
-		vector<Plane*> singleSwitchPlanes;
 		Hint* result = nullptr;
 		string line;
 		while (getline(file, line)) {
@@ -999,8 +1002,9 @@ int Level::clearPotentialLevelStateHolders() {
 					statesAtSolutionStep.end(), nextPotentialLevelStates->begin(), nextPotentialLevelStates->end());
 				nextPotentialLevelStates->clear();
 			}
+			Plane* singleSwitchPlane;
 			HintState::PotentialLevelState* stateAtSwitch =
-				Plane::findStateAtSwitch(statesAtSolutionStep, color, switchGroupName);
+				Plane::findStateAtSwitch(statesAtSolutionStep, color, switchGroupName, &singleSwitchPlane);
 			if (stateAtSwitch == nullptr) {
 				Logger::debugLogger.logString(
 					"ERROR: level " + to_string(levelN) + " solution line " + to_string(lineN)
@@ -1009,10 +1013,24 @@ int Level::clearPotentialLevelStateHolders() {
 			}
 
 			//we found the switch, so kick it and advance to the next step
-			singleSwitchPlanes.push_back(stateAtSwitch->plane);
+			Plane* planeWithAllSwitches = stateAtSwitch->plane;
+			stateAtSwitch->plane = singleSwitchPlane;
 			currentPotentialLevelStateSteps = stateAtSwitch->steps;
 			result = stateAtSwitch->plane->pursueSolutionAfterSwitches(stateAtSwitch, currentPotentialLevelStateSteps + 1);
 			statesAtSolutionStep.clear();
+
+			//if kicking the switch resulted in a new state, we need to restore the original plane in case it had multiple
+			//	switches
+			deque<HintState::PotentialLevelState*>* postKickPotentialLevelStates =
+				getNextPotentialLevelStatesForSteps(currentPotentialLevelStateSteps + 1);
+			if (!postKickPotentialLevelStates->empty())
+				postKickPotentialLevelStates->front()->plane = planeWithAllSwitches;
+			else {
+				Logger::debugLogger.logString(
+					"ERROR: level " + to_string(levelN) + " solution line " + to_string(lineN)
+						+ ": kicking switch resulted in old state: \"" + line + "\"");
+				break;
+			}
 		}
 
 		if (line != "end")
@@ -1026,8 +1044,6 @@ int Level::clearPotentialLevelStateHolders() {
 				"level " + to_string(levelN) + " solution verified, "
 					+ to_string(foundHintSearchTotalSteps) + "(" + to_string(foundHintSearchTotalHintSteps) + ")" + " steps");
 		clearPotentialLevelStateHolders();
-		for (Plane* singleSwitchPlane : singleSwitchPlanes)
-			delete singleSwitchPlane;
 	}
 #endif
 deque<HintState::PotentialLevelState*>* Level::getNextPotentialLevelStatesForSteps(int nextPotentialLevelStateSteps) {
