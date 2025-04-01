@@ -1302,7 +1302,7 @@ void MapState::saveState(ofstream& file) {
 	//don't save the rail states if we're saving the floor file
 	//also write that we unlocked all the switches
 	if (Editor::needsGameStateSave) {
-		file << lastActivatedSwitchColorFilePrefix << "100\n";
+		file << lastActivatedSwitchColorFilePrefix << (int)(MapState::colorCount - 1) << "\n";
 		return;
 	}
 	for (int i = 0; i < (int)railStates.size(); i++) {
