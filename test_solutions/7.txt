@@ -35,6 +35,7 @@ white: red-red
 white: black-red
 white: green-red
 white: green-red
+milestone: green: blue-red
 red: blue-green
 red: magenta-red
 red: white-red
