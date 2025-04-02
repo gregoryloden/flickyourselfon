@@ -221,13 +221,16 @@ void LevelTypes::Plane::findMilestonesToThisPlane(vector<Plane*>& levelPlanes, v
 		//if we get here, this connection is the only way to get to the next plane, and it is a rail connection
 		//look for a switch that only controls this rail
 		ConnectionSwitch* matchingConnectionSwitch = nullptr;
+		RailByteMaskData* matchingRailByteMaskData = nullptr;
 		for (Plane* plane : levelPlanes) {
+			//see if any of the switches in this plane match this rail
 			for (ConnectionSwitch& connectionSwitch : plane->connectionSwitches) {
 				for (RailByteMaskData* railByteMaskData : connectionSwitch.affectedRailByteMaskData) {
 					if (railByteMaskData->railByteIndex == railConnection->railByteIndex
 						&& railByteMaskData->getRailTileOffsetByteMask() == railConnection->railTileOffsetByteMask)
 					{
 						matchingConnectionSwitch = &connectionSwitch;
+						matchingRailByteMaskData = railByteMaskData;
 						break;
 					}
 				}
@@ -236,11 +239,18 @@ void LevelTypes::Plane::findMilestonesToThisPlane(vector<Plane*>& levelPlanes, v
 			}
 			if (matchingConnectionSwitch == nullptr)
 				continue;
+			//if we already found this switch as a milestone, we don't need to mark or track it again
+			else if (matchingConnectionSwitch->isMilestone)
+				break;
 
 			//we found a matching switch for this rail
 			//if it's single-use, it's a milestone
-			if (matchingConnectionSwitch->isSingleUse) {
+			if (matchingConnectionSwitch->isSingleUse)
 				matchingConnectionSwitch->isMilestone = true;
+			//if this switch is the only switch to control the rail (whether it's single-use or not), and the rail starts out
+			//	lowered, track the switch's plane as a destination plane
+			Rail* rail = matchingRailByteMaskData->rail;
+			if (rail->getGroups().size() == 1 && rail->getInitialTileOffset() != 0) {
 				//track its plane if it isn't already tracked
 				bool destinationPlaneAlreadyIncluded = false;
 				for (Plane* destinationPlane : outDestinationPlanes) {
