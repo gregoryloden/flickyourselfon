@@ -220,37 +220,39 @@ void LevelTypes::Plane::findMilestonesToThisPlane(vector<Plane*>& levelPlanes, v
 			continue;
 		//if we get here, this connection is the only way to get to the next plane, and it is a rail connection
 		//look for a switch that only controls this rail
-		bool foundMilestoneSwitch = false;
+		ConnectionSwitch* matchingConnectionSwitch = nullptr;
 		for (Plane* plane : levelPlanes) {
 			for (ConnectionSwitch& connectionSwitch : plane->connectionSwitches) {
-				//only single-use switches can be milestone switches
-				if (!connectionSwitch.isSingleUse)
-					continue;
-				//it's a single-use switch, it's a milestone if it matches this rail
 				for (RailByteMaskData* railByteMaskData : connectionSwitch.affectedRailByteMaskData) {
 					if (railByteMaskData->railByteIndex == railConnection->railByteIndex
 						&& railByteMaskData->getRailTileOffsetByteMask() == railConnection->railTileOffsetByteMask)
 					{
-						foundMilestoneSwitch = true;
-						connectionSwitch.isMilestone = true;
-						//track its plane if it isn't already tracked
-						bool destinationPlaneAlreadyIncluded = false;
-						for (Plane* destinationPlane : outDestinationPlanes) {
-							if (destinationPlane == plane) {
-								destinationPlaneAlreadyIncluded = true;
-								break;
-							}
-						}
-						if (!destinationPlaneAlreadyIncluded)
-							outDestinationPlanes.push_back(plane);
+						matchingConnectionSwitch = &connectionSwitch;
 						break;
 					}
 				}
-				if (foundMilestoneSwitch)
+				if (matchingConnectionSwitch != nullptr)
 					break;
 			}
-			if (foundMilestoneSwitch)
-				break;
+			if (matchingConnectionSwitch == nullptr)
+				continue;
+
+			//we found a matching switch for this rail
+			//if it's single-use, it's a milestone
+			if (matchingConnectionSwitch->isSingleUse) {
+				matchingConnectionSwitch->isMilestone = true;
+				//track its plane if it isn't already tracked
+				bool destinationPlaneAlreadyIncluded = false;
+				for (Plane* destinationPlane : outDestinationPlanes) {
+					if (destinationPlane == plane) {
+						destinationPlaneAlreadyIncluded = true;
+						break;
+					}
+				}
+				if (!destinationPlaneAlreadyIncluded)
+					outDestinationPlanes.push_back(plane);
+			}
+			break;
 		}
 	}
 	delete[] seenPlanes;
