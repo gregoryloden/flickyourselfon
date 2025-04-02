@@ -7,24 +7,24 @@ green: white-black
 green: magenta-black
 green: magenta-black
 blue: white-black
-blue: blue-red
+milestone: blue: blue-red
 blue: black-red
 blue: black-red
 blue: red-red
-red: blue-red
+milestone: red: blue-red
 red: white-red
 red: magenta-red
-red: red-cyan
+milestone: red: red-cyan
 
 #second milestone blue
 white: red-red
 green: black-red
-blue: green-red
+milestone: blue: green-red
 blue: red-red
 blue: white-black
 blue: black-red
 blue: black-red
-blue: blue-yellow
+milestone: blue: blue-yellow
 
 #third milestone green
 white: green-red
@@ -43,8 +43,8 @@ red: white-red
 red: black-green
 green: white-red
 green: yellow-red
-green: magenta-green
+milestone: green: magenta-green
 
 #fourth milestone white
-white: black-white
+milestone: white: black-white
 end

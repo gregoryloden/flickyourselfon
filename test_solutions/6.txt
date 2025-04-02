@@ -9,7 +9,7 @@ white: blue-black
 white: blue-black
 white: blue-black
 white: cyan-black
-white: white-black
+milestone: white: white-black
 end
 
 #magenta-black path
@@ -23,7 +23,7 @@ white: blue-black
 white: magenta-black
 white: green-black
 white: yellow-black
-white: white-black
+milestone: white: white-black
 end
 
 #hint-found == magenta-black path
@@ -37,5 +37,5 @@ white: blue-black
 white: magenta-black
 white: green-black
 white: yellow-black
-white: white-black
+milestone: white: white-black
 end

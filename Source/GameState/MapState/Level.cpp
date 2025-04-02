@@ -477,7 +477,9 @@ Hint* LevelTypes::Plane::pursueSolutionAfterSwitches(HintState::PotentialLevelSt
 		vector<HintState::PotentialLevelState*>& states,
 		char color,
 		const char* switchGroupName,
-		Plane** outPlaneWithAllSwitches)
+		Plane** outPlaneWithAllSwitches,
+		vector<Plane*>& outSingleSwitchPlanes,
+		bool* outSwitchIsMilestone)
 	{
 		stringstream checkGroupName;
 		for (HintState::PotentialLevelState* state : states) {
@@ -498,6 +500,8 @@ Hint* LevelTypes::Plane::pursueSolutionAfterSwitches(HintState::PotentialLevelSt
 				state->plane->connectionSwitches.push_back(connectionSwitch);
 				state->plane->connections = plane->connections;
 				state->plane->hasAction = true;
+				outSingleSwitchPlanes.push_back(state->plane);
+				*outSwitchIsMilestone = connectionSwitch.isMilestone;
 				return state;
 			}
 		}
@@ -992,6 +996,15 @@ int Level::clearPotentialLevelStateHolders() {
 				continue;
 			if (line == "end")
 				break;
+
+			//check if it's a milestone
+			bool expectMilestoneSwitch = false;
+			static constexpr char* milestonePrefix = "milestone: ";
+			if (StringUtils::startsWith(line, milestonePrefix)) {
+				expectMilestoneSwitch = true;
+				line = line.c_str() + StringUtils::strlenConst(milestonePrefix);
+			}
+
 			//find switch color and then group
 			static constexpr char* switchColorPrefixes[] { "red: ", "blue: ", "green: ", "white: " };
 			int color = 0;
@@ -1015,17 +1028,23 @@ int Level::clearPotentialLevelStateHolders() {
 				nextPotentialLevelStates->clear();
 			}
 			Plane* planeWithAllSwitches;
-			HintState::PotentialLevelState* stateAtSwitch =
-				Plane::findStateAtSwitch(statesAtSolutionStep, color, switchGroupName, &planeWithAllSwitches);
+			bool switchIsMilestone;
+			HintState::PotentialLevelState* stateAtSwitch = Plane::findStateAtSwitch(
+				statesAtSolutionStep, color, switchGroupName, &planeWithAllSwitches, singleSwitchPlanes, &switchIsMilestone);
 			if (stateAtSwitch == nullptr) {
 				Logger::debugLogger.logString(
 					"ERROR: level " + to_string(levelN) + " solution line " + to_string(lineN)
 						+ ": unable to reach switch, or state has already been seen: \"" + line + "\"");
 				break;
+			} else if (switchIsMilestone != expectMilestoneSwitch) {
+				Logger::debugLogger.logString(
+					"ERROR: level " + to_string(levelN) + " solution line " + to_string(lineN)
+						+ ": found " + (switchIsMilestone ? "milestone" : "non-milestone")
+						+ ", expected " + (expectMilestoneSwitch ? "milestone" : "non-milestone") + ": \"" + line + "\"");
+				break;
 			}
 
 			//we found the switch, so kick it and advance to the next step
-			singleSwitchPlanes.push_back(stateAtSwitch->plane);
 			currentPotentialLevelStateSteps = stateAtSwitch->steps;
 			result = stateAtSwitch->plane->pursueSolutionAfterSwitches(stateAtSwitch, currentPotentialLevelStateSteps + 1);
 			statesAtSolutionStep.clear();

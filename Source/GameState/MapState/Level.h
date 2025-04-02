@@ -110,13 +110,15 @@ namespace LevelTypes {
 			//go through all the given states and see if one has a plane with a switch matching the given description
 			//if there is one, the state will have a clone of the original plane containing only that matching switch, and the
 			//	original plane with all switches will be written to outPlaneWithAllSwitches
-			//callers are responsible for tracking and deleting the clone plane
+			//the clone plane is added to outSingleSwitchPlanes; callers are responsible for deleting it
 			//returns the state with the single-switch-cloned matching plane if one was found
 			static HintState::PotentialLevelState* findStateAtSwitch(
 				vector<HintState::PotentialLevelState*>& states,
 				char color,
 				const char* switchGroupName,
-				Plane** outPlaneWithAllSwitches);
+				Plane** outPlaneWithAllSwitches,
+				vector<Plane*>& outSingleSwitchPlanes,
+				bool* outSwitchIsMilestone);
 		#endif
 		//get the bounds of the hint to render for this plane
 		void getHintRenderBounds(int* outLeftWorldX, int* outTopWorldY, int* outRightWorldX, int* outBottomWorldY);
