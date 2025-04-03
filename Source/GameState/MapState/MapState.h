@@ -193,6 +193,9 @@ public:
 	static char getTile(int x, int y) { return tiles[y * mapWidth + x]; }
 	static char getHeight(int x, int y) { return heights[y * mapWidth + x]; }
 	static short getRailSwitchId(int x, int y) { return railSwitchIds[y * mapWidth + x]; }
+private:
+	static short getPlaneId(int x, int y) { return planeIds[y * mapWidth + x]; }
+public:
 	static Rail* getRailFromId(int railId) { return rails[railId & railSwitchIndexBitmask]; }
 	static short getIdFromRailIndex(short railIndex) { return railIndex | railIdValue; }
 	static short getIdFromSwitchIndex(short switchIndex) { return switchIndex | switchIdValue; }

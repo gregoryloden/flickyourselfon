@@ -875,7 +875,7 @@ Hint* MapState::generateHint(float playerX, float playerY) {
 	//with noclip or editing the save file, it's possible to be somewhere that isn't a plane accessible from the start, so don't
 	//	try to generate a hint
 	//should never happen with an umodified save file once the game is released
-	short planeId = planeIds[(int)playerY / tileSize * mapWidth + (int)playerX / tileSize];
+	short planeId = getPlaneId((int)playerX / tileSize, (int)playerY / tileSize);
 	if (planeId == 0) {
 		Logger::debugLogger.logString(
 			"ERROR: no plane found to generate hint at " + to_string(playerX) + "," + to_string(playerY));
@@ -899,7 +899,7 @@ int MapState::getLevelN(float playerX, float playerY) {
 		return 0;
 	//don't worry if the player is outside of a level plane (whether due to the intro animation, noclip, or a modified save
 	//	file)
-	short planeId = planeIds[(int)playerY / tileSize * mapWidth + (int)playerX / tileSize];
+	short planeId = getPlaneId((int)playerX / tileSize, (int)playerY / tileSize);
 	return planeId == 0 ? 0 : planes[planeId - 1]->getOwningLevel()->getLevelN();
 }
 void MapState::renderBelowPlayer(EntityState* camera, float playerWorldGroundY, char playerZ, int ticksTime) {
