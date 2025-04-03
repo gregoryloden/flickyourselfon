@@ -54,10 +54,16 @@ public:
 	void render(int screenLeftWorldX, int screenTopWorldY, bool isOn);
 	//render the groups for the segments
 	void renderGroups(int screenLeftWorldX, int screenTopWorldY);
-	//remove a segment from this reset switch if it matches the end segment of one of the branches
+	//remove a segment from this reset switch if the given color and group can be found in the branch whose end segment is the
+	//	given x and y
 	bool editorRemoveEndSegment(int x, int y, char color, char group);
 	//remove any segment matching the given color and group after the corresponding switch was deleted
 	void editorRemoveSwitchSegment(char color, char group);
+private:
+	//search the given list for the given segment, and remove it if we find it
+	//returns whether the segment was found/removed
+	bool editorFindAndRemoveSegment(vector<Segment>* segments, char color, char group);
+public:
 	//add a segment to this reset switch if it's new and the space is valid
 	bool editorAddSegment(int x, int y, char color, char group);
 	//change the group for a segment matching the given color and old group

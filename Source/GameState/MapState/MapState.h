@@ -234,7 +234,7 @@ public:
 	static void buildMap();
 private:
 	//go along the path and add rail segment indices to a list, and set the given id over those tiles
-	//the given rail index is assumed to already have its tile marked
+	//the given rail index is assumed to already have its tile marked, and is not included in the result list
 	//returns the indices of the parsed segments
 	static vector<int> parseRail(int* pixels, int redShift, int segmentIndex, int railSwitchId);
 	//read rail colors and groups from the reset switch segments starting from the given tile, if there is a segment there
