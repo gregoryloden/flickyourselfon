@@ -6,7 +6,7 @@ green: yellow-red
 green: white-black
 green: magenta-black
 green: magenta-black
-blue: white-black
+blue: yellow-green
 milestone: blue: blue-red
 blue: black-red
 blue: black-red
@@ -21,7 +21,7 @@ white: red-red
 green: black-red
 milestone: blue: green-red
 blue: red-red
-blue: white-black
+blue: yellow-green
 blue: black-red
 blue: black-red
 milestone: blue: blue-yellow
