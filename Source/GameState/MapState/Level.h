@@ -11,6 +11,7 @@
 class Level;
 class Rail;
 class Switch;
+class ResetSwitch;
 namespace LevelTypes {
 	class RailByteMaskData;
 }
@@ -102,6 +103,10 @@ namespace LevelTypes {
 		void extendConnections();
 		//remove plane-plane connections to planes that aren't hasAction
 		void removeNonHasActionPlaneConnections();
+		#ifdef DEBUG
+			//validate that the reset switch resets all the switches in this plane
+			void validateResetSwitch(ResetSwitch* resetSwitch);
+		#endif
 		//follow all possible paths to other planes, and return a hint if any of those other planes are the victory plane
 		Hint* pursueSolutionToPlanes(HintState::PotentialLevelState* currentState, int basePotentialLevelStateSteps);
 		//kick each switch in this plane, and then pursue solutions from those states
@@ -267,6 +272,10 @@ public:
 	//generate a hint to solve this level from the start, to save time in the future allocating PotentialLevelStates when
 	//	generating hints
 	void preAllocatePotentialLevelStates();
+	#ifdef DEBUG
+		//validate that the reset switch resets all the switches of this level, and no more
+		void validateResetSwitch(ResetSwitch* resetSwitch);
+	#endif
 	//generate a hint based on the initial state in this level
 	Hint* generateHint(LevelTypes::Plane* currentPlane, GetRailState getRailState, char lastActivatedSwitchColor);
 private:

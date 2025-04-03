@@ -2,6 +2,7 @@
 #include "GameState/MapState/MapState.h"
 #include "GameState/MapState/Rail.h"
 #include "GameState/MapState/Switch.h"
+#include "GameState/MapState/ResetSwitch.h"
 #include "Sprites/SpriteSheet.h"
 #ifdef TEST_SOLUTIONS
 	#include "Util/FileUtils.h"
@@ -318,6 +319,22 @@ void LevelTypes::Plane::removeNonHasActionPlaneConnections() {
 			iter = connections.erase(iter);
 	}
 }
+#ifdef DEBUG
+	//validate that the reset switch resets all the switches in this plane
+	void LevelTypes::Plane::validateResetSwitch(ResetSwitch* resetSwitch) {
+		for (ConnectionSwitch& connectionSwitch : connectionSwitches) {
+			Switch* switch0 = connectionSwitch.hint.data.switch0;
+			if (!resetSwitch->hasGroupForColor(switch0->getGroup(), switch0->getColor())) {
+				stringstream message;
+				message
+					<< "ERROR: level " << to_string(owningLevel->getLevelN())
+					<< ": reset switch missing c" << (int)switch0->getColor() << " ";
+				MapState::logGroup(switch0->getGroup(), &message);
+				Logger::debugLogger.logString(message.str());
+			}
+		}
+	}
+#endif
 Hint* LevelTypes::Plane::pursueSolutionToPlanes(
 	HintState::PotentialLevelState* currentState, int basePotentialLevelStateSteps)
 {
@@ -755,6 +772,28 @@ void Level::preAllocatePotentialLevelStates() {
 		testSolutions(getRailState);
 	#endif
 }
+#ifdef DEBUG
+	void Level::validateResetSwitch(ResetSwitch* resetSwitch) {
+		//validate that every switch in this level can be found on the reset switch
+		for (Plane* plane : planes)
+			plane->validateResetSwitch(resetSwitch);
+
+		//validate that every rail affected by the reset switch belongs in this level
+		for (short resetSwitchRailId : *resetSwitch->getAffectedRailIds()) {
+			bool foundRailInLevel = false;
+			for (RailByteMaskData& railByteMaskData : allRailByteMaskData) {
+				if (railByteMaskData.railId == resetSwitchRailId) {
+					foundRailInLevel = true;
+					break;
+				}
+			}
+			if (!foundRailInLevel)
+				Logger::debugLogger.logString(
+					"ERROR: level " + to_string(levelN) + ": reset switch affects rail " + to_string(resetSwitchRailId)
+						+ " outside of level");
+		}
+	}
+#endif
 Hint* Level::generateHint(Plane* currentPlane, GetRailState getRailState, char lastActivatedSwitchColor) {
 	hintSearchIsRunning = true;
 	if (lastActivatedSwitchColor < minimumRailColor)
