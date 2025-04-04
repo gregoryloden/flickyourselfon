@@ -54,15 +54,20 @@ public:
 	void render(int screenLeftWorldX, int screenTopWorldY, bool isOn);
 	//render the groups for the segments
 	void renderGroups(int screenLeftWorldX, int screenTopWorldY);
-	//remove a segment from this reset switch if the given color and group can be found in the branch whose end segment is the
-	//	given x and y
-	bool editorRemoveEndSegment(int x, int y, char color, char group);
+	//remove a segment from this reset switch if it matches a segment in one of the branches
+	//writes the x/y of the tile that used to have a segment, but no longer does, to outEndX/outEndY if a matching segment was
+	//	found/deleted
+	//returns whether a segment was found/deleted
+	bool editorRemoveSegment(int x, int y, char color, char group, int* outFreeX, int* outFreeY);
 	//remove any segment matching the given color and group after the corresponding switch was deleted
-	void editorRemoveSwitchSegment(char color, char group);
+	//writes the x/y of the tile that used to have a segment, but no longer does, to outEndX/outEndY if a matching segment was
+	//	found
+	//returns whether a segment was found/deleted
+	bool editorRemoveSwitchSegment(char color, char group, int* outEndX, int* outEndY);
 private:
-	//search the given list for the given segment, and remove it if we find it
-	//returns whether the segment was found/removed
-	bool editorFindAndRemoveSegment(vector<Segment>* segments, char color, char group);
+	//remove the given segment that we found earlier from the given list
+	//writes the x/y of the tile that used to have a segment, but no longer does, to outEndX/outEndY
+	void editorRemoveFoundSegment(vector<Segment>* segments, int segmentI, int* outFreeX, int* outFreeY);
 public:
 	//add a segment to this reset switch if it's new and the space is valid
 	bool editorAddSegment(int x, int y, char color, char group);

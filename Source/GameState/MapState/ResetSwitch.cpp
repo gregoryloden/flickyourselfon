@@ -106,47 +106,49 @@ void ResetSwitch::renderGroups(int screenLeftWorldX, int screenTopWorldY) {
 	for (Segment& segment : rightSegments)
 		segment.renderGroup(screenLeftWorldX, screenTopWorldY);
 }
-bool ResetSwitch::editorRemoveEndSegment(int x, int y, char color, char group) {
+bool ResetSwitch::editorRemoveSegment(int x, int y, char color, char group, int* outFreeX, int* outFreeY) {
 	vector<Segment>* allSegments[] { &leftSegments, &bottomSegments, &rightSegments };
 	for (vector<Segment>* segments : allSegments) {
-		if (segments->empty())
-			continue;
-		//make sure this is the last segment of the branch
-		Segment& lastSegment = segments->back();
-		if (lastSegment.x != x || lastSegment.y != y)
-			continue;
-		//find the actual segment to delete
-		if (editorFindAndRemoveSegment(segments, color, group))
-			return true;
-	}
-	return false;
-}
-void ResetSwitch::editorRemoveSwitchSegment(char color, char group) {
-	if (group == 0)
-		return;
-	vector<Segment>* allSegments[] { &leftSegments, &bottomSegments, &rightSegments };
-	for (vector<Segment>* segments : allSegments) {
-		if (editorFindAndRemoveSegment(segments, color, group))
-			return;
-	}
-}
-bool ResetSwitch::editorFindAndRemoveSegment(vector<Segment>* segments, char color, char group) {
-	for (int i = 0; i < (int)segments->size(); i++) {
-		Segment& segment = (*segments)[i];
-		if (segment.color != color || segment.group != group)
-			continue;
-		//we found a matching color + group
-		//shift only the colors and groups back to preserve the positions + sprite indices
-		for (i++; i < (int)segments->size(); i++) {
-			Segment& deleteSegment = (*segments)[i - 1];
-			Segment& remainingSegment = (*segments)[i];
-			deleteSegment.color = remainingSegment.color;
-			deleteSegment.group = remainingSegment.group;
+		for (int i = 0; i < (int)segments->size(); i++) {
+			Segment& segment = (*segments)[i];
+			if (segment.x == x && segment.y == y && segment.color == color && segment.group == group) {
+				//don't delete group 0 if there's a segment of the same color after it
+				if (group == 0 && i + 1 < (int)segments->size() && (*segments)[i + 1].color == color)
+					return false;
+				editorRemoveFoundSegment(segments, i, outFreeX, outFreeY);
+				return true;
+			}
 		}
-		segments->erase(segments->end() - 1);
-		return true;
 	}
 	return false;
+}
+bool ResetSwitch::editorRemoveSwitchSegment(char color, char group, int* outFreeX, int* outFreeY) {
+	if (group == 0)
+		return false;
+	vector<Segment>* allSegments[] { &leftSegments, &bottomSegments, &rightSegments };
+	for (vector<Segment>* segments : allSegments) {
+		for (int i = 1; i < (int)segments->size(); i++) {
+			Segment& segment = (*segments)[i];
+			if (segment.color != color || segment.group != group)
+				continue;
+			//we found a matching color + group, delete it
+			editorRemoveFoundSegment(segments, i, outFreeX, outFreeY);
+			return true;
+		}
+	}
+	return false;
+}
+void ResetSwitch::editorRemoveFoundSegment(vector<Segment>* segments, int segmentI, int* outFreeX, int* outFreeY) {
+	//shift only the colors and groups back to preserve the positions + sprite indices
+	for (segmentI++; segmentI < (int)segments->size(); segmentI++) {
+		Segment& deleteSegment = (*segments)[segmentI - 1];
+		Segment& remainingSegment = (*segments)[segmentI];
+		deleteSegment.color = remainingSegment.color;
+		deleteSegment.group = remainingSegment.group;
+	}
+	*outFreeX = segments->back().x;
+	*outFreeY = segments->back().y;
+	segments->erase(segments->end() - 1);
 }
 bool ResetSwitch::editorAddSegment(int x, int y, char color, char group) {
 	//make sure this color/group combination doesn't already exist, except for group 0

@@ -1528,7 +1528,9 @@ void MapState::editorSetSwitch(int leftX, int topY, char color, char group) {
 				rail->editorRemoveGroup(group);
 		}
 		for (ResetSwitch* resetSwitch : resetSwitches) {
-			resetSwitch->editorRemoveSwitchSegment(color, group);
+			int freeX, freeY;
+			if (resetSwitch->editorRemoveSwitchSegment(color, group, &freeX, &freeY))
+				editorSetRailSwitchId(freeX, freeY, 0);
 		}
 	//we're setting a new switch
 	} else {
@@ -1561,8 +1563,10 @@ void MapState::editorSetRail(int x, int y, char color, char group) {
 		return;
 	//delete a segment from a reset switch
 	} else if (tileHasResetSwitch(x, y)) {
-		if (resetSwitches[getRailSwitchId(x, y) & railSwitchIndexBitmask]->editorRemoveEndSegment(x, y, color, group))
-			editorSetRailSwitchId(x, y, 0);
+		int freeX, freeY;
+		if (resetSwitches[getRailSwitchId(x, y) & railSwitchIndexBitmask]
+				->editorRemoveSegment(x, y, color, group, &freeX, &freeY))
+			editorSetRailSwitchId(freeX, freeY, 0);
 		return;
 	}
 
