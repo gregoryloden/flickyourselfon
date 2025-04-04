@@ -160,6 +160,7 @@ bool ResetSwitch::editorAddSegment(int x, int y, char color, char group) {
 		}
 	}
 	bool newColor = true;
+	bool insertingGroup = false;
 	vector<Segment>* segmentsToAddTo = nullptr;
 	//if this position is adjacent to the reset switch bottom, we can definitely place a segment here
 	if (x == centerX - 1 && y == bottomY)
@@ -196,8 +197,16 @@ bool ResetSwitch::editorAddSegment(int x, int y, char color, char group) {
 		if (segmentsToAddTo == nullptr)
 			return false;
 		newColor = color != segmentsToAddTo->back().color;
-		//can't add a third color
-		if (newColor && segmentsToAddTo->front().color != segmentsToAddTo->back().color)
+		//not a new color, we can definitely add it
+		if (!newColor)
+			;
+		//if it's the same as the first color, we'll insert it at the end of the first color
+		else if (color == segmentsToAddTo->front().color) {
+			insertingGroup = true;
+			//and it's actually not a new color
+			newColor = false;
+		//we can't add a third color
+		} else if (segmentsToAddTo->front().color != segmentsToAddTo->back().color)
 			return false;
 	}
 	//adding a new color and group 0 must be paired with each other
@@ -206,6 +215,21 @@ bool ResetSwitch::editorAddSegment(int x, int y, char color, char group) {
 
 	//if we get here, we can add this segment
 	addSegment(x, y, color, group, segmentsToAddTo);
+	//if we needed to insert it, shift the other segment group and colors back
+	if (insertingGroup) {
+		for (int i = (int)segmentsToAddTo->size() - 1; i >= 1; i--) {
+			Segment& shiftFromSegment = (*segmentsToAddTo)[i - 1];
+			Segment& shiftToSegment = (*segmentsToAddTo)[i];
+			shiftToSegment.color = shiftFromSegment.color;
+			shiftToSegment.group = shiftFromSegment.group;
+			//the old group 0 segment for the second color is where the new segment goes
+			if (shiftFromSegment.group == 0) {
+				shiftFromSegment.color = color;
+				shiftFromSegment.group = group;
+				break;
+			}
+		}
+	}
 	return true;
 }
 void ResetSwitch::editorRewriteGroup(char color, char oldGroup, char group) {
