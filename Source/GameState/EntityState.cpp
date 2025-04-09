@@ -191,16 +191,22 @@ Particle::Particle(objCounterParameters())
 , spriteAnimation(nullptr)
 , spriteAnimationStartTicksTime(0)
 , spriteDirection(SpriteDirection::Right)
+, r(0)
+, g(0)
+, b(0)
 , isAbovePlayer(false) {
 }
 Particle::~Particle() {
 	//don't delete the sprite animation, SpriteRegistry owns it
 }
-Particle* Particle::produce(objCounterParametersComma() float pX, float pY, bool pIsAbovePlayer) {
+Particle* Particle::produce(objCounterParametersComma() float pX, float pY, float pR, float pG, float pB, bool pIsAbovePlayer) {
 	initializeWithNewFromPool(p, Particle)
 	p->x.set(newConstantValue(pX));
 	p->y.set(newConstantValue(pY));
 	p->spriteAnimation = nullptr;
+	p->r = pR;
+	p->g = pG;
+	p->b = pB;
 	p->isAbovePlayer = pIsAbovePlayer;
 	return p;
 }
@@ -208,6 +214,9 @@ void Particle::copyParticle(Particle* other) {
 	copyEntityState(other);
 	setSpriteAnimation(other->spriteAnimation, other->spriteAnimationStartTicksTime);
 	setDirection(other->spriteDirection);
+	r = other->r;
+	g = other->g;
+	b = other->b;
 	isAbovePlayer = other->isAbovePlayer;
 }
 pooledReferenceCounterDefineRelease(Particle)
@@ -232,6 +241,7 @@ void Particle::render(EntityState* camera, int ticksTime) {
 	if (spriteAnimation == nullptr)
 		return;
 
+	glColor4f((GLfloat)r, (GLfloat)g, (GLfloat)b, 1.0f);
 	float renderCenterX = getRenderCenterScreenX(camera,  ticksTime);
 	float renderCenterY = getRenderCenterScreenY(camera,  ticksTime);
 	spriteAnimation->renderUsingCenter(

@@ -760,46 +760,61 @@ void MapState::updateWithPreviousMapState(MapState* prev, int ticksTime) {
 		railStates[i]->updateWithPreviousRailState(prev->railStates[i], ticksTime);
 
 	while (particles.size() < prev->particles.size())
-		particles.push_back(newParticle(0, 0, false));
+		particles.push_back(newParticle(0, 0, 1, 1, 1, false));
 	while (particles.size() > prev->particles.size())
 		particles.pop_back();
 	for (int i = (int)particles.size() - 1; i >= 0; i--) {
 		if (!particles[i].get()->updateWithPreviousParticle(prev->particles[i].get(), ticksTime))
 			particles.erase(particles.begin() + i);
 	}
-	if (particles.empty())
-		radioWavesColor = -1;
 }
 Particle* MapState::queueParticle(
 	float centerX,
 	float centerY,
+	float r,
+	float g,
+	float b,
 	bool isAbovePlayer,
 	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> components,
 	int ticksTime)
 {
-	Particle* particle = newParticle(centerX, centerY, isAbovePlayer);
+	Particle* particle = newParticle(centerX, centerY, r, g, b, isAbovePlayer);
 	particle->beginEntityAnimation(&components, ticksTime);
 	particles.push_back(particle);
 	return particle;
 }
+Particle* MapState::queueParticleWithWaveColor(
+	float centerX,
+	float centerY,
+	char color,
+	bool isAbovePlayer,
+	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> components,
+	int ticksTime)
+{
+	float r = (color == squareColor || color == sineColor) ? 1.0f : 0.0f;
+	float g = (color == sawColor || color == sineColor) ? 1.0f : 0.0f;
+	float b = (color == triangleColor || color == sineColor) ? 1.0f : 0.0f;
+	return queueParticle(centerX, centerY, r, g, b, isAbovePlayer, components, ticksTime);
+}
 void MapState::flipSwitch(short switchId, bool moveRailsForward, bool allowRadioTowerAnimation, int ticksTime) {
 	SwitchState* switchState = switchStates[switchId & railSwitchIndexBitmask];
 	Switch* switch0 = switchState->getSwitch();
+	char switchColor = switch0->getColor();
 	//this is a turn-on-other-switches switch, flip it if we haven't done so already
 	if (switch0->getGroup() == 0) {
-		if (lastActivatedSwitchColor < switch0->getColor()) {
-			lastActivatedSwitchColor = switch0->getColor();
+		if (lastActivatedSwitchColor < switchColor) {
+			lastActivatedSwitchColor = switchColor;
 			if (allowRadioTowerAnimation)
 				shouldPlayRadioTowerAnimation = true;
 		}
 	//this is just a regular switch and we've turned on the parent switch, flip it
-	} else if (lastActivatedSwitchColor >= switch0->getColor()) {
+	} else if (lastActivatedSwitchColor >= switchColor) {
 		switchState->flip(moveRailsForward, ticksTime);
 
-		radioWavesColor = switch0->getColor();
-		queueParticle(
+		queueParticleWithWaveColor(
 			switch0->getSwitchWavesCenterX(),
 			switch0->getSwitchWavesCenterY(),
+			switchColor,
 			true,
 			{
 				entityAnimationSpriteAnimationWithDelay(SpriteRegistry::switchWavesAnimation),
@@ -810,9 +825,10 @@ void MapState::flipSwitch(short switchId, bool moveRailsForward, bool allowRadio
 			Rail* rail = railState->getRail();
 			Rail::Segment* segments[] { rail->getSegment(0), rail->getSegment(rail->getSegmentCount() - 1) };
 			for (Rail::Segment* segment : segments)
-				queueParticle(
+				queueParticleWithWaveColor(
 					segment->tileCenterX(),
 					segment->tileCenterY(),
+					rail->getColor(),
 					true,
 					{
 						newEntityAnimationDelay(SpriteRegistry::radioWaveAnimationTicksPerFrame),
@@ -821,7 +837,7 @@ void MapState::flipSwitch(short switchId, bool moveRailsForward, bool allowRadio
 					ticksTime);
 		}
 
-		Audio::railSwitchWavesSounds[radioWavesColor]->play(0);
+		Audio::railSwitchWavesSounds[switchColor]->play(0);
 	}
 }
 void MapState::flipResetSwitch(short resetSwitchId, KickResetSwitchUndoState* kickResetSwitchUndoState, int ticksTime) {
@@ -848,9 +864,10 @@ void MapState::writeCurrentRailStates(short resetSwitchId, KickResetSwitchUndoSt
 int MapState::startRadioWavesAnimation(int initialTicksDelay, int ticksTime) {
 	radioWavesColor = lastActivatedSwitchColor;
 	static constexpr int interRadioWavesAnimationTicks = 1500;
-	Particle* particle = queueParticle(
+	Particle* particle = queueParticleWithWaveColor(
 		antennaCenterWorldX(),
 		antennaCenterWorldY(),
+		radioWavesColor,
 		true,
 		{
 			newEntityAnimationDelay(initialTicksDelay),
@@ -873,9 +890,10 @@ void MapState::startSwitchesFadeInAnimation(int initialTicksDelay, int ticksTime
 	for (Switch* switch0 : switches) {
 		if (switch0->getColor() != lastActivatedSwitchColor || switch0->getGroup() == 0)
 			continue;
-		queueParticle(
+		queueParticleWithWaveColor(
 			switch0->getSwitchWavesCenterX(),
 			switch0->getSwitchWavesCenterY(),
+			lastActivatedSwitchColor,
 			true,
 			{
 				newEntityAnimationDelay(initialTicksDelay),
@@ -1106,11 +1124,6 @@ void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int 
 
 	//draw particles above the player
 	glEnable(GL_BLEND);
-	float radioWavesR = (radioWavesColor == squareColor || radioWavesColor == sineColor) ? 1.0f : 0.0f;
-	float radioWavesG = (radioWavesColor == sawColor || radioWavesColor == sineColor) ? 1.0f : 0.0f;
-	float radioWavesB = (radioWavesColor == triangleColor || radioWavesColor == sineColor) ? 1.0f : 0.0f;
-	if (radioWavesColor != -1)
-		glColor4f(radioWavesR, radioWavesG, radioWavesB, 1.0f);
 	for (ReferenceCounterHolder<Particle>& particle : particles) {
 		if (particle.get()->getIsAbovePlayer())
 			particle.get()->render(camera, ticksTime);
@@ -1120,6 +1133,9 @@ void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int 
 	if (ticksTime < waveformEndTicksTime && ticksTime > waveformStartTicksTime) {
 		//find where we are in the animation
 		static constexpr float waveformAnimationPeriods = 2.5f;
+		float radioWavesR = (radioWavesColor == squareColor || radioWavesColor == sineColor) ? 1.0f : 0.0f;
+		float radioWavesG = (radioWavesColor == sawColor || radioWavesColor == sineColor) ? 1.0f : 0.0f;
+		float radioWavesB = (radioWavesColor == triangleColor || radioWavesColor == sineColor) ? 1.0f : 0.0f;
 		float alpha = 0.625f;
 		if (ticksTime - waveformStartTicksTime < waveformStartEndBufferTicks)
 			alpha *= (float)(ticksTime - waveformStartTicksTime) / (float)waveformStartEndBufferTicks;

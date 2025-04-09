@@ -3,7 +3,7 @@
 #include "Util/PooledReferenceCounter.h"
 
 #define newDynamicCameraAnchor() produceWithoutArgs(DynamicCameraAnchor)
-#define newParticle(x, y, isAbovePlayer) produceWithArgs(Particle, x, y, isAbovePlayer)
+#define newParticle(x, y, r, g, b, isAbovePlayer) produceWithArgs(Particle, x, y, r, g, b, isAbovePlayer)
 
 class DynamicValue;
 class EntityAnimation;
@@ -118,6 +118,9 @@ private:
 	SpriteAnimation* spriteAnimation;
 	int spriteAnimationStartTicksTime;
 	SpriteDirection spriteDirection;
+	float r;
+	float g;
+	float b;
 	bool isAbovePlayer;
 
 public:
@@ -128,7 +131,7 @@ public:
 	//don't do anything based on a camera change
 	virtual void setNextCamera(GameState* nextGameState, int ticksTime) {}
 	//initialize and return a Particle
-	static Particle* produce(objCounterParametersComma() float pX, float pY, bool pIsAbovePlayer);
+	static Particle* produce(objCounterParametersComma() float pX, float pY, float pR, float pG, float pB, bool pIsAbovePlayer);
 	//copy the state of the other Particle
 	void copyParticle(Particle* other);
 	//release a reference to this Particle and return it to the pool if applicable

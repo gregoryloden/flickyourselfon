@@ -189,6 +189,9 @@ void PlayerState::spawnParticle(
 	mapState.get()->queueParticle(
 		pX,
 		pY,
+		1,
+		1,
+		1,
 		pDirection == SpriteDirection::Up,
 		{
 			newEntityAnimationSetSpriteAnimation(pAnimation),
@@ -912,6 +915,9 @@ void PlayerState::trySpawnGoalSparks(int ticksTime) {
 			mapState.get()->queueParticle(
 				sparkX,
 				sparkY,
+				1,
+				1,
+				1,
 				false,
 				{
 					newEntityAnimationDelay(initialDelay),

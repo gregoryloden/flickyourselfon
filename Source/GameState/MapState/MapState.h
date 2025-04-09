@@ -301,9 +301,22 @@ public:
 	Particle* queueParticle(
 		float centerX,
 		float centerY,
+		float r,
+		float g,
+		float b,
 		bool isAbovePlayer,
 		vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> components,
 		int ticksTime);
+private:
+	//queue a particle colored according to the given waveform color
+	Particle* queueParticleWithWaveColor(
+		float centerX,
+		float centerY,
+		char color,
+		bool isAbovePlayer,
+		vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> components,
+		int ticksTime);
+public:
 	//flip a switch
 	void flipSwitch(short switchId, bool moveRailsForward, bool allowRadioTowerAnimation, int ticksTime);
 	//flip a reset switch
