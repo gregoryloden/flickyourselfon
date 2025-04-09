@@ -1053,7 +1053,7 @@ void PlayerState::kickClimb(float currentX, float currentY, float targetX, float
 		newEntityAnimationGenerateHint(&Hint::none),
 	});
 
-	tryAddNoOpUndoState();
+	prepForNewUndoState();
 	stackNewClimbFallUndoState(undoState, currentX, currentY, z, hint);
 	beginEntityAnimation(&kickingAnimationComponents, ticksTime);
 	float currentWorldGroundY = getWorldGroundY(ticksTime);
@@ -1145,7 +1145,7 @@ void PlayerState::kickFall(float currentX, float currentY, float targetX, float 
 		newEntityAnimationGenerateHint(&Hint::none),
 	});
 
-	tryAddNoOpUndoState();
+	prepForNewUndoState();
 	stackNewClimbFallUndoState(undoState, currentX, currentY, z, hint);
 	beginEntityAnimation(&kickingAnimationComponents, ticksTime);
 	float currentWorldGroundY = getWorldGroundY(ticksTime);
@@ -1172,7 +1172,7 @@ void PlayerState::kickRail(short railId, float xPosition, float yPosition, int t
 		nullptr,
 		nullptr,
 		nullptr);
-	tryAddNoOpUndoState();
+	prepForNewUndoState();
 	stackNewRideRailUndoState(undoState, railId, hint);
 	undoRedoTutorialUnlocked = true;
 	beginEntityAnimation(&ridingRailAnimationComponents, ticksTime);
@@ -1385,7 +1385,7 @@ void PlayerState::kickSwitch(short switchId, int ticksTime) {
 	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> kickAnimationComponents;
 	addKickSwitchComponents(switchId, &kickAnimationComponents, true, true, &Hint::none);
 	beginEntityAnimation(&kickAnimationComponents, ticksTime);
-	tryAddNoOpUndoState();
+	prepForNewUndoState();
 	stackNewKickSwitchUndoState(undoState, switchId, spriteDirection, hint);
 	undoRedoTutorialUnlocked = true;
 }
@@ -1415,7 +1415,7 @@ void PlayerState::kickResetSwitch(short resetSwitchId, int ticksTime) {
 	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> kickAnimationComponents;
 	addKickResetSwitchComponents(resetSwitchId, &kickAnimationComponents, nullptr, &Hint::none);
 	beginEntityAnimation(&kickAnimationComponents, ticksTime);
-	tryAddNoOpUndoState();
+	prepForNewUndoState();
 	mapState.get()->writeCurrentRailStates(
 		resetSwitchId, stackNewKickResetSwitchUndoState(undoState, resetSwitchId, spriteDirection, hint));
 	undoRedoTutorialUnlocked = true;
@@ -1449,10 +1449,12 @@ void PlayerState::setUndoState(ReferenceCounterHolder<UndoState>& holder, UndoSt
 		//we assume that we never replace an entire state stack with a new one, so this will not create a stack overflow
 		holder.set(newUndoState);
 }
-void PlayerState::tryAddNoOpUndoState() {
+void PlayerState::prepForNewUndoState() {
 	//include an extra no-op so that after undoing an action and moving, the player can undo straight to the action's location
 	if (undoState.get() != nullptr && undoState.get()->getTypeIdentifier() != NoOpUndoState::classTypeIdentifier)
 		stackNewNoOpUndoState(undoState);
+	//clear the redo state
+	setUndoState(redoState, nullptr);
 }
 void PlayerState::clearUndoRedoStates() {
 	setUndoState(undoState, nullptr);
