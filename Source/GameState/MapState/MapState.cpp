@@ -794,6 +794,20 @@ Particle* MapState::queueParticleWithWaveColor(
 	float b = (color == triangleColor || color == sineColor) ? 1.0f : 0.0f;
 	return queueParticle(centerX, centerY, r, g, b, isAbovePlayer, components, ticksTime);
 }
+void MapState::queueEndSegmentParticles(Rail* rail, int ticksTime) {
+	Rail::Segment* segments[] { rail->getSegment(0), rail->getSegment(rail->getSegmentCount() - 1) };
+	for (Rail::Segment* segment : segments)
+		queueParticleWithWaveColor(
+			segment->tileCenterX(),
+			segment->tileCenterY(),
+			rail->getColor(),
+			true,
+			{
+				newEntityAnimationDelay(SpriteRegistry::radioWaveAnimationTicksPerFrame),
+				entityAnimationSpriteAnimationWithDelay(SpriteRegistry::railWavesAnimation),
+			},
+			ticksTime);
+}
 void MapState::flipSwitch(short switchId, bool moveRailsForward, bool allowRadioTowerAnimation, int ticksTime) {
 	SwitchState* switchState = switchStates[switchId & railSwitchIndexBitmask];
 	Switch* switch0 = switchState->getSwitch();
@@ -819,36 +833,47 @@ void MapState::flipSwitch(short switchId, bool moveRailsForward, bool allowRadio
 			},
 			ticksTime);
 
-		for (RailState* railState : *switchState->getConnectedRailStates()) {
-			Rail* rail = railState->getRail();
-			Rail::Segment* segments[] { rail->getSegment(0), rail->getSegment(rail->getSegmentCount() - 1) };
-			for (Rail::Segment* segment : segments)
-				queueParticleWithWaveColor(
-					segment->tileCenterX(),
-					segment->tileCenterY(),
-					rail->getColor(),
-					true,
-					{
-						newEntityAnimationDelay(SpriteRegistry::radioWaveAnimationTicksPerFrame),
-						entityAnimationSpriteAnimationWithDelay(SpriteRegistry::railWavesAnimation),
-					},
-					ticksTime);
-		}
+		for (RailState* railState : *switchState->getConnectedRailStates())
+			queueEndSegmentParticles(railState->getRail(), ticksTime);
 
 		Audio::railSwitchWavesSounds[switchColor]->play(0);
 	}
 }
 void MapState::flipResetSwitch(short resetSwitchId, KickResetSwitchUndoState* kickResetSwitchUndoState, int ticksTime) {
 	ResetSwitchState* resetSwitchState = resetSwitchStates[resetSwitchId & railSwitchIndexBitmask];
+	int maxResetRailColor = -1;
 	if (kickResetSwitchUndoState != nullptr) {
-		for (KickResetSwitchUndoState::RailUndoState& railUndoState : *kickResetSwitchUndoState->getRailUndoStates())
-			railStates[railUndoState.railId & railSwitchIndexBitmask]->loadState(
-				railUndoState.fromTargetTileOffset, railUndoState.fromMovementDirection, true);
+		for (KickResetSwitchUndoState::RailUndoState& railUndoState : *kickResetSwitchUndoState->getRailUndoStates()) {
+			RailState* railState = railStates[railUndoState.railId & railSwitchIndexBitmask];
+			if (railState->loadState(railUndoState.fromTargetTileOffset, railUndoState.fromMovementDirection, true)) {
+				Rail* rail = railState->getRail();
+				queueEndSegmentParticles(rail, ticksTime);
+				maxResetRailColor = MathUtils::max(maxResetRailColor, rail->getColor());
+			}
+		}
 	} else {
-		for (short railId : *resetSwitchState->getResetSwitch()->getAffectedRailIds())
-			railStates[railId & railSwitchIndexBitmask]->reset(true);
+		for (short railId : *resetSwitchState->getResetSwitch()->getAffectedRailIds()) {
+			RailState* railState = railStates[railId & railSwitchIndexBitmask];
+			if (railState->reset(true)) {
+				Rail* rail = railState->getRail();
+				queueEndSegmentParticles(rail, ticksTime);
+				maxResetRailColor = MathUtils::max(maxResetRailColor, rail->getColor());
+			}
+		}
 	}
 	resetSwitchState->flip(ticksTime);
+	if (maxResetRailColor >= 0) {
+		queueParticleWithWaveColor(
+			(float)(resetSwitchState->getResetSwitch()->getCenterX() * tileSize + halfTileSize),
+			(float)((resetSwitchState->getResetSwitch()->getBottomY() - 1) * tileSize),
+			maxResetRailColor,
+			true,
+			{
+				entityAnimationSpriteAnimationWithDelay(SpriteRegistry::railWavesAnimation),
+			},
+			ticksTime);
+		Audio::resetSwitchWavesSounds[maxResetRailColor]->play(0);
+	}
 }
 void MapState::writeCurrentRailStates(short resetSwitchId, KickResetSwitchUndoState* kickResetSwitchUndoState) {
 	vector<KickResetSwitchUndoState::RailUndoState>* railUndoStates = kickResetSwitchUndoState->getRailUndoStates();

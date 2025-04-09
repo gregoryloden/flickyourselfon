@@ -315,6 +315,8 @@ private:
 		bool isAbovePlayer,
 		vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> components,
 		int ticksTime);
+	//queue particles for the end segments of this rail, after a delay of one animation frame
+	void queueEndSegmentParticles(Rail* rail, int ticksTime);
 public:
 	//flip a switch
 	void flipSwitch(short switchId, bool moveRailsForward, bool allowRadioTowerAnimation, int ticksTime);

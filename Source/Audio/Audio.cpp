@@ -320,6 +320,7 @@ Music::WaveformMusicSet Audio::musics;
 Music::WaveformMusicSet Audio::radioWavesSounds;
 Music::WaveformMusicSet Audio::switchesFadeInSounds;
 Music::WaveformMusicSet Audio::railSwitchWavesSounds;
+Music::WaveformMusicSet Audio::resetSwitchWavesSounds;
 Music* Audio::victorySound = nullptr;
 array<Sound*, Audio::stepSoundsCount> Audio::stepSounds;
 Sound* Audio::climbSound = nullptr;
@@ -440,6 +441,18 @@ void Audio::loadSounds() {
 		},
 		railSwitchWavesSounds);
 	loadWaveformMusicSet(
+		"resetswitchwaves",
+		false,
+		-1,
+		railSwitchWavesSoundEffectSpecs,
+		{
+			railSwitchWavesSoundSquareVolume,
+			railSwitchWavesSoundTriangleVolume,
+			railSwitchWavesSoundSawVolume,
+			railSwitchWavesSoundSineVolume,
+		},
+		resetSwitchWavesSounds);
+	loadWaveformMusicSet(
 		"victory",
 		true,
 		-1,
@@ -494,6 +507,7 @@ void Audio::unloadSounds() {
 	unloadWaveformMusicSet(radioWavesSounds);
 	unloadWaveformMusicSet(switchesFadeInSounds);
 	unloadWaveformMusicSet(railSwitchWavesSounds);
+	unloadWaveformMusicSet(resetSwitchWavesSounds);
 	delete victorySound;
 	unloadSoundSet(stepSounds);
 	delete climbSound;

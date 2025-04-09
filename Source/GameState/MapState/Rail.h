@@ -162,7 +162,9 @@ public:
 	//render the movement direction over the ends of the rail
 	void renderMovementDirections(int screenLeftWorldX, int screenTopWorldY);
 	//set this rail to the initial tile offset and movement direction, with or without a moving animation
-	void loadState(char pTileOffset, char pNextMovementDirection, bool animateMovement);
+	//returns whether this changes the state of the rail
+	bool loadState(char pTileOffset, char pNextMovementDirection, bool animateMovement);
 	//reset this rail to its default state, with or without a moving animation
-	void reset(bool animateMovement);
+	//returns whether this changes the state of the rail
+	bool reset(bool animateMovement);
 };

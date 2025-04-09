@@ -655,14 +655,16 @@ void RailState::renderMovementDirections(int screenLeftWorldX, int screenTopWorl
 		}
 	}
 }
-void RailState::loadState(char pTileOffset, char pNextMovementDirection, bool animateMovement) {
+bool RailState::loadState(char pTileOffset, char pNextMovementDirection, bool animateMovement) {
+	bool isDifferent = targetTileOffset != pTileOffset;
 	if (!animateMovement)
 		tileOffset = pTileOffset;
 	targetTileOffset = pTileOffset;
 	bouncesRemaining = 0;
 	currentMovementDirection = pNextMovementDirection;
 	nextMovementDirection = pNextMovementDirection;
+	return isDifferent;
 }
-void RailState::reset(bool animateMovement) {
-	loadState(rail->getInitialTileOffset(), rail->getInitialMovementDirection(), animateMovement);
+bool RailState::reset(bool animateMovement) {
+	return loadState(rail->getInitialTileOffset(), rail->getInitialMovementDirection(), animateMovement);
 }
