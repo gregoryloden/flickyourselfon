@@ -180,7 +180,6 @@ private:
 	int switchesAnimationFadeInStartTicksTime;
 	bool shouldPlayRadioTowerAnimation;
 	vector<ReferenceCounterHolder<Particle>> particles;
-	char radioWavesColor;
 	int waveformStartTicksTime;
 	int waveformEndTicksTime;
 	ReferenceCounterHolder<HintState> hintState;

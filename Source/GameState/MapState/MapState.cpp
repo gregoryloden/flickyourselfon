@@ -72,7 +72,6 @@ MapState::MapState(objCounterParameters())
 , switchesAnimationFadeInStartTicksTime(-switchesFadeInDuration)
 , shouldPlayRadioTowerAnimation(false)
 , particles()
-, radioWavesColor(-1)
 , waveformStartTicksTime(0)
 , waveformEndTicksTime(0)
 , hintState(nullptr)
@@ -737,7 +736,6 @@ void MapState::updateWithPreviousMapState(MapState* prev, int ticksTime) {
 	finishedMapCameraTutorial = prev->finishedMapCameraTutorial;
 	shouldPlayRadioTowerAnimation = false;
 	switchesAnimationFadeInStartTicksTime = prev->switchesAnimationFadeInStartTicksTime;
-	radioWavesColor = prev->radioWavesColor;
 	waveformStartTicksTime = prev->waveformStartTicksTime;
 	waveformEndTicksTime = prev->waveformEndTicksTime;
 	hintState.set(prev->hintState.get());
@@ -862,16 +860,15 @@ void MapState::writeCurrentRailStates(short resetSwitchId, KickResetSwitchUndoSt
 	}
 }
 int MapState::startRadioWavesAnimation(int initialTicksDelay, int ticksTime) {
-	radioWavesColor = lastActivatedSwitchColor;
 	static constexpr int interRadioWavesAnimationTicks = 1500;
 	Particle* particle = queueParticleWithWaveColor(
 		antennaCenterWorldX(),
 		antennaCenterWorldY(),
-		radioWavesColor,
+		lastActivatedSwitchColor,
 		true,
 		{
 			newEntityAnimationDelay(initialTicksDelay),
-			newEntityAnimationPlaySound(Audio::radioWavesSounds[radioWavesColor], 0),
+			newEntityAnimationPlaySound(Audio::radioWavesSounds[lastActivatedSwitchColor], 0),
 			entityAnimationSpriteAnimationWithDelay(SpriteRegistry::radioWavesAnimation),
 			newEntityAnimationSetSpriteAnimation(nullptr),
 			newEntityAnimationDelay(interRadioWavesAnimationTicks),
@@ -1133,9 +1130,9 @@ void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int 
 	if (ticksTime < waveformEndTicksTime && ticksTime > waveformStartTicksTime) {
 		//find where we are in the animation
 		static constexpr float waveformAnimationPeriods = 2.5f;
-		float radioWavesR = (radioWavesColor == squareColor || radioWavesColor == sineColor) ? 1.0f : 0.0f;
-		float radioWavesG = (radioWavesColor == sawColor || radioWavesColor == sineColor) ? 1.0f : 0.0f;
-		float radioWavesB = (radioWavesColor == triangleColor || radioWavesColor == sineColor) ? 1.0f : 0.0f;
+		float radioWavesR = (lastActivatedSwitchColor == squareColor || lastActivatedSwitchColor == sineColor) ? 1.0f : 0.0f;
+		float radioWavesG = (lastActivatedSwitchColor == sawColor || lastActivatedSwitchColor == sineColor) ? 1.0f : 0.0f;
+		float radioWavesB = (lastActivatedSwitchColor == triangleColor || lastActivatedSwitchColor == sineColor) ? 1.0f : 0.0f;
 		float alpha = 0.625f;
 		if (ticksTime - waveformStartTicksTime < waveformStartEndBufferTicks)
 			alpha *= (float)(ticksTime - waveformStartTicksTime) / (float)waveformStartEndBufferTicks;
@@ -1163,7 +1160,8 @@ void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int 
 			//divide by the height because we want one period to be a square
 			float basePeriodX = (i + 0.5f) / waveformHeight + animationPeriodCycle;
 			GLint pointLeft = (GLint)(waveformLeft + i);
-			GLint basePointTop = (GLint)(waveformY(radioWavesColor, fmodf(basePeriodX, 1.0f)) * waveformHeight) + waveformTop;
+			GLint basePointTop =
+				(GLint)(waveformY(lastActivatedSwitchColor, fmodf(basePeriodX, 1.0f)) * waveformHeight) + waveformTop;
 			GLint pointTop = MathUtils::min(basePointTop, lastPointBottom);
 			GLint pointBottom = MathUtils::max(basePointTop + 1, lastPointTop);
 			SpriteSheet::renderPreColoredRectangle(pointLeft, pointTop, pointLeft + 1, pointBottom);
@@ -1173,19 +1171,19 @@ void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int 
 
 		//draw the edge rails
 		static constexpr int waveformRailSpacing = 1;
-		Rail::setSegmentColor(radioWavesColor, 1.0f, alpha);
+		Rail::setSegmentColor(lastActivatedSwitchColor, 1.0f, alpha);
 		GLint railBaseTopY = waveformTop - (GLint)SpriteRegistry::rails->getSpriteHeight() / 2;
 		SpriteRegistry::rails->renderSpriteAtScreenPosition(
 			Rail::Segment::spriteHorizontalIndexHorizontal,
 			0,
 			waveformLeft - (GLint)(SpriteRegistry::rails->getSpriteWidth() + waveformRailSpacing),
-			railBaseTopY + (GLint)(waveformY(radioWavesColor, fmodf(animationPeriodCycle, 1.0f)) * waveformHeight));
+			railBaseTopY + (GLint)(waveformY(lastActivatedSwitchColor, fmodf(animationPeriodCycle, 1.0f)) * waveformHeight));
 		SpriteRegistry::rails->renderSpriteAtScreenPosition(
 			Rail::Segment::spriteHorizontalIndexHorizontal,
 			0,
 			waveformLeft + (GLint)(waveformWidth + waveformRailSpacing),
 			railBaseTopY
-				+ (GLint)(waveformY(radioWavesColor, fmodf(animationPeriodCycle + waveformAspectRatio, 1.0f))
+				+ (GLint)(waveformY(lastActivatedSwitchColor, fmodf(animationPeriodCycle + waveformAspectRatio, 1.0f))
 					* waveformHeight));
 	}
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
