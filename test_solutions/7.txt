@@ -65,7 +65,7 @@ blue: cyan-green
 blue: cyan-yellow
 blue: cyan-yellow
 blue: magenta-blue
-milestone: white: cyan-green
+milestone: white: magenta-yellow
 white: black-red
 milestone: white: black-white
 end
