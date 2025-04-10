@@ -43,11 +43,21 @@ red: black-green
 red: white-red
 red: black-green
 milestone: green: green-green
+green: cyan-red
+green: cyan-red
+green: yellow-green
+green: yellow-green
+green: yellow-green
+green: yellow-green
+green: black-green
+green: black-green
 green: white-red
 green: yellow-red
 milestone: green: magenta-green
 
 #fourth milestone white
+blue: yellow-red
+blue: cyan-yellow
 white: white-green
 white: red-red
 white: red-red
