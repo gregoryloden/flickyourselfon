@@ -53,6 +53,35 @@ LevelTypes::Plane::Connection::Connection(
 LevelTypes::Plane::Connection::~Connection() {
 	//don't delete toPlane, it's owned by a Level
 }
+bool LevelTypes::Plane::Connection::matchesRail(RailByteMaskData* railByteMaskData) {
+	return railByteMaskData->railByteIndex == railByteIndex
+		&& railByteMaskData->getRailTileOffsetByteMask() == railTileOffsetByteMask;
+}
+bool LevelTypes::Plane::Connection::requiresSwitchesOnPlane(Plane* plane) {
+	//plane connections can't require switches
+	if (railByteIndex == Level::absentRailByteIndex)
+		return false;
+	RailByteMaskData* matchingRailByteMaskData = nullptr;
+	int matchingSwitches = 0;
+	//check all the switches in this plane and see how many of them affect this rail
+	//save the RailByteMaskData if we find any matching switch
+	for (ConnectionSwitch& connectionSwitch : plane->connectionSwitches) {
+		for (RailByteMaskData* railByteMaskData : connectionSwitch.affectedRailByteMaskData) {
+			if (matchesRail(railByteMaskData)) {
+				matchingRailByteMaskData = railByteMaskData;
+				matchingSwitches++;
+				break;
+			}
+		}
+	}
+	//none of the switches matched this rail, so this connection can't require any of them
+	if (matchingSwitches == 0)
+		return false;
+	//if the rail starts out lowered, and is only affected by switches in this plane, then using this connection requires
+	//	reaching this plane first
+	Rail* rail = matchingRailByteMaskData->rail;
+	return rail->getInitialTileOffset() != 0 && rail->getGroups().size() == matchingSwitches;
+}
 
 //////////////////////////////// LevelTypes::Plane ////////////////////////////////
 LevelTypes::Plane::Plane(objCounterParametersComma() Level* pOwningLevel, int pIndexInOwningLevel)
@@ -140,7 +169,7 @@ void LevelTypes::Plane::findMilestonesToThisPlane(vector<Plane*>& levelPlanes, v
 		Plane* lastPlane = nextPlane;
 		for (Connection& connection : nextPlane->connections) {
 			Plane* toPlane = connection.toPlane;
-			if (!seenPlanes[toPlane->indexInOwningLevel]) {
+			if (!seenPlanes[toPlane->indexInOwningLevel] && !connection.requiresSwitchesOnPlane(this)) {
 				nextPlane = toPlane;
 				pathConnections.push_back(&connection);
 				pathPlanes.push_back(nextPlane);
@@ -184,7 +213,10 @@ void LevelTypes::Plane::findMilestonesToThisPlane(vector<Plane*>& levelPlanes, v
 			Plane* lastPlane = nextPlane;
 			for (Connection& connection : nextPlane->connections) {
 				Plane* toPlane = connection.toPlane;
-				if (!rerouteSeenPlanes[toPlane->indexInOwningLevel] && &connection != nextMainPathConnection) {
+				if (!rerouteSeenPlanes[toPlane->indexInOwningLevel]
+					&& &connection != nextMainPathConnection
+					&& !connection.requiresSwitchesOnPlane(this))
+				{
 					nextPlane = toPlane;
 					reroutePathPlanes.push_back(nextPlane);
 					rerouteSeenPlanes[toPlane->indexInOwningLevel] = true;
@@ -227,9 +259,7 @@ void LevelTypes::Plane::findMilestonesToThisPlane(vector<Plane*>& levelPlanes, v
 			//see if any of the switches in this plane match this rail
 			for (ConnectionSwitch& connectionSwitch : plane->connectionSwitches) {
 				for (RailByteMaskData* railByteMaskData : connectionSwitch.affectedRailByteMaskData) {
-					if (railByteMaskData->railByteIndex == railConnection->railByteIndex
-						&& railByteMaskData->getRailTileOffsetByteMask() == railConnection->railTileOffsetByteMask)
-					{
+					if (railConnection->matchesRail(railByteMaskData)) {
 						matchingConnectionSwitch = &connectionSwitch;
 						matchingRailByteMaskData = railByteMaskData;
 						break;

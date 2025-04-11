@@ -51,6 +51,12 @@ namespace LevelTypes {
 			Connection(
 				Plane* pToPlane, int pRailByteIndex, int pRailTileOffsetByteMask, int pSteps, Rail* rail, Plane* hintPlane);
 			virtual ~Connection();
+
+			//returns whether this connection is a rail connection that matches the given RailByteMaskData
+			bool matchesRail(RailByteMaskData* railByteMaskData);
+			//returns true if this is a rail connection that starts lowered, and can only be raised by switches on the given
+			//	plane
+			bool requiresSwitchesOnPlane(Plane* plane);
 		};
 
 		Level* owningLevel;
