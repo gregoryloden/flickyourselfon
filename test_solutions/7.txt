@@ -59,8 +59,16 @@ milestone: green: magenta-green
 white: white-green
 white: red-red
 white: red-red
-milestone: blue: magenta-yellow
+red: magenta-green
+red: blue-yellow
+red: green-green
+red: white-green
+red: green-green
 blue: yellow-red
+red: blue-blue
+red: blue-yellow
+red: magenta-green
+milestone: blue: magenta-yellow
 milestone: blue: white-blue
 blue: cyan-blue
 blue: cyan-blue
