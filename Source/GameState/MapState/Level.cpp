@@ -613,6 +613,15 @@ void LevelTypes::Plane::countSwitchesAndConnections(
 			stepsMessage << " -> ";
 			logHint(stepsMessage, hintState->hint, hintState->railByteMasks);
 			stepsMessage << " -> plane " << hintState->plane->getIndexInOwningLevel();
+			if (hintState->hint->type == Hint::Type::Switch) {
+				for (ConnectionSwitch& connectionSwitch : hintState->plane->connectionSwitches) {
+					if (&connectionSwitch.hint != hintState->hint)
+						continue;
+					if (connectionSwitch.isMilestone)
+						stepsMessage << " (milestone)";
+					break;
+				}
+			}
 		}
 		Logger::debugLogger.logString(stepsMessage.str());
 	}
