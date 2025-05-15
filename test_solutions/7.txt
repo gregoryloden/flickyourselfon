@@ -29,6 +29,7 @@ milestone: blue: blue-yellow
 #third milestone green
 white: green-red
 white: black-red
+milestone: white: cyan-green
 white: blue-red
 white: red-red
 white: red-red
