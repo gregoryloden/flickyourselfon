@@ -176,85 +176,48 @@ void LevelTypes::Plane::findMilestones(vector<Plane*>& levelPlanes) {
 		destinationPlanes[i]->findMilestonesToThisPlane(levelPlanes, destinationPlanes);
 }
 void LevelTypes::Plane::findMilestonesToThisPlane(vector<Plane*>& levelPlanes, vector<Plane*>& outDestinationPlanes) {
-	Plane* nextPlane = levelPlanes[0];
-	//DFS to find a path to the end
-	bool* seenPlanes = new bool[levelPlanes.size()] {};
-	vector<Plane*> pathPlanes ({ nextPlane });
+	//find any path to the end
+	vector<Plane*> pathPlanes ({ levelPlanes[0] });
 	vector<Connection*> pathConnections;
-	while (true) {
-		Plane* lastPlane = nextPlane;
-		for (Connection& connection : nextPlane->connections) {
-			Plane* toPlane = connection.toPlane;
-			if (!seenPlanes[toPlane->indexInOwningLevel] && !connection.requiresSwitchesOnPlane(this)) {
-				nextPlane = toPlane;
-				pathConnections.push_back(&connection);
-				pathPlanes.push_back(nextPlane);
-				seenPlanes[toPlane->indexInOwningLevel] = true;
-				break;
-			}
-		}
-		if (nextPlane == lastPlane) {
-			//since we know that the level has this plane, we can assume there is a path to get here (which is how we found this
-			//	plane), which means that there is another plane/connection to try, which means that these lists won't be empty,
-			//	and pathPlanes will still not be empty after popping
-			pathPlanes.pop_back();
-			pathConnections.pop_back();
-			nextPlane = pathPlanes.back();
-		} else if (nextPlane == this)
-			break;
-	}
+	vector<Connection*> excludeZeroConnections;
+	auto acceptPathToThisPlane = [&pathPlanes, this]() {
+		return pathPlanes.back() == this ? PathWalkCheckResult::AcceptPath : PathWalkCheckResult::KeepSearching;
+	};
+	pathWalk(levelPlanes, excludeZeroConnections, pathPlanes, pathConnections, acceptPathToThisPlane);
 
 	//prep some data about our path
 	bool* requiredConnections = new bool[pathConnections.size()];
 	for (int i = 0; i < (int)pathConnections.size(); i++)
 		requiredConnections[i] = true;
-	for (int i = 0; i < (int)levelPlanes.size(); i++)
-		seenPlanes[i] = false;
+	bool* seenPlanes = new bool[levelPlanes.size()] {};
 	for (Plane* plane : pathPlanes)
 		seenPlanes[plane->indexInOwningLevel] = true;
 
-	//DFS again to find routes from each plane in the path toward later planes in the path, without going through any of the
-	//	connections in the path we already found
-	bool* rerouteSeenPlanes = new bool[levelPlanes.size()];
+	//go back and search again to find routes from each plane in the path toward later planes in the path, without going through
+	//	any of the connections in the path we already found
 	vector<Plane*> reroutePathPlanes;
+	vector<Connection*> reroutePathConnections;
 	for (int i = 0; i < (int)pathConnections.size(); i++) {
-		nextPlane = pathPlanes[i];
-		reroutePathPlanes.push_back(nextPlane);
-		Connection* nextMainPathConnection = pathConnections[i];
-		for (int j = 0; j < (int)levelPlanes.size(); j++)
-			rerouteSeenPlanes[j] = false;
-		for (Plane* plane : reroutePathPlanes)
-			rerouteSeenPlanes[plane->indexInOwningLevel] = true;
-		while (true) {
-			Plane* lastPlane = nextPlane;
-			for (Connection& connection : nextPlane->connections) {
-				Plane* toPlane = connection.toPlane;
-				if (!rerouteSeenPlanes[toPlane->indexInOwningLevel]
-					&& &connection != nextMainPathConnection
-					&& !connection.requiresSwitchesOnPlane(this))
-				{
-					nextPlane = toPlane;
-					reroutePathPlanes.push_back(nextPlane);
-					rerouteSeenPlanes[toPlane->indexInOwningLevel] = true;
-					break;
-				}
-			}
-			if (nextPlane == lastPlane) {
-				//stop if we've exhausted all paths from the plane for this iteration
-				if ((int)reroutePathPlanes.size() == i + 1)
-					break;
-				reroutePathPlanes.pop_back();
-				nextPlane = reroutePathPlanes.back();
+		reroutePathPlanes.push_back(pathPlanes[i]);
+		reroutePathConnections.push_back(pathConnections[i]);
+		vector<Connection*> excludeNextOriginalPathConnection ({ reroutePathConnections.back() });
+		auto checkIfRerouteReturnsToOriginalPath = [&pathPlanes, &reroutePathPlanes, seenPlanes, requiredConnections, i]() {
+			Plane* plane = reroutePathPlanes.back();
+			if (!seenPlanes[plane->indexInOwningLevel])
+				return PathWalkCheckResult::KeepSearching;
 			//we found a plane on the original path through an alternate route
 			//mark every connection between the reroute start and end planes as non-required
 			//then, go back one connection
-			} else if (seenPlanes[nextPlane->indexInOwningLevel]) {
-				for (int j = i; pathPlanes[j] != nextPlane; j++)
-					requiredConnections[j] = false;
-				reroutePathPlanes.pop_back();
-				nextPlane = reroutePathPlanes.back();
-			}
-		}
+			for (int j = i; pathPlanes[j] != plane; j++)
+				requiredConnections[j] = false;
+			return PathWalkCheckResult::RejectPlane;
+		};
+		pathWalk(
+			levelPlanes,
+			excludeNextOriginalPathConnection,
+			reroutePathPlanes,
+			reroutePathConnections,
+			checkIfRerouteReturnsToOriginalPath);
 	}
 
 	//now we have a list of which connections are required
@@ -298,7 +261,63 @@ void LevelTypes::Plane::findMilestonesToThisPlane(vector<Plane*>& levelPlanes, v
 	}
 	delete[] seenPlanes;
 	delete[] requiredConnections;
-	delete[] rerouteSeenPlanes;
+}
+void LevelTypes::Plane::pathWalk(
+	vector<Plane*>& levelPlanes,
+	vector<Connection*>& excludedConnections,
+	vector<Plane*>& inOutPathPlanes,
+	vector<Connection*>& inOutPathConnections,
+	function<PathWalkCheckResult()> checkPath)
+{
+	int initialPathPlanesCount = (int)inOutPathPlanes.size();
+	Plane* nextPlane = inOutPathPlanes.back();
+	bool* seenPlanes = new bool[levelPlanes.size()] {};
+	for (Plane* plane : inOutPathPlanes)
+		seenPlanes[plane->indexInOwningLevel] = true;
+	//DFS to search for planes
+	while (true) {
+		Plane* lastPlane = nextPlane;
+		PathWalkCheckResult pathWalkCheckResult = PathWalkCheckResult::RejectPlane;
+		for (Connection& connection : nextPlane->connections) {
+			//skip connections going to planes that we've already seen, we only care about the planes in the path, not the
+			//	connections
+			//skip connections that we can't cross because they require already being on this plane
+			Plane* toPlane = connection.toPlane;
+			if (seenPlanes[toPlane->indexInOwningLevel] || connection.requiresSwitchesOnPlane(this))
+				continue;
+			//skip connections that are excluded
+			bool connectionIsExcluded = false;
+			for (Connection* excludedConnection : excludedConnections) {
+				if (&connection == excludedConnection) {
+					connectionIsExcluded = true;
+					break;
+				}
+			}
+			if (connectionIsExcluded)
+				continue;
+			//we found a valid connection, track it
+			nextPlane = toPlane;
+			inOutPathConnections.push_back(&connection);
+			inOutPathPlanes.push_back(nextPlane);
+			seenPlanes[toPlane->indexInOwningLevel] = true;
+			pathWalkCheckResult = checkPath();
+			break;
+		}
+		//we found a connection and checkPath() accepted it, we're done
+		if (pathWalkCheckResult == PathWalkCheckResult::AcceptPath)
+			break;
+		//either we didn't find a valid connection from the last plane, or we did but checkPath() rejected it; go back to the
+		//	previous plane
+		else if (pathWalkCheckResult == PathWalkCheckResult::RejectPlane) {
+			//if there are have no more planes we can visit after returning to the starting plane, we're done
+			if ((int)inOutPathPlanes.size() == initialPathPlanesCount)
+				break;
+			inOutPathPlanes.pop_back();
+			inOutPathConnections.pop_back();
+			nextPlane = inOutPathPlanes.back();
+		}
+	}
+	delete[] seenPlanes;
 }
 void LevelTypes::Plane::extendConnections() {
 	//look at the (growing) list of planes reachable from this plane (directly or indirectly), and see if there are any other

@@ -19,6 +19,11 @@ namespace LevelTypes {
 namespace LevelTypes {
 	class Plane onlyInDebug(: public ObjCounter) {
 	private:
+		enum class PathWalkCheckResult: unsigned char {
+			KeepSearching,
+			AcceptPath,
+			RejectPlane,
+		};
 		//Should only be allocated within an object, on the stack, or as a static object
 		class Tile {
 		public:
@@ -107,6 +112,20 @@ namespace LevelTypes {
 	private:
 		//find milestones that enable access to this plane, and record their planes in outDestinationPlanes
 		void findMilestonesToThisPlane(vector<Plane*>& levelPlanes, vector<Plane*>& outDestinationPlanes);
+		//search for paths to every remaining plane in levelPlanes, without going through any of the given excluded connections
+		//assumes there is at least one plane in inOutPathPlanes
+		//starts from the end of the path described by inOutPathPlanes, with inOutPathConnections detailing the connections
+		//	going from the plane at the same index to the plane at the next index
+		//calls checkPath() at every step when a new plane has been reached, and stops if it returns AcceptPath
+		//discards the most recently found plane from the path and continues searching if checkPath() returns RejectPlane
+		//inOutPathPlanes and inOutPathConnections will contain the path as it existed when checkPath() returned AcceptPath, or
+		//	will contain their original contents if checkPath() never returned AcceptPath
+		void pathWalk(
+			vector<Plane*>& levelPlanes,
+			vector<Connection*>& excludedConnections,
+			vector<Plane*>& inOutPathPlanes,
+			vector<Connection*>& inOutPathConnections,
+			function<PathWalkCheckResult()> checkPath);
 	public:
 		//copy and add plane-plane and rail connections from all planes that are reachable through plane-plane connections from
 		//	this plane
