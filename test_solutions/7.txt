@@ -65,7 +65,7 @@ red: blue-yellow
 red: green-green
 red: white-green
 red: green-green
-blue: yellow-red
+milestone: blue: yellow-red
 red: blue-blue
 red: blue-yellow
 red: magenta-green
