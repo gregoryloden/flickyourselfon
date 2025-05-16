@@ -52,6 +52,10 @@ namespace LevelTypes {
 				Plane* pToPlane, int pRailByteIndex, int pRailTileOffsetByteMask, int pSteps, Rail* rail, Plane* hintPlane);
 			virtual ~Connection();
 
+			//returns the first switch in the given list of planes that controls this rail, or nullptr if one was not found
+			//writes the matching RailByteMaskData for the rail if a matching switch was found, as well as the switch's Plane
+			ConnectionSwitch* findMatchingSwitch(
+				vector<Plane*>& levelPlanes, RailByteMaskData** outRailByteMaskData, Plane** outPlane);
 			//returns whether this connection is a rail connection that matches the given RailByteMaskData
 			bool matchesRail(RailByteMaskData* railByteMaskData);
 			//returns true if this is a rail connection that starts lowered, and can only be raised by switches on the given
