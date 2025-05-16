@@ -52,7 +52,7 @@ green: yellow-green
 green: yellow-green
 green: black-green
 green: black-green
-green: white-red
+milestone: green: white-red
 green: yellow-red
 milestone: green: magenta-green
 
