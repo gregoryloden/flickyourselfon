@@ -1179,12 +1179,12 @@ int Level::clearPotentialLevelStateHolders() {
 					"ERROR: level " + to_string(levelN) + " solution line " + to_string(lineN)
 						+ ": unable to reach switch, or state has already been seen: \"" + line + "\"");
 				break;
-			} else if (switchIsMilestone != expectMilestoneSwitch) {
+			}
+			if (switchIsMilestone != expectMilestoneSwitch) {
 				Logger::debugLogger.logString(
 					"ERROR: level " + to_string(levelN) + " solution line " + to_string(lineN)
 						+ ": found " + (switchIsMilestone ? "milestone" : "non-milestone")
 						+ ", expected " + (expectMilestoneSwitch ? "milestone" : "non-milestone") + ": \"" + line + "\"");
-				break;
 			}
 
 			//we found the switch, so kick it and advance to the next step
