@@ -110,6 +110,8 @@ owningLevel(pOwningLevel)
 , connectionSwitches()
 , connections()
 , hasAction(false)
+, visitedMilestonesByteIndex(Level::absentRailByteIndex)
+, visitedMilestonesBitShift(0)
 , renderLeftTileX(MapState::getMapWidth())
 , renderTopTileY(MapState::getMapHeight())
 , renderRightTileX(0)
@@ -170,12 +172,19 @@ void LevelTypes::Plane::addRailConnectionToSwitch(RailByteMaskData* railByteMask
 		connectionSwitch.isSingleUse = false;
 }
 void LevelTypes::Plane::findMilestones(vector<Plane*>& levelPlanes) {
+	//can't find milestones to the victory plane without a victory plane
 	Plane* victoryPlane = levelPlanes[0]->owningLevel->getVictoryPlane();
 	if (victoryPlane == nullptr)
 		return;
+
+	//recursively find milestones to destination planes, and track the planes for those milestones as destination planes
 	vector<Plane*> destinationPlanes ({ victoryPlane });
 	for (int i = 0; i < (int)destinationPlanes.size(); i++)
 		destinationPlanes[i]->findMilestonesToThisPlane(levelPlanes, destinationPlanes);
+
+	//and make sure to mark the victory plane as a milestone destination
+	victoryPlane->owningLevel->trackRailByteMaskBits(
+		visitedMilestonesBitCount, &victoryPlane->visitedMilestonesByteIndex, &victoryPlane->visitedMilestonesBitShift);
 }
 void LevelTypes::Plane::findMilestonesToThisPlane(vector<Plane*>& levelPlanes, vector<Plane*>& outDestinationPlanes) {
 	//find any path to this plane
@@ -287,8 +296,14 @@ void LevelTypes::Plane::findMilestonesToThisPlane(vector<Plane*>& levelPlanes, v
 			continue;
 		//we found a matching switch for this rail
 		//if it's single-use, it's a milestone
-		if (matchingConnectionSwitch->isSingleUse)
+		if (matchingConnectionSwitch->isSingleUse) {
 			matchingConnectionSwitch->isMilestone = true;
+			//if we haven't done so already, mark the plane as a milestone destination by having it track a bit for whether it's
+			//	been visited or not
+			if (plane->visitedMilestonesByteIndex == Level::absentRailByteIndex)
+				plane->owningLevel->trackRailByteMaskBits(
+					visitedMilestonesBitCount, &plane->visitedMilestonesByteIndex, &plane->visitedMilestonesBitShift);
+		}
 		//if this switch is the only switch to control the rail (whether it's single-use or not), and the rail starts out
 		//	lowered, track the switch's plane as a destination plane
 		Rail* rail = matchingRailByteMaskData->rail;
@@ -430,9 +445,36 @@ void LevelTypes::Plane::removeNonHasActionPlaneConnections() {
 		}
 	}
 #endif
-Hint* LevelTypes::Plane::pursueSolutionToPlanes(
-	HintState::PotentialLevelState* currentState, int basePotentialLevelStateSteps)
-{
+void LevelTypes::Plane::markVisitedMilestoneDestinationPlanesInDraftState(vector<Plane*>& levelPlanes) {
+	for (Plane* plane : levelPlanes) {
+		if (plane->visitedMilestonesByteIndex == Level::absentRailByteIndex)
+			continue;
+		//find every milestone in this plane, and check that all its rails are raised
+		bool allMilestoneRailsRaised = true;
+		for (ConnectionSwitch& connectionSwitch : plane->connectionSwitches) {
+			if (!connectionSwitch.isMilestone)
+				continue;
+			for (RailByteMaskData* railByteMaskData : connectionSwitch.affectedRailByteMaskData) {
+				if (((HintState::PotentialLevelState::draftState.railByteMasks[railByteMaskData->railByteIndex]
+							>> railByteMaskData->railBitShift)
+						& Level::baseRailTileOffsetByteMask)
+					!= 0)
+				{
+					allMilestoneRailsRaised = false;
+					break;
+				}
+			}
+			if (!allMilestoneRailsRaised)
+				break;
+		}
+		//mark this plane as visited if none of its milestone connections are lowered
+		//but never mark the victory plane as visited, it's registered as a milestone destination plane but has no switches
+		if (allMilestoneRailsRaised && plane != plane->owningLevel->getVictoryPlane())
+			HintState::PotentialLevelState::draftState.railByteMasks[plane->visitedMilestonesByteIndex] |=
+				baseVisitedMilestonesByteMask << plane->visitedMilestonesBitShift;
+	}
+}
+void LevelTypes::Plane::pursueSolutionToPlanes(HintState::PotentialLevelState* currentState, int basePotentialLevelStateSteps) {
 	unsigned int bucket = currentState->railByteMasksHash % Level::PotentialLevelStatesByBucket::bucketSize;
 	Level::CheckedPlaneData* checkedPlaneData = Level::checkedPlaneDatas + indexInOwningLevel;
 	checkedPlaneData->steps = 0;
@@ -499,20 +541,36 @@ Hint* LevelTypes::Plane::pursueSolutionToPlanes(
 				nextPotentialLevelState->plane = connectionToPlane;
 				nextPotentialLevelState->hint = checkedPlaneData->hint;
 
-				//if it goes to the victory plane, return the hint for the first transition
-				if (connectionToPlane == Level::cachedHintSearchVictoryPlane) {
-					#ifdef LOG_FOUND_HINT_STEPS
-						logSteps(nextPotentialLevelState);
-					#endif
-					Level::foundHintSearchTotalSteps = nextPotentialLevelState->steps;
-					//reset checked plane data
-					while (Level::checkedPlanesCount > 0)
-						Level::checkedPlaneDatas[Level::checkedPlaneIndices[--Level::checkedPlanesCount]].steps =
-							Level::CheckedPlaneData::maxStepsLimit;
-					for (; steps <= maxStepsSeen; steps++)
-						Level::checkPlaneCounts[steps] = 0;
-					return nextPotentialLevelState->getHint();
+				//if it goes to a milestone destination plane, and we haven't visited it yet from this state, check if the state
+				//	with the visited flag is new too
+				if (connectionToPlane->visitedMilestonesByteIndex != Level::absentRailByteIndex
+					&& ((nextPotentialLevelState->railByteMasks[connectionToPlane->visitedMilestonesByteIndex]
+								>> connectionToPlane->visitedMilestonesBitShift)
+							& baseVisitedMilestonesByteMask)
+						== 0)
+				{
+					//get a new state with the visited flag set
+					for (int i = HintState::PotentialLevelState::currentRailByteMaskCount - 1; i >= 0; i--)
+						HintState::PotentialLevelState::draftState.railByteMasks[i] = nextPotentialLevelState->railByteMasks[i];
+					HintState::PotentialLevelState::draftState.railByteMasks[connectionToPlane->visitedMilestonesByteIndex] |=
+						baseVisitedMilestonesByteMask << connectionToPlane->visitedMilestonesBitShift;
+					HintState::PotentialLevelState::draftState.setHash();
+					HintState::PotentialLevelState* milestoneDestinationPotentialLevelState =
+						HintState::PotentialLevelState::draftState.addNewState(
+							potentialLevelStates, nextPotentialLevelState->steps);
+
+					//if no state has ever been to this milestone destination plane, frontload it instead of tracking it at its steps
+					if (milestoneDestinationPotentialLevelState != nullptr) {
+						//we have to fill this one out too, copy from the state without the visited flag set
+						milestoneDestinationPotentialLevelState->priorState = nextPotentialLevelState->priorState;
+						milestoneDestinationPotentialLevelState->plane = nextPotentialLevelState->plane;
+						milestoneDestinationPotentialLevelState->hint = nextPotentialLevelState->hint;
+						Level::frontloadMilestoneDestinationState(milestoneDestinationPotentialLevelState);
+					}
+					//whether the visited state is new or not, don't track the state without the flag
+					continue;
 				}
+
 				//otherwise, track it
 				Level::getNextPotentialLevelStatesForSteps(nextPotentialLevelState->steps)->push_back(nextPotentialLevelState);
 			}
@@ -523,9 +581,9 @@ Hint* LevelTypes::Plane::pursueSolutionToPlanes(
 	while (Level::checkedPlanesCount > 0)
 		Level::checkedPlaneDatas[Level::checkedPlaneIndices[--Level::checkedPlanesCount]].steps =
 			Level::CheckedPlaneData::maxStepsLimit;
-	return nullptr;
 }
-Hint* LevelTypes::Plane::pursueSolutionAfterSwitches(HintState::PotentialLevelState* currentState, int stepsAfterSwitchKick) {
+void LevelTypes::Plane::pursueSolutionAfterSwitches(HintState::PotentialLevelState* currentState) {
+	int stepsAfterSwitchKick = currentState->steps + 1;
 	for (ConnectionSwitch& connectionSwitch : connectionSwitches) {
 		//first, reset the draft rail byte masks
 		for (int i = HintState::PotentialLevelState::currentRailByteMaskCount - 1; i >= 0; i--)
@@ -566,23 +624,19 @@ Hint* LevelTypes::Plane::pursueSolutionAfterSwitches(HintState::PotentialLevelSt
 			continue;
 		}
 
-		//if this was a milestone switch, restart the hint search from here
-		if (connectionSwitch.isMilestone)
-			Level::pushMilestone();
-
-		//fill out the new PotentialLevelState and track it
+		//fill out the new PotentialLevelState
 		nextPotentialLevelState->priorState = currentState;
 		nextPotentialLevelState->plane = this;
 		nextPotentialLevelState->hint = &connectionSwitch.hint;
+
+		//if this was a milestone switch, restart the hint search from here
+		if (connectionSwitch.isMilestone)
+			Level::pushMilestone(currentState->steps);
+
+		//track it, and then afterwards, travel to all planes possible
 		Level::getNextPotentialLevelStatesForSteps(stepsAfterSwitchKick)->push_back(nextPotentialLevelState);
-
-		//then afterwards, travel to all planes possible, and check to see if they yielded a hint
-		Hint* result = pursueSolutionToPlanes(nextPotentialLevelState, stepsAfterSwitchKick);
-		if (result != nullptr)
-			return result;
+		pursueSolutionToPlanes(nextPotentialLevelState, stepsAfterSwitchKick);
 	}
-
-	return nullptr;
 }
 #ifdef TEST_SOLUTIONS
 	HintState::PotentialLevelState* LevelTypes::Plane::findStateAtSwitch(
@@ -805,17 +859,21 @@ void Level::assignRadioTowerSwitch(Switch* radioTowerSwitch) {
 }
 int Level::trackNextRail(short railId, Rail* rail) {
 	minimumRailColor = MathUtils::max(rail->getColor(), minimumRailColor);
-	int railByteIndex = railByteMaskBitsTracked / 32;
-	int railBitShift = railByteMaskBitsTracked % 32;
-	//make sure there are enough bits to fit the new mask
-	if (railBitShift + railByteMaskBitCount > 32) {
-		railByteIndex++;
-		railBitShift = 0;
-		railByteMaskBitsTracked = (railByteMaskBitsTracked / 32 + 1) * 32 + railByteMaskBitCount;
-	} else
-		railByteMaskBitsTracked += railByteMaskBitCount;
+	int railByteIndex, railBitShift;
+	trackRailByteMaskBits(railByteMaskBitCount, &railByteIndex, &railBitShift);
 	allRailByteMaskData.push_back(RailByteMaskData(railId, railByteIndex, railBitShift, rail));
 	return (int)allRailByteMaskData.size() - 1;
+}
+void Level::trackRailByteMaskBits(int nBits, int* outByteIndex, int* outBitShift) {
+	*outByteIndex = railByteMaskBitsTracked / 32;
+	*outBitShift = railByteMaskBitsTracked % 32;
+	//make sure there are enough bits to fit the new mask
+	if (*outBitShift + nBits > 32) {
+		(*outByteIndex)++;
+		*outBitShift = 0;
+		railByteMaskBitsTracked = (railByteMaskBitsTracked / 32 + 1) * 32 + nBits;
+	} else
+		railByteMaskBitsTracked += nBits;
 }
 void Level::findMilestonesAndExtendConnections() {
 	Plane::findMilestones(planes);
@@ -956,6 +1014,7 @@ void Level::resetPlaneSearchHelpers() {
 	maxPotentialLevelStateSteps = -1;
 	currentMilestones = 0;
 	currentNextPotentialLevelStatesBySteps = &nextPotentialLevelStatesByStepsByMilestone[0];
+	currentNextPotentialLevelStates = getNextPotentialLevelStatesForSteps(currentPotentialLevelStateSteps);
 }
 HintState::PotentialLevelState* Level::loadBasePotentialLevelState(LevelTypes::Plane* currentPlane, GetRailState getRailState) {
 	//setup the draft state to use for the base potential level state
@@ -969,6 +1028,7 @@ HintState::PotentialLevelState* Level::loadBasePotentialLevelState(LevelTypes::P
 		HintState::PotentialLevelState::draftState.railByteMasks[railByteMaskData.railByteIndex] |=
 			(unsigned int)(movementDirectionBit | tileOffset) << railByteMaskData.railBitShift;
 	}
+	Plane::markVisitedMilestoneDestinationPlanesInDraftState(planes);
 	HintState::PotentialLevelState::draftState.setHash();
 
 	//load the base potential level state
@@ -983,14 +1043,11 @@ HintState::PotentialLevelState* Level::loadBasePotentialLevelState(LevelTypes::P
 	return baseLevelState;
 }
 Hint* Level::performHintSearch(HintState::PotentialLevelState* baseLevelState, Plane* currentPlane, int startTime) {
-	//find all hasAction planes reachable from the current plane to start the search
-	Hint* result = currentPlane->pursueSolutionToPlanes(baseLevelState, 0);
-	//if we can get to the victory plane without kicking any switches, we're done
-	if (result != nullptr)
-		return result;
-	//include the current plane to search if it's hasAction
+	//find all hasAction planes reachable from the current plane to start the search, including the current plane if it's
+	//	hasAction
 	if (currentPlane->getHasAction())
 		getNextPotentialLevelStatesForSteps(0)->push_back(baseLevelState);
+	currentPlane->pursueSolutionToPlanes(baseLevelState, 0);
 
 	//go through all states and see if there's anything we could do to get closer to the victory plane
 	static constexpr int targetLoopTicks = 20;
@@ -1034,10 +1091,17 @@ Hint* Level::performHintSearch(HintState::PotentialLevelState* baseLevelState, P
 			//skip any states that were replaced with shorter routes
 			if (potentialLevelState->steps == -1)
 				continue;
-			result = potentialLevelState->plane->pursueSolutionAfterSwitches(
-				potentialLevelState, Level::currentPotentialLevelStateSteps + 1);
-			if (result != nullptr)
-				return result;
+			//if this state is at the victory plane, we're done
+			Plane* nextPlane = potentialLevelState->plane;
+			if (nextPlane == cachedHintSearchVictoryPlane) {
+				#ifdef LOG_FOUND_HINT_STEPS
+					Plane::logSteps(potentialLevelState);
+				#endif
+				foundHintSearchTotalSteps = potentialLevelState->steps;
+				return potentialLevelState->getHint();
+			//otherwise, kick a switch at this plane and advance to other planes
+			} else
+				nextPlane->pursueSolutionAfterSwitches(potentialLevelState);
 		}
 
 		//bail if the search was canceled or took too long
@@ -1131,7 +1195,6 @@ int Level::clearPotentialLevelStateHolders() {
 		//go through each step in the file and make sure we can activate that switch
 		vector<HintState::PotentialLevelState*> statesAtSolutionStep;
 		vector<Plane*> singleSwitchPlanes;
-		Hint* result = nullptr;
 		string line;
 		while (getline(file, line)) {
 			lineN++;
@@ -1187,9 +1250,10 @@ int Level::clearPotentialLevelStateHolders() {
 						+ ", expected " + (expectMilestoneSwitch ? "milestone" : "non-milestone") + ": \"" + line + "\"");
 			}
 
-			//we found the switch, so kick it and advance to the next step
+			//we found the switch, so go to it and kick it and advance to the next step
 			currentPotentialLevelStateSteps = stateAtSwitch->steps;
-			result = stateAtSwitch->plane->pursueSolutionAfterSwitches(stateAtSwitch, currentPotentialLevelStateSteps + 1);
+			currentNextPotentialLevelStates = getNextPotentialLevelStatesForSteps(currentPotentialLevelStateSteps);
+			stateAtSwitch->plane->pursueSolutionAfterSwitches(stateAtSwitch);
 			statesAtSolutionStep.clear();
 
 			//if kicking the switch resulted in a new state, we need to restore the original plane in case it had multiple
@@ -1209,7 +1273,7 @@ int Level::clearPotentialLevelStateHolders() {
 		if (line != "end")
 			Logger::debugLogger.logString(
 				"ERROR: level " + to_string(levelN) + " solution: missing \"end\"");
-		else if (result == nullptr)
+		else if (currentNextPotentialLevelStates->empty() || currentNextPotentialLevelStates->front()->plane != victoryPlane)
 			Logger::debugLogger.logString(
 				"ERROR: level " + to_string(levelN) + " solution: unable to reach victory plane after all steps");
 		else
@@ -1229,7 +1293,12 @@ deque<HintState::PotentialLevelState*>* Level::getNextPotentialLevelStatesForSte
 	}
 	return (*currentNextPotentialLevelStatesBySteps)[nextPotentialLevelStateSteps];
 }
-void Level::pushMilestone() {
+void Level::frontloadMilestoneDestinationState(HintState::PotentialLevelState* state) {
+	//we expect the given state will not match the step count of the current queue, but that's fine
+	currentNextPotentialLevelStates->push_front(state);
+	hintSearchCheckStateI++;
+}
+void Level::pushMilestone(int newPotentialLevelStateSteps) {
 	#ifdef LOG_SEARCH_STEPS_STATS
 		Logger::debugLogger.logString(
 			"milestone+ : " + to_string(currentMilestones) + " > " + to_string(currentMilestones + 1));
@@ -1241,9 +1310,14 @@ void Level::pushMilestone() {
 		nextPotentialLevelStatesByStepsByMilestone.push_back(vector<deque<HintState::PotentialLevelState*>*>());
 	maxPotentialLevelStateSteps = -1;
 	currentNextPotentialLevelStatesBySteps = &nextPotentialLevelStatesByStepsByMilestone[currentMilestones];
-	//we need to set these here because pushMilestone() is called in the middle of iterating this queue
+	//jump to the given number of steps and then update the states queue because pushMilestone() is called in the middle of
+	//	iterating it
+	currentPotentialLevelStateSteps = newPotentialLevelStateSteps;
 	currentNextPotentialLevelStates = getNextPotentialLevelStatesForSteps(currentPotentialLevelStateSteps);
-	hintSearchCheckStateI = 0;
+	//set this to 1 since this is called in the middle of pursuing solutions and this is the last state we'll handle at the
+	//	current number of steps
+	//unless we frontload a destination state, in which case it'll extend the search loop to handle it
+	hintSearchCheckStateI = 1;
 }
 bool Level::popMilestone() {
 	#ifdef LOG_SEARCH_STEPS_STATS

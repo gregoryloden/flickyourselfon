@@ -68,12 +68,17 @@ namespace LevelTypes {
 			bool requiresSwitchesOnPlane(Plane* plane);
 		};
 
+		static constexpr int visitedMilestonesBitCount = 1;
+		static constexpr int baseVisitedMilestonesByteMask = 1;
+
 		Level* owningLevel;
 		int indexInOwningLevel;
 		vector<Tile> tiles;
 		vector<ConnectionSwitch> connectionSwitches;
 		vector<Connection> connections;
 		bool hasAction;
+		int visitedMilestonesByteIndex;
+		int visitedMilestonesBitShift;
 		int renderLeftTileX;
 		int renderTopTileY;
 		int renderRightTileX;
@@ -136,10 +141,13 @@ namespace LevelTypes {
 			//validate that the reset switch resets all the switches in this plane
 			void validateResetSwitch(ResetSwitch* resetSwitch);
 		#endif
-		//follow all possible paths to other planes, and return a hint if any of those other planes are the victory plane
-		Hint* pursueSolutionToPlanes(HintState::PotentialLevelState* currentState, int basePotentialLevelStateSteps);
+		//look for milestone destination planes, and if any of them have all their milestones activated, mark them as visited in
+		//	the draft state
+		static void markVisitedMilestoneDestinationPlanesInDraftState(vector<Plane*>& levelPlanes);
+		//follow all possible paths to other planes, adding states at those planes to the current hint search queues
+		void pursueSolutionToPlanes(HintState::PotentialLevelState* currentState, int basePotentialLevelStateSteps);
 		//kick each switch in this plane, and then pursue solutions from those states
-		Hint* pursueSolutionAfterSwitches(HintState::PotentialLevelState* currentState, int stepsAfterSwitchKick);
+		void pursueSolutionAfterSwitches(HintState::PotentialLevelState* currentState);
 		#ifdef TEST_SOLUTIONS
 			//go through all the given states and see if one has a plane with a switch matching the given description
 			//if there is one, the state will have a clone of the original plane containing only that matching switch, and the
@@ -169,11 +177,11 @@ namespace LevelTypes {
 			int* outExtendedRailConnections);
 		#ifdef LOG_FOUND_HINT_STEPS
 			//log all the steps of a hint state
-			void logSteps(HintState::PotentialLevelState* hintState);
+			static void logSteps(HintState::PotentialLevelState* hintState);
 			//log a single hint step
-			void logHint(stringstream& stepsMessage, Hint* hint, unsigned int* railByteMasks);
+			static void logHint(stringstream& stepsMessage, Hint* hint, unsigned int* railByteMasks);
 			//log the rail byte masks
-			void logRailByteMasks(stringstream& stepsMessage, unsigned int* railByteMasks);
+			static void logRailByteMasks(stringstream& stepsMessage, unsigned int* railByteMasks);
 		#endif
 	};
 	//Should only be allocated within an object, on the stack, or as a static object
@@ -291,6 +299,9 @@ public:
 	//create a byte mask for a new rail
 	//returns the index into the internal byte mask vector for use in getRailByteMaskData()
 	int trackNextRail(short railId, Rail* rail);
+	//register the given number of bits in the rail byte mask, and write the byte index to outByteIndex and bit shift to
+	//	outBitShift
+	void trackRailByteMaskBits(int nBits, int* outByteIndex, int* outBitShift);
 	//find planes with milestone switches, add extended connections to the planes of this level, and remove plane-plane
 	//	connections to planes without switches
 	void findMilestonesAndExtendConnections();
@@ -327,8 +338,10 @@ private:
 public:
 	//get the queue of next potential level states corresponding to the given steps
 	static deque<HintState::PotentialLevelState*>* getNextPotentialLevelStatesForSteps(int nextPotentialLevelStateSteps);
-	//save away the current states to check, and start over with a new set
-	static void pushMilestone();
+	//insert the given state to be the next state that we check in our hint search
+	static void frontloadMilestoneDestinationState(HintState::PotentialLevelState* state);
+	//save away the current states to check, and start over with a new set at the given number of steps
+	static void pushMilestone(int newPotentialLevelStateSteps);
 private:
 	//restore states to check from a previous milestone
 	//should only be called when there are no states in the currentNextPotentialLevelStatesBySteps queues
