@@ -39,3 +39,17 @@ white: green-black
 white: yellow-black
 milestone: white: white-black
 end
+
+#new hint-found == red-black path
+start
+white: green-black
+white: cyan-black
+white: yellow-black
+white: red-black
+white: blue-black
+white: blue-black
+white: blue-black
+white: cyan-black
+white: yellow-black
+milestone: white: white-black
+end

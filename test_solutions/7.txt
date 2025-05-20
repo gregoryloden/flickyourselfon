@@ -1,3 +1,4 @@
+##original
 start
 #first milestone red
 green: magenta-black
@@ -83,5 +84,110 @@ white: blue-yellow
 white: black-blue
 white: green-blue
 white: black-red
+milestone: white: black-white
+end
+
+
+##hint-found
+start
+#second milestone #1
+green: magenta-black
+green: magenta-black
+white: red-red
+green: black-yellow
+milestone: blue: green-red
+
+#third milestone #1
+white: green-red
+white: black-red
+milestone: white: cyan-green
+
+#third milestone #2
+white: blue-red
+white: black-red
+white: black-red
+white: black-red
+white: red-red
+white: red-red
+milestone: green: blue-red
+
+#third milestone #3
+milestone: red: blue-green
+
+#third milestone #4
+red: black-green
+red: white-red
+red: black-green
+milestone: green: green-green
+
+#third milestone #5
+green: cyan-red
+green: yellow-green
+green: black-green
+green: black-green
+green: cyan-red
+milestone: green: white-red
+
+#third milestone #6 (final)
+green: yellow-red
+green: yellow-red
+milestone: green: magenta-green
+
+#first milestone #1
+green: yellow-red
+green: yellow-red
+green: magenta-black
+green: magenta-black
+green: white-black
+green: white-black
+green: magenta-black
+green: magenta-black
+milestone: blue: blue-red
+
+#second milestone #2 (final)
+blue: yellow-green
+blue: yellow-green
+blue: black-red
+milestone: blue: blue-yellow
+
+#first milestone #2
+blue: red-red
+milestone: red: blue-red
+
+#first milestone #3 (final)
+red: magenta-red
+milestone: red: red-cyan
+
+#fourth milestone #1
+red: magenta-green
+red: blue-yellow
+red: green-green
+red: magenta-green
+milestone: blue: yellow-red
+
+#fourth milestone #2
+red: blue-blue
+red: white-green
+milestone: blue: magenta-yellow
+
+#fourth milestone #3
+milestone: blue: white-blue
+
+#fourth milestone #4
+blue: cyan-yellow
+blue: cyan-yellow
+blue: cyan-blue
+blue: cyan-blue
+blue: magenta-blue
+white: red-red
+white: red-red
+white: white-green
+milestone: white: magenta-yellow
+
+#fourth milestone #5 (final)
+white: white-red
+white: green-blue
+white: black-blue
+white: black-blue
 milestone: white: black-white
 end
