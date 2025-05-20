@@ -11,6 +11,7 @@
 #ifdef TEST_SOLUTIONS
 	#include "Util/StringUtils.h"
 #endif
+#include "Util/VectorUtils.h"
 
 #define newPlane(owningLevel, indexInOwningLevel) newWithArgs(Plane, owningLevel, indexInOwningLevel)
 
@@ -305,20 +306,12 @@ void LevelTypes::Plane::findMilestonesToThisPlane(vector<Plane*>& levelPlanes, v
 					visitedMilestonesBitCount, &plane->visitedMilestonesByteIndex, &plane->visitedMilestonesBitShift);
 		}
 		//if this switch is the only switch to control the rail (whether it's single-use or not), and the rail starts out
-		//	lowered, track the switch's plane as a destination plane
+		//	lowered, track the switch's plane as a destination plane, if it isn't already tracked
 		Rail* rail = matchingRailByteMaskData->rail;
-		if (rail->getGroups().size() == 1 && rail->getInitialTileOffset() != 0) {
-			//track its plane if it isn't already tracked
-			bool destinationPlaneAlreadyIncluded = false;
-			for (Plane* destinationPlane : outDestinationPlanes) {
-				if (destinationPlane == plane) {
-					destinationPlaneAlreadyIncluded = true;
-					break;
-				}
-			}
-			if (!destinationPlaneAlreadyIncluded)
-				outDestinationPlanes.push_back(plane);
-		}
+		if (rail->getGroups().size() == 1
+				&& rail->getInitialTileOffset() != 0
+				&& !VectorUtils::includes(outDestinationPlanes, plane))
+			outDestinationPlanes.push_back(plane);
 	}
 	delete[] seenPlanes;
 	delete[] requiredConnections;
@@ -340,21 +333,14 @@ void LevelTypes::Plane::pathWalk(
 		Plane* lastPlane = nextPlane;
 		PathWalkCheckResult pathWalkCheckResult = PathWalkCheckResult::RejectPlane;
 		for (Connection& connection : nextPlane->connections) {
-			//skip connections going to planes that we've already seen, we only care about the planes in the path, not the
-			//	connections
-			//skip connections that we can't cross because they require already being on this plane
+			//skip a connection if:
+			//- it goes to a plane that we've already seen; we only care about the planes in the path, not the connections
+			//- we can't cross it without having already reached this destination plane
+			//- it's been excluded
 			Plane* toPlane = connection.toPlane;
-			if (seenPlanes[toPlane->indexInOwningLevel] || connection.requiresSwitchesOnPlane(this))
-				continue;
-			//skip connections that are excluded
-			bool connectionIsExcluded = false;
-			for (Connection* excludedConnection : excludedConnections) {
-				if (&connection == excludedConnection) {
-					connectionIsExcluded = true;
-					break;
-				}
-			}
-			if (connectionIsExcluded)
+			if (seenPlanes[toPlane->indexInOwningLevel]
+					|| connection.requiresSwitchesOnPlane(this)
+					|| VectorUtils::includes(excludedConnections, &connection))
 				continue;
 			//we found a valid connection, track it
 			nextPlane = toPlane;
@@ -450,26 +436,20 @@ void LevelTypes::Plane::markVisitedMilestoneDestinationPlanesInDraftState(vector
 		if (plane->visitedMilestonesByteIndex == Level::absentRailByteIndex)
 			continue;
 		//find every milestone in this plane, and check that all its rails are raised
-		bool allMilestoneRailsRaised = true;
-		for (ConnectionSwitch& connectionSwitch : plane->connectionSwitches) {
-			if (!connectionSwitch.isMilestone)
-				continue;
-			for (RailByteMaskData* railByteMaskData : connectionSwitch.affectedRailByteMaskData) {
-				if (((HintState::PotentialLevelState::draftState.railByteMasks[railByteMaskData->railByteIndex]
-							>> railByteMaskData->railBitShift)
-						& Level::baseRailTileOffsetByteMask)
-					!= 0)
-				{
-					allMilestoneRailsRaised = false;
-					break;
-				}
-			}
-			if (!allMilestoneRailsRaised)
-				break;
-		}
+		auto railIsLowered = [](RailByteMaskData* railByteMaskData) {
+			return ((HintState::PotentialLevelState::draftState.railByteMasks[railByteMaskData->railByteIndex]
+						>> railByteMaskData->railBitShift)
+					& Level::baseRailTileOffsetByteMask)
+				!= 0;
+		};
+		auto hasLoweredMilestoneRails = [railIsLowered](ConnectionSwitch& connectionSwitch) {
+			return connectionSwitch.isMilestone
+				&& VectorUtils::anyMatch(connectionSwitch.affectedRailByteMaskData, railIsLowered);
+		};
 		//mark this plane as visited if none of its milestone connections are lowered
 		//but never mark the victory plane as visited, it's registered as a milestone destination plane but has no switches
-		if (allMilestoneRailsRaised && plane != plane->owningLevel->getVictoryPlane())
+		if (!VectorUtils::anyMatch(plane->connectionSwitches, hasLoweredMilestoneRails)
+				&& plane != plane->owningLevel->getVictoryPlane())
 			HintState::PotentialLevelState::draftState.railByteMasks[plane->visitedMilestonesByteIndex] |=
 				baseVisitedMilestonesByteMask << plane->visitedMilestonesBitShift;
 	}
@@ -907,14 +887,10 @@ void Level::preAllocatePotentialLevelStates() {
 
 		//validate that every rail affected by the reset switch belongs in this level
 		for (short resetSwitchRailId : *resetSwitch->getAffectedRailIds()) {
-			bool foundRailInLevel = false;
-			for (RailByteMaskData& railByteMaskData : allRailByteMaskData) {
-				if (railByteMaskData.railId == resetSwitchRailId) {
-					foundRailInLevel = true;
-					break;
-				}
-			}
-			if (!foundRailInLevel)
+			auto matchesResetSwitchRailId = [resetSwitchRailId](RailByteMaskData& railByteMaskData) {
+				return railByteMaskData.railId == resetSwitchRailId;
+			};
+			if (!VectorUtils::anyMatch(allRailByteMaskData, matchesResetSwitchRailId))
 				Logger::debugLogger.logString(
 					"ERROR: level " + to_string(levelN) + ": reset switch affects rail " + to_string(resetSwitchRailId)
 						+ " outside of level");

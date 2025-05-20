@@ -19,6 +19,7 @@
 #include "Util/FileUtils.h"
 #include "Util/Logger.h"
 #include "Util/StringUtils.h"
+#include "Util/VectorUtils.h"
 
 #define entityAnimationSpriteAnimationWithDelay(animation) \
 	newEntityAnimationSetSpriteAnimation(animation), \
@@ -452,17 +453,11 @@ void MapState::buildLevels() {
 
 		//validate all levels have valid reset switches
 		for (Level* level : levels) {
-			ResetSwitch* levelResetSwitch = nullptr;
-			for (int i = 0; i < (int)resetSwitches.size(); i++) {
-				if (resetSwitchLevels[i] == level) {
-					levelResetSwitch = resetSwitches[i];
-					break;
-				}
-			}
-			if (levelResetSwitch == nullptr)
+			unsigned int levelResetSwitchI = VectorUtils::indexOf(resetSwitchLevels, level);
+			if (levelResetSwitchI >= resetSwitches.size())
 				Logger::debugLogger.logString("ERROR: level " + to_string(level->getLevelN()) + ": missing reset switch");
 			else
-				level->validateResetSwitch(levelResetSwitch);
+				level->validateResetSwitch(resetSwitches[levelResetSwitchI]);
 		}
 	#endif
 }
