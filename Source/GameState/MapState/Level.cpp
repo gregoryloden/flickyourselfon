@@ -722,50 +722,15 @@ void LevelTypes::Plane::countSwitchesAndConnections(
 	}
 }
 #ifdef LOG_FOUND_HINT_STEPS
-	void LevelTypes::Plane::logSteps(HintState::PotentialLevelState* hintState) {
-		stringstream stepsMessage;
-		if (hintState->priorState == nullptr) {
-			stepsMessage << "start at plane " << hintState->plane->getIndexInOwningLevel();
-			logRailByteMasks(stepsMessage, hintState->railByteMasks);
-		} else {
-			logSteps(hintState->priorState);
-			stepsMessage << " -> ";
-			logHint(stepsMessage, hintState->hint, hintState->railByteMasks);
-			stepsMessage << " -> plane " << hintState->plane->getIndexInOwningLevel();
-			if (hintState->hint->type == Hint::Type::Switch) {
-				for (ConnectionSwitch& connectionSwitch : hintState->plane->connectionSwitches) {
-					if (&connectionSwitch.hint != hintState->hint)
-						continue;
-					if (connectionSwitch.isMilestone)
-						stepsMessage << " (milestone)";
-					break;
-				}
-			}
+	bool LevelTypes::Plane::isMilestoneSwitchHint(Hint* hint) {
+		if (hint->type != Hint::Type::Switch)
+			return false;
+		for (ConnectionSwitch& connectionSwitch : connectionSwitches) {
+			if (&connectionSwitch.hint != hint)
+				continue;
+			return connectionSwitch.isMilestone;
 		}
-		Logger::debugLogger.logString(stepsMessage.str());
-	}
-	void LevelTypes::Plane::logHint(stringstream& stepsMessage, Hint* hint, unsigned int* railByteMasks) {
-		if (hint->type == Hint::Type::Plane)
-			stepsMessage << "plane " << hint->data.plane->getIndexInOwningLevel();
-		else if (hint->type == Hint::Type::Rail) {
-			Rail::Segment* segment = hint->data.rail->getSegment(0);
-			stepsMessage << "rail " << MapState::getRailSwitchId(segment->x, segment->y);
-			MapState::logRailDescriptor(hint->data.rail, &stepsMessage);
-		} else if (hint->type == Hint::Type::Switch) {
-			Switch* switch0 = hint->data.switch0;
-			stepsMessage << "switch " << MapState::getRailSwitchId(switch0->getLeftX(), switch0->getTopY());
-			logRailByteMasks(stepsMessage, railByteMasks);
-			MapState::logSwitchDescriptor(hint->data.switch0, &stepsMessage);
-		} else if (hint->type == Hint::Type::None)
-			stepsMessage << "none";
-		else if (hint->type == Hint::Type::UndoReset)
-			stepsMessage << "undo/reset";
-		else
-			stepsMessage << "[unknown]";
-	}
-	void LevelTypes::Plane::logRailByteMasks(stringstream& stepsMessage, unsigned int* railByteMasks) {
-		for (int i = 0; i < HintState::PotentialLevelState::currentRailByteMaskCount; i++)
-			stepsMessage << std::hex << std::uppercase << "  " << railByteMasks[i] << std::dec;
+		return false;
 	}
 #endif
 
@@ -1095,7 +1060,7 @@ Hint* Level::performHintSearch(HintState::PotentialLevelState* baseLevelState, P
 			Plane* nextPlane = potentialLevelState->plane;
 			if (nextPlane == cachedHintSearchVictoryPlane) {
 				#ifdef LOG_FOUND_HINT_STEPS
-					Plane::logSteps(potentialLevelState);
+					potentialLevelState->logSteps();
 				#endif
 				foundHintSearchTotalSteps = potentialLevelState->steps;
 				return potentialLevelState->getHint();
@@ -1278,7 +1243,7 @@ int Level::clearPotentialLevelStateHolders() {
 				"ERROR: level " + to_string(levelN) + " solution: unable to reach victory plane after all steps");
 		else {
 			#ifdef LOG_FOUND_HINT_STEPS
-				Plane::logSteps(currentNextPotentialLevelStates->front());
+				currentNextPotentialLevelStates->front()->logSteps();
 			#endif
 			foundHintSearchTotalSteps = currentNextPotentialLevelStates->front()->steps;
 			currentNextPotentialLevelStates->front()->getHint();

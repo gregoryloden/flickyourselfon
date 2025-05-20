@@ -3,7 +3,6 @@
 #define newLevel(levelN, startTile) newWithArgs(Level, levelN, startTile)
 #ifdef DEBUG
 	#define TRACK_HINT_SEARCH_STATS
-	#define LOG_FOUND_HINT_STEPS
 	//#define LOG_SEARCH_STEPS_STATS
 	#define TEST_SOLUTIONS
 #endif
@@ -176,12 +175,8 @@ namespace LevelTypes {
 			int* outExtendedPlaneConnections,
 			int* outExtendedRailConnections);
 		#ifdef LOG_FOUND_HINT_STEPS
-			//log all the steps of a hint state
-			static void logSteps(HintState::PotentialLevelState* hintState);
-			//log a single hint step
-			static void logHint(stringstream& stepsMessage, Hint* hint, unsigned int* railByteMasks);
-			//log the rail byte masks
-			static void logRailByteMasks(stringstream& stepsMessage, unsigned int* railByteMasks);
+			//check if the given hint is for a milestone switch
+			bool isMilestoneSwitchHint(Hint* hint);
 		#endif
 	};
 	//Should only be allocated within an object, on the stack, or as a static object

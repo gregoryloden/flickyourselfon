@@ -3,6 +3,9 @@
 #include "Util/PooledReferenceCounter.h"
 
 #define newHintState(hint, animationEndTicksTime) produceWithArgs(HintState, hint, animationEndTicksTime)
+#ifdef DEBUG
+	#define LOG_FOUND_HINT_STEPS
+#endif
 
 class Rail;
 class Switch;
@@ -78,6 +81,14 @@ public:
 		PotentialLevelState* addNewState(vector<PotentialLevelState*>& potentialLevelStates, int pSteps);
 		//get the hint that leads the player to the second state in the priorState stack
 		Hint* getHint();
+		#ifdef LOG_FOUND_HINT_STEPS
+			//log all the steps of this state
+			void logSteps();
+			//log the single hint step for this state
+			void logHint(stringstream& stepsMessage);
+			//log the rail byte masks for this state
+			void logRailByteMasks(stringstream& stepsMessage);
+		#endif
 	};
 
 private:

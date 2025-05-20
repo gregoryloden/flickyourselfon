@@ -5,6 +5,7 @@
 #include "GameState/MapState/Switch.h"
 #include "Sprites/SpriteRegistry.h"
 #include "Sprites/SpriteSheet.h"
+#include "Util/Logger.h"
 
 #define newHintStatePotentialLevelState(priorStateAndDraftState, steps) \
 	produceWithArgs(HintState::PotentialLevelState, priorStateAndDraftState, steps)
@@ -109,6 +110,46 @@ Hint* HintState::PotentialLevelState::getHint() {
 	}
 	return hintLevelState->hint;
 }
+#ifdef LOG_FOUND_HINT_STEPS
+	void HintState::PotentialLevelState::logSteps() {
+		stringstream stepsMessage;
+		if (priorState == nullptr) {
+			stepsMessage << "start at plane " << plane->getIndexInOwningLevel();
+			logRailByteMasks(stepsMessage);
+		} else {
+			priorState->logSteps();
+			stepsMessage << " -> ";
+			logHint(stepsMessage);
+			stepsMessage << " -> plane " << plane->getIndexInOwningLevel();
+			if (plane->isMilestoneSwitchHint(hint))
+				stepsMessage << " (milestone)";
+		}
+		Logger::debugLogger.logString(stepsMessage.str());
+	}
+	void HintState::PotentialLevelState::logHint(stringstream& stepsMessage) {
+		if (hint->type == Hint::Type::Plane)
+			stepsMessage << "plane " << hint->data.plane->getIndexInOwningLevel();
+		else if (hint->type == Hint::Type::Rail) {
+			Rail::Segment* segment = hint->data.rail->getSegment(0);
+			stepsMessage << "rail " << MapState::getRailSwitchId(segment->x, segment->y);
+			MapState::logRailDescriptor(hint->data.rail, &stepsMessage);
+		} else if (hint->type == Hint::Type::Switch) {
+			Switch* switch0 = hint->data.switch0;
+			stepsMessage << "switch " << MapState::getRailSwitchId(switch0->getLeftX(), switch0->getTopY());
+			logRailByteMasks(stepsMessage);
+			MapState::logSwitchDescriptor(hint->data.switch0, &stepsMessage);
+		} else if (hint->type == Hint::Type::None)
+			stepsMessage << "none";
+		else if (hint->type == Hint::Type::UndoReset)
+			stepsMessage << "undo/reset";
+		else
+			stepsMessage << "[unknown]";
+	}
+	void HintState::PotentialLevelState::logRailByteMasks(stringstream& stepsMessage) {
+		for (int i = 0; i < currentRailByteMaskCount; i++)
+			stepsMessage << std::hex << std::uppercase << "  " << railByteMasks[i] << std::dec;
+	}
+#endif
 
 //////////////////////////////// HintState ////////////////////////////////
 HintState::HintState(objCounterParameters())
