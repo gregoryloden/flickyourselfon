@@ -9,14 +9,14 @@ public:
 	//Should only be allocated within an object, on the stack, or as a static object
 	class Segment {
 	public:
-		static const int spriteHorizontalIndexVertical = 0;
-		static const int spriteHorizontalIndexHorizontal = 1;
-		static const int spriteHorizontalIndexEndHorizontalFirst = 6;
-		static const int spriteHorizontalIndexEndVerticalFirst = 8;
-		static const int spriteHorizontalIndexEndFirst = spriteHorizontalIndexEndHorizontalFirst;
-		static const int spriteHorizontalIndexShadowFirst = 10;
-		static const int spriteHorizontalIndexBorderFirst = 16;
-		static const char absentTileOffset = -1;
+		static constexpr int spriteHorizontalIndexVertical = 0;
+		static constexpr int spriteHorizontalIndexHorizontal = 1;
+		static constexpr int spriteHorizontalIndexEndHorizontalFirst = 6;
+		static constexpr int spriteHorizontalIndexEndVerticalFirst = 8;
+		static constexpr int spriteHorizontalIndexEndFirst = spriteHorizontalIndexEndHorizontalFirst;
+		static constexpr int spriteHorizontalIndexShadowFirst = 10;
+		static constexpr int spriteHorizontalIndexBorderFirst = 16;
+		static constexpr char absentTileOffset = -1;
 
 		int x;
 		int y;

@@ -21,18 +21,18 @@ private:
 	};
 
 	//title/text animation timing
-	static const int introTitleFadeInStartTicksTime = 1000;
-	static const int introTitleFadeInTicksDuration = 1000;
-	static const int introTitleDisplayTicksDuration = 2000;
-	static const int introTitleFadeOutTicksDuration = 500;
-	static const int introAnimationStartTicksTime =
+	static constexpr int introTitleFadeInStartTicksTime = 1000;
+	static constexpr int introTitleFadeInTicksDuration = 1000;
+	static constexpr int introTitleDisplayTicksDuration = 2000;
+	static constexpr int introTitleFadeOutTicksDuration = 500;
+	static constexpr int introAnimationStartTicksTime =
 		introTitleFadeInStartTicksTime
 			+ introTitleFadeInTicksDuration
 			+ introTitleDisplayTicksDuration
 			+ introTitleFadeOutTicksDuration
 			+ 500;
 	//save icon timing
-	static const int saveIconShowDuration = 3000;
+	static constexpr int saveIconShowDuration = 3000;
 	//title screen and intro explanation text
 public:
 	static constexpr char* titleGameName = "Kick Yourself On";
