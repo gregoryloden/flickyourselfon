@@ -1276,10 +1276,16 @@ int Level::clearPotentialLevelStateHolders() {
 		else if (currentNextPotentialLevelStates->empty() || currentNextPotentialLevelStates->front()->plane != victoryPlane)
 			Logger::debugLogger.logString(
 				"ERROR: level " + to_string(levelN) + " solution: unable to reach victory plane after all steps");
-		else
+		else {
+			#ifdef LOG_FOUND_HINT_STEPS
+				Plane::logSteps(currentNextPotentialLevelStates->front());
+			#endif
+			foundHintSearchTotalSteps = currentNextPotentialLevelStates->front()->steps;
+			currentNextPotentialLevelStates->front()->getHint();
 			Logger::debugLogger.logString(
 				"level " + to_string(levelN) + " solution verified, "
 					+ to_string(foundHintSearchTotalSteps) + "(" + to_string(foundHintSearchTotalHintSteps) + ")" + " steps");
+		}
 		clearPotentialLevelStateHolders();
 		for (Plane* singleSwitchPlane : singleSwitchPlanes)
 			delete singleSwitchPlane;
