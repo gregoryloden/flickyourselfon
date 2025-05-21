@@ -1072,9 +1072,11 @@ Hint* Level::performHintSearch(HintState::PotentialLevelState* baseLevelState, P
 		} else {
 			int loopTicks = now - lastCheckStartTime;
 			if (loopTicks < targetLoopTicks - 1)
-				loopMaxStateCount = loopTicks == 0
-					? loopMaxStateCount * targetLoopTicks
-					: MathUtils::min(loopMaxStateCount * 2, loopMaxStateCount * targetLoopTicks / loopTicks);
+				loopMaxStateCount = MathUtils::max(
+					loopMaxStateCount,
+					loopTicks == 0
+						? loopMaxStateCount * targetLoopTicks
+						: MathUtils::min(loopMaxStateCount * 2, loopMaxStateCount * targetLoopTicks / loopTicks));
 			else if (loopTicks > targetLoopTicks + 1)
 				loopMaxStateCount = MathUtils::max(1, loopMaxStateCount * targetLoopTicks / loopTicks);
 		}
