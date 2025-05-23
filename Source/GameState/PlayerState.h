@@ -46,7 +46,6 @@ private:
 	static constexpr char* finishedMoveTutorialFileValue = "finishedMoveTutorial";
 	static constexpr char* finishedKickTutorialFileValue = "finishedKickTutorial";
 	static constexpr char* finishedUndoRedoTutorialFileValue = "finishedUndoRedoTutorial";
-	static constexpr char* lastGoalFilePrefix = "lastGoal ";
 	static constexpr char* noClipFileValue = "noClip";
 
 	static thread* hintSearchThread;
@@ -80,8 +79,6 @@ private:
 	bool finishedKickTutorial;
 	bool undoRedoTutorialUnlocked;
 	bool finishedUndoRedoTutorial;
-	int lastGoalX;
-	int lastGoalY;
 	ReferenceCounterHolder<UndoState> undoState;
 	ReferenceCounterHolder<UndoState> redoState;
 	Hint* hint;
@@ -137,8 +134,6 @@ public:
 	void savePauseState();
 	//move the player to the given level, or restore the state without a selected level
 	void setLevelSelectState(int levelN);
-	//do any last steps needed after selecting a level
-	void confirmSelectLevel(int levelN, int ticksTime);
 	//update this PlayerState by reading from the previous state
 	void updateWithPreviousPlayerState(PlayerState* prev, bool hasKeyboardControl, int ticksTime);
 private:
@@ -194,8 +189,6 @@ private:
 		float* outActualYPosition);
 	//auto-climb, auto-fall, or auto-ride-rail if we can
 	void tryAutoKick(PlayerState* prev, int ticksTime);
-	//spawn sparks over a goal tile if applicable
-	void trySpawnGoalSparks(int ticksTime);
 	//collect the completed hint if applicable
 	void tryCollectCompletedHint(PlayerState* other);
 	//wait for the hint thread to finish, and clear it

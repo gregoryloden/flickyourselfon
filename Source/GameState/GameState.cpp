@@ -96,7 +96,7 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 			if ((endPauseDecision & (int)PauseState::EndPauseDecision::RequestHint) != 0 && !Editor::isActive)
 				mapState.get()->setHint(playerState.get()->getHint(), gameTicksTime);
 			if ((endPauseDecision & (int)PauseState::EndPauseDecision::SelectLevel) != 0)
-				playerState.get()->confirmSelectLevel(selectedLevelN, gameTicksTime);
+				playerState.get()->generateHint(&Hint::none, gameTicksTime);
 			//don't reset the game in editor mode
 			if ((endPauseDecision & (int)PauseState::EndPauseDecision::Reset) != 0 && !Editor::isActive) {
 				Logger::gameplayLogger.log("  reset game");
@@ -146,7 +146,9 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 		if (levelsUnlocked == 0) {
 			MapState::setIntroAnimationBootTile(false);
 			playerState.get()->setInitialZ();
-		}
+		//the player beat a level, spawn goal sparks
+		} else
+			mapState.get()->spawnGoalSparks(playerLevelN, gameTicksTime);
 		levelsUnlocked = playerLevelN;
 	}
 	if (perpetualHints)

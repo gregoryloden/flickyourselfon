@@ -919,6 +919,42 @@ void MapState::startSwitchesFadeInAnimation(int initialTicksDelay, int ticksTime
 			ticksTime);
 	}
 }
+void MapState::spawnGoalSparks(int levelN, int ticksTime) {
+	char ignoreZ;
+	int tileX, tileY;
+	getLevelStartPosition(levelN, &tileX, &tileY, &ignoreZ);
+	SpriteDirection directions[] =
+		{ SpriteDirection::Right, SpriteDirection::Up, SpriteDirection::Left, SpriteDirection::Down };
+	for (SpriteDirection direction : directions) {
+		SpriteAnimation* animations[] { SpriteRegistry::sparksSlowAnimationA, SpriteRegistry::sparksSlowAnimationA };
+		animations[rand() % 2] = SpriteRegistry::sparksSlowAnimationB;
+		float sparkX = (float)(tileX * MapState::tileSize + MapState::halfTileSize);
+		float sparkY = (float)(tileY * MapState::tileSize + MapState::halfTileSize);
+		if (direction == SpriteDirection::Up)
+			sparkY -= 1.0f;
+		else if (direction == SpriteDirection::Down)
+			sparkY += 1.0f;
+		for (int i = 0; i < 2; i++) {
+			SpriteAnimation* animation = animations[i];
+			int initialDelay = rand() % SpriteRegistry::sparksSlowTicksPerFrame + i * SpriteRegistry::sparksSlowTicksPerFrame;
+			queueParticle(
+				sparkX,
+				sparkY,
+				1,
+				1,
+				1,
+				false,
+				{
+					newEntityAnimationDelay(initialDelay),
+					newEntityAnimationSetSpriteAnimation(animation),
+					newEntityAnimationSetDirection(direction),
+					newEntityAnimationDelay(animation->getTotalTicksDuration()),
+				},
+				ticksTime);
+		}
+	}
+	Audio::victorySound->play(0);
+}
 void MapState::toggleShowConnections() {
 	if (Editor::isActive) {
 		//if only tiles were visible, restore everything and turn connections on

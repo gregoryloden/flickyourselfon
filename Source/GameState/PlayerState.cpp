@@ -60,8 +60,6 @@ PlayerState::PlayerState(objCounterParameters())
 , finishedKickTutorial(false)
 , undoRedoTutorialUnlocked(false)
 , finishedUndoRedoTutorial(false)
-, lastGoalX(0)
-, lastGoalY(0)
 , undoState(nullptr)
 , redoState(nullptr)
 , hint(&Hint::none)
@@ -114,8 +112,6 @@ void PlayerState::copyPlayerState(PlayerState* other) {
 	finishedKickTutorial = other->finishedKickTutorial;
 	undoRedoTutorialUnlocked = other->undoRedoTutorialUnlocked;
 	finishedUndoRedoTutorial = other->finishedUndoRedoTutorial;
-	lastGoalX = other->lastGoalX;
-	lastGoalY = other->lastGoalY;
 	setUndoState(undoState, other->undoState.get());
 	setUndoState(redoState, other->redoState.get());
 	hint = other->hint;
@@ -260,11 +256,6 @@ void PlayerState::setLevelSelectState(int levelN) {
 		z = pauseZ;
 	}
 }
-void PlayerState::confirmSelectLevel(int levelN, int ticksTime) {
-	char ignoreZ;
-	MapState::getLevelStartPosition(levelN, &lastGoalX, &lastGoalY, &ignoreZ);
-	generateHint(&Hint::none, ticksTime);
-}
 void PlayerState::updateWithPreviousPlayerState(PlayerState* prev, bool hasKeyboardControl, int ticksTime) {
 	bool previousStateHadEntityAnimation = prev->entityAnimation.get() != nullptr;
 
@@ -286,8 +277,6 @@ void PlayerState::updateWithPreviousPlayerState(PlayerState* prev, bool hasKeybo
 	finishedKickTutorial = prev->finishedKickTutorial;
 	undoRedoTutorialUnlocked = prev->undoRedoTutorialUnlocked;
 	finishedUndoRedoTutorial = prev->finishedUndoRedoTutorial;
-	lastGoalX = prev->lastGoalX;
-	lastGoalY = prev->lastGoalY;
 	setUndoState(undoState, prev->undoState.get());
 	setUndoState(redoState, prev->redoState.get());
 	noClip = prev->noClip;
@@ -312,7 +301,6 @@ void PlayerState::updateWithPreviousPlayerState(PlayerState* prev, bool hasKeybo
 	if (!Editor::isActive) {
 		setKickAction();
 		tryAutoKick(prev, ticksTime);
-		trySpawnGoalSparks(ticksTime);
 		tryCollectCompletedHint(prev);
 	}
 
@@ -890,45 +878,6 @@ void PlayerState::tryAutoKick(PlayerState* prev, int ticksTime) {
 		autoKickStartTicksTime = -1;
 		canImmediatelyAutoKick = true;
 	}
-}
-void PlayerState::trySpawnGoalSparks(int ticksTime) {
-	int tileX = (int)x.get()->getValue(0) / MapState::tileSize;
-	int tileY = (int)(y.get()->getValue(0) + boundingBoxCenterYOffset) / MapState::tileSize;
-	if (MapState::getTile(tileX, tileY) != MapState::tilePuzzleEnd || (lastGoalX == tileX && lastGoalY == tileY))
-		return;
-	lastGoalX = tileX;
-	lastGoalY = tileY;
-	SpriteDirection directions[] =
-		{ SpriteDirection::Right, SpriteDirection::Up, SpriteDirection::Left, SpriteDirection::Down };
-	for (SpriteDirection direction : directions) {
-		SpriteAnimation* animations[] { SpriteRegistry::sparksSlowAnimationA, SpriteRegistry::sparksSlowAnimationA };
-		animations[rand() % 2] = SpriteRegistry::sparksSlowAnimationB;
-		float sparkX = (float)(tileX * MapState::tileSize + MapState::halfTileSize);
-		float sparkY = (float)(tileY * MapState::tileSize + MapState::halfTileSize);
-		if (direction == SpriteDirection::Up)
-			sparkY -= 1.0f;
-		else if (direction == SpriteDirection::Down)
-			sparkY += 1.0f;
-		for (int i = 0; i < 2; i++) {
-			SpriteAnimation* animation = animations[i];
-			int initialDelay = rand() % SpriteRegistry::sparksSlowTicksPerFrame + i * SpriteRegistry::sparksSlowTicksPerFrame;
-			mapState.get()->queueParticle(
-				sparkX,
-				sparkY,
-				1,
-				1,
-				1,
-				false,
-				{
-					newEntityAnimationDelay(initialDelay),
-					newEntityAnimationSetSpriteAnimation(animation),
-					newEntityAnimationSetDirection(direction),
-					newEntityAnimationDelay(animation->getTotalTicksDuration()),
-				},
-				ticksTime);
-		}
-	}
-	Audio::victorySound->play(0);
 }
 void PlayerState::tryCollectCompletedHint(PlayerState* other) {
 	if (hintSearchStorage == nullptr) {
@@ -1665,7 +1614,6 @@ void PlayerState::saveState(ofstream& file) {
 		file << finishedKickTutorialFileValue << "\n";
 	if (finishedUndoRedoTutorial)
 		file << finishedUndoRedoTutorialFileValue << "\n";
-	file << lastGoalFilePrefix << lastGoalX << " " << lastGoalY << "\n";
 	if (noClip)
 		file << noClipFileValue << "\n";
 }
@@ -1686,8 +1634,6 @@ bool PlayerState::loadState(string& line) {
 		finishedKickTutorial = true;
 	else if (StringUtils::startsWith(line, finishedUndoRedoTutorialFileValue))
 		finishedUndoRedoTutorial = true;
-	else if (StringUtils::startsWith(line, lastGoalFilePrefix))
-		StringUtils::parsePosition(line.c_str() + StringUtils::strlenConst(lastGoalFilePrefix), &lastGoalX, &lastGoalY);
 	else if (StringUtils::startsWith(line, noClipFileValue))
 		noClip = true;
 	else
@@ -1713,8 +1659,6 @@ void PlayerState::reset() {
 	finishedKickTutorial = false;
 	undoRedoTutorialUnlocked = false;
 	finishedUndoRedoTutorial = false;
-	lastGoalX = 0;
-	lastGoalY = 0;
 	clearUndoRedoStates();
 	hint = &Hint::none;
 }

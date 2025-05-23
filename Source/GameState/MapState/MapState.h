@@ -329,6 +329,8 @@ public:
 	int startRadioWavesAnimation(int initialTicksDelay, int ticksTime);
 	//set the start of the fade-in animation for the next switch color and show radio waves for them
 	void startSwitchesFadeInAnimation(int initialTicksDelay, int ticksTime);
+	//spawn sparks over the start tile for the given level, which we just reached
+	void spawnGoalSparks(int levelN, int ticksTime);
 	//toggle the state of showing connections, and any other relevant state
 	void toggleShowConnections();
 	//generate a hint based on the state of the map and the given player position
