@@ -918,7 +918,6 @@ int GameState::introAnimationWalk(
 void GameState::resetGame(int ticksTime) {
 	Audio::stopAll();
 	levelsUnlocked = 0;
-	perpetualHints = false;
 	gameTimeOffsetTicksDuration = 0;
 	pauseState.set(nullptr);
 	//discard old states before assigning new states and resetting them, that way we reuse states only if they aren't in use by
