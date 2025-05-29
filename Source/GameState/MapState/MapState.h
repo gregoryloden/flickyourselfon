@@ -383,9 +383,11 @@ public:
 	//examine the neighboring tiles and pick an appropriate default tile, but only if we match the expected floor height
 	//wall tiles and floor tiles of a different height will be ignored
 	static void editorSetAppropriateDefaultFloorTile(int x, int y, char expectedFloorHeight);
-	//check to see if there is a floor tile at this x that is effectively "above" an adjacent tile at the given y
-	//go up the tiles, and if we find a floor tile with the right height, return true, or if it's too low, return false
-	static bool editorHasFloorTileCreatingShadowForHeight(int x, int y, char height);
+	//compare the given height against the height of the next non-"hidden" height at the given x and north of the given y
+	//high floor and wall heights "hide" tiles behind them, search for the first tile with a height that isn't "hidden"
+	//returns a positive, zero, or negative number if the found tile is higher, equal, or lower than the given height,
+	//	respectively
+	static char editorCompareAdjacentFloorHeight(int x, int y, char floorHeight);
 	//check if there is already a switch with the same color and group
 	static bool editorHasSwitch(char color, char group);
 	//set a switch if there's room, or delete one if we can

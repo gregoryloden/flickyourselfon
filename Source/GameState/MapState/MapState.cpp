@@ -1448,53 +1448,53 @@ void MapState::editorSetAppropriateDefaultFloorTile(int x, int y, char expectedF
 	if (height != expectedFloorHeight)
 		return;
 
-	int leftX = x - 1;
-	int rightX = x + 1;
-	char leftHeight = getHeight(leftX, y);
-	char rightHeight = getHeight(rightX, y);
-	bool leftIsBelow = leftHeight < height || leftHeight == emptySpaceHeight;
-	bool leftIsAbove = leftHeight > height && editorHasFloorTileCreatingShadowForHeight(leftX, y, height);
-	bool rightIsBelow = rightHeight < height || rightHeight == emptySpaceHeight;
-	bool rightIsAbove = rightHeight > height && editorHasFloorTileCreatingShadowForHeight(rightX, y, height);
+	char leftHeightComparison = editorCompareAdjacentFloorHeight(x - 1, y, height);
+	char rightHeightComparison = editorCompareAdjacentFloorHeight(x + 1, y, height);
 
 	//this tile is higher than the one above it
 	char topHeight = getHeight(x, y - 1);
 	if (height > topHeight || topHeight == emptySpaceHeight) {
-		if (leftIsAbove)
+		if (leftHeightComparison > 0)
 			editorSetTile(x, y, tilePlatformTopGroundLeftFloor);
-		else if (leftIsBelow)
+		else if (leftHeightComparison < 0)
 			editorSetTile(x, y, tilePlatformTopLeftFloor);
-		else if (rightIsAbove)
+		else if (rightHeightComparison > 0)
 			editorSetTile(x, y, tilePlatformTopGroundRightFloor);
-		else if (rightIsBelow)
+		else if (rightHeightComparison < 0)
 			editorSetTile(x, y, tilePlatformTopRightFloor);
 		else
 			editorSetTile(x, y, tilePlatformTopFloorFirst);
 	//this tile is the same height or lower than the one above it
 	} else {
-		if (leftIsAbove)
+		if (leftHeightComparison > 0)
 			editorSetTile(x, y, tileGroundLeftFloorFirst);
-		else if (leftIsBelow)
+		else if (leftHeightComparison < 0)
 			editorSetTile(x, y, tilePlatformLeftFloorFirst);
-		else if (rightIsAbove)
+		else if (rightHeightComparison > 0)
 			editorSetTile(x, y, tileGroundRightFloorFirst);
-		else if (rightIsBelow)
+		else if (rightHeightComparison < 0)
 			editorSetTile(x, y, tilePlatformRightFloorFirst);
 		else
 			editorSetTile(x, y, tileFloorFirst);
 	}
 }
-bool MapState::editorHasFloorTileCreatingShadowForHeight(int x, int y, char height) {
-	for (char tileOffset = 1; true; tileOffset++) {
+char MapState::editorCompareAdjacentFloorHeight(int x, int y, char floorHeight) {
+	for (char tileOffset = 0; true; tileOffset++) {
 		char otherHeight = getHeight(x, y - (int)tileOffset);
-		//too high to match, keep going
-		if (otherHeight > height + tileOffset * 2)
+		//empty space is always lower
+		if (otherHeight == emptySpaceHeight)
+			return -1;
+		char expectedHeight = floorHeight + tileOffset * 2;
+		//too high to match, which means it's still hiding tiles; keep going
+		if (otherHeight > expectedHeight)
 			continue;
-
-		//if the other tile is higher, then either we found the tile above this one, or we found a tile further north than the
-		//	tile that would be above this one (which is hidden by a higher tile)
-		//otherwise there is no tile above this one
-		return otherHeight > height;
+		//we found a wall tile, lower than the expected floor height
+		if (otherHeight % 2 == 1)
+			//if it's lower than the original floor height, assume that there are no "hidden" tiles at this height
+			//if it's higher than the original floor height, assume that there are "hidden" tiles at this height
+			return otherHeight < floorHeight ? -1 : 0;
+		//we found a non-hidden floor tile, compare it to the original height, assuming that the floor continued at that height
+		return otherHeight - floorHeight;
 	}
 }
 bool MapState::editorHasSwitch(char color, char group) {
