@@ -948,6 +948,8 @@ void Editor::render(EntityState* camera, int ticksTime) {
 	SpriteSheet::renderRectangleOutline(1.0f, 1.0f, 1.0f, 1.0f, boxLeftX, boxTopY, boxRightX, boxBottomY);
 
 	//if we've selected something to paint, draw a box around the area we'll paint
+	string boxMapTopLeftText;
+	string boxMapBottomRightText;
 	if (selectedButton != nullptr) {
 		//get the map coordinate of the mouse
 		int boxLeftMapX;
@@ -963,6 +965,9 @@ void Editor::render(EntityState* camera, int ticksTime) {
 		boxRightX = (GLint)(boxRightMapX * MapState::tileSize - screenLeftWorldX);
 		boxBottomY = (GLint)(boxBottomMapY * MapState::tileSize - screenTopWorldY);
 		SpriteSheet::renderRectangleOutline(1.0f, 1.0f, 1.0f, 1.0f, boxLeftX, boxTopY, boxRightX, boxBottomY);
+
+		boxMapTopLeftText = "@ " + to_string(boxLeftMapX) + ", " + to_string(boxTopMapY);
+		boxMapBottomRightText = "- " + to_string(boxRightMapX) + ", " + to_string(boxBottomMapY);
 	}
 
 	//draw the right and bottom background rectangles around the game view
@@ -973,8 +978,11 @@ void Editor::render(EntityState* camera, int ticksTime) {
 	for (Button* button : buttons)
 		button->render();
 
-	if (selectedButton != nullptr)
+	if (selectedButton != nullptr) {
 		selectedButton->renderHighlightOutline();
+		Text::render(boxMapTopLeftText.c_str(), 10, Config::gameScreenHeight + 15, 1);
+		Text::render(boxMapBottomRightText.c_str(), 10, Config::gameScreenHeight + 25, 1);
+	}
 	selectedRailSwitchGroupButton->renderHighlightOutline();
 	selectedPaintBoxXRadiusButton->renderHighlightOutline();
 	selectedPaintBoxYRadiusButton->renderHighlightOutline();
