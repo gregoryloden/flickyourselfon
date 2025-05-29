@@ -383,7 +383,8 @@ public:
 	//examine the neighboring tiles and pick an appropriate default tile, but only if we match the expected floor height
 	//wall tiles and floor tiles of a different height will be ignored
 	static void editorSetAppropriateDefaultFloorTile(int x, int y, char expectedFloorHeight);
-	//compare the given height against the height of the next non-"hidden" height at the given x and north of the given y
+	//find the height of the next non-"hidden" tile at the given x and north or equal to the given y, and compare it against the
+	//	given height
 	//high floor and wall heights "hide" tiles behind them, search for the first tile with a height that isn't "hidden"
 	//returns a positive, zero, or negative number if the found tile is higher, equal, or lower than the given height,
 	//	respectively
