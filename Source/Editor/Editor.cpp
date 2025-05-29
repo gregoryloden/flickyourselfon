@@ -855,7 +855,7 @@ void Editor::unloadButtons() {
 	delete noiseTilesDistribution;
 	noiseTilesDistribution = nullptr;
 }
-#ifdef DEBUG
+#ifdef VALIDATE_MAP_TILES
 	void Editor::validateMapTiles() {
 		for (int y = 0; y < MapState::getMapHeight(); y++) {
 			for (int x = 0; x < MapState::getMapWidth(); x++) {

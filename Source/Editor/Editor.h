@@ -3,6 +3,10 @@
 #include <random>
 #include "Sprites/Text.h"
 
+#ifdef DEBUG
+	#define VALIDATE_MAP_TILES
+#endif
+
 class EntityState;
 
 class Editor {
@@ -477,7 +481,7 @@ public:
 	static void loadButtons();
 	//delete all the editor buttons
 	static void unloadButtons();
-	#ifdef DEBUG
+	#ifdef VALIDATE_MAP_TILES
 		//make sure every tile is in the right tile group based on the heights of tiles near it
 		static void Editor::validateMapTiles();
 	#endif

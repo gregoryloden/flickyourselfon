@@ -262,7 +262,7 @@ void MapState::buildMap() {
 	}
 
 	if (Editor::isActive) {
-		#ifdef DEBUG
+		#ifdef VALIDATE_MAP_TILES
 			Editor::validateMapTiles();
 		#endif
 	} else
