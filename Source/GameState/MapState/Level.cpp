@@ -299,12 +299,11 @@ void LevelTypes::Plane::findMilestonesToThisPlane(vector<Plane*>& levelPlanes, v
 		//if it's single-use, it's a milestone
 		if (matchingConnectionSwitch->isSingleUse) {
 			#ifdef LOG_FOUND_MILESTONES_AND_DESTINATION_PLANES
-				stringstream newMilestoneMessageStream;
-				newMilestoneMessageStream << "level " << plane->owningLevel->getLevelN()
+				stringstream newMilestoneMessage;
+				newMilestoneMessage << "level " << plane->owningLevel->getLevelN()
 					<< " milestone: c" << (int)matchingConnectionSwitch->hint.data.switch0->getColor() << " ";
-				MapState::logGroup(matchingConnectionSwitch->hint.data.switch0->getGroup(), &newMilestoneMessageStream);
-				string newMilestoneMessage = newMilestoneMessageStream.str();
-				Logger::debugLogger.logString(newMilestoneMessage);
+				MapState::logGroup(matchingConnectionSwitch->hint.data.switch0->getGroup(), &newMilestoneMessage);
+				Logger::debugLogger.logString(newMilestoneMessage.str());
 			#endif
 			matchingConnectionSwitch->isMilestone = true;
 			//if we haven't done so already, mark the plane as a milestone destination by having it track a bit for whether it's
@@ -321,15 +320,14 @@ void LevelTypes::Plane::findMilestonesToThisPlane(vector<Plane*>& levelPlanes, v
 			&& !VectorUtils::includes(outDestinationPlanes, plane))
 		{
 			#ifdef LOG_FOUND_MILESTONES_AND_DESTINATION_PLANES
-				stringstream destinationPlaneMessageStream;
-				destinationPlaneMessageStream << "level " << plane->owningLevel->getLevelN()
+				stringstream destinationPlaneMessage;
+				destinationPlaneMessage << "level " << plane->owningLevel->getLevelN()
 					<< " destination plane " << plane->indexInOwningLevel << " with switches:";
 				for (ConnectionSwitch& connectionSwitch : plane->connectionSwitches) {
-					destinationPlaneMessageStream << " c" << (int)connectionSwitch.hint.data.switch0->getColor() << " ";
-					MapState::logGroup(connectionSwitch.hint.data.switch0->getGroup(), &destinationPlaneMessageStream);
+					destinationPlaneMessage << " c" << (int)connectionSwitch.hint.data.switch0->getColor() << " ";
+					MapState::logGroup(connectionSwitch.hint.data.switch0->getGroup(), &destinationPlaneMessage);
 				}
-				string destinationPlaneMessage = destinationPlaneMessageStream.str();
-				Logger::debugLogger.logString(destinationPlaneMessage);
+				Logger::debugLogger.logString(destinationPlaneMessage.str());
 			#endif
 			outDestinationPlanes.push_back(plane);
 		}
@@ -637,11 +635,11 @@ void LevelTypes::Plane::pursueSolutionAfterSwitches(HintState::PotentialLevelSta
 				#ifdef LOG_FOUND_HINT_STEPS
 					nextPotentialLevelState->logSteps();
 				#endif
-				stringstream milestoneMessageStream;
-				milestoneMessageStream << nextPotentialLevelState->steps << " steps, push milestone c"
+				stringstream milestoneMessage;
+				milestoneMessage << nextPotentialLevelState->steps << " steps, push milestone c"
 					<< (int)(connectionSwitch.hint.data.switch0->getColor()) << " ";
-				MapState::logGroup(connectionSwitch.hint.data.switch0->getGroup(), &milestoneMessageStream);
-				Logger::debugLogger.logString(milestoneMessageStream.str());
+				MapState::logGroup(connectionSwitch.hint.data.switch0->getGroup(), &milestoneMessage);
+				Logger::debugLogger.logString(milestoneMessage.str());
 			#endif
 		}
 
