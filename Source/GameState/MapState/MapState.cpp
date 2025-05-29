@@ -1486,13 +1486,15 @@ void MapState::editorSetAppropriateDefaultFloorTile(int x, int y, char expectedF
 }
 bool MapState::editorHasFloorTileCreatingShadowForHeight(int x, int y, char height) {
 	for (char tileOffset = 1; true; tileOffset++) {
-		char heightDiff = getHeight(x, y - (int)tileOffset) - height;
+		char otherHeight = getHeight(x, y - (int)tileOffset);
 		//too high to match, keep going
-		if (heightDiff > tileOffset * 2)
+		if (otherHeight > height + tileOffset * 2)
 			continue;
 
-		//if it's an exact match then we found the tile above this one, otherwise there is no tile above this one
-		return heightDiff == tileOffset * 2;
+		//if the other tile is higher, then either we found the tile above this one, or we found a tile further north than the
+		//	tile that would be above this one (which is hidden by a higher tile)
+		//otherwise there is no tile above this one
+		return otherHeight > height;
 	}
 }
 bool MapState::editorHasSwitch(char color, char group) {
