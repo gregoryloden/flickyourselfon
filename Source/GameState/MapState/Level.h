@@ -2,6 +2,7 @@
 
 #define newLevel(levelN, startTile) newWithArgs(Level, levelN, startTile)
 #ifdef DEBUG
+	#define LOG_FOUND_MILESTONES
 	#define TRACK_HINT_SEARCH_STATS
 	//#define LOG_SEARCH_STEPS_STATS
 	#define TEST_SOLUTIONS

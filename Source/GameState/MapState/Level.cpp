@@ -298,6 +298,14 @@ void LevelTypes::Plane::findMilestonesToThisPlane(vector<Plane*>& levelPlanes, v
 		//we found a matching switch for this rail
 		//if it's single-use, it's a milestone
 		if (matchingConnectionSwitch->isSingleUse) {
+			#ifdef LOG_FOUND_MILESTONES
+				stringstream newMilestoneMessageStream;
+				newMilestoneMessageStream << "level " << plane->owningLevel->getLevelN()
+					<< " milestone: c" << (int)matchingConnectionSwitch->hint.data.switch0->getColor() << " ";
+				MapState::logGroup(matchingConnectionSwitch->hint.data.switch0->getGroup(), &newMilestoneMessageStream);
+				string newMilestoneMessage = newMilestoneMessageStream.str();
+				Logger::debugLogger.logString(newMilestoneMessage);
+			#endif
 			matchingConnectionSwitch->isMilestone = true;
 			//if we haven't done so already, mark the plane as a milestone destination by having it track a bit for whether it's
 			//	been visited or not
