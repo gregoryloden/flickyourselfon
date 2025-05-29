@@ -4,6 +4,7 @@
 #include "Sprites/SpriteSheet.h"
 #include "Util/Config.h"
 #include "Util/FileUtils.h"
+#include "Util/Logger.h"
 
 #define newSaveButton(zone, leftX, topY) newWithArgs(Editor::SaveButton, zone, leftX, topY)
 #define newExportMapButton(zone, leftX, topY) newWithArgs(Editor::ExportMapButton, zone, leftX, topY)
@@ -854,6 +855,41 @@ void Editor::unloadButtons() {
 	delete noiseTilesDistribution;
 	noiseTilesDistribution = nullptr;
 }
+#ifdef DEBUG
+	void Editor::validateMapTiles() {
+		for (int y = 0; y < MapState::getMapHeight(); y++) {
+			for (int x = 0; x < MapState::getMapWidth(); x++) {
+				char height = MapState::getHeight(x, y);
+				if (height == MapState::emptySpaceHeight)
+					continue;
+
+				//check what tile is supposed to be here
+				char oldTile = MapState::getTile(x, y);
+				char defaultTile;
+				if (height % 2 == 0) {
+					MapState::editorSetAppropriateDefaultFloorTile(x, y, height);
+					defaultTile = MapState::getTile(x, y);
+					MapState::editorSetTile(x, y, oldTile);
+				} else
+					defaultTile = MapState::tileWallFirst;
+
+				//validate that the tile we found is in the right range
+				TileDistribution* tileDistribution = getTileDistribution(oldTile);
+				char foundTile = tileDistribution != nullptr ? tileDistribution->min : oldTile;
+				//  no issue if:
+				//- the tile matches
+				//- it's one of a few manually-and-purposefully-selected unique tiles
+				if (foundTile == defaultTile || foundTile == MapState::tileCount - 1 || foundTile == MapState::tilePuzzleEnd)
+					;
+				//no match, this is an error
+				else
+					Logger::debugLogger.logString(
+						"ERROR: tile at " + to_string(x) + ", " + to_string(y)
+							+ ": expected tile " + to_string(defaultTile) + ", found tile " + to_string(foundTile));
+			}
+		}
+	}
+#endif
 char Editor::getSelectedHeight() {
 	return selectedButton != nullptr && selectedButton == lastSelectedHeightButton
 		? lastSelectedHeightButton->getHeight()

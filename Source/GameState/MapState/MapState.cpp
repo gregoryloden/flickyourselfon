@@ -261,7 +261,11 @@ void MapState::buildMap() {
 		}
 	}
 
-	if (!Editor::isActive)
+	if (Editor::isActive) {
+		#ifdef DEBUG
+			Editor::validateMapTiles();
+		#endif
+	} else
 		buildLevels();
 }
 vector<int> MapState::parseRail(int* pixels, int redShift, int segmentIndex, int railSwitchId) {

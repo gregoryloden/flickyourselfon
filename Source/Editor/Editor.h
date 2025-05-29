@@ -477,6 +477,10 @@ public:
 	static void loadButtons();
 	//delete all the editor buttons
 	static void unloadButtons();
+	#ifdef DEBUG
+		//make sure every tile is in the right tile group based on the heights of tiles near it
+		static void Editor::validateMapTiles();
+	#endif
 	//return the height of the selected height button, or -1 if it's not selected
 	static char getSelectedHeight();
 private:
