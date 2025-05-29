@@ -39,6 +39,21 @@ private:
 		RGB(float pRed, float pGreen, float pBlue);
 		virtual ~RGB();
 	};
+	//Should only be allocated within an object, on the stack, or as a static object
+	class TileDistribution {
+	public:
+		char min;
+		char max;
+		function<char(default_random_engine&)> getRandomTile;
+
+		TileDistribution(
+			char pMin,
+			char pMax,
+			function<char(default_random_engine&)> pGetRandomTile,
+			vector<TileDistribution*>& containingList);
+		TileDistribution(char pMin, char pMax, vector<TileDistribution*>& containingList);
+		virtual ~TileDistribution();
+	};
 	class Button onlyInDebug(: public ObjCounter) {
 	public:
 		static const RGB buttonGrayRGB;
@@ -443,13 +458,14 @@ private:
 	static int lastMouseDragMapY;
 	static default_random_engine* randomEngine;
 	static discrete_distribution<int>* noiseTilesDistribution;
-	static discrete_distribution<int> floorTileDistribution;
-	static uniform_int_distribution<int> wallTileDistribution;
-	static uniform_int_distribution<int> platformRightFloorTileDistribution;
-	static uniform_int_distribution<int> platformLeftFloorTileDistribution;
-	static uniform_int_distribution<int> platformTopFloorTileDistribution;
-	static uniform_int_distribution<int> groundLeftFloorTileDistribution;
-	static uniform_int_distribution<int> groundRightFloorTileDistribution;
+	static vector<TileDistribution*> allTileDistributions;
+	static TileDistribution floorTileDistribution;
+	static TileDistribution wallTileDistribution;
+	static TileDistribution platformRightFloorTileDistribution;
+	static TileDistribution platformLeftFloorTileDistribution;
+	static TileDistribution platformTopFloorTileDistribution;
+	static TileDistribution groundLeftFloorTileDistribution;
+	static TileDistribution groundRightFloorTileDistribution;
 	static bool saveButtonDisabled;
 	static bool exportMapButtonDisabled;
 public:
@@ -469,6 +485,10 @@ private:
 public:
 	//see if we clicked on any buttons or the game screen
 	static void handleClick(SDL_MouseButtonEvent& clickEvent, bool isDrag, EntityState* camera, int ticksTime);
+private:
+	//get the distribution of compatible tiles for the given tile, or nullptr if this tile is unique
+	static TileDistribution* getTileDistribution(char tile);
+public:
 	//draw the editor interface
 	static void render(EntityState* camera, int ticksTime);
 private:

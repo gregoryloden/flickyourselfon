@@ -51,6 +51,19 @@ Editor::RGB::RGB(float pRed, float pGreen, float pBlue)
 }
 Editor::RGB::~RGB() {}
 
+//////////////////////////////// Editor::TileDistribution ////////////////////////////////
+Editor::TileDistribution::TileDistribution(
+	char pMin, char pMax, function<char(default_random_engine&)> pGetRandomTile, vector<TileDistribution*>& containingList)
+: min(pMin)
+, max(pMax)
+, getRandomTile(pGetRandomTile) {
+	containingList.push_back(this);
+}
+Editor::TileDistribution::TileDistribution(char pMin, char pMax, vector<TileDistribution*>& containingList)
+: TileDistribution(pMin, pMax, uniform_int_distribution<int>(pMin, pMax), containingList) {
+}
+Editor::TileDistribution::~TileDistribution() {}
+
 //////////////////////////////// Editor::Button ////////////////////////////////
 const Editor::RGB Editor::Button::buttonGrayRGB (0.5f, 0.5f, 0.5f);
 Editor::Button::Button(objCounterParametersComma() Zone zone, int zoneLeftX, int zoneTopY)
@@ -513,23 +526,12 @@ void Editor::ShuffleTileButton::paintMap(int x, int y) {
 }
 bool Editor::ShuffleTileButton::shuffleTile(int x, int y) {
 	char oldTile = MapState::getTile(x, y);
-	char newTile;
-	if (oldTile >= MapState::tileFloorFirst && oldTile <= MapState::tileFloorLast)
-		newTile = (char)floorTileDistribution(*randomEngine);
-	else if (oldTile >= MapState::tileWallFirst && oldTile <= MapState::tileWallLast)
-		newTile = (char)wallTileDistribution(*randomEngine);
-	else if (oldTile >= MapState::tilePlatformRightFloorFirst && oldTile <= MapState::tilePlatformRightFloorLast)
-		newTile = (char)platformRightFloorTileDistribution(*randomEngine);
-	else if (oldTile >= MapState::tilePlatformLeftFloorFirst && oldTile <= MapState::tilePlatformLeftFloorLast)
-		newTile = (char)platformLeftFloorTileDistribution(*randomEngine);
-	else if (oldTile >= MapState::tilePlatformTopFloorFirst && oldTile <= MapState::tilePlatformTopFloorLast)
-		newTile = (char)platformTopFloorTileDistribution(*randomEngine);
-	else if (oldTile >= MapState::tileGroundLeftFloorFirst && oldTile <= MapState::tileGroundLeftFloorLast)
-		newTile = (char)groundLeftFloorTileDistribution(*randomEngine);
-	else if (oldTile >= MapState::tileGroundRightFloorFirst && oldTile <= MapState::tileGroundRightFloorLast)
-		newTile = (char)groundRightFloorTileDistribution(*randomEngine);
-	else
+	TileDistribution* tileDistribution = getTileDistribution(oldTile);
+	//for unique tiles, there's nothing to change
+	if (tileDistribution == nullptr)
 		return true;
+
+	char newTile = tileDistribution->getRandomTile(*randomEngine);
 	if (newTile == oldTile)
 		return false;
 	MapState::editorSetTile(x, y, newTile);
@@ -762,18 +764,23 @@ int Editor::lastMouseDragMapX = -1;
 int Editor::lastMouseDragMapY = -1;
 default_random_engine* Editor::randomEngine = nullptr;
 discrete_distribution<int>* Editor::noiseTilesDistribution = nullptr;
-discrete_distribution<int> Editor::floorTileDistribution ({ 6.25, 6.25, 6.25, 6.25, 1, 1, 1, 1, 1 });
-uniform_int_distribution<int> Editor::wallTileDistribution (MapState::tileWallFirst, MapState::tileWallLast);
-uniform_int_distribution<int> Editor::platformRightFloorTileDistribution (
-	MapState::tilePlatformRightFloorFirst, MapState::tilePlatformRightFloorLast);
-uniform_int_distribution<int> Editor::platformLeftFloorTileDistribution (
-	MapState::tilePlatformLeftFloorFirst, MapState::tilePlatformLeftFloorLast);
-uniform_int_distribution<int> Editor::platformTopFloorTileDistribution (
-	MapState::tilePlatformTopFloorFirst, MapState::tilePlatformTopFloorLast);
-uniform_int_distribution<int> Editor::groundLeftFloorTileDistribution (
-	MapState::tileGroundLeftFloorFirst, MapState::tileGroundLeftFloorLast);
-uniform_int_distribution<int> Editor::groundRightFloorTileDistribution (
-	MapState::tileGroundRightFloorFirst, MapState::tileGroundRightFloorLast);
+vector<Editor::TileDistribution*> Editor::allTileDistributions;
+Editor::TileDistribution Editor::floorTileDistribution (
+	MapState::tileFloorFirst,
+	MapState::tileFloorLast,
+	discrete_distribution<int>({ 6.25, 6.25, 6.25, 6.25, 1, 1, 1, 1, 1 }),
+	allTileDistributions);
+Editor::TileDistribution Editor::wallTileDistribution (MapState::tileWallFirst, MapState::tileWallLast, allTileDistributions);
+Editor::TileDistribution Editor::platformRightFloorTileDistribution (
+	MapState::tilePlatformRightFloorFirst, MapState::tilePlatformRightFloorLast, allTileDistributions);
+Editor::TileDistribution Editor::platformLeftFloorTileDistribution (
+	MapState::tilePlatformLeftFloorFirst, MapState::tilePlatformLeftFloorLast, allTileDistributions);
+Editor::TileDistribution Editor::platformTopFloorTileDistribution (
+	MapState::tilePlatformTopFloorFirst, MapState::tilePlatformTopFloorLast, allTileDistributions);
+Editor::TileDistribution Editor::groundLeftFloorTileDistribution (
+	MapState::tileGroundLeftFloorFirst, MapState::tileGroundLeftFloorLast, allTileDistributions);
+Editor::TileDistribution Editor::groundRightFloorTileDistribution (
+	MapState::tileGroundRightFloorFirst, MapState::tileGroundRightFloorLast, allTileDistributions);
 bool Editor::saveButtonDisabled = true;
 bool Editor::exportMapButtonDisabled = false;
 bool Editor::needsGameStateSave = false;
@@ -922,6 +929,13 @@ void Editor::handleClick(SDL_MouseButtonEvent& clickEvent, bool isDrag, EntitySt
 		saveButtonDisabled = false;
 		exportMapButtonDisabled = false;
 	}
+}
+Editor::TileDistribution* Editor::getTileDistribution(char tile) {
+	for (TileDistribution* tileDistribution : allTileDistributions) {
+		if (tile >= tileDistribution->min && tile <= tileDistribution->max)
+			return tileDistribution;
+	}
+	return nullptr;
 }
 void Editor::render(EntityState* camera, int ticksTime) {
 	//draw a box around the world
