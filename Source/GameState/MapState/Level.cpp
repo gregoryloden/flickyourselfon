@@ -631,8 +631,19 @@ void LevelTypes::Plane::pursueSolutionAfterSwitches(HintState::PotentialLevelSta
 		nextPotentialLevelState->hint = &connectionSwitch.hint;
 
 		//if this was a milestone switch, restart the hint search from here
-		if (connectionSwitch.isMilestone)
+		if (connectionSwitch.isMilestone) {
 			Level::pushMilestone(currentState->steps);
+			#ifdef LOG_STEPS_AT_EVERY_MILESTONE
+				#ifdef LOG_FOUND_HINT_STEPS
+					nextPotentialLevelState->logSteps();
+				#endif
+				stringstream milestoneMessageStream;
+				milestoneMessageStream << nextPotentialLevelState->steps << " steps, push milestone c"
+					<< (int)(connectionSwitch.hint.data.switch0->getColor()) << " ";
+				MapState::logGroup(connectionSwitch.hint.data.switch0->getGroup(), &milestoneMessageStream);
+				Logger::debugLogger.logString(milestoneMessageStream.str());
+			#endif
+		}
 
 		//track it, and then afterwards, travel to all planes possible
 		Level::getNextPotentialLevelStatesForSteps(stepsAfterSwitchKick)->push_back(nextPotentialLevelState);
