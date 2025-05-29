@@ -298,7 +298,7 @@ void LevelTypes::Plane::findMilestonesToThisPlane(vector<Plane*>& levelPlanes, v
 		//we found a matching switch for this rail
 		//if it's single-use, it's a milestone
 		if (matchingConnectionSwitch->isSingleUse) {
-			#ifdef LOG_FOUND_MILESTONES
+			#ifdef LOG_FOUND_MILESTONES_AND_DESTINATION_PLANES
 				stringstream newMilestoneMessageStream;
 				newMilestoneMessageStream << "level " << plane->owningLevel->getLevelN()
 					<< " milestone: c" << (int)matchingConnectionSwitch->hint.data.switch0->getColor() << " ";
@@ -317,9 +317,22 @@ void LevelTypes::Plane::findMilestonesToThisPlane(vector<Plane*>& levelPlanes, v
 		//	lowered, track the switch's plane as a destination plane, if it isn't already tracked
 		Rail* rail = matchingRailByteMaskData->rail;
 		if (rail->getGroups().size() == 1
-				&& rail->getInitialTileOffset() != 0
-				&& !VectorUtils::includes(outDestinationPlanes, plane))
+			&& rail->getInitialTileOffset() != 0
+			&& !VectorUtils::includes(outDestinationPlanes, plane))
+		{
+			#ifdef LOG_FOUND_MILESTONES_AND_DESTINATION_PLANES
+				stringstream destinationPlaneMessageStream;
+				destinationPlaneMessageStream << "level " << plane->owningLevel->getLevelN()
+					<< " destination plane " << plane->indexInOwningLevel << " with switches:";
+				for (ConnectionSwitch& connectionSwitch : plane->connectionSwitches) {
+					destinationPlaneMessageStream << " c" << (int)connectionSwitch.hint.data.switch0->getColor() << " ";
+					MapState::logGroup(connectionSwitch.hint.data.switch0->getGroup(), &destinationPlaneMessageStream);
+				}
+				string destinationPlaneMessage = destinationPlaneMessageStream.str();
+				Logger::debugLogger.logString(destinationPlaneMessage);
+			#endif
 			outDestinationPlanes.push_back(plane);
+		}
 	}
 	delete[] seenPlanes;
 	delete[] requiredConnections;
