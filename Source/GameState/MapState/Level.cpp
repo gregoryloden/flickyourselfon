@@ -1092,14 +1092,21 @@ Hint* Level::performHintSearch(HintState::PotentialLevelState* baseLevelState, P
 		//	search time approaches the target duration
 		} else {
 			int loopTicks = now - lastCheckStartTime;
-			if (loopTicks < targetLoopTicks - 1)
+			if (loopTicks < targetLoopTicks - 1) {
 				loopMaxStateCount = MathUtils::max(
 					loopMaxStateCount,
 					loopTicks == 0
 						? loopMaxStateCount * targetLoopTicks
 						: MathUtils::min(loopMaxStateCount * 2, loopMaxStateCount * targetLoopTicks / loopTicks));
-			else if (loopTicks > targetLoopTicks + 1)
+				#ifdef LOG_LOOP_MAX_STATE_COUNT_CHANGES
+					Logger::debugLogger.logString(string("loopMaxStateCount increased to ") + to_string(loopMaxStateCount));
+				#endif
+			} else if (loopTicks > targetLoopTicks + 1) {
 				loopMaxStateCount = MathUtils::max(1, loopMaxStateCount * targetLoopTicks / loopTicks);
+				#ifdef LOG_LOOP_MAX_STATE_COUNT_CHANGES
+					Logger::debugLogger.logString(string("loopMaxStateCount decreased to ") + to_string(loopMaxStateCount));
+				#endif
+			}
 		}
 		lastCheckStartTime = now;
 	} while (currentPotentialLevelStateSteps <= maxPotentialLevelStateSteps || popMilestone());
