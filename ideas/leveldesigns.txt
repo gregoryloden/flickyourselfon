@@ -38,6 +38,7 @@ Level 8:
 	part of it: first part: multiple puzzles to unlock the long rails to the end
 	part of it: one puzzle is "pick the right rail to get to the end" guessing
 	part of it: platform maze
+	part of it: 7 platforms in a hexagon pattern
 	part of it: towers of hanoi solution 1 2 1 3 1 2 1
 	part of it: sine section: 2 switches: both reachable, have to do 2 then 1 because doing 1 first prevents access to 2
 	part of it: saw section: circle of switches to raise the last rail; 6 platforms, each with a switch that raises the next rail and also the rail 2 behind
