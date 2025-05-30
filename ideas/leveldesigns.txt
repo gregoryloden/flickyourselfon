@@ -43,4 +43,4 @@ Level 8:
 	part of it: sine section: 2 switches: both reachable, have to do 2 then 1 because doing 1 first prevents access to 2
 	part of it: saw section: circle of switches to raise the last rail; 6 platforms, each with a switch that raises the next rail and also the rail 2 behind
 	long rails between sections between old levels, short puzzles at those old levels
-	final rail: hilbert curve, double spiral
+	final rail: hilbert curve, double spiral, at least one more shape
