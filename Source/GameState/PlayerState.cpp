@@ -1591,8 +1591,8 @@ bool PlayerState::renderTutorials() {
 	//not exactly a tutorial, but it goes where tutorials are rendered and replaces any other tutorial that would render
 	else if (hint->type == Hint::Type::UndoReset) {
 		glColor4f(1.0f, 1.0f, 1.0f, 0.75f);
-		float afterUndoX = MapState::renderControlsTutorial("Undo: ", { Config::undoKeyBinding.value });
-		Text::render(" / Reset", afterUndoX, MapState::tutorialBaselineY, 1.0f);
+		float afterUndoX = MapState::renderControlsTutorial("(solution blocked; Undo ", { Config::undoKeyBinding.value });
+		Text::render(" / Reset)", afterUndoX, MapState::tutorialBaselineY, 1.0f);
 		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 	} else
 		return false;
