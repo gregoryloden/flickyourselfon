@@ -197,6 +197,13 @@ HintState* HintState::produce(objCounterParametersComma() Hint* pHint, int anima
 }
 pooledReferenceCounterDefineRelease(HintState)
 void HintState::render(int screenLeftWorldX, int screenTopWorldY, int ticksTime) {
+	//this is a temporary hint, always show this and at full alpha
+	if (hint->type == Hint::Type::CalculatingHint) {
+		MapState::renderControlsTutorial("(calculating hint...)", {});
+		//text doesn't have an offscreen arrow
+		offscreenArrowAlpha = 0;
+		return;
+	}
 	//animation is over, don't render the hint or offscreen arrow
 	if (ticksTime >= animationEndTicksTime) {
 		offscreenArrowAlpha = 0;
@@ -206,12 +213,9 @@ void HintState::render(int screenLeftWorldX, int screenTopWorldY, int ticksTime)
 	float progress = (float)progressTicks / totalDisplayTicks;
 	float alpha = 0.5f - (progress + progress * progress) * 0.25f;
 	//if we couldn't find a hint, show a tutorial-area message
-	if (hint->type == Hint::Type::CalculatingHint || hint->type == Hint::Type::SearchCanceledEarly) {
+	if (hint->type == Hint::Type::SearchCanceledEarly) {
 		glColor4f(1.0f, 1.0f, 1.0f, alpha * 2.0f);
-		if (hint->type == Hint::Type::CalculatingHint)
-			MapState::renderControlsTutorial("(calculating hint...)", {});
-		else
-			MapState::renderControlsTutorial("(unable to calculate hint)", {});
+		MapState::renderControlsTutorial("(unable to calculate hint)", {});
 		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 		//text doesn't have an offscreen arrow
 		offscreenArrowAlpha = 0;
