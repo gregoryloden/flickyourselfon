@@ -375,6 +375,9 @@ void MapState::buildLevels() {
 	}
 
 	//add reset switches to planes
+	#ifdef DEBUG
+		bool* levelHasResetSwitch = new bool[levels.size()] {};
+	#endif
 	for (ResetSwitch* resetSwitch : resetSwitches) {
 		//with the editor, it's possible to have reset switches which aren't on any plane accessible from the start, so skip
 		//	those
@@ -384,9 +387,25 @@ void MapState::buildLevels() {
 			Logger::debugLogger.logString(
 				"ERROR: no plane found for reset switch @ "
 					+ to_string(resetSwitch->getCenterX()) + "," + to_string(resetSwitch->getBottomY()));
-		else
-			planes[planeId - 1]->getOwningLevel()->assignResetSwitch(resetSwitch);
+		else {
+			Level* level = planes[planeId - 1]->getOwningLevel();
+			level->assignResetSwitch(resetSwitch);
+			#ifdef DEBUG
+				//validate reset switches in levels
+				level->validateResetSwitch(resetSwitch);
+				levelHasResetSwitch[level->getLevelN() - 1] = true;
+			#endif
+		}
 	}
+	#ifdef DEBUG
+		//validate all levels have reset switches
+		for (Level* level : levels) {
+			if (!levelHasResetSwitch[level->getLevelN() - 1])
+				Logger::debugLogger.logString("ERROR: level " + to_string(level->getLevelN()) + ": missing reset switch");
+		}
+		delete[] levelHasResetSwitch;
+	#endif
+
 
 	//organize switch/plane combinations so that we can refer to them when adding rail connections
 	vector<PlaneConnectionSwitch*> planeConnectionSwitchesByGroupByColor[colorCount];
@@ -451,32 +470,6 @@ void MapState::buildLevels() {
 	Level::setupHintSearchHelpers(levels);
 	for (Level* level : levels)
 		level->preAllocatePotentialLevelStates();
-
-	//validate levels in debug
-	#ifdef DEBUG
-		//validate all reset switches have levels
-		vector<Level*> resetSwitchLevels;
-		for (ResetSwitch* resetSwitch : resetSwitches) {
-			Level* level = nullptr;
-			short planeId = getPlaneId(resetSwitch->getCenterX(), resetSwitch->getBottomY());
-			if (planeId == 0)
-				Logger::debugLogger.logString(
-					"ERROR: reset switch at " + to_string(resetSwitch->getCenterX())
-						+ ", " + to_string(resetSwitch->getBottomY()) + " not in level");
-			else
-				level = planes[planeId - 1]->getOwningLevel();
-			resetSwitchLevels.push_back(level);
-		}
-
-		//validate all levels have valid reset switches
-		for (Level* level : levels) {
-			unsigned int levelResetSwitchI = VectorUtils::indexOf(resetSwitchLevels, level);
-			if (levelResetSwitchI >= resetSwitches.size())
-				Logger::debugLogger.logString("ERROR: level " + to_string(level->getLevelN()) + ": missing reset switch");
-			else
-				level->validateResetSwitch(resetSwitches[levelResetSwitchI]);
-		}
-	#endif
 }
 LevelTypes::Plane* MapState::buildPlane(
 	int tile, Level* activeLevel, deque<int>& tileChecks, vector<PlaneConnection>& planeConnections)
