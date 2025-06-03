@@ -337,6 +337,8 @@ public:
 	Hint* generateHint(float playerX, float playerY);
 	//set the given hint to be shown
 	void setHint(Hint* hint, int ticksTime);
+	//returns true if this MapState should receive a new hint this update
+	bool requestsHint();
 	//get the level for the given position
 	int getLevelN(float playerX, float playerY);
 	//render the map

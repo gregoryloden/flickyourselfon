@@ -1007,6 +1007,9 @@ Hint* MapState::generateHint(float playerX, float playerY) {
 void MapState::setHint(Hint* hint, int ticksTime) {
 	hintState.set(newHintState(hint, ticksTime));
 }
+bool MapState::requestsHint() {
+	return hintState.get()->getHintType() == Hint::Type::CalculatingHint;
+}
 int MapState::getLevelN(float playerX, float playerY) {
 	if (Editor::isActive)
 		return 0;

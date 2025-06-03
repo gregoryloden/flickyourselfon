@@ -151,7 +151,7 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 			mapState.get()->spawnGoalSparks(playerLevelN, gameTicksTime);
 		levelsUnlocked = playerLevelN;
 	}
-	if (perpetualHints)
+	if (mapState.get()->requestsHint() || perpetualHints)
 		mapState.get()->setHint(playerState.get()->getHint(), gameTicksTime);
 
 	//handle events after states have been updated
