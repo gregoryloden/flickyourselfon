@@ -50,10 +50,14 @@ private:
 public:
 	//returns whether the group can be found in any of the segments
 	bool hasGroupForColor(char group, char color);
+	//get the bounds of the hint to render for this reset switch
+	void getHintRenderBounds(int* outLeftWorldX, int* outTopWorldY, int* outRightWorldX, int* outBottomWorldY);
 	//render the reset switch body and its segments
 	void render(int screenLeftWorldX, int screenTopWorldY, bool isOn);
 	//render the groups for the segments
 	void renderGroups(int screenLeftWorldX, int screenTopWorldY);
+	//render boxes over the tiles of this reset switch
+	void renderHint(int screenLeftWorldX, int screenTopWorldY, float alpha);
 	//remove a segment from this reset switch if it matches a segment in one of the branches
 	//writes the x/y of the tile that used to have a segment, but no longer does, to outEndX/outEndY if a matching segment was
 	//	found/deleted

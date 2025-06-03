@@ -8,6 +8,7 @@
 #endif
 
 class Rail;
+class ResetSwitch;
 class Switch;
 namespace LevelTypes {
 	class Plane;
@@ -30,10 +31,10 @@ public:
 		LevelTypes::Plane* plane;
 		Rail* rail;
 		Switch* switch0;
+		ResetSwitch* resetSwitch;
 	};
 
 	static Hint none;
-	static Hint undoReset;
 	static Hint calculatingHint;
 	static Hint searchCanceledEarly;
 

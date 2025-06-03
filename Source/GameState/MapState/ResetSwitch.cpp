@@ -79,6 +79,12 @@ bool ResetSwitch::hasGroupForColor(char group, char color) {
 	}
 	return false;
 }
+void ResetSwitch::getHintRenderBounds(int* outLeftWorldX, int* outTopWorldY, int* outRightWorldX, int* outBottomWorldY) {
+	*outLeftWorldX = centerX * MapState::tileSize;
+	*outTopWorldY = (bottomY - 1) * MapState::tileSize;
+	*outRightWorldX = (centerX + 1) * MapState::tileSize;
+	*outBottomWorldY = (bottomY + 1) * MapState::tileSize;
+}
 void ResetSwitch::render(int screenLeftWorldX, int screenTopWorldY, bool isOn) {
 	if (Editor::isActive && editorIsDeleted)
 		return;
@@ -105,6 +111,15 @@ void ResetSwitch::renderGroups(int screenLeftWorldX, int screenTopWorldY) {
 		segment.renderGroup(screenLeftWorldX, screenTopWorldY);
 	for (Segment& segment : rightSegments)
 		segment.renderGroup(screenLeftWorldX, screenTopWorldY);
+}
+void ResetSwitch::renderHint(int screenLeftWorldX, int screenTopWorldY, float alpha) {
+	glEnable(GL_BLEND);
+	glColor4f(1.0f, 1.0f, 1.0f, alpha);
+	GLint drawLeftX = (GLint)(centerX * MapState::tileSize - screenLeftWorldX);
+	GLint drawTopY = (GLint)((bottomY - 1) * MapState::tileSize - screenTopWorldY);
+	SpriteSheet::renderPreColoredRectangle(
+		drawLeftX, drawTopY, drawLeftX + (GLint)MapState::tileSize, drawTopY + (GLint)MapState::tileSize * 2);
+	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 }
 bool ResetSwitch::editorRemoveSegment(int x, int y, char color, char group, int* outFreeX, int* outFreeY) {
 	vector<Segment>* allSegments[] { &leftSegments, &bottomSegments, &rightSegments };

@@ -812,7 +812,8 @@ levelN(pLevelN)
 , railByteMaskBitsTracked(0)
 , victoryPlane(nullptr)
 , minimumRailColor(0)
-, radioTowerHint(Hint::Type::None) {
+, radioTowerHint(Hint::Type::None)
+, undoResetHint(Hint::Type::None) {
 }
 Level::~Level() {
 	for (Plane* plane : planes)
@@ -831,6 +832,10 @@ void Level::addVictoryPlane() {
 void Level::assignRadioTowerSwitch(Switch* radioTowerSwitch) {
 	radioTowerHint.type = Hint::Type::Switch;
 	radioTowerHint.data.switch0 = radioTowerSwitch;
+}
+void Level::assignResetSwitch(ResetSwitch* resetSwitch) {
+	undoResetHint.type = Hint::Type::UndoReset;
+	undoResetHint.data.resetSwitch = resetSwitch;
 }
 int Level::trackNextRail(short railId, Rail* rail) {
 	minimumRailColor = MathUtils::max(rail->getColor(), minimumRailColor);
@@ -1120,7 +1125,7 @@ Hint* Level::performHintSearch(HintState::PotentialLevelState* baseLevelState, P
 		lastCheckStartTime = now;
 	} while (currentPotentialLevelStateSteps <= maxPotentialLevelStateSteps || popMilestone());
 	//at this point, we've exhausted all states at all steps regardless of milestones, there is no solution
-	return &Hint::undoReset;
+	return &undoResetHint;
 }
 int Level::clearPotentialLevelStateHolders() {
 	do {

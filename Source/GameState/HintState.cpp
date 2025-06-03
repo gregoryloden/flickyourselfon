@@ -3,6 +3,7 @@
 #include "GameState/MapState/MapState.h"
 #include "GameState/MapState/Rail.h"
 #include "GameState/MapState/Switch.h"
+#include "GameState/MapState/ResetSwitch.h"
 #include "Sprites/SpriteRegistry.h"
 #include "Sprites/SpriteSheet.h"
 #include "Util/Logger.h"
@@ -12,7 +13,6 @@
 
 //////////////////////////////// Hint ////////////////////////////////
 Hint Hint::none (Hint::Type::None);
-Hint Hint::undoReset (Hint::Type::UndoReset);
 Hint Hint::calculatingHint (Hint::Type::CalculatingHint);
 Hint Hint::searchCanceledEarly (Hint::Type::SearchCanceledEarly);
 Hint::Hint(Type pType)
@@ -186,6 +186,10 @@ HintState* HintState::produce(objCounterParametersComma() Hint* pHint, int anima
 			pHint->data.switch0->getHintRenderBounds(
 				&h->renderLeftWorldX, &h->renderTopWorldY, &h->renderRightWorldX, &h->renderBottomWorldY);
 			break;
+		case Hint::Type::UndoReset:
+			pHint->data.resetSwitch->getHintRenderBounds(
+				&h->renderLeftWorldX, &h->renderTopWorldY, &h->renderRightWorldX, &h->renderBottomWorldY);
+			break;
 		default:
 			break;
 	}
@@ -227,6 +231,9 @@ void HintState::render(int screenLeftWorldX, int screenTopWorldY, int ticksTime)
 			break;
 		case Hint::Type::Switch:
 			hint->data.switch0->renderHint(screenLeftWorldX, screenTopWorldY, alpha);
+			break;
+		case Hint::Type::UndoReset:
+			hint->data.resetSwitch->renderHint(screenLeftWorldX, screenTopWorldY, alpha);
 			break;
 		default:
 			return;

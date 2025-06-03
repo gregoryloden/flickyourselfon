@@ -357,10 +357,9 @@ void MapState::buildLevels() {
 	//add switches to planes
 	vector<PlaneConnectionSwitch> planeConnectionSwitches;
 	for (Switch* switch0 : switches) {
-		int tile = switch0->getTopY() * mapWidth + switch0->getLeftX();
 		//with the editor, it's possible to have switches which aren't on any plane accessible from the start, so skip those
 		//should never happen with an umodified floor file once the game is released
-		short planeId = planeIds[tile];
+		short planeId = getPlaneId(switch0->getLeftX(), switch0->getTopY());
 		if (planeId == 0) {
 			stringstream message;
 			message << "ERROR: no plane found for switch @ " << switch0->getLeftX() << "," << switch0->getTopY();
@@ -373,6 +372,20 @@ void MapState::buildLevels() {
 			plane->getOwningLevel()->assignRadioTowerSwitch(switch0);
 		else
 			planeConnectionSwitches.push_back(PlaneConnectionSwitch(switch0, plane, plane->addConnectionSwitch(switch0)));
+	}
+
+	//add reset switches to planes
+	for (ResetSwitch* resetSwitch : resetSwitches) {
+		//with the editor, it's possible to have reset switches which aren't on any plane accessible from the start, so skip
+		//	those
+		//should never happen with an umodified floor file once the game is released
+		short planeId = getPlaneId(resetSwitch->getCenterX(), resetSwitch->getBottomY());
+		if (planeId == 0)
+			Logger::debugLogger.logString(
+				"ERROR: no plane found for reset switch @ "
+					+ to_string(resetSwitch->getCenterX()) + "," + to_string(resetSwitch->getBottomY()));
+		else
+			planes[planeId - 1]->getOwningLevel()->assignResetSwitch(resetSwitch);
 	}
 
 	//organize switch/plane combinations so that we can refer to them when adding rail connections
@@ -1150,7 +1163,7 @@ void MapState::renderBelowPlayer(EntityState* camera, float playerWorldGroundY, 
 	}
 
 	//draw hints above rails, if applicable
-	if (hintType == Hint::Type::Rail || hintType == Hint::Type::Switch)
+	if (hintType == Hint::Type::Rail || hintType == Hint::Type::Switch || hintType == Hint::Type::UndoReset)
 		hintState.get()->render(screenLeftWorldX, screenTopWorldY, ticksTime);
 }
 void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int ticksTime) {

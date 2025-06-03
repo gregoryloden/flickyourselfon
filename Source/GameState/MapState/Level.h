@@ -277,6 +277,7 @@ private:
 	LevelTypes::Plane* victoryPlane;
 	char minimumRailColor;
 	Hint radioTowerHint;
+	Hint undoResetHint;
 
 public:
 	Level(objCounterParametersComma() int pLevelN, int pStartTile);
@@ -294,6 +295,8 @@ public:
 	void addVictoryPlane();
 	//set the switch for the radio tower hint
 	void assignRadioTowerSwitch(Switch* radioTowerSwitch);
+	//set the reset switch for the undo/reset hint
+	void assignResetSwitch(ResetSwitch* resetSwitch);
 	//create a byte mask for a new rail
 	//returns the index into the internal byte mask vector for use in getRailByteMaskData()
 	int trackNextRail(short railId, Rail* rail);
@@ -322,8 +325,7 @@ private:
 	//create a potential level state set with the given state retriever, loading it into potentialLevelStatesByBucketByPlane
 	HintState::PotentialLevelState* loadBasePotentialLevelState(LevelTypes::Plane* currentPlane, GetRailState getRailState);
 	//begin the hint search after all the helpers have been set up
-	static Hint* performHintSearch(
-		HintState::PotentialLevelState* baseLevelState, LevelTypes::Plane* currentPlane, int startTime);
+	Hint* performHintSearch(HintState::PotentialLevelState* baseLevelState, LevelTypes::Plane* currentPlane, int startTime);
 	//release all potential level states used and clear the structures that held them
 	//returns how many unique states were held
 	int clearPotentialLevelStateHolders();
