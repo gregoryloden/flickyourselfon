@@ -142,6 +142,10 @@ Hint* HintState::PotentialLevelState::getHint() {
 			stepsMessage << "none";
 		else if (hint->type == Hint::Type::UndoReset)
 			stepsMessage << "undo/reset";
+		else if (hint->type == Hint::Type::CalculatingHint)
+			stepsMessage << "calculatingHint";
+		else if (hint->type == Hint::Type::SearchCanceledEarly)
+			stepsMessage << "searchCanceledEarly";
 		else
 			stepsMessage << "[unknown]";
 	}
