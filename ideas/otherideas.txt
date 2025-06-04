@@ -10,6 +10,13 @@ multiple levels/heights per bar?
 
 Jump rails that are one-way?
 
+kick while riding a rail to jump
+	kick near a corner to jump to another rail
+		"rail-swap" boot indicator
+
+end-of-level tile starts dark then gets big and light then shrinks to light
+	tile animation/rotation before you get there
+
 music composition ideas:
 	- imagine the notes like a swimming fish, does a u-turn after the first section first half, then keeps swimming
 	- imagine the radio tower is trying to reconnect to the boot
