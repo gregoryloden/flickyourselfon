@@ -6,6 +6,7 @@
 	produceWithArgs(\
 		CompositeQuarticValue, constantValue, linearValuePerTick, quadraticValuePerTick, cubicValuePerTick, quarticValuePerTick)
 #define newLinearInterpolatedValue(valuesAtTimes) produceWithArgs(LinearInterpolatedValue, valuesAtTimes)
+#define newPiecewiseValue(valuesAtTimes) produceWithArgs(PiecewiseValue, valuesAtTimes)
 
 //each DynamicValue is only held in one place at a time
 class DynamicValue: public PooledReferenceCounter {
@@ -89,8 +90,44 @@ public:
 	static LinearInterpolatedValue* produce(objCounterParametersComma() vector<ValueAtTime> valuesAtTimes);
 	//release a reference to this LinearInterpolatedValue and return it to the pool if applicable
 	virtual void release();
-	//return a new value with all the values shifted so that it's 0 at time 0
+	//return a new value with all the values shifted so that it's the given value at time 0
+	//assumes there is at least one value
 	virtual DynamicValue* copyWithConstantValue(float pConstantValue);
 	//get the value at the given time
+	//assumes there is at least one value
+	virtual float getValue(int ticksElapsed);
+};
+class PiecewiseValue: public DynamicValue {
+public:
+	//Should only be allocated within an object, on the stack, or as a static object
+	class ValueAtTime {
+	private:
+		ReferenceCounterHolder<DynamicValue> value;
+		int atTicksTime;
+
+	public:
+		ValueAtTime(DynamicValue* pValue, int pAtTicksTime);
+		virtual ~ValueAtTime();
+
+		DynamicValue* getValue() { return value.get(); }
+		int getAtTicksTime() { return atTicksTime; }
+	};
+
+private:
+	vector<ValueAtTime> valuesAtTimes;
+
+public:
+	PiecewiseValue(objCounterParameters());
+	virtual ~PiecewiseValue();
+
+	//initialize and return a PiecewiseValue
+	static PiecewiseValue* produce(objCounterParametersComma() vector<ValueAtTime> valuesAtTimes);
+	//release a reference to this PiecewiseValue and return it to the pool if applicable
+	virtual void release();
+	//return a new value with all the values shifted so that it's the given value at time 0
+	//assumes there is at least one value
+	virtual DynamicValue* copyWithConstantValue(float pConstantValue);
+	//get the value at the given time
+	//assumes there is at least one value
 	virtual float getValue(int ticksElapsed);
 };

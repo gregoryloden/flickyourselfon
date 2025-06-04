@@ -118,3 +118,48 @@ float LinearInterpolatedValue::getValue(int ticksElapsed) {
 	float highValuePart = highValueAtTime->getValue() * (ticksElapsed - lowValueAtTime->getAtTicksTime()) / interValueDuration;
 	return highValuePart + lowValuePart;
 }
+
+//////////////////////////////// PiecewiseValue::ValueAtTime ////////////////////////////////
+PiecewiseValue::ValueAtTime::ValueAtTime(DynamicValue* pValue, int pAtTicksTime)
+: value(pValue)
+, atTicksTime(pAtTicksTime) {
+}
+PiecewiseValue::ValueAtTime::~ValueAtTime() {}
+
+//////////////////////////////// PiecewiseValue ////////////////////////////////
+PiecewiseValue::PiecewiseValue(objCounterParameters())
+: DynamicValue(objCounterArguments())
+, valuesAtTimes() {
+}
+PiecewiseValue::~PiecewiseValue() {}
+PiecewiseValue* PiecewiseValue::produce(objCounterParametersComma() vector<ValueAtTime> valuesAtTimes) {
+	initializeWithNewFromPool(p, PiecewiseValue)
+	p->valuesAtTimes = valuesAtTimes;
+	return p;
+}
+pooledReferenceCounterDefineRelease(PiecewiseValue)
+DynamicValue* PiecewiseValue::copyWithConstantValue(float pConstantValue) {
+	static vector<ValueAtTime> newValuesAtTimes;
+	newValuesAtTimes.clear();
+	float shift = pConstantValue - valuesAtTimes.front().getValue()->getValue(0);
+	for (ValueAtTime valueAtTime : valuesAtTimes) {
+		DynamicValue* value = valueAtTime.getValue();
+		newValuesAtTimes.push_back(
+			ValueAtTime(value->copyWithConstantValue(value->getValue(0) + shift), valueAtTime.getAtTicksTime()));
+	}
+	return newPiecewiseValue(newValuesAtTimes);
+}
+float PiecewiseValue::getValue(int ticksElapsed) {
+	int activeValueIndex = 0;
+	int futureValueIndex = (int)valuesAtTimes.size();
+	while (activeValueIndex < futureValueIndex - 1) {
+		int midIndex = (activeValueIndex + futureValueIndex) / 2;
+		ValueAtTime* midValueAtTime = &valuesAtTimes[midIndex];
+		if (midValueAtTime->getAtTicksTime() > ticksElapsed)
+			futureValueIndex = midIndex;
+		else
+			activeValueIndex = midIndex;
+	}
+	ValueAtTime& activeValueAtTime = valuesAtTimes[activeValueIndex];
+	return activeValueAtTime.getValue()->getValue(ticksElapsed - activeValueAtTime.getAtTicksTime());
+}

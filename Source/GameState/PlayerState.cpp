@@ -981,25 +981,37 @@ void PlayerState::kickClimb(float currentX, float currentY, float targetX, float
 	float moveDurationSquared = floatMoveDuration * floatMoveDuration;
 	float moveDurationCubed = moveDurationSquared * floatMoveDuration;
 
+	DynamicValue* xVelocity;
+	DynamicValue* yVelocity;
+	if (xMoveDistance == 0) {
+		xVelocity = newConstantValue(0.0f);
+		yVelocity = newCompositeQuarticValue(
+			0.0f,
+			0.0f,
+			0.0f,
+			yMoveDistance / (moveDurationCubed * 2.0f),
+			yMoveDistance / (moveDurationCubed * floatMoveDuration * 2.0f));
+	} else {
+		xVelocity = newCompositeQuarticValue(0.0f, 0.0f, xMoveDistance / moveDurationSquared, 0.0f, 0.0f);
+		yVelocity = newCompositeQuarticValue(
+			0.0f, 2.0f * yMoveDistance / floatMoveDuration, -yMoveDistance / moveDurationSquared, 0.0f, 0.0f);
+	}
+
 	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> kickingAnimationComponents ({
 		//start by stopping the player and delaying until the leg-sticking-out frame
 		newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f)),
 		newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerFastKickingAnimation),
 		newEntityAnimationDelay(SpriteRegistry::playerFastKickingAnimationTicksPerFrame),
 		//set the climb velocity
-		xMoveDistance == 0
-			? newEntityAnimationSetVelocity(
-				newConstantValue(0.0f),
-				newCompositeQuarticValue(
-					0.0f,
-					0.0f,
-					0.0f,
-					yMoveDistance / (moveDurationCubed * 2.0f),
-					yMoveDistance / (moveDurationCubed * floatMoveDuration * 2.0f)))
-			: newEntityAnimationSetVelocity(
-				newCompositeQuarticValue(0.0f, 0.0f, xMoveDistance / moveDurationSquared, 0.0f, 0.0f),
-				newCompositeQuarticValue(
-					0.0f, 2.0f * yMoveDistance / floatMoveDuration, -yMoveDistance / moveDurationSquared, 0.0f, 0.0f)),
+		newEntityAnimationSetVelocity(
+			newPiecewiseValue({
+				PiecewiseValue::ValueAtTime(xVelocity, 0) COMMA
+				PiecewiseValue::ValueAtTime(newConstantValue(xMoveDistance), moveDuration) COMMA
+			}),
+			newPiecewiseValue({
+				PiecewiseValue::ValueAtTime(yVelocity, 0) COMMA
+				PiecewiseValue::ValueAtTime(newConstantValue(yMoveDistance), moveDuration) COMMA
+			})),
 		newEntityAnimationPlaySound(Audio::climbSound, 0),
 		//then delay for the rest of the animation and stop the player
 		newEntityAnimationDelay(moveDuration),
@@ -1090,7 +1102,15 @@ void PlayerState::kickFall(float currentX, float currentY, float targetX, float 
 		newEntityAnimationSetSpriteAnimation(fallAnimation),
 		newEntityAnimationDelay(fallAnimationFirstFrameTicks),
 		//set the fall velocity
-		newEntityAnimationSetVelocity(xVelocity, yVelocity),
+		newEntityAnimationSetVelocity(
+			newPiecewiseValue({
+				PiecewiseValue::ValueAtTime(xVelocity, 0) COMMA
+				PiecewiseValue::ValueAtTime(newConstantValue(xMoveDistance), moveDuration) COMMA
+			}),
+			newPiecewiseValue({
+				PiecewiseValue::ValueAtTime(yVelocity, 0) COMMA
+				PiecewiseValue::ValueAtTime(newConstantValue(yMoveDistance), moveDuration) COMMA
+			})),
 		newEntityAnimationPlaySound(Audio::jumpSound, 0),
 		//then delay for the rest of the animation and stop the player
 		newEntityAnimationDelay(moveDuration),
@@ -1317,8 +1337,14 @@ void PlayerState::addRailRideComponents(
 		components->end(),
 		{
 			newEntityAnimationSetVelocity(
-				newCompositeQuarticValue(0.0f, (finalXPosition - targetXPosition) / bootLiftDuration, 0.0f, 0.0f, 0.0f),
-				newCompositeQuarticValue(0.0f, (finalYPosition - targetYPosition) / bootLiftDuration, 0.0f, 0.0f, 0.0f)),
+				newLinearInterpolatedValue({
+					LinearInterpolatedValue::ValueAtTime(targetXPosition, 0) COMMA
+					LinearInterpolatedValue::ValueAtTime(finalXPosition, bootLiftDuration) COMMA
+				}),
+				newLinearInterpolatedValue({
+					LinearInterpolatedValue::ValueAtTime(targetYPosition, 0) COMMA
+					LinearInterpolatedValue::ValueAtTime(finalYPosition, bootLiftDuration) COMMA
+				})),
 			newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerBootLiftAnimation),
 			newEntityAnimationDelay(bootLiftDuration),
 			newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f)),

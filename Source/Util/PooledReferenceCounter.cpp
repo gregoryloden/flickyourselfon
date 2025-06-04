@@ -108,6 +108,7 @@ template class ObjectPool<LinearInterpolatedValue>;
 template class ObjectPool<KickSwitchUndoState>;
 template class ObjectPool<MoveUndoState>;
 template class ObjectPool<NoOpUndoState>;
+template class ObjectPool<PiecewiseValue>;
 template class ObjectPool<RideRailUndoState>;
 //superclasses only need holders, the classes themselves are not allocated
 template class ReferenceCounterHolder<DynamicValue>;
