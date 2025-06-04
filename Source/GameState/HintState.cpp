@@ -191,6 +191,7 @@ HintState* HintState::produce(objCounterParametersComma() Hint* pHint, int anima
 				&h->renderLeftWorldX, &h->renderTopWorldY, &h->renderRightWorldX, &h->renderBottomWorldY);
 			break;
 		default:
+			h->offscreenArrowAlpha = 0;
 			break;
 	}
 	return h;
