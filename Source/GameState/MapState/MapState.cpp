@@ -687,13 +687,10 @@ MapState::TileFallResult MapState::tileFalls(int x, int y, char initialHeight, i
 }
 KickActionType MapState::getSwitchKickActionType(short switchId) {
 	Switch* switch0 = switches[switchId & railSwitchIndexBitmask];
-	bool group0 = switch0->getGroup() == 0;
-	//we've already triggered this group 0 switch, or can't yet kick this puzzle switch
-	if (group0 == (lastActivatedSwitchColor >= switch0->getColor()))
-		//if we've already triggered this group 0 switch, there's nothing to show, otherwise this is a switch that the player
-		//	can't kick yet
-		return group0 ? KickActionType::None : KickActionType::NoSwitch;
-	if (group0) {
+	if (switch0->getGroup() == 0) {
+		//we've already triggered this group 0 switch, there's nothing to show
+		if (lastActivatedSwitchColor >= switch0->getColor())
+			return KickActionType::None;
 		switch (switch0->getColor()) {
 			case squareColor: return KickActionType::Square;
 			case triangleColor: return KickActionType::Triangle;
@@ -702,7 +699,8 @@ KickActionType MapState::getSwitchKickActionType(short switchId) {
 			default: return KickActionType::None;
 		}
 	} else
-		return KickActionType::Switch;
+		//we can kick the switch if we've already triggered the group 0 switch for this color
+		return lastActivatedSwitchColor >= switch0->getColor() ? KickActionType::Switch : KickActionType::NoSwitch;
 }
 char MapState::horizontalTilesHeight(int lowMapX, int highMapX, int mapY) {
 	if (tileHasResetSwitchBody(lowMapX, mapY) || tileHasSwitch(lowMapX, mapY))
