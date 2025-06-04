@@ -566,11 +566,6 @@ bool PlayerState::setRailKickAction(float xPosition, float yPosition) {
 	//if it's the wrong height, just ignore it completely
 	if (rail->getBaseHeight() != z)
 		return false;
-	//if it's lowered, we can't ride it but don't allow falling
-	if (!railState->canRide()) {
-		availableKickAction.set(newRailSwitchKickAction(KickActionType::NoRail, MapState::absentRailSwitchId, -1));
-		return true;
-	}
 
 	//ensure it's the start or end of the rail
 	int railSegmentIndex = rail->getSegmentCount() - 1;
@@ -584,7 +579,10 @@ bool PlayerState::setRailKickAction(float xPosition, float yPosition) {
 		return false;
 
 	availableKickAction.set(
-		newRailSwitchKickAction(KickActionType::Rail, MapState::getRailSwitchId(railMapX, railMapY), railSegmentIndex));
+		newRailSwitchKickAction(
+			//we're definitely at the end of a rail; we can only ride it if it's raised, but don't allow falling if it's not
+			railState->canRide() ? KickActionType::Rail : KickActionType::NoRail,
+			MapState::getRailSwitchId(railMapX, railMapY), railSegmentIndex));
 	return true;
 }
 bool PlayerState::setSwitchKickAction(float xPosition, float yPosition) {

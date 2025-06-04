@@ -362,6 +362,9 @@ void GameState::render(int ticksTime) {
 		hasRailsToReset = mapState.get()->renderGroupsForRailsToReset(camera, contextualGroupsRailSwitchId, gameTicksTime);
 	else if (playerState.get()->hasRailSwitchKickAction(KickActionType::Switch, &contextualGroupsRailSwitchId))
 		mapState.get()->renderGroupsForRailsFromSwitch(camera, contextualGroupsRailSwitchId, gameTicksTime);
+	else if (playerState.get()->hasRailSwitchKickAction(KickActionType::Rail, &contextualGroupsRailSwitchId)
+			|| playerState.get()->hasRailSwitchKickAction(KickActionType::NoRail, &contextualGroupsRailSwitchId))
+		mapState.get()->renderGroupsForSwitchesFromRail(camera, contextualGroupsRailSwitchId, gameTicksTime);
 	playerState.get()->renderKickAction(camera, hasRailsToReset, gameTicksTime);
 
 	if (levelsUnlocked > 0 && !camera->hasAnimation())

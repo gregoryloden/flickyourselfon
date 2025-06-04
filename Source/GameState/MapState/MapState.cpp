@@ -1314,6 +1314,25 @@ void MapState::renderGroupsForRailsFromSwitch(EntityState* camera, short switchI
 	}
 	switch0->renderGroup(screenLeftWorldX, screenTopWorldY);
 }
+void MapState::renderGroupsForSwitchesFromRail(EntityState* camera, short railId, int ticksTime) {
+	if (!Config::railKickIndicator.isOn())
+		return;
+	Rail* rail = rails[railId & railSwitchIndexBitmask];
+	char color = rail->getColor();
+	if (lastActivatedSwitchColor < color || rail->getGroups().empty())
+		return;
+	int screenLeftWorldX = getScreenLeftWorldX(camera, ticksTime);
+	int screenTopWorldY = getScreenTopWorldY(camera, ticksTime);
+	for (char group : rail->getGroups()) {
+		for (Switch* switch0 : switches) {
+			if (switch0->getGroup() != group)
+				continue;
+			switch0->renderGroup(screenLeftWorldX, screenTopWorldY);
+			break;
+		}
+	}
+	rail->renderGroups(screenLeftWorldX, screenTopWorldY);
+}
 bool MapState::renderTutorials(bool showConnections) {
 	if (showConnections && !finishedConnectionsTutorial)
 		renderControlsTutorial("Show connections: ", { Config::showConnectionsKeyBinding.value });

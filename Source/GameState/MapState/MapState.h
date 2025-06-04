@@ -351,6 +351,8 @@ public:
 	bool renderGroupsForRailsToReset(EntityState* camera, short resetSwitchId, int ticksTime);
 	//render the groups for rails that have the group of this switch
 	void renderGroupsForRailsFromSwitch(EntityState* camera, short switchId, int ticksTime);
+	//render the groups for switches that have a group in this rail
+	void renderGroupsForSwitchesFromRail(EntityState* camera, short railId, int ticksTime);
 	//render any applicable tutorials
 	//returns whether a tutorial was rendered
 	bool renderTutorials(bool showConnections);
