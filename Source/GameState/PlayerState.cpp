@@ -197,6 +197,7 @@ void PlayerState::spawnParticle(
 		particleStartTicksTime);
 }
 void PlayerState::generateHint(Hint* useHint, int ticksTime) {
+	mapState.get()->setHint(&Hint::none, 0);
 	if (useHint->isAdvancement())
 		hint = useHint;
 	else {
