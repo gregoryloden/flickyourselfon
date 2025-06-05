@@ -4,6 +4,9 @@
 #include "GameState/MapState/Switch.h"
 #include "GameState/MapState/ResetSwitch.h"
 #include "Sprites/SpriteSheet.h"
+#ifdef RENDER_PLANE_IDS
+	#include "Sprites/Text.h"
+#endif
 #ifdef TEST_SOLUTIONS
 	#include "Util/FileUtils.h"
 #endif
@@ -701,6 +704,17 @@ void LevelTypes::Plane::renderHint(int screenLeftWorldX, int screenTopWorldY, fl
 	}
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 }
+#ifdef RENDER_PLANE_IDS
+	void LevelTypes::Plane::renderId(int screenLeftWorldX, int screenTopWorldY)  {
+		glEnable(GL_BLEND);
+		string id = to_string(indexInOwningLevel);
+		Text::Metrics metrics = Text::getMetrics(id.c_str(), 1.0f);
+		Tile& tile = tiles.front();
+		float leftX = (float)(tile.x * MapState::tileSize - screenLeftWorldX);
+		float topY = (float)(tile.y * MapState::tileSize - screenTopWorldY + metrics.aboveBaseline);
+		Text::render(id.c_str(), leftX, topY, 1.0f);
+	}
+#endif
 void LevelTypes::Plane::countSwitchesAndConnections(
 	int outSwitchCounts[4],
 	int* outSingleUseSwitches,

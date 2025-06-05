@@ -1272,6 +1272,11 @@ void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int 
 					0, i, wavesActivatedX, wavesActivatedEdgeSpacing + i * wavesActivatedYSpacing);
 		}
 	}
+
+	#ifdef RENDER_PLANE_IDS
+		for (LevelTypes::Plane* plane : planes)
+			plane->renderId(screenLeftWorldX, screenTopWorldY);
+	#endif
 }
 bool MapState::renderGroupsForRailsToReset(EntityState* camera, short resetSwitchId, int ticksTime) {
 	int screenLeftWorldX = getScreenLeftWorldX(camera, ticksTime);

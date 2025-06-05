@@ -7,6 +7,7 @@
 	//#define LOG_SEARCH_STEPS_STATS
 	//#define LOG_STEPS_AT_EVERY_MILESTONE
 	//#define LOG_LOOP_MAX_STATE_COUNT_CHANGES
+	//#define RENDER_PLANE_IDS
 	#define TEST_SOLUTIONS
 #endif
 
@@ -168,6 +169,10 @@ namespace LevelTypes {
 		void getHintRenderBounds(int* outLeftWorldX, int* outTopWorldY, int* outRightWorldX, int* outBottomWorldY);
 		//render boxes over every tile in this plane
 		void renderHint(int screenLeftWorldX, int screenTopWorldY, float alpha);
+		#ifdef RENDER_PLANE_IDS
+			//render indexInOwningLevel over the first tile of this plane
+			void renderId(int screenLeftWorldX, int screenTopWorldY);
+		#endif
 		//track the switches in this plane
 		void countSwitchesAndConnections(
 			int outSwitchCounts[4],
