@@ -134,6 +134,8 @@ namespace LevelTypes {
 			vector<Plane*>& inOutPathPlanes,
 			vector<Connection*>& inOutPathConnections,
 			function<PathWalkCheckResult()> checkPath);
+		//track this plane as a milestone destination plane
+		void trackAsMilestoneDestination();
 	public:
 		//copy and add plane-plane and rail connections from all planes that are reachable through plane-plane connections from
 		//	this plane

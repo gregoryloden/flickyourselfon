@@ -187,8 +187,7 @@ void LevelTypes::Plane::findMilestones(vector<Plane*>& levelPlanes) {
 		destinationPlanes[i]->findMilestonesToThisPlane(levelPlanes, destinationPlanes);
 
 	//and make sure to mark the victory plane as a milestone destination
-	victoryPlane->owningLevel->trackRailByteMaskBits(
-		visitedMilestonesBitCount, &victoryPlane->visitedMilestonesByteIndex, &victoryPlane->visitedMilestonesBitShift);
+	victoryPlane->trackAsMilestoneDestination();
 }
 void LevelTypes::Plane::findMilestonesToThisPlane(vector<Plane*>& levelPlanes, vector<Plane*>& outDestinationPlanes) {
 	//find any path to this plane
@@ -312,8 +311,7 @@ void LevelTypes::Plane::findMilestonesToThisPlane(vector<Plane*>& levelPlanes, v
 			//if we haven't done so already, mark the plane as a milestone destination by having it track a bit for whether it's
 			//	been visited or not
 			if (plane->visitedMilestonesByteIndex == Level::absentRailByteIndex)
-				plane->owningLevel->trackRailByteMaskBits(
-					visitedMilestonesBitCount, &plane->visitedMilestonesByteIndex, &plane->visitedMilestonesBitShift);
+				plane->trackAsMilestoneDestination();
 		}
 		//if this switch is the only switch to control the rail (whether it's single-use or not), and the rail starts out
 		//	lowered, track the switch's plane as a destination plane, if it isn't already tracked
@@ -387,6 +385,9 @@ void LevelTypes::Plane::pathWalk(
 		}
 	}
 	delete[] seenPlanes;
+}
+void LevelTypes::Plane::trackAsMilestoneDestination() {
+	owningLevel->trackRailByteMaskBits(visitedMilestonesBitCount, &visitedMilestonesByteIndex, &visitedMilestonesBitShift);
 }
 void LevelTypes::Plane::extendConnections() {
 	//look at the (growing) list of planes reachable from this plane (directly or indirectly), and see if there are any other
