@@ -504,6 +504,25 @@ LevelTypes::Plane* MapState::buildPlane(
 				continue;
 			}
 
+			//if there's a rail, check if it's the start/end segment
+			//if so, don't check for tiles to climb or fall to
+			if ((railSwitchIds[tile] & railSwitchIdBitmask) == railIdValue) {
+				short railId = railSwitchIds[tile];
+				Rail* rail = rails[railId & railSwitchIndexBitmask];
+				Rail::Segment* startSegment = rail->getSegment(0);
+				Rail::Segment* endSegment = rail->getSegment(rail->getSegmentCount() - 1);
+				int startTile = startSegment->y * mapWidth + startSegment->x;
+				int endTile = endSegment->y * mapWidth + endSegment->x;
+				if (tile == startTile) {
+					addRailPlaneConnection(
+						endTile, railId, planeConnections, activeLevel, rail, rail->getSegmentCount() - 2, tileChecks);
+					continue;
+				} else if (tile == endTile) {
+					addRailPlaneConnection(startTile, railId, planeConnections, activeLevel, rail, 1, tileChecks);
+					continue;
+				}
+			}
+
 			//check for neighboring tiles to climb to
 			if (neighborHeight > planeHeight && neighborHeight != emptySpaceHeight) {
 				//for all neighbors but the down neighbor, the tile to climb to is one tile up
@@ -515,11 +534,8 @@ LevelTypes::Plane* MapState::buildPlane(
 					continue;
 			//check for neighboring tiles to fall to
 			} else {
-				//no falling if there was a rail on the center tile
-				if ((railSwitchIds[tile] & railSwitchIdBitmask) == railIdValue)
-					continue;
 				//for all neighbors but the up neighbor, the tile to climb to is further down
-				else if (neighbor != upNeighbor) {
+				if (neighbor != upNeighbor) {
 					int fallX = neighbor % mapWidth;
 					int fallY;
 					if (tileFalls(fallX, neighbor / mapWidth, planeHeight, &fallY, nullptr) != TileFallResult::Floor)
@@ -534,22 +550,6 @@ LevelTypes::Plane* MapState::buildPlane(
 				continue;
 			planeConnections.push_back(PlaneConnection(neighbor, nullptr, -1));
 			tileChecks.push_back(neighbor);
-		}
-
-		//check for other tiles of interest to connect planes
-		//if there's a rail, check if it's the start/end segment
-		if ((railSwitchIds[tile] & railSwitchIdBitmask) == railIdValue) {
-			short railId = railSwitchIds[tile];
-			Rail* rail = rails[railId & railSwitchIndexBitmask];
-			Rail::Segment* startSegment = rail->getSegment(0);
-			Rail::Segment* endSegment = rail->getSegment(rail->getSegmentCount() - 1);
-			int startTile = startSegment->y * mapWidth + startSegment->x;
-			int endTile = endSegment->y * mapWidth + endSegment->x;
-			if (tile == startTile)
-				addRailPlaneConnection(
-					endTile, railId, planeConnections, activeLevel, rail, rail->getSegmentCount() - 2, tileChecks);
-			else if (tile == endTile)
-				addRailPlaneConnection(startTile, railId, planeConnections, activeLevel, rail, 1, tileChecks);
 		}
 	}
 	return plane;
