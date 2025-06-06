@@ -43,7 +43,7 @@ void Rail::Segment::render(int screenLeftWorldX, int screenTopWorldY, float tile
 	{
 		int spriteX = spriteHorizontalIndex * MapState::tileSize;
 		int spriteHeight = bottomTileY * MapState::tileSize - topWorldY;
-		SpriteRegistry::rails->renderSpriteSheetRegionAtScreenRegion(
+		(SpriteRegistry::rails->*SpriteSheet::renderSpriteSheetRegionAtScreenRegion)(
 			spriteX,
 			0,
 			spriteX + MapState::tileSize,
@@ -60,7 +60,7 @@ void Rail::Segment::render(int screenLeftWorldX, int screenTopWorldY, float tile
 		int spriteX = (spriteHorizontalIndex + spriteHorizontalIndexBorderFirst) * MapState::tileSize;
 		int spriteTop = topBorder ? 0 : topSpriteHeight;
 		int spriteBottom = bottomBorder ? MapState::tileSize : topSpriteHeight;
-		SpriteRegistry::rails->renderSpriteSheetRegionAtScreenRegion(
+		(SpriteRegistry::rails->*SpriteSheet::renderSpriteSheetRegionAtScreenRegion)(
 			spriteX,
 			spriteTop,
 			spriteX + MapState::tileSize,

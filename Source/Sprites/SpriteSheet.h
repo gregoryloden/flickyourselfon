@@ -35,7 +35,17 @@ public:
 		int verticalSpriteCount,
 		bool hasBottomRightPixelBorder);
 	//draw the specified region of the sprite sheet
-	void renderSpriteSheetRegionAtScreenRegion(
+	static void (SpriteSheet::* renderSpriteSheetRegionAtScreenRegion)(
+		int spriteLeftX,
+		int spriteTopY,
+		int spriteRightX,
+		int spriteBottomY,
+		GLint drawLeftX,
+		GLint drawTopY,
+		GLint drawRightX,
+		GLint drawBottomY);
+	//draw the specified region of the sprite sheet to the screen
+	void renderSpriteSheetRegionAtScreenRegionOpenGL(
 		int spriteLeftX,
 		int spriteTopY,
 		int spriteRightX,

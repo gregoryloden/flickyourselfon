@@ -235,7 +235,7 @@ void Text::render(const char* text, float leftX, float baselineY, float fontScal
 		int glyphHeight = glyph->getHeight();
 		float topY = baselineY - (float)(glyphHeight - glyph->getBaselineOffset()) * fontScale;
 
-		font->renderSpriteSheetRegionAtScreenRegion(
+		(font->*SpriteSheet::renderSpriteSheetRegionAtScreenRegion)(
 			glyphSpriteX,
 			glyphSpriteY,
 			glyphSpriteX + glyphWidth,
@@ -269,10 +269,10 @@ void Text::renderWithKeyBackgroundWithMetrics(
 
 	//draw the left side
 	glEnable(GL_BLEND);
-	keyBackground->renderSpriteSheetRegionAtScreenRegion(
+	(keyBackground->*SpriteSheet::renderSpriteSheetRegionAtScreenRegion)(
 		0, 0, leftHalfSpriteWidth, keyBackground->getSpriteHeight(), (GLint)leftX, topY, drawLeftMiddleX, bottomY);
 	//draw the middle section
-	keyBackground->renderSpriteSheetRegionAtScreenRegion(
+	(keyBackground->*SpriteSheet::renderSpriteSheetRegionAtScreenRegion)(
 		leftHalfSpriteWidth,
 		0,
 		leftHalfSpriteWidth + 1,
@@ -282,7 +282,7 @@ void Text::renderWithKeyBackgroundWithMetrics(
 		drawRightMiddleX,
 		bottomY);
 	//draw the right side
-	keyBackground->renderSpriteSheetRegionAtScreenRegion(
+	(keyBackground->*SpriteSheet::renderSpriteSheetRegionAtScreenRegion)(
 		leftHalfSpriteWidth + 1,
 		0,
 		keyBackground->getSpriteWidth(),

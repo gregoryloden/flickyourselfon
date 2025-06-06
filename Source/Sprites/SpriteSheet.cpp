@@ -1,6 +1,16 @@
 #include "SpriteSheet.h"
 #include "Util/FileUtils.h"
 
+void (SpriteSheet::* SpriteSheet::renderSpriteSheetRegionAtScreenRegion)(
+		int spriteLeftX,
+		int spriteTopY,
+		int spriteRightX,
+		int spriteBottomY,
+		GLint drawLeftX,
+		GLint drawTopY,
+		GLint drawRightX,
+		GLint drawBottomY)
+	= &SpriteSheet::renderSpriteSheetRegionAtScreenRegionOpenGL;
 SpriteSheet::SpriteSheet(
 	objCounterParametersComma()
 	SDL_Surface* imageSurface,
@@ -56,7 +66,7 @@ SpriteSheet* SpriteSheet::produce(
 	SDL_FreeSurface(surface);
 	return spriteSheet;
 }
-void SpriteSheet::renderSpriteSheetRegionAtScreenRegion(
+void SpriteSheet::renderSpriteSheetRegionAtScreenRegionOpenGL(
 	int spriteLeftX,
 	int spriteTopY,
 	int spriteRightX,
@@ -89,7 +99,7 @@ void SpriteSheet::renderSpriteAtScreenPosition(
 {
 	int spriteLeftX = (GLint)(spriteHorizontalIndex * spriteWidth);
 	int spriteTopY = (GLint)(spriteVerticalIndex * spriteHeight);
-	renderSpriteSheetRegionAtScreenRegion(
+	(this->*renderSpriteSheetRegionAtScreenRegion)(
 		spriteLeftX,
 		spriteTopY,
 		spriteLeftX + (GLint)spriteWidth,
