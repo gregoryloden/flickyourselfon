@@ -197,13 +197,13 @@ void SpriteRegistry::loadTiles() {
 	for (int i = 0; i < 16; i++) {
 		tilesDestRect.y = (tileBordersDestRect.y = MapState::tileSize * i);
 		SDL_BlitSurface(tilesSurface, &tilesRect, combinedSurface, &tilesDestRect);
-		for (int j = 0; j < MapState::tileCount; j++) {
-			tileBordersDestRect.x = j * MapState::tileSize;
-			for (int k = 0; k < 4; k++) {
-				if ((i & (1 << k)) != 0) {
-					tileBordersRect.x = k * MapState::tileSize;
-					SDL_BlitSurface(tileBordersSurface, &tileBordersRect, combinedSurface, &tileBordersDestRect);
-				}
+		for (int k = 0; k < 4; k++) {
+			if ((i & (1 << k)) == 0)
+				continue;
+			tileBordersRect.x = k * MapState::tileSize;
+			for (int j = 0; j < MapState::tileCount; j++) {
+				tileBordersDestRect.x = j * MapState::tileSize;
+				SDL_BlitSurface(tileBordersSurface, &tileBordersRect, combinedSurface, &tileBordersDestRect);
 			}
 		}
 	}
