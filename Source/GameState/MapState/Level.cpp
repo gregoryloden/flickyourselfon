@@ -562,7 +562,8 @@ void LevelTypes::Plane::pursueSolutionToPlanes(HintState::PotentialLevelState* c
 						HintState::PotentialLevelState::draftState.addNewState(
 							potentialLevelStates, nextPotentialLevelState->steps);
 
-					//if no state has ever been to this milestone destination plane, frontload it instead of tracking it at its steps
+					//if no state has ever been to this milestone destination plane, frontload it instead of tracking it at its
+					//	steps
 					if (milestoneDestinationPotentialLevelState != nullptr) {
 						//we have to fill this one out too, copy from the state without the visited flag set
 						milestoneDestinationPotentialLevelState->priorState = nextPotentialLevelState->priorState;
