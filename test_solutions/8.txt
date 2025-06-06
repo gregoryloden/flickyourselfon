@@ -1,0 +1,86 @@
+##original
+start
+#platform maze
+milestone: white: green-green
+milestone: red: black-yellow
+milestone: white: magenta-red
+milestone: green: cyan-green
+milestone: blue: red-green
+milestone: green: blue-green
+milestone: blue: white-black
+milestone: red: magenta-yellow
+milestone: blue: white-red
+milestone: red: red-blue
+milestone: green: green-magenta
+
+#pick-a-rail
+milestone: red: cyan-red
+
+#hexagon
+milestone: green: red-green
+green: white-green
+blue: blue-green
+red: red-green
+white: yellow-red
+milestone: blue: yellow-blue
+
+#1-2, white area
+white: black-cyan
+white: white-magenta
+white: white-magenta
+
+#circle, green area
+green: blue-yellow
+green: red-blue
+green: green-blue
+green: blue-blue
+green: red-yellow
+green: green-yellow
+
+#towers of hanoi, blue area
+blue: white-green
+blue: cyan-green
+blue: white-green
+milestone: blue: magenta-red
+blue: white-green
+blue: cyan-green
+blue: white-green
+end
+
+#hint-found
+start
+#starting area
+milestone: red: cyan-red
+milestone: green: red-green
+milestone: white: green-green
+milestone: red: black-yellow
+milestone: white: magenta-red
+milestone: green: cyan-green
+milestone: blue: red-green
+milestone: green: blue-green
+milestone: blue: white-black
+milestone: red: magenta-yellow
+milestone: blue: white-red
+milestone: red: red-blue
+milestone: green: green-magenta
+green: white-green
+red: red-green
+white: yellow-red
+milestone: blue: yellow-blue
+
+#outer area
+white: black-cyan
+white: white-magenta
+white: white-magenta
+green: green-yellow
+green: red-yellow
+green: blue-blue
+green: green-blue
+blue: white-green
+blue: cyan-green
+blue: white-green
+milestone: blue: magenta-red
+blue: white-green
+blue: cyan-green
+blue: white-green
+end
