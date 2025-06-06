@@ -193,7 +193,6 @@ void Editor::SaveButton::onClick() {
 
 	//request to save the game becuase rail/switch ids may have changed
 	needsGameStateSave = true;
-
 	saveButtonDisabled = true;
 }
 
@@ -210,22 +209,17 @@ void Editor::ExportMapButton::onClick() {
 	if (exportMapButtonDisabled)
 		return;
 
+	//create the map image
 	int mapWidth = MapState::getMapWidth();
 	int mapHeight = MapState::getMapHeight();
-
-	SDL_Surface* tilesSurface = FileUtils::loadImage(SpriteRegistry::tilesFileName);
 	SDL_Surface* mapSurface = SDL_CreateRGBSurface(
-		0,
-		mapWidth * MapState::tileSize,
-		mapHeight * MapState::tileSize,
-		tilesSurface->format->BitsPerPixel,
-		tilesSurface->format->Rmask,
-		tilesSurface->format->Gmask,
-		tilesSurface->format->Bmask,
-		tilesSurface->format->Amask);
+		0, mapWidth * MapState::tileSize, mapHeight * MapState::tileSize, 32, 0xFF0000, 0xFF00, 0xFF, 0xFF000000);
 	SDL_Renderer* mapRenderer = SDL_CreateSoftwareRenderer(mapSurface);
-	SDL_Texture* tilesTexture = SDL_CreateTextureFromSurface(mapRenderer, tilesSurface);
 
+	//draw the tiles on it
+	SDL_Surface* tilesSurface = FileUtils::loadImage(SpriteRegistry::tilesFileName);
+	SDL_Texture* tilesTexture = SDL_CreateTextureFromSurface(mapRenderer, tilesSurface);
+	SDL_FreeSurface(tilesSurface);
 	for (int mapY = 0; mapY < mapHeight; mapY++) {
 		for (int mapX = 0; mapX < mapWidth; mapX++) {
 			if (MapState::getHeight(mapX, mapY) == MapState::emptySpaceHeight)
@@ -239,12 +233,14 @@ void Editor::ExportMapButton::onClick() {
 			SDL_RenderCopy(mapRenderer, tilesTexture, &source, &destination);
 		}
 	}
-
-	FileUtils::saveImage(mapSurface, "images/map.png");
 	SDL_DestroyTexture(tilesTexture);
+
+	//write it with just tiles
+	FileUtils::saveImage(mapSurface, "maptiles.png");
+
+	//cleanup
 	SDL_DestroyRenderer(mapRenderer);
 	SDL_FreeSurface(mapSurface);
-	SDL_FreeSurface(tilesSurface);
 
 	exportMapButtonDisabled = true;
 }
