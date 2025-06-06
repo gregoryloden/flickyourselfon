@@ -1040,6 +1040,7 @@ void MapState::renderBelowPlayer(EntityState* camera, float playerWorldGroundY, 
 				(int)(tiles[mapIndex]), (int)(useTileBorders[mapIndex]), leftX, topY);
 		}
 	}
+	glEnable(GL_BLEND);
 
 	if (Editor::isActive) {
 		//darken tiles that don't match the selected height in the editor, if one is selected
@@ -1066,7 +1067,6 @@ void MapState::renderBelowPlayer(EntityState* camera, float playerWorldGroundY, 
 	//color tiles that are above or below the player, based on how far above or below the player they are, if the setting is
 	//	enabled
 	} else if (Config::heightBasedShading.state != Config::heightBasedShadingOffValue) {
-		glEnable(GL_BLEND);
 		static constexpr int nearHeightsEnd = 4;
 		//even distribution from 0%-50% across floor height differences 0-7
 		float maxAlpha = 0.5f;
@@ -1109,6 +1109,14 @@ void MapState::renderBelowPlayer(EntityState* camera, float playerWorldGroundY, 
 		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 	}
 
+	//draw the radio tower immediately after drawing and coloring the tiles
+	if (Editor::isActive)
+		glColor4f(1.0f, 1.0f, 1.0f, 2.0f / 3.0f);
+	SpriteRegistry::radioTower->renderSpriteAtScreenPosition(
+		0, 0, (GLint)(radioTowerLeftXOffset - screenLeftWorldX), (GLint)(radioTowerTopYOffset - screenTopWorldY));
+	if (Editor::isActive)
+		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+
 	//draw hints below rails, if applicable
 	Hint::Type hintType = hintState.get()->getHintType();
 	if (hintType == Hint::Type::Plane)
@@ -1140,15 +1148,6 @@ void MapState::renderBelowPlayer(EntityState* camera, float playerWorldGroundY, 
 			ticksTime);
 	for (ResetSwitchState* resetSwitchState : resetSwitchStates)
 		resetSwitchState->render(screenLeftWorldX, screenTopWorldY, ticksTime);
-
-	//draw the radio tower after drawing everything else
-	glEnable(GL_BLEND);
-	if (Editor::isActive)
-		glColor4f(1.0f, 1.0f, 1.0f, 2.0f / 3.0f);
-	SpriteRegistry::radioTower->renderSpriteAtScreenPosition(
-		0, 0, (GLint)(radioTowerLeftXOffset - screenLeftWorldX), (GLint)(radioTowerTopYOffset - screenTopWorldY));
-	if (Editor::isActive)
-		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 
 	//draw particles below the player
 	for (ReferenceCounterHolder<Particle>& particle : particles) {
