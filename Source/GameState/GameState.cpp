@@ -377,8 +377,8 @@ void GameState::render(int ticksTime) {
 		renderSaveIcon(gameTicksTime);
 
 	//TODO: real win condition
-	int winTileX = 55;
-	int winTileY = 156;
+	int winTileX = 103;
+	int winTileY = 112;
 	float px = playerState.get()->getRenderCenterWorldX(gameTicksTime);
 	float py = playerState.get()->getRenderCenterWorldY(gameTicksTime);
 	if (abs(px / MapState::tileSize - winTileX - 0.5f) <= 1.5f
