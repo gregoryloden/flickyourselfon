@@ -409,5 +409,7 @@ public:
 	static void editorAdjustRailInitialTileOffset(int x, int y, char tileOffset);
 	//check if we're saving a rail or switch to the floor file, and if so get the data we need at this tile
 	static char editorGetRailSwitchFloorSaveData(int x, int y);
+	//render tiles to the map image
+	static void editorRenderTiles(SDL_Renderer* mapRenderer);
 };
 #endif

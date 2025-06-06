@@ -210,32 +210,19 @@ void Editor::ExportMapButton::onClick() {
 		return;
 
 	//create the map image
-	int mapWidth = MapState::getMapWidth();
-	int mapHeight = MapState::getMapHeight();
 	SDL_Surface* mapSurface = SDL_CreateRGBSurface(
-		0, mapWidth * MapState::tileSize, mapHeight * MapState::tileSize, 32, 0xFF0000, 0xFF00, 0xFF, 0xFF000000);
+		0,
+		MapState::getMapWidth() * MapState::tileSize,
+		MapState::getMapHeight() * MapState::tileSize,
+		32,
+		0xFF0000,
+		0xFF00,
+		0xFF,
+		0xFF000000);
 	SDL_Renderer* mapRenderer = SDL_CreateSoftwareRenderer(mapSurface);
 
-	//draw the tiles on it
-	SDL_Surface* tilesSurface = FileUtils::loadImage(SpriteRegistry::tilesFileName);
-	SDL_Texture* tilesTexture = SDL_CreateTextureFromSurface(mapRenderer, tilesSurface);
-	SDL_FreeSurface(tilesSurface);
-	for (int mapY = 0; mapY < mapHeight; mapY++) {
-		for (int mapX = 0; mapX < mapWidth; mapX++) {
-			if (MapState::getHeight(mapX, mapY) == MapState::emptySpaceHeight)
-				continue;
-
-			int destinationX = mapX * MapState::tileSize;
-			int destinationY = mapY * MapState::tileSize;
-			int tileX = (int)MapState::getTile(mapX, mapY) * MapState::tileSize;
-			SDL_Rect source { tileX, 0, MapState::tileSize, MapState::tileSize };
-			SDL_Rect destination { destinationX, destinationY, MapState::tileSize, MapState::tileSize };
-			SDL_RenderCopy(mapRenderer, tilesTexture, &source, &destination);
-		}
-	}
-	SDL_DestroyTexture(tilesTexture);
-
 	//write it with just tiles
+	MapState::editorRenderTiles(mapRenderer);
 	FileUtils::saveImage(mapSurface, "maptiles.png");
 
 	//cleanup
