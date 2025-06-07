@@ -137,17 +137,17 @@ void SpriteSheet::renderSpriteSheetRegionAtScreenRegionRenderer(
 void SpriteSheet::renderSpriteAtScreenPosition(
 	int spriteHorizontalIndex, int spriteVerticalIndex, GLint drawLeftX, GLint drawTopY)
 {
-	int spriteLeftX = (GLint)(spriteHorizontalIndex * spriteWidth);
-	int spriteTopY = (GLint)(spriteVerticalIndex * spriteHeight);
+	int spriteLeftX = spriteHorizontalIndex * spriteWidth;
+	int spriteTopY = spriteVerticalIndex * spriteHeight;
 	(this->*renderSpriteSheetRegionAtScreenRegion)(
 		spriteLeftX,
 		spriteTopY,
-		spriteLeftX + (GLint)spriteWidth,
-		spriteTopY + (GLint)spriteHeight,
+		spriteLeftX + spriteWidth,
+		spriteTopY + spriteHeight,
 		drawLeftX,
 		drawTopY,
-		drawLeftX + spriteWidth,
-		drawTopY + spriteHeight);
+		drawLeftX + (GLint)spriteWidth,
+		drawTopY + (GLint)spriteHeight);
 }
 void SpriteSheet::renderSpriteCenteredAtScreenPosition(
 	int spriteHorizontalIndex, int spriteVerticalIndex, float drawCenterX, float drawCenterY)
