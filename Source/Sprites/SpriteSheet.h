@@ -98,6 +98,6 @@ public:
 	static void renderRectangleOutline(
 		GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha, GLint leftX, GLint topY, GLint rightX, GLint bottomY);
 private:
-	//set the color and enable blending as determined by the alpha
-	static void setColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
+	//set the color for a rectangle and enable blending as determined by the alpha
+	static void setRectangleColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
 };

@@ -182,9 +182,9 @@ void SpriteSheet::renderSpriteCenteredAtScreenPosition(
 void SpriteSheet::renderFilledRectangle(
 	GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha, GLint leftX, GLint topY, GLint rightX, GLint bottomY)
 {
-	setColor(red, green, blue, alpha);
+	setRectangleColor(red, green, blue, alpha);
 	renderPreColoredRectangle(leftX, topY, rightX, bottomY);
-	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+	setRectangleColor(1.0f, 1.0f, 1.0f, 1.0f);
 }
 void SpriteSheet::renderPreColoredRectangle(GLint leftX, GLint topY, GLint rightX, GLint bottomY) {
 	glBegin(GL_QUADS);
@@ -202,7 +202,7 @@ void SpriteSheet::renderRectangleOutline(
 	GLfloat lineTopY = (GLfloat)topY - 0.5f;
 	GLfloat lineRightX = (GLfloat)rightX + 0.5f;
 	GLfloat lineBottomY = (GLfloat)bottomY + 0.5f;
-	setColor(red, green, blue, alpha);
+	setRectangleColor(red, green, blue, alpha);
 	//TODO: make this correct
 	glLineWidth(3.0f);
 	glBegin(GL_LINE_LOOP);
@@ -213,7 +213,7 @@ void SpriteSheet::renderRectangleOutline(
 	glEnd();
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 }
-void SpriteSheet::setColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha) {
+void SpriteSheet::setRectangleColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha) {
 	if (alpha >= 1.0f) {
 		glDisable(GL_BLEND);
 		glColor3f(red, green, blue);
