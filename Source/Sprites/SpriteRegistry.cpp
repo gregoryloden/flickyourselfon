@@ -37,7 +37,7 @@ SpriteAnimation* SpriteRegistry::sparksSlowAnimationA = nullptr;
 SpriteAnimation* SpriteRegistry::sparksSlowAnimationB = nullptr;
 void SpriteRegistry::loadAll() {
 	player = newSpriteSheetWithImagePath("player.png", 10, 4, false);
-	loadTiles();
+	tiles = loadTiles();
 	radioTower = newSpriteSheetWithImagePath("radiotower.png", 1, 1, false);
 	rails = newSpriteSheetWithImagePath("rails.png", 22, 1, true);
 	switches = newSpriteSheetWithImagePath("switches.png", 9, 1, true);
@@ -178,7 +178,7 @@ void SpriteRegistry::loadAll() {
 		});
 	sparksSlowAnimationB->disableLooping();
 }
-void SpriteRegistry::loadTiles() {
+SpriteSheet* SpriteRegistry::loadTiles() {
 	SDL_Surface* tilesSurface = FileUtils::loadImage(tilesFileName);
 	SDL_Surface* tileBordersSurface = FileUtils::loadImage("tileborders.png");
 	SDL_Surface* combinedSurface = SDL_CreateRGBSurface(
@@ -209,7 +209,7 @@ void SpriteRegistry::loadTiles() {
 	}
 	SDL_FreeSurface(tilesSurface);
 	SDL_FreeSurface(tileBordersSurface);
-	tiles = newSpriteSheet(combinedSurface, MapState::tileCount, 16, false);
+	return newSpriteSheet(combinedSurface, MapState::tileCount, 16, false);
 }
 void SpriteRegistry::unloadAll() {
 	delete playerWalkingAnimation;

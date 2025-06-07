@@ -54,7 +54,7 @@ public:
 	static void loadAll();
 private:
 	//load the tiles sprite sheet, overlaying the border image onto it
-	static void loadTiles();
+	static SpriteSheet* loadTiles();
 public:
 	//delete all the sprite sheets
 	static void unloadAll();
