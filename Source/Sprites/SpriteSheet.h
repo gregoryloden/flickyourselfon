@@ -9,6 +9,8 @@ class SpriteSheet onlyInDebug(: public ObjCounter) {
 private:
 	GLuint textureId;
 	SDL_Surface* renderSurface;
+	SDL_Renderer* activeRenderer;
+	SDL_Texture* activeRenderTexture;
 	int spriteWidth;
 	int spriteHeight;
 	float spriteTexPixelWidth;
@@ -35,8 +37,12 @@ public:
 		int horizontalSpriteCount,
 		int verticalSpriteCount,
 		bool hasBottomRightPixelBorder);
-	//load a texture with this SpriteSheet's surface, use it, and then delete it
-	void withRendererTexture(SDL_Renderer* renderer, function<void(SDL_Texture* texture)> useTexture);
+	//render using OpenGL rendering functions
+	static void renderWithOpenGL();
+	//render using SDL_Renderer/SDL_Texture rendering functions
+	static void renderWithRenderer();
+	//load a texture with this SpriteSheet's surface, use it for rendering, and then delete it
+	void withRenderTexture(SDL_Renderer* renderer, function<void()> renderWithTexture);
 	//draw the specified region of the sprite sheet
 	static void (SpriteSheet::* renderSpriteSheetRegionAtScreenRegion)(
 		int spriteLeftX,

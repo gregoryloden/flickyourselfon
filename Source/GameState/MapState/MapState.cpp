@@ -1782,19 +1782,16 @@ char MapState::editorGetRailSwitchFloorSaveData(int x, int y) {
 	return 0;
 }
 void MapState::editorRenderTiles(SDL_Renderer* mapRenderer) {
-	SpriteRegistry::tiles->withRendererTexture(
+	SpriteRegistry::tiles->withRenderTexture(
 		mapRenderer,
-		[mapRenderer](SDL_Texture* tilesTexture) {
+		[]() {
 			for (int mapY = 0; mapY < mapHeight; mapY++) {
 				for (int mapX = 0; mapX < mapWidth; mapX++) {
 					if (getHeight(mapX, mapY) == emptySpaceHeight)
 						continue;
 
-					int destinationX = mapX * tileSize;
-					int destinationY = mapY * tileSize;
-					SDL_Rect source { (int)getTile(mapX, mapY) * tileSize, 0, tileSize, tileSize };
-					SDL_Rect destination { destinationX, destinationY, tileSize, tileSize };
-					SDL_RenderCopy(mapRenderer, tilesTexture, &source, &destination);
+					SpriteRegistry::tiles->renderSpriteAtScreenPosition(
+						(int)getTile(mapX, mapY), 0, (GLint)(mapX * tileSize), (GLint)(mapY * tileSize));
 				}
 			}
 		});

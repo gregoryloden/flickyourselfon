@@ -220,6 +220,7 @@ void Editor::ExportMapButton::onClick() {
 		0xFF,
 		0xFF000000);
 	SDL_Renderer* mapRenderer = SDL_CreateSoftwareRenderer(mapSurface);
+	SpriteSheet::renderWithRenderer();
 
 	//write it with just tiles
 	MapState::editorRenderTiles(mapRenderer);
@@ -228,6 +229,7 @@ void Editor::ExportMapButton::onClick() {
 	//cleanup
 	SDL_DestroyRenderer(mapRenderer);
 	SDL_FreeSurface(mapSurface);
+	SpriteSheet::renderWithOpenGL();
 
 	exportMapButtonDisabled = true;
 }

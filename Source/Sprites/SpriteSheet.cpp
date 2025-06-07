@@ -1,5 +1,6 @@
 #include "SpriteSheet.h"
 #include "Util/FileUtils.h"
+#include "Util/Logger.h"
 
 void (SpriteSheet::* SpriteSheet::renderSpriteSheetRegionAtScreenRegion)(
 		int spriteLeftX,
@@ -20,6 +21,8 @@ SpriteSheet::SpriteSheet(
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
 textureId(0)
 , renderSurface(imageSurface)
+, activeRenderer(nullptr)
+, activeRenderTexture(nullptr)
 , spriteWidth(imageSurface->w / horizontalSpriteCount)
 , spriteHeight(imageSurface->h / verticalSpriteCount)
 , spriteTexPixelWidth(1.0f / (float)imageSurface->w)
@@ -56,6 +59,14 @@ textureId(0)
 }
 SpriteSheet::~SpriteSheet() {
 	SDL_FreeSurface(renderSurface);
+	#ifdef DEBUG
+		//don't delete activeRenderer, it's managed elsewhere; it should be nullptr by now
+		if (activeRenderer != nullptr)
+			Logger::debugLogger.log("ERROR: SpriteSheet activeRenderer not null");
+		//don't delete renderTexture, it's managed elsewhere; it should be nullptr by now
+		if (activeRenderTexture != nullptr)
+			Logger::debugLogger.log("ERROR: SpriteSheet renderTexture not null");
+	#endif
 }
 SpriteSheet* SpriteSheet::produce(
 	objCounterParametersComma()
@@ -67,10 +78,19 @@ SpriteSheet* SpriteSheet::produce(
 	return newSpriteSheet(
 		FileUtils::loadImage(imagePath), horizontalSpriteCount, verticalSpriteCount, hasBottomRightPixelBorder);
 }
-void SpriteSheet::withRendererTexture(SDL_Renderer* renderer, function<void(SDL_Texture* texture)> useTexture) {
-	SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, renderSurface);
-	useTexture(texture);
-	SDL_DestroyTexture(texture);
+void SpriteSheet::renderWithOpenGL() {
+	renderSpriteSheetRegionAtScreenRegion = &renderSpriteSheetRegionAtScreenRegionOpenGL;
+}
+void SpriteSheet::renderWithRenderer() {
+	renderSpriteSheetRegionAtScreenRegion = &renderSpriteSheetRegionAtScreenRegionRenderer;
+}
+void SpriteSheet::withRenderTexture(SDL_Renderer* renderer, function<void()> renderWithTexture) {
+	activeRenderer = renderer;
+	activeRenderTexture = SDL_CreateTextureFromSurface(renderer, renderSurface);
+	renderWithTexture();
+	SDL_DestroyTexture(activeRenderTexture);
+	activeRenderTexture = nullptr;
+	activeRenderer = nullptr;
 }
 void SpriteSheet::renderSpriteSheetRegionAtScreenRegionOpenGL(
 	int spriteLeftX,
@@ -99,6 +119,20 @@ void SpriteSheet::renderSpriteSheetRegionAtScreenRegionOpenGL(
 	glVertex2i(drawLeftX, drawBottomY);
 	glEnd();
 	glDisable(GL_TEXTURE_2D);
+}
+void SpriteSheet::renderSpriteSheetRegionAtScreenRegionRenderer(
+	int spriteLeftX,
+	int spriteTopY,
+	int spriteRightX,
+	int spriteBottomY,
+	GLint drawLeftX,
+	GLint drawTopY,
+	GLint drawRightX,
+	GLint drawBottomY)
+{
+	SDL_Rect source { spriteLeftX, spriteTopY, spriteRightX - spriteLeftX, spriteBottomY - spriteTopY };
+	SDL_Rect destination { (int)drawLeftX, (int)drawTopY, (int)(drawRightX - drawLeftX), (int)(drawBottomY - drawTopY) };
+	SDL_RenderCopy(activeRenderer, activeRenderTexture, &source, &destination);
 }
 void SpriteSheet::renderSpriteAtScreenPosition(
 	int spriteHorizontalIndex, int spriteVerticalIndex, GLint drawLeftX, GLint drawTopY)
