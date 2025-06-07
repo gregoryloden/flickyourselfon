@@ -207,10 +207,9 @@ void SpriteRegistry::loadTiles() {
 			}
 		}
 	}
-	tiles = newSpriteSheet(combinedSurface, MapState::tileCount, 16, false);
 	SDL_FreeSurface(tilesSurface);
 	SDL_FreeSurface(tileBordersSurface);
-	SDL_FreeSurface(combinedSurface);
+	tiles = newSpriteSheet(combinedSurface, MapState::tileCount, 16, false);
 }
 void SpriteRegistry::unloadAll() {
 	delete playerWalkingAnimation;

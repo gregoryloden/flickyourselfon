@@ -131,8 +131,6 @@ void Text::loadFont() {
 		else
 			headerRow = lowestGlyphBottom + 1;
 	}
-
-	SDL_FreeSurface(fontSurface);
 }
 void Text::unloadFont() {
 	delete font;

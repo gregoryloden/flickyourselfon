@@ -19,6 +19,7 @@ SpriteSheet::SpriteSheet(
 	bool hasBottomRightPixelBorder)
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
 textureId(0)
+, renderSurface(imageSurface)
 , spriteWidth(imageSurface->w / horizontalSpriteCount)
 , spriteHeight(imageSurface->h / verticalSpriteCount)
 , spriteTexPixelWidth(1.0f / (float)imageSurface->w)
@@ -53,7 +54,9 @@ textureId(0)
 	centerAnchorX = spriteWidth * 0.5f;
 	centerAnchorY = spriteHeight * 0.5f;
 }
-SpriteSheet::~SpriteSheet() {}
+SpriteSheet::~SpriteSheet() {
+	SDL_FreeSurface(renderSurface);
+}
 SpriteSheet* SpriteSheet::produce(
 	objCounterParametersComma()
 	const char* imagePath,
@@ -61,10 +64,8 @@ SpriteSheet* SpriteSheet::produce(
 	int verticalSpriteCount,
 	bool hasBottomRightPixelBorder)
 {
-	SDL_Surface* surface = FileUtils::loadImage(imagePath);
-	SpriteSheet* spriteSheet = newSpriteSheet(surface, horizontalSpriteCount, verticalSpriteCount, hasBottomRightPixelBorder);
-	SDL_FreeSurface(surface);
-	return spriteSheet;
+	return newSpriteSheet(
+		FileUtils::loadImage(imagePath), horizontalSpriteCount, verticalSpriteCount, hasBottomRightPixelBorder);
 }
 void SpriteSheet::renderSpriteSheetRegionAtScreenRegionOpenGL(
 	int spriteLeftX,

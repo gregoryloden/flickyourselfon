@@ -8,6 +8,7 @@
 class SpriteSheet onlyInDebug(: public ObjCounter) {
 private:
 	GLuint textureId;
+	SDL_Surface* renderSurface;
 	int spriteWidth;
 	int spriteHeight;
 	float spriteTexPixelWidth;
