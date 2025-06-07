@@ -127,7 +127,7 @@ int Rail::middleSegmentSpriteHorizontalIndex(int prevX, int prevY, int x, int y,
 int Rail::extentSegmentSpriteHorizontalIndex(int prevX, int prevY, int x, int y) {
 	return middleSegmentSpriteHorizontalIndex(prevX, prevY, x, y, x + (x - prevX), y + (y - prevY));
 }
-void Rail::setSegmentColor(int railColor, float saturation, float alpha) {
+void Rail::setSegmentColor(char railColor, float saturation, float alpha) {
 	static constexpr float sineColorIntensity = 14.0f / 16.0f;
 	float redColor = sineColorIntensity;
 	float greenColor = sineColorIntensity;
