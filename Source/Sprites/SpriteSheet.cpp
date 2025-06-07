@@ -10,11 +10,11 @@ void (SpriteSheet::* SpriteSheet::renderSpriteSheetRegionAtScreenRegion)(
 		GLint drawLeftX,
 		GLint drawTopY,
 		GLint drawRightX,
-		GLint drawBottomY)
-	= &SpriteSheet::renderSpriteSheetRegionAtScreenRegionOpenGL;
+		GLint drawBottomY) =
+	&SpriteSheet::renderSpriteSheetRegionAtScreenRegionOpenGL;
 void (SpriteSheet::* SpriteSheet::renderSpriteAtScreenPosition)(
-		int spriteHorizontalIndex, int spriteVerticalIndex, GLint drawLeftX, GLint drawTopY)
-	= &SpriteSheet::renderSpriteAtScreenPositionOpenGL;
+		int spriteHorizontalIndex, int spriteVerticalIndex, GLint drawLeftX, GLint drawTopY) =
+	&SpriteSheet::renderSpriteAtScreenPositionOpenGL;
 SpriteSheet::SpriteSheet(
 	objCounterParametersComma()
 	SDL_Surface* imageSurface,
