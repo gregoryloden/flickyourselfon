@@ -63,6 +63,16 @@ public:
 		GLint drawTopY,
 		GLint drawRightX,
 		GLint drawBottomY);
+	//draw the specified region of the sprite sheet to the renderer
+	void renderSpriteSheetRegionAtScreenRegionRenderer(
+		int spriteLeftX,
+		int spriteTopY,
+		int spriteRightX,
+		int spriteBottomY,
+		GLint drawLeftX,
+		GLint drawTopY,
+		GLint drawRightX,
+		GLint drawBottomY);
 	//draw the specified sprite image with its top-left corner at the specified coordinate
 	void renderSpriteAtScreenPosition(int spriteHorizontalIndex, int spriteVerticalIndex, GLint drawLeftX, GLint drawTopY);
 	//draw the specified sprite image with its center at the specified coordinate
