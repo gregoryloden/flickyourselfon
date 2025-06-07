@@ -35,6 +35,8 @@ public:
 		int horizontalSpriteCount,
 		int verticalSpriteCount,
 		bool hasBottomRightPixelBorder);
+	//load a texture with this SpriteSheet's surface, use it, and then delete it
+	void withRendererTexture(SDL_Renderer* renderer, function<void(SDL_Texture* texture)> useTexture);
 	//draw the specified region of the sprite sheet
 	static void (SpriteSheet::* renderSpriteSheetRegionAtScreenRegion)(
 		int spriteLeftX,

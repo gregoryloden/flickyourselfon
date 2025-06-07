@@ -67,6 +67,11 @@ SpriteSheet* SpriteSheet::produce(
 	return newSpriteSheet(
 		FileUtils::loadImage(imagePath), horizontalSpriteCount, verticalSpriteCount, hasBottomRightPixelBorder);
 }
+void SpriteSheet::withRendererTexture(SDL_Renderer* renderer, function<void(SDL_Texture* texture)> useTexture) {
+	SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, renderSurface);
+	useTexture(texture);
+	SDL_DestroyTexture(texture);
+}
 void SpriteSheet::renderSpriteSheetRegionAtScreenRegionOpenGL(
 	int spriteLeftX,
 	int spriteTopY,

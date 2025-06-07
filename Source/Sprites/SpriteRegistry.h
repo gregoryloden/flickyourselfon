@@ -13,7 +13,6 @@ public:
 	static constexpr int radioWaveAnimationTicksPerFrame = 80;
 	static constexpr int sparksTicksPerFrame = 50;
 	static constexpr int sparksSlowTicksPerFrame = 100;
-	static constexpr char* tilesFileName = "tiles.png";
 
 	static SpriteSheet* player;
 	static SpriteSheet* tiles;

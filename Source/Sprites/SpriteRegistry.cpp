@@ -179,7 +179,7 @@ void SpriteRegistry::loadAll() {
 	sparksSlowAnimationB->disableLooping();
 }
 SpriteSheet* SpriteRegistry::loadTiles() {
-	SDL_Surface* tilesSurface = FileUtils::loadImage(tilesFileName);
+	SDL_Surface* tilesSurface = FileUtils::loadImage("tiles.png");
 	SDL_Surface* tileBordersSurface = FileUtils::loadImage("tileborders.png");
 	SDL_Surface* combinedSurface = SDL_CreateRGBSurface(
 		tilesSurface->flags,

@@ -1782,20 +1782,20 @@ char MapState::editorGetRailSwitchFloorSaveData(int x, int y) {
 	return 0;
 }
 void MapState::editorRenderTiles(SDL_Renderer* mapRenderer) {
-	SDL_Surface* tilesSurface = FileUtils::loadImage(SpriteRegistry::tilesFileName);
-	SDL_Texture* tilesTexture = SDL_CreateTextureFromSurface(mapRenderer, tilesSurface);
-	SDL_FreeSurface(tilesSurface);
-	for (int mapY = 0; mapY < mapHeight; mapY++) {
-		for (int mapX = 0; mapX < mapWidth; mapX++) {
-			if (getHeight(mapX, mapY) == emptySpaceHeight)
-				continue;
+	SpriteRegistry::tiles->withRendererTexture(
+		mapRenderer,
+		[mapRenderer](SDL_Texture* tilesTexture) {
+			for (int mapY = 0; mapY < mapHeight; mapY++) {
+				for (int mapX = 0; mapX < mapWidth; mapX++) {
+					if (getHeight(mapX, mapY) == emptySpaceHeight)
+						continue;
 
-			int destinationX = mapX * tileSize;
-			int destinationY = mapY * tileSize;
-			SDL_Rect source { (int)getTile(mapX, mapY) * tileSize, 0, tileSize, tileSize };
-			SDL_Rect destination { destinationX, destinationY, tileSize, tileSize };
-			SDL_RenderCopy(mapRenderer, tilesTexture, &source, &destination);
-		}
-	}
-	SDL_DestroyTexture(tilesTexture);
+					int destinationX = mapX * tileSize;
+					int destinationY = mapY * tileSize;
+					SDL_Rect source { (int)getTile(mapX, mapY) * tileSize, 0, tileSize, tileSize };
+					SDL_Rect destination { destinationX, destinationY, tileSize, tileSize };
+					SDL_RenderCopy(mapRenderer, tilesTexture, &source, &destination);
+				}
+			}
+		});
 }
