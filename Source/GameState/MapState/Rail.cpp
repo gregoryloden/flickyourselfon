@@ -34,7 +34,7 @@ void Rail::Segment::render(int screenLeftWorldX, int screenTopWorldY, float tile
 	if (bottomTileHeight == MapState::emptySpaceHeight
 		|| bottomTileHeight <= baseHeight - (char)((yPixelOffset + MapState::tileSize - 1) / MapState::tileSize) * 2)
 	{
-		SpriteRegistry::rails->renderSpriteAtScreenPosition(spriteHorizontalIndex, 0, drawLeftX, drawTopY);
+		(SpriteRegistry::rails->*SpriteSheet::renderSpriteAtScreenPosition)(spriteHorizontalIndex, 0, drawLeftX, drawTopY);
 		topBorder = topTileHeight % 2 == 1 && topTileHeight != MapState::emptySpaceHeight;
 		bottomBorder = bottomTileHeight % 2 == 1 && bottomTileHeight != MapState::emptySpaceHeight;
 	//the top part of this segment is visible
@@ -317,7 +317,7 @@ void Rail::renderShadow(int screenLeftWorldX, int screenTopWorldY) {
 		Segment& segment = (*segments)[i];
 		//don't render a shadow if this segment hides behind a platform or can't be lowered
 		if (segment.maxTileOffset > 0)
-			SpriteRegistry::rails->renderSpriteAtScreenPosition(
+			(SpriteRegistry::rails->*SpriteSheet::renderSpriteAtScreenPosition)(
 				segment.spriteHorizontalIndex + Segment::spriteHorizontalIndexShadowFirst,
 				0,
 				(GLint)(segment.x * MapState::tileSize - screenLeftWorldX),

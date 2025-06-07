@@ -295,7 +295,7 @@ void HintState::renderOffscreenArrow(int screenLeftWorldX, int screenTopWorldY) 
 		drawArrowTopY = (GLint)(MathUtils::max(offscreenArrowMaxEdgeSpacing, MathUtils::min(maxArrowTopY, baseArrowTopY)));
 	}
 	glColor4f(1.0f, 1.0f, 1.0f, offscreenArrowAlpha);
-	SpriteRegistry::borderArrows->renderSpriteAtScreenPosition(
+	(SpriteRegistry::borderArrows->*SpriteSheet::renderSpriteAtScreenPosition)(
 		arrowSpriteHorizontalIndex, arrowSpriteVerticalIndex, drawArrowLeftX, drawArrowTopY);
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 }

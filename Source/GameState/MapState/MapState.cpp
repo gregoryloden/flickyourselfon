@@ -1036,7 +1036,7 @@ void MapState::renderBelowPlayer(EntityState* camera, float playerWorldGroundY, 
 
 			GLint leftX = (GLint)(x * tileSize - screenLeftWorldX);
 			GLint topY = (GLint)(y * tileSize - screenTopWorldY);
-			SpriteRegistry::tiles->renderSpriteAtScreenPosition(
+			(SpriteRegistry::tiles->*SpriteSheet::renderSpriteAtScreenPosition)(
 				(int)(tiles[mapIndex]), (int)(useTileBorders[mapIndex]), leftX, topY);
 		}
 	}
@@ -1112,7 +1112,7 @@ void MapState::renderBelowPlayer(EntityState* camera, float playerWorldGroundY, 
 	//draw the radio tower immediately after drawing and coloring the tiles
 	if (Editor::isActive)
 		glColor4f(1.0f, 1.0f, 1.0f, 2.0f / 3.0f);
-	SpriteRegistry::radioTower->renderSpriteAtScreenPosition(
+	(SpriteRegistry::radioTower->*SpriteSheet::renderSpriteAtScreenPosition)(
 		0, 0, (GLint)(radioTowerLeftXOffset - screenLeftWorldX), (GLint)(radioTowerTopYOffset - screenTopWorldY));
 	if (Editor::isActive)
 		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
@@ -1239,12 +1239,12 @@ void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int 
 		static constexpr int waveformRailSpacing = 1;
 		Rail::setSegmentColor(lastActivatedSwitchColor, 1.0f, alpha);
 		GLint railBaseTopY = waveformTop - (GLint)SpriteRegistry::rails->getSpriteHeight() / 2;
-		SpriteRegistry::rails->renderSpriteAtScreenPosition(
+		(SpriteRegistry::rails->*SpriteSheet::renderSpriteAtScreenPosition)(
 			Rail::Segment::spriteHorizontalIndexHorizontal,
 			0,
 			waveformLeft - (GLint)(SpriteRegistry::rails->getSpriteWidth() + waveformRailSpacing),
 			railBaseTopY + (GLint)(waveformY(lastActivatedSwitchColor, fmodf(animationPeriodCycle, 1.0f)) * waveformHeight));
-		SpriteRegistry::rails->renderSpriteAtScreenPosition(
+		(SpriteRegistry::rails->*SpriteSheet::renderSpriteAtScreenPosition)(
 			Rail::Segment::spriteHorizontalIndexHorizontal,
 			0,
 			waveformLeft + (GLint)(waveformWidth + waveformRailSpacing),
@@ -1267,7 +1267,7 @@ void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int 
 		int wavesActivatedYSpacing = SpriteRegistry::wavesActivated->getSpriteHeight() + 2;
 		for (int i = 0; i <= lastActivatedSwitchColor; i++) {
 			if (i < lastActivatedSwitchColor || ticksTime >= switchesAnimationFadeInStartTicksTime)
-				SpriteRegistry::wavesActivated->renderSpriteAtScreenPosition(
+				(SpriteRegistry::wavesActivated->*SpriteSheet::renderSpriteAtScreenPosition)(
 					0, i, wavesActivatedX, wavesActivatedEdgeSpacing + i * wavesActivatedYSpacing);
 		}
 	}
@@ -1790,7 +1790,7 @@ void MapState::editorRenderTiles(SDL_Renderer* mapRenderer) {
 					if (getHeight(mapX, mapY) == emptySpaceHeight)
 						continue;
 
-					SpriteRegistry::tiles->renderSpriteAtScreenPosition(
+					(SpriteRegistry::tiles->*SpriteSheet::renderSpriteAtScreenPosition)(
 						(int)getTile(mapX, mapY), 0, (GLint)(mapX * tileSize), (GLint)(mapY * tileSize));
 				}
 			}

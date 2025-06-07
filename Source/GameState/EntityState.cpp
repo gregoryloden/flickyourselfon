@@ -179,7 +179,7 @@ void DynamicCameraAnchor::render(int ticksTime) {
 				if (arrowXI == 1 && arrowYI == 1)
 					continue;
 				GLint arrowX = (GLint)(borderInset + arrowXI * xIncrement);
-				SpriteRegistry::borderArrows->renderSpriteAtScreenPosition(arrowXI, arrowYI, arrowX, arrowY);
+				(SpriteRegistry::borderArrows->*SpriteSheet::renderSpriteAtScreenPosition)(arrowXI, arrowYI, arrowX, arrowY);
 			}
 		}
 	}

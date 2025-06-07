@@ -54,17 +54,18 @@ void Switch::render(
 	//draw the gray sprite if it's off or fading in
 	if (lastActivatedSwitchColor < color
 			|| (lastActivatedSwitchColor == color && lastActivatedSwitchColorFadeInTicksOffset <= 0))
-		SpriteRegistry::switches->renderSpriteAtScreenPosition(0, 0, drawLeftX, drawTopY);
+		(SpriteRegistry::switches->*SpriteSheet::renderSpriteAtScreenPosition)(0, 0, drawLeftX, drawTopY);
 	//draw the color sprite if it's already on or it's fully faded in
 	else if (lastActivatedSwitchColor > color
 		|| (lastActivatedSwitchColor == color && lastActivatedSwitchColorFadeInTicksOffset >= MapState::switchesFadeInDuration))
 	{
 		int spriteHorizontalIndex = lastActivatedSwitchColor < color ? 0 : (int)(color * 2 + (isOn ? 1 : 2));
-		SpriteRegistry::switches->renderSpriteAtScreenPosition(spriteHorizontalIndex, 0, drawLeftX, drawTopY);
+		(SpriteRegistry::switches->*SpriteSheet::renderSpriteAtScreenPosition)(spriteHorizontalIndex, 0, drawLeftX, drawTopY);
 	//draw a partially faded light color sprite above the darker color sprite if we're fading in the color
 	} else {
 		int darkSpriteHorizontalIndex = (int)(color * 2 + 2);
-		SpriteRegistry::switches->renderSpriteAtScreenPosition(darkSpriteHorizontalIndex, 0, drawLeftX, drawTopY);
+		(SpriteRegistry::switches->*SpriteSheet::renderSpriteAtScreenPosition)(
+			darkSpriteHorizontalIndex, 0, drawLeftX, drawTopY);
 		float fadeInAlpha =
 			MathUtils::fsqr((float)lastActivatedSwitchColorFadeInTicksOffset / (float)MapState::switchesFadeInDuration);
 		glColor4f(1.0f, 1.0f, 1.0f, fadeInAlpha);

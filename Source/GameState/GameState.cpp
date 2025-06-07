@@ -476,7 +476,7 @@ void GameState::renderSaveIcon(int gameTicksTime) {
 	glColor4f(1.0f, 1.0f, 1.0f, saveIconMaxAlpha * baseAlpha);
 	GLint drawLeftX = Config::gameScreenWidth - SpriteRegistry::save->getSpriteWidth() - saveIconEdgeSpacing;
 	GLint drawTopY = Config::gameScreenHeight - SpriteRegistry::save->getSpriteHeight() - saveIconEdgeSpacing;
-	SpriteRegistry::save->renderSpriteAtScreenPosition(0, 0, drawLeftX, drawTopY);
+	(SpriteRegistry::save->*SpriteSheet::renderSpriteAtScreenPosition)(0, 0, drawLeftX, drawTopY);
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 }
 void GameState::saveState(int gameTicksTime) {

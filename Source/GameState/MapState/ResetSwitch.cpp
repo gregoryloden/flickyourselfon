@@ -19,7 +19,7 @@ void ResetSwitch::Segment::render(int screenLeftWorldX, int screenTopWorldY) {
 	Rail::setSegmentColor(color, 1.0f, 1.0f);
 	GLint drawLeftX = (GLint)(x * MapState::tileSize - screenLeftWorldX);
 	GLint drawTopY = (GLint)(y * MapState::tileSize - screenTopWorldY);
-	SpriteRegistry::rails->renderSpriteAtScreenPosition(spriteHorizontalIndex, 0, drawLeftX, drawTopY);
+	(SpriteRegistry::rails->*SpriteSheet::renderSpriteAtScreenPosition)(spriteHorizontalIndex, 0, drawLeftX, drawTopY);
 }
 void ResetSwitch::Segment::renderGroup(int screenLeftWorldX, int screenTopWorldY) {
 	GLint drawLeftX = (GLint)(x * MapState::tileSize - screenLeftWorldX);
@@ -92,7 +92,7 @@ void ResetSwitch::render(int screenLeftWorldX, int screenTopWorldY, bool isOn) {
 	glEnable(GL_BLEND);
 	GLint drawLeftX = (GLint)(centerX * MapState::tileSize - screenLeftWorldX);
 	GLint drawTopY = (GLint)((bottomY - 1) * MapState::tileSize - screenTopWorldY);
-	SpriteRegistry::resetSwitch->renderSpriteAtScreenPosition(isOn ? 1 : 0, 0, drawLeftX, drawTopY);
+	(SpriteRegistry::resetSwitch->*SpriteSheet::renderSpriteAtScreenPosition)(isOn ? 1 : 0, 0, drawLeftX, drawTopY);
 	for (Segment& segment : leftSegments)
 		segment.render(screenLeftWorldX, screenTopWorldY);
 	for (Segment& segment : bottomSegments)

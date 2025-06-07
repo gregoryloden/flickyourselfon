@@ -12,6 +12,9 @@ void (SpriteSheet::* SpriteSheet::renderSpriteSheetRegionAtScreenRegion)(
 		GLint drawRightX,
 		GLint drawBottomY)
 	= &SpriteSheet::renderSpriteSheetRegionAtScreenRegionOpenGL;
+void (SpriteSheet::* SpriteSheet::renderSpriteAtScreenPosition)(
+		int spriteHorizontalIndex, int spriteVerticalIndex, GLint drawLeftX, GLint drawTopY)
+	= &SpriteSheet::renderSpriteAtScreenPositionOpenGL;
 SpriteSheet::SpriteSheet(
 	objCounterParametersComma()
 	SDL_Surface* imageSurface,
@@ -80,9 +83,11 @@ SpriteSheet* SpriteSheet::produce(
 }
 void SpriteSheet::renderWithOpenGL() {
 	renderSpriteSheetRegionAtScreenRegion = &renderSpriteSheetRegionAtScreenRegionOpenGL;
+	renderSpriteAtScreenPosition = &renderSpriteAtScreenPositionOpenGL;
 }
 void SpriteSheet::renderWithRenderer() {
 	renderSpriteSheetRegionAtScreenRegion = &renderSpriteSheetRegionAtScreenRegionRenderer;
+	renderSpriteAtScreenPosition = &renderSpriteAtScreenPositionRenderer;
 }
 void SpriteSheet::loadRenderTexture(SDL_Renderer* renderer, SDL_Renderer** outOldRenderer, SDL_Texture** outOldTexture) {
 	if (outOldRenderer != nullptr)
@@ -146,12 +151,12 @@ void SpriteSheet::renderSpriteSheetRegionAtScreenRegionRenderer(
 	SDL_Rect destination { (int)drawLeftX, (int)drawTopY, (int)(drawRightX - drawLeftX), (int)(drawBottomY - drawTopY) };
 	SDL_RenderCopy(activeRenderer, activeRenderTexture, &source, &destination);
 }
-void SpriteSheet::renderSpriteAtScreenPosition(
+void SpriteSheet::renderSpriteAtScreenPositionOpenGL(
 	int spriteHorizontalIndex, int spriteVerticalIndex, GLint drawLeftX, GLint drawTopY)
 {
 	int spriteLeftX = spriteHorizontalIndex * spriteWidth;
 	int spriteTopY = spriteVerticalIndex * spriteHeight;
-	(this->*renderSpriteSheetRegionAtScreenRegion)(
+	renderSpriteSheetRegionAtScreenRegionOpenGL(
 		spriteLeftX,
 		spriteTopY,
 		spriteLeftX + spriteWidth,
@@ -161,10 +166,17 @@ void SpriteSheet::renderSpriteAtScreenPosition(
 		drawLeftX + (GLint)spriteWidth,
 		drawTopY + (GLint)spriteHeight);
 }
+void SpriteSheet::renderSpriteAtScreenPositionRenderer(
+	int spriteHorizontalIndex, int spriteVerticalIndex, GLint drawLeftX, GLint drawTopY)
+{
+	SDL_Rect source { spriteHorizontalIndex * spriteWidth, spriteVerticalIndex * spriteHeight, spriteWidth, spriteHeight };
+	SDL_Rect destination { (int)drawLeftX, (int)drawTopY, spriteWidth, spriteHeight };
+	SDL_RenderCopy(activeRenderer, activeRenderTexture, &source, &destination);
+}
 void SpriteSheet::renderSpriteCenteredAtScreenPosition(
 	int spriteHorizontalIndex, int spriteVerticalIndex, float drawCenterX, float drawCenterY)
 {
-	renderSpriteAtScreenPosition(
+	(this->*renderSpriteAtScreenPosition)(
 		spriteHorizontalIndex, spriteVerticalIndex, (GLint)(drawCenterX - centerAnchorX), (GLint)(drawCenterY - centerAnchorY));
 }
 void SpriteSheet::renderFilledRectangle(

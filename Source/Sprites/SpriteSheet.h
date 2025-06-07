@@ -78,7 +78,14 @@ public:
 		GLint drawRightX,
 		GLint drawBottomY);
 	//draw the specified sprite image with its top-left corner at the specified coordinate
-	void renderSpriteAtScreenPosition(int spriteHorizontalIndex, int spriteVerticalIndex, GLint drawLeftX, GLint drawTopY);
+	static void (SpriteSheet::* renderSpriteAtScreenPosition)(
+		int spriteHorizontalIndex, int spriteVerticalIndex, GLint drawLeftX, GLint drawTopY);
+	//draw the specified sprite image to the screen with its top-left corner at the specified coordinate
+	void renderSpriteAtScreenPositionOpenGL(
+		int spriteHorizontalIndex, int spriteVerticalIndex, GLint drawLeftX, GLint drawTopY);
+	//draw the specified sprite image to the renderer with its top-left corner at the specified coordinate
+	void renderSpriteAtScreenPositionRenderer(
+		int spriteHorizontalIndex, int spriteVerticalIndex, GLint drawLeftX, GLint drawTopY);
 	//draw the specified sprite image with its center at the specified coordinate
 	void renderSpriteCenteredAtScreenPosition(
 		int spriteHorizontalIndex, int spriteVerticalIndex, float drawCenterX, float drawCenterY);
