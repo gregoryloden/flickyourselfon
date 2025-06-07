@@ -41,6 +41,10 @@ public:
 	static void renderWithOpenGL();
 	//render using SDL_Renderer/SDL_Texture rendering functions
 	static void renderWithRenderer();
+	//load a render texture for the given renderer, writing the old renderer and texture to the given out parameters
+	void loadRenderTexture(SDL_Renderer* renderer, SDL_Renderer** outOldRenderer, SDL_Texture** outOldTexture);
+	//destroy the texture on this SpriteSheet and restore it with the given texture and renderer
+	void unloadRenderTexture(SDL_Renderer* renderer, SDL_Texture* texture);
 	//load a texture with this SpriteSheet's surface, use it for rendering, and then delete it
 	void withRenderTexture(SDL_Renderer* renderer, function<void()> renderWithTexture);
 	//draw the specified region of the sprite sheet

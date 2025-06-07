@@ -84,13 +84,25 @@ void SpriteSheet::renderWithOpenGL() {
 void SpriteSheet::renderWithRenderer() {
 	renderSpriteSheetRegionAtScreenRegion = &renderSpriteSheetRegionAtScreenRegionRenderer;
 }
-void SpriteSheet::withRenderTexture(SDL_Renderer* renderer, function<void()> renderWithTexture) {
+void SpriteSheet::loadRenderTexture(SDL_Renderer* renderer, SDL_Renderer** outOldRenderer, SDL_Texture** outOldTexture) {
+	if (outOldRenderer != nullptr)
+		*outOldRenderer = activeRenderer;
+	if (outOldTexture != nullptr)
+		*outOldTexture = activeRenderTexture;
 	activeRenderer = renderer;
 	activeRenderTexture = SDL_CreateTextureFromSurface(renderer, renderSurface);
-	renderWithTexture();
+}
+void SpriteSheet::unloadRenderTexture(SDL_Renderer* renderer, SDL_Texture* texture) {
 	SDL_DestroyTexture(activeRenderTexture);
-	activeRenderTexture = nullptr;
-	activeRenderer = nullptr;
+	activeRenderer = renderer;
+	activeRenderTexture = texture;
+}
+void SpriteSheet::withRenderTexture(SDL_Renderer* renderer, function<void()> renderWithTexture) {
+	SDL_Renderer* oldRenderer;
+	SDL_Texture* oldTexture;
+	loadRenderTexture(renderer, &oldRenderer, &oldTexture);
+	renderWithTexture();
+	unloadRenderTexture(oldRenderer, oldTexture);
 }
 void SpriteSheet::renderSpriteSheetRegionAtScreenRegionOpenGL(
 	int spriteLeftX,
