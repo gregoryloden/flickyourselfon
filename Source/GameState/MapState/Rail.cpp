@@ -310,7 +310,6 @@ void Rail::getHintRenderBounds(int* outLeftWorldX, int* outTopWorldY, int* outRi
 void Rail::renderShadow(int screenLeftWorldX, int screenTopWorldY) {
 	if (Editor::isActive && editorIsDeleted)
 		return;
-	glEnable(GL_BLEND);
 
 	int lastSegmentIndex = (int)segments->size() - 1;
 	for (int i = 1; i < lastSegmentIndex; i++) {
@@ -335,7 +334,6 @@ void Rail::renderGroups(int screenLeftWorldX, int screenTopWorldY) {
 	}
 }
 void Rail::renderHint(int screenLeftWorldX, int screenTopWorldY, float alpha) {
-	glEnable(GL_BLEND);
 	glColor4f(1.0f, 1.0f, 1.0f, alpha);
 	for (Segment& segment : *segments) {
 		GLint leftX = (GLint)(segment.x * MapState::tileSize - screenLeftWorldX);

@@ -696,7 +696,6 @@ void LevelTypes::Plane::getHintRenderBounds(int* outLeftWorldX, int* outTopWorld
 	*outBottomWorldY = renderBottomTileY * MapState::tileSize;
 }
 void LevelTypes::Plane::renderHint(int screenLeftWorldX, int screenTopWorldY, float alpha) {
-	glEnable(GL_BLEND);
 	glColor4f(1.0f, 1.0f, 1.0f, alpha);
 	for (Tile& tile : tiles) {
 		GLint leftX = (GLint)(tile.x * MapState::tileSize - screenLeftWorldX);
@@ -708,7 +707,6 @@ void LevelTypes::Plane::renderHint(int screenLeftWorldX, int screenTopWorldY, fl
 }
 #ifdef RENDER_PLANE_IDS
 	void LevelTypes::Plane::renderId(int screenLeftWorldX, int screenTopWorldY)  {
-		glEnable(GL_BLEND);
 		string id = to_string(indexInOwningLevel);
 		Text::Metrics metrics = Text::getMetrics(id.c_str(), 1.0f);
 		Tile& tile = tiles.front();

@@ -1570,7 +1570,6 @@ void PlayerState::render(EntityState* camera, int ticksTime) {
 
 	float renderCenterX = getRenderCenterScreenX(camera,  ticksTime);
 	float renderCenterY = getRenderCenterScreenY(camera,  ticksTime);
-	glEnable(GL_BLEND);
 	if (spriteAnimation != nullptr)
 		spriteAnimation->renderUsingCenter(
 			renderCenterX, renderCenterY, ticksTime - spriteAnimationStartTicksTime, 0, (int)spriteDirection);

@@ -214,11 +214,5 @@ void SpriteSheet::renderRectangleOutline(
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 }
 void SpriteSheet::setRectangleColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha) {
-	if (alpha >= 1.0f) {
-		glDisable(GL_BLEND);
-		glColor3f(red, green, blue);
-	} else {
-		glEnable(GL_BLEND);
-		glColor4f(red, green, blue, alpha);
-	}
+	glColor4f(red, green, blue, alpha);
 }

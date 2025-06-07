@@ -218,6 +218,7 @@ void renderLoop(CircularStateQueue<GameState>* gameStateQueue) {
 	glContext = SDL_GL_CreateContext(window);
 	SDL_GL_SetSwapInterval(1);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glEnable(GL_BLEND);
 	glOrtho(0, (GLdouble)Config::windowScreenWidth, (GLdouble)Config::windowScreenHeight, 0, -1, 1);
 
 	//load all the sprites now that our context has been created

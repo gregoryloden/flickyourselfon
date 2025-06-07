@@ -242,7 +242,6 @@ Editor::TileButton::TileButton(objCounterParametersComma() Zone zone, int zoneLe
 }
 Editor::TileButton::~TileButton() {}
 void Editor::TileButton::renderOverButton() {
-	glDisable(GL_BLEND);
 	(SpriteRegistry::tiles->*SpriteSheet::renderSpriteAtScreenPosition)((int)tile, 0, (GLint)leftX + 1, (GLint)topY + 1);
 }
 void Editor::TileButton::onClick() {
@@ -360,7 +359,6 @@ Editor::NoiseTileButton::NoiseTileButton(objCounterParametersComma() Zone zone, 
 Editor::NoiseTileButton::~NoiseTileButton() {}
 void Editor::NoiseTileButton::renderOverButton() {
 	if (tile >= 0) {
-		glDisable(GL_BLEND);
 		(SpriteRegistry::tiles->*SpriteSheet::renderSpriteAtScreenPosition)((int)tile, 0, (GLint)leftX + 1, (GLint)topY + 1);
 		int drawCount = count;
 		for (int i = 0; i < MapState::tileSize; i++) {
@@ -560,7 +558,6 @@ Editor::SwitchButton::SwitchButton(objCounterParametersComma() Zone zone, int zo
 Editor::SwitchButton::~SwitchButton() {}
 void Editor::SwitchButton::renderOverButton() {
 	renderRGBRect(blackRGB, 1.0f, leftX + 1, topY + 1, rightX - 1, bottomY - 1);
-	glEnable(GL_BLEND);
 	(SpriteRegistry::switches->*SpriteSheet::renderSpriteAtScreenPosition)(
 		(int)(color * 2 + 1), 0, (GLint)leftX + 1, (GLint)topY + 1);
 }
@@ -598,7 +595,6 @@ void Editor::RailButton::renderOverButton() {
 		(GLint)topY + 1,
 		(GLint)rightX - 1,
 		(GLint)bottomY - 1);
-	glEnable(GL_BLEND);
 	(SpriteRegistry::rails->*SpriteSheet::renderSpriteAtScreenPosition)(0, 0, (GLint)leftX + 1, (GLint)topY + 1);
 }
 void Editor::RailButton::paintMap(int x, int y) {
@@ -621,7 +617,6 @@ Editor::RailMovementMagnitudeButton::RailMovementMagnitudeButton(
 Editor::RailMovementMagnitudeButton::~RailMovementMagnitudeButton() {}
 void Editor::RailMovementMagnitudeButton::renderOverButton() {
 	renderRGBRect(blackRGB, 1.0f, leftX + 1, topY + 1, rightX - 1, bottomY - 1);
-	glEnable(GL_BLEND);
 	(SpriteRegistry::rails->*SpriteSheet::renderSpriteAtScreenPosition)(0, 0, (GLint)leftX + 1, (GLint)topY + 1);
 	for (int i = 1; i <= 2; i++) {
 		int arrowAntiWidth = magnitudeAdd < 0 ? i + 1 : 4 - i;
@@ -663,7 +658,6 @@ Editor::RailTileOffsetButton::RailTileOffsetButton(
 Editor::RailTileOffsetButton::~RailTileOffsetButton() {}
 void Editor::RailTileOffsetButton::renderOverButton() {
 	renderRGBRect(blackRGB, 1.0f, leftX + 1, topY + 1, rightX - 1, bottomY - 1);
-	glEnable(GL_BLEND);
 	(SpriteRegistry::rails->*SpriteSheet::renderSpriteAtScreenPosition)(1, 0, (GLint)leftX + 1, (GLint)topY + 1);
 	int arrowTopY1 = tileOffset < 0 ? topY + 1 : bottomY - 2;
 	int arrowTopY2 = tileOffset < 0 ? topY + 2 : bottomY - 3;
@@ -682,7 +676,6 @@ Editor::ResetSwitchButton::ResetSwitchButton(objCounterParametersComma() Zone zo
 Editor::ResetSwitchButton::~ResetSwitchButton() {}
 void Editor::ResetSwitchButton::renderOverButton() {
 	renderRGBRect(blackRGB, 1.0f, leftX + 1, topY + 1, rightX - 1, bottomY - 1);
-	glEnable(GL_BLEND);
 	(SpriteRegistry::resetSwitch->*SpriteSheet::renderSpriteAtScreenPosition)(0, 0, (GLint)leftX + 1, (GLint)topY + 1);
 }
 void Editor::ResetSwitchButton::paintMap(int x, int y) {

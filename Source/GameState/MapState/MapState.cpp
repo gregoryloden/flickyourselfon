@@ -1169,6 +1169,7 @@ void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int 
 		railState->renderAbovePlayer(screenLeftWorldX, screenTopWorldY);
 
 	if (showConnections) {
+		glDisable(GL_BLEND);
 		//show movement directions and groups above the player for all rails
 		for (RailState* railState : renderRailStates) {
 			Rail* rail = railState->getRail();
@@ -1183,10 +1184,10 @@ void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int 
 		}
 		for (ResetSwitch* resetSwitch : resetSwitches)
 			resetSwitch->renderGroups(screenLeftWorldX, screenTopWorldY);
+		glEnable(GL_BLEND);
 	}
 
 	//draw particles above the player
-	glEnable(GL_BLEND);
 	for (ReferenceCounterHolder<Particle>& particle : particles) {
 		if (particle.get()->getIsAbovePlayer())
 			particle.get()->render(camera, ticksTime);
@@ -1282,6 +1283,7 @@ bool MapState::renderGroupsForRailsToReset(EntityState* camera, short resetSwitc
 	int screenTopWorldY = getScreenTopWorldY(camera, ticksTime);
 	ResetSwitch* resetSwitch = resetSwitches[resetSwitchId & railSwitchIndexBitmask];
 	bool hasRailsToReset = false;
+	glDisable(GL_BLEND);
 	for (short railId : *resetSwitch->getAffectedRailIds()) {
 		RailState* railState = railStates[railId & railSwitchIndexBitmask];
 		if (railState->isInDefaultState())
@@ -1292,6 +1294,7 @@ bool MapState::renderGroupsForRailsToReset(EntityState* camera, short resetSwitc
 	}
 	if (hasRailsToReset)
 		resetSwitch->renderGroups(screenLeftWorldX, screenTopWorldY);
+	glEnable(GL_BLEND);
 	return hasRailsToReset;
 }
 void MapState::renderGroupsForRailsFromSwitch(EntityState* camera, short switchId, int ticksTime) {
@@ -1304,6 +1307,7 @@ void MapState::renderGroupsForRailsFromSwitch(EntityState* camera, short switchI
 		return;
 	int screenLeftWorldX = getScreenLeftWorldX(camera, ticksTime);
 	int screenTopWorldY = getScreenTopWorldY(camera, ticksTime);
+	glDisable(GL_BLEND);
 	for (RailState* railState : renderRailStates) {
 		Rail* rail = railState->getRail();
 		if (rail->getColor() != color)
@@ -1317,6 +1321,7 @@ void MapState::renderGroupsForRailsFromSwitch(EntityState* camera, short switchI
 		}
 	}
 	switch0->renderGroup(screenLeftWorldX, screenTopWorldY);
+	glEnable(GL_BLEND);
 }
 void MapState::renderGroupsForSwitchesFromRail(EntityState* camera, short railId, int ticksTime) {
 	if (!Config::railKickIndicator.isOn())
@@ -1327,6 +1332,7 @@ void MapState::renderGroupsForSwitchesFromRail(EntityState* camera, short railId
 		return;
 	int screenLeftWorldX = getScreenLeftWorldX(camera, ticksTime);
 	int screenTopWorldY = getScreenTopWorldY(camera, ticksTime);
+	glDisable(GL_BLEND);
 	for (char group : rail->getGroups()) {
 		for (Switch* switch0 : switches) {
 			if (switch0->getGroup() != group)
@@ -1336,6 +1342,7 @@ void MapState::renderGroupsForSwitchesFromRail(EntityState* camera, short railId
 		}
 	}
 	rail->renderGroups(screenLeftWorldX, screenTopWorldY);
+	glEnable(GL_BLEND);
 }
 bool MapState::renderTutorials(bool showConnections) {
 	if (showConnections && !finishedConnectionsTutorial)

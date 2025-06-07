@@ -15,7 +15,6 @@ ResetSwitch::Segment::Segment(int pX, int pY, char pColor, char pGroup, int pSpr
 }
 ResetSwitch::Segment::~Segment() {}
 void ResetSwitch::Segment::render(int screenLeftWorldX, int screenTopWorldY) {
-	glEnable(GL_BLEND);
 	Rail::setSegmentColor(color, 1.0f, 1.0f);
 	GLint drawLeftX = (GLint)(x * MapState::tileSize - screenLeftWorldX);
 	GLint drawTopY = (GLint)(y * MapState::tileSize - screenTopWorldY);
@@ -89,7 +88,6 @@ void ResetSwitch::render(int screenLeftWorldX, int screenTopWorldY, bool isOn) {
 	if (Editor::isActive && editorIsDeleted)
 		return;
 
-	glEnable(GL_BLEND);
 	GLint drawLeftX = (GLint)(centerX * MapState::tileSize - screenLeftWorldX);
 	GLint drawTopY = (GLint)((bottomY - 1) * MapState::tileSize - screenTopWorldY);
 	(SpriteRegistry::resetSwitch->*SpriteSheet::renderSpriteAtScreenPosition)(isOn ? 1 : 0, 0, drawLeftX, drawTopY);
@@ -113,7 +111,6 @@ void ResetSwitch::renderGroups(int screenLeftWorldX, int screenTopWorldY) {
 		segment.renderGroup(screenLeftWorldX, screenTopWorldY);
 }
 void ResetSwitch::renderHint(int screenLeftWorldX, int screenTopWorldY, float alpha) {
-	glEnable(GL_BLEND);
 	glColor4f(1.0f, 1.0f, 1.0f, alpha);
 	GLint drawLeftX = (GLint)(centerX * MapState::tileSize - screenLeftWorldX);
 	GLint drawTopY = (GLint)((bottomY - 1) * MapState::tileSize - screenTopWorldY);

@@ -223,7 +223,6 @@ Text::Metrics Text::getKeyBackgroundMetrics(Metrics* textMetrics) {
 	return metrics;
 }
 void Text::render(const char* text, float leftX, float baselineY, float fontScale) {
-	glEnable(GL_BLEND);
 	int charIndex = 0;
 	while (text[charIndex] != 0) {
 		Glyph* glyph = getNextGlyph(text, &charIndex);
@@ -266,7 +265,6 @@ void Text::renderWithKeyBackgroundWithMetrics(
 	GLint bottomY = (GLint)(baselineY + keyBackgroundMetrics->belowBaseline);
 
 	//draw the left side
-	glEnable(GL_BLEND);
 	(keyBackground->*SpriteSheet::renderSpriteSheetRegionAtScreenRegion)(
 		0, 0, leftHalfSpriteWidth, keyBackground->getSpriteHeight(), (GLint)leftX, topY, drawLeftMiddleX, bottomY);
 	//draw the middle section
