@@ -154,9 +154,9 @@ public:
 	//the switch connected to this rail was kicked, move this rail accordingly
 	void triggerMovement(bool moveForward);
 	//render the rail behind the player by rendering each segment, and save which segments are above the player
-	void renderBelowPlayer(int screenLeftWorldX, int screenTopWorld, float playerWorldGroundY);
+	void renderBelowPlayer(int screenLeftWorldX, int screenTopWorldY, float playerWorldGroundY);
 	//render the rail in front of the player using the list of saved segments
-	void renderAbovePlayer(int screenLeftWorldX, int screenTopWorld);
+	void renderAbovePlayer(int screenLeftWorldX, int screenTopWorldY);
 	//set the segment color for this rail based on the raised/lowered state
 	void setSegmentColor();
 	//render the movement direction over the ends of the rail
