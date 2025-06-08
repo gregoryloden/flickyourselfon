@@ -71,7 +71,7 @@ ReferenceCounterHolder<ReferenceCountedObject>& ReferenceCounterHolder<Reference
 //////////////////////////////// ObjectPool ////////////////////////////////
 template <class PooledObject> vector<PooledObject*> ObjectPool<PooledObject>::pool;
 template <class PooledObject> PooledObject* ObjectPool<PooledObject>::newFromPool(objCounterParameters()) {
-	if (pool.size() > 0) {
+	if (!pool.empty()) {
 		PooledObject* p = pool.back();
 		pool.pop_back();
 		return p;

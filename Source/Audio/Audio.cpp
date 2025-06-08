@@ -163,12 +163,12 @@ void AudioTypes::Music::load() {
 	const char* nextNotes = notesString.c_str();
 	for (char c = *nextNotes; c != 0; c = *nextNotes) {
 		if (c == '-') {
-			if (notes.size() == 0 || notes.back().frequency != 0)
+			if (notes.empty() || notes.back().frequency != 0)
 				notes.push_back(Note(0, 1));
 			else
 				notes.back().beats++;
 		} else if (c == '_') {
-			if (notes.size() > 0)
+			if (!notes.empty())
 				notes.back().beats++;
 		} else if (c >= 'A' && c <= 'G') {
 			char noteIndex = c - 'A';
