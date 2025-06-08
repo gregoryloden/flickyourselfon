@@ -97,7 +97,7 @@ void ResetSwitch::render(int screenLeftWorldX, int screenTopWorldY, bool isOn) {
 		segment.render(screenLeftWorldX, screenTopWorldY);
 	for (Segment& segment : rightSegments)
 		segment.render(screenLeftWorldX, screenTopWorldY);
-	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+	(SpriteRegistry::rails->*SpriteSheet::setSpriteColor)(1.0f, 1.0f, 1.0f, 1.0f);
 }
 void ResetSwitch::renderGroups(int screenLeftWorldX, int screenTopWorldY) {
 	if (Editor::isActive && editorIsDeleted)

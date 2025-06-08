@@ -62,11 +62,11 @@ void KickAction::render(float centerX, float bottomY, bool hasRailsToReset) {
 			if (!Config::resetSwitchKickIndicator.isOn())
 				return;
 			if (!hasRailsToReset)
-				glColor4f(1.0f, 1.0f, 1.0f, 0.5f);
+				Text::setRenderColor(1.0f, 1.0f, 1.0f, 0.5f);
 			static constexpr char* resetText = "Reset";
 			Text::render(resetText, centerX - Text::getMetrics(resetText, 1.0f).charactersWidth * 0.5f, bottomY - 2.0f, 1.0f);
 			if (!hasRailsToReset) {
-				glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+				Text::setRenderColor(1.0f, 1.0f, 1.0f, 1.0f);
 				static constexpr char* xText = u8"❌";
 				Text::render(xText, centerX - Text::getMetrics(xText, 1.0f).charactersWidth * 0.5f, bottomY - 2.0f, 1.0f);
 			}

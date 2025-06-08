@@ -103,7 +103,7 @@ void PauseState::PauseMenu::render(int selectedOption, KeyBindingOption* selecti
 		PauseOption* option = options[i];
 		if (option->enabled != wasEnabled) {
 			wasEnabled = option->enabled;
-			glColor4f(1.0f, 1.0f, 1.0f, wasEnabled ? 1.0f : 0.5f);
+			Text::setRenderColor(1.0f, 1.0f, 1.0f, wasEnabled ? 1.0f : 0.5f);
 		}
 
 		Text::Metrics& optionMetrics = optionsMetrics[i];
@@ -131,6 +131,7 @@ void PauseState::PauseMenu::render(int selectedOption, KeyBindingOption* selecti
 
 		lastMetrics = &optionMetrics;
 	}
+	Text::setRenderColor(1.0f, 1.0f, 1.0f, 1.0f);
 }
 
 //////////////////////////////// PauseState::LevelSelectMenu ////////////////////////////////

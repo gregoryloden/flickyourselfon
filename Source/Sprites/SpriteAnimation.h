@@ -37,6 +37,7 @@ public:
 	virtual ~SpriteAnimation();
 
 	int getTotalTicksDuration() { return totalTicksDuration; }
+	SpriteSheet* getSprite() { return sprite; }
 	void disableLooping() { loopAnimation = false; }
 private:
 	//binary search for the referenced frame

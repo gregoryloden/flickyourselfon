@@ -67,11 +67,11 @@ void Switch::render(
 			darkSpriteHorizontalIndex, 0, drawLeftX, drawTopY);
 		float fadeInAlpha =
 			MathUtils::fsqr((float)lastActivatedSwitchColorFadeInTicksOffset / (float)MapState::switchesFadeInDuration);
-		glColor4f(1.0f, 1.0f, 1.0f, fadeInAlpha);
+		(SpriteRegistry::switches->*SpriteSheet::setSpriteColor)(1.0f, 1.0f, 1.0f, fadeInAlpha);
 		int lightSpriteLeftX = (darkSpriteHorizontalIndex - 1) * 12 + 1;
 		(SpriteRegistry::switches->*SpriteSheet::renderSpriteSheetRegionAtScreenRegion)(
 			lightSpriteLeftX, 1, lightSpriteLeftX + 10, 11, drawLeftX + 1, drawTopY + 1, drawLeftX + 11, drawTopY + 11);
-		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+		(SpriteRegistry::switches->*SpriteSheet::setSpriteColor)(1.0f, 1.0f, 1.0f, 1.0f);
 	}
 }
 void Switch::renderGroup(int screenLeftWorldX, int screenTopWorldY) {

@@ -140,7 +140,7 @@ void Rail::setSegmentColor(char railColor, float saturation, float alpha) {
 	}
 	static constexpr float desaturatedColorIntensity = 10.0f / 16.0f;
 	float desaturatedAdd = (1.0f - saturation) * desaturatedColorIntensity;
-	glColor4f(
+	(SpriteRegistry::rails->*SpriteSheet::setSpriteColor)(
 		redColor * saturation + desaturatedAdd,
 		greenColor * saturation + desaturatedAdd,
 		blueColor * saturation + desaturatedAdd,
@@ -600,7 +600,7 @@ void RailState::renderBelowPlayer(int screenLeftWorldX, int screenTopWorldY, flo
 	Rail::setSegmentColor(rail->getColor(), 1.0f, canRide() ? 1.0f : nearlyRaisedAlphaIntensity);
 	rail->getSegment(0)->render(screenLeftWorldX, screenTopWorldY, 0.0f, baseHeight);
 	rail->getSegment(lastSegmentIndex)->render(screenLeftWorldX, screenTopWorldY, 0.0f, baseHeight);
-	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+	(SpriteRegistry::rails->*SpriteSheet::setSpriteColor)(1.0f, 1.0f, 1.0f, 1.0f);
 }
 void RailState::renderAbovePlayer(int screenLeftWorldX, int screenTopWorldY) {
 	if (Editor::isActive && rail->editorIsDeleted)
@@ -611,7 +611,7 @@ void RailState::renderAbovePlayer(int screenLeftWorldX, int screenTopWorldY) {
 	for (Rail::Segment* segment : segmentsAbovePlayer)
 		segment->render(screenLeftWorldX, screenTopWorldY, tileOffset, baseHeight);
 	segmentsAbovePlayer.clear();
-	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+	(SpriteRegistry::rails->*SpriteSheet::setSpriteColor)(1.0f, 1.0f, 1.0f, 1.0f);
 }
 void RailState::setSegmentColor() {
 	static constexpr float loweredAlphaIntensity = 0.5f;

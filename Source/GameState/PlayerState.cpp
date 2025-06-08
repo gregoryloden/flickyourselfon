@@ -1562,10 +1562,10 @@ void PlayerState::render(EntityState* camera, int ticksTime) {
 		float ghostRenderCenterY = getRenderCenterScreenYFromWorldY(
 			ghostSpriteY.get()->getValue(ticksTime - ghostSpriteStartTicksTime), camera, ticksTime);
 
-		glColor4f(1.0f, 1.0f, 1.0f, 0.5f);
+		(SpriteRegistry::player->*SpriteSheet::setSpriteColor)(1.0f, 1.0f, 1.0f, 0.5f);
 		SpriteRegistry::player->renderSpriteCenteredAtScreenPosition(
 			hasBoot ? 4 : 0, (int)ghostSpriteDirection, ghostRenderCenterX, ghostRenderCenterY);
-		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+		(SpriteRegistry::player->*SpriteSheet::setSpriteColor)(1.0f, 1.0f, 1.0f, 1.0f);
 	}
 
 	float renderCenterX = getRenderCenterScreenX(camera,  ticksTime);
@@ -1614,10 +1614,10 @@ bool PlayerState::renderTutorials() {
 		MapState::renderControlsTutorial("Undo/Redo: ", { Config::undoKeyBinding.value, Config::redoKeyBinding.value });
 	//not exactly a tutorial, but it goes where tutorials are rendered and replaces any other tutorial that would render
 	else if (hint->type == Hint::Type::UndoReset) {
-		glColor4f(1.0f, 1.0f, 1.0f, 0.75f);
+		Text::setRenderColor(1.0f, 1.0f, 1.0f, 0.75f);
 		float afterUndoX = MapState::renderControlsTutorial("(solution blocked; Undo ", { Config::undoKeyBinding.value });
 		Text::render(" / Reset)", afterUndoX, MapState::tutorialBaselineY, 1.0f);
-		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+		Text::setRenderColor(1.0f, 1.0f, 1.0f, 1.0f);
 	} else
 		return false;
 	return true;

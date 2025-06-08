@@ -94,5 +94,7 @@ public:
 		const char* text, float leftX, float baselineY, Metrics* textMetrics, Metrics* keyBackgroundMetrics);
 	//render lines of text vertically and horizontally centered
 	static void renderLines(vector<string>& lines, vector<Metrics>& linesMetrics);
+	//set the color to use for the font and the key background
+	static void setRenderColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
 };
 #endif

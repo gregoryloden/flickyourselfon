@@ -465,19 +465,19 @@ void GameState::renderTextDisplay(int gameTicksTime) {
 		renderTextDisplay(gameTicksTime);
 		return;
 	}
-	glColor4f(1.0f, 1.0f, 1.0f, textDisplayAlpha);
+	Text::setRenderColor(1.0f, 1.0f, 1.0f, textDisplayAlpha);
 	Text::renderLines(textDisplayStrings, textDisplayMetrics);
-	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+	Text::setRenderColor(1.0f, 1.0f, 1.0f, 1.0f);
 }
 void GameState::renderSaveIcon(int gameTicksTime) {
 	static constexpr int saveIconEdgeSpacing = 10;
 	static constexpr float saveIconMaxAlpha = 7.0f / 8.0f;
 	float baseAlpha = 1.0f - MathUtils::fsqr((float)(gameTicksTime - lastSaveTicksTime) / saveIconShowDuration);
-	glColor4f(1.0f, 1.0f, 1.0f, saveIconMaxAlpha * baseAlpha);
 	GLint drawLeftX = Config::gameScreenWidth - SpriteRegistry::save->getSpriteWidth() - saveIconEdgeSpacing;
 	GLint drawTopY = Config::gameScreenHeight - SpriteRegistry::save->getSpriteHeight() - saveIconEdgeSpacing;
+	(SpriteRegistry::save->*SpriteSheet::setSpriteColor)(1.0f, 1.0f, 1.0f, saveIconMaxAlpha * baseAlpha);
 	(SpriteRegistry::save->*SpriteSheet::renderSpriteAtScreenPosition)(0, 0, drawLeftX, drawTopY);
-	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+	(SpriteRegistry::save->*SpriteSheet::setSpriteColor)(1.0f, 1.0f, 1.0f, 1.0f);
 }
 void GameState::saveState(int gameTicksTime) {
 	ofstream file;

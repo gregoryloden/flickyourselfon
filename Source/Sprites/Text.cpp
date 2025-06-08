@@ -310,3 +310,7 @@ void Text::renderLines(vector<string>& lines, vector<Metrics>& linesMetrics) {
 		lastMetrics = metrics;
 	}
 }
+void Text::setRenderColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha) {
+	(font->*SpriteSheet::setSpriteColor)(red, green, blue, alpha);
+	(keyBackground->*SpriteSheet::setSpriteColor)(red, green, blue, alpha);
+}

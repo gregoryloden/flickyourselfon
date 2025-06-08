@@ -15,6 +15,8 @@ void (SpriteSheet::* SpriteSheet::renderSpriteSheetRegionAtScreenRegion)(
 void (SpriteSheet::* SpriteSheet::renderSpriteAtScreenPosition)(
 		int spriteHorizontalIndex, int spriteVerticalIndex, GLint drawLeftX, GLint drawTopY) =
 	&SpriteSheet::renderSpriteAtScreenPositionOpenGL;
+void (SpriteSheet::* SpriteSheet::setSpriteColor)(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha) =
+	&SpriteSheet::setSpriteColorOpenGL;
 SpriteSheet::SpriteSheet(
 	objCounterParametersComma()
 	SDL_Surface* imageSurface,
@@ -84,10 +86,12 @@ SpriteSheet* SpriteSheet::produce(
 void SpriteSheet::renderWithOpenGL() {
 	renderSpriteSheetRegionAtScreenRegion = &renderSpriteSheetRegionAtScreenRegionOpenGL;
 	renderSpriteAtScreenPosition = &renderSpriteAtScreenPositionOpenGL;
+	setSpriteColor = &SpriteSheet::setSpriteColorOpenGL;
 }
 void SpriteSheet::renderWithRenderer() {
 	renderSpriteSheetRegionAtScreenRegion = &renderSpriteSheetRegionAtScreenRegionRenderer;
 	renderSpriteAtScreenPosition = &renderSpriteAtScreenPositionRenderer;
+	setSpriteColor = &SpriteSheet::setSpriteColorRenderer;
 }
 void SpriteSheet::loadRenderTexture(SDL_Renderer* renderer, SDL_Renderer** outOldRenderer, SDL_Texture** outOldTexture) {
 	if (outOldRenderer != nullptr)
@@ -108,6 +112,13 @@ void SpriteSheet::withRenderTexture(SDL_Renderer* renderer, function<void()> ren
 	loadRenderTexture(renderer, &oldRenderer, &oldTexture);
 	renderWithTexture();
 	unloadRenderTexture(oldRenderer, oldTexture);
+}
+void SpriteSheet::setSpriteColorOpenGL(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha) {
+	glColor4f(red, green, blue, alpha);
+}
+void SpriteSheet::setSpriteColorRenderer(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha) {
+	SDL_SetTextureColorMod(activeRenderTexture, (Uint8)(red * 255), (Uint8)(green * 255), (Uint8)(blue * 255));
+	SDL_SetTextureAlphaMod(activeRenderTexture, (Uint8)(alpha * 255));
 }
 void SpriteSheet::renderSpriteSheetRegionAtScreenRegionOpenGL(
 	int spriteLeftX,

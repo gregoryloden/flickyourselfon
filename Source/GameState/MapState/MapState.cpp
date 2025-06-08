@@ -1111,11 +1111,11 @@ void MapState::renderBelowPlayer(EntityState* camera, float playerWorldGroundY, 
 
 	//draw the radio tower immediately after drawing and coloring the tiles
 	if (Editor::isActive)
-		glColor4f(1.0f, 1.0f, 1.0f, 2.0f / 3.0f);
+		(SpriteRegistry::radioTower->*SpriteSheet::setSpriteColor)(1.0f, 1.0f, 1.0f, 2.0f / 3.0f);
 	(SpriteRegistry::radioTower->*SpriteSheet::renderSpriteAtScreenPosition)(
 		0, 0, (GLint)(radioTowerLeftXOffset - screenLeftWorldX), (GLint)(radioTowerTopYOffset - screenTopWorldY));
 	if (Editor::isActive)
-		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+		(SpriteRegistry::radioTower->*SpriteSheet::setSpriteColor)(1.0f, 1.0f, 1.0f, 1.0f);
 
 	//draw hints below rails, if applicable
 	Hint::Type hintType = hintState.get()->getHintType();
@@ -1252,8 +1252,8 @@ void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int 
 			railBaseTopY
 				+ (GLint)(waveformY(lastActivatedSwitchColor, fmodf(animationPeriodCycle + waveformAspectRatio, 1.0f))
 					* waveformHeight));
+		(SpriteRegistry::rails->*SpriteSheet::setSpriteColor)(1.0f, 1.0f, 1.0f, 1.0f);
 	}
-	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 
 	Hint::Type hintType = hintState.get()->getHintType();
 	if (hintType == Hint::Type::CalculatingHint || hintType == Hint::Type::SearchCanceledEarly)

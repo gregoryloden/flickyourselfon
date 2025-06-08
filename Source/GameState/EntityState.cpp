@@ -241,9 +241,10 @@ void Particle::render(EntityState* camera, int ticksTime) {
 	if (spriteAnimation == nullptr)
 		return;
 
-	glColor4f((GLfloat)r, (GLfloat)g, (GLfloat)b, 1.0f);
+	(spriteAnimation->getSprite()->*SpriteSheet::setSpriteColor)((GLfloat)r, (GLfloat)g, (GLfloat)b, 1.0f);
 	float renderCenterX = getRenderCenterScreenX(camera,  ticksTime);
 	float renderCenterY = getRenderCenterScreenY(camera,  ticksTime);
 	spriteAnimation->renderUsingCenter(
 		renderCenterX, renderCenterY, ticksTime - spriteAnimationStartTicksTime, 0, (int)spriteDirection);
+	(spriteAnimation->getSprite()->*SpriteSheet::setSpriteColor)(1.0f, 1.0f, 1.0f, 1.0f);
 }

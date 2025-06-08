@@ -47,6 +47,12 @@ public:
 	void unloadRenderTexture(SDL_Renderer* renderer, SDL_Texture* texture);
 	//load a texture with this SpriteSheet's surface, use it for rendering, and then delete it
 	void withRenderTexture(SDL_Renderer* renderer, function<void()> renderWithTexture);
+	//set a color to render with
+	static void (SpriteSheet::* setSpriteColor)(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
+	//set a color to render with using OpenGL
+	void setSpriteColorOpenGL(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
+	//set a color to render with using the renderer
+	void setSpriteColorRenderer(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
 	//draw the specified region of the sprite sheet
 	static void (SpriteSheet::* renderSpriteSheetRegionAtScreenRegion)(
 		int spriteLeftX,

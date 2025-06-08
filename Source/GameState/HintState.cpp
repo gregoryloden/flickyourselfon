@@ -6,6 +6,7 @@
 #include "GameState/MapState/ResetSwitch.h"
 #include "Sprites/SpriteRegistry.h"
 #include "Sprites/SpriteSheet.h"
+#include "Sprites/Text.h"
 #include "Util/Logger.h"
 
 #define newHintStatePotentialLevelState(priorStateAndDraftState, steps) \
@@ -215,9 +216,9 @@ void HintState::render(int screenLeftWorldX, int screenTopWorldY, int ticksTime)
 	float alpha = 0.5f - (progress + progress * progress) * 0.25f;
 	//if we couldn't find a hint, show a tutorial-area message
 	if (hint->type == Hint::Type::SearchCanceledEarly) {
-		glColor4f(1.0f, 1.0f, 1.0f, alpha * 2.0f);
+		Text::setRenderColor(1.0f, 1.0f, 1.0f, alpha * 2.0f);
 		MapState::renderControlsTutorial("(unable to calculate hint)", {});
-		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+		Text::setRenderColor(1.0f, 1.0f, 1.0f, 1.0f);
 		//text doesn't have an offscreen arrow
 		offscreenArrowAlpha = 0;
 		return;
@@ -294,8 +295,8 @@ void HintState::renderOffscreenArrow(int screenLeftWorldX, int screenTopWorldY) 
 			Config::gameScreenHeight - offscreenArrowMaxEdgeSpacing - SpriteRegistry::borderArrows->getSpriteHeight();
 		drawArrowTopY = (GLint)(MathUtils::max(offscreenArrowMaxEdgeSpacing, MathUtils::min(maxArrowTopY, baseArrowTopY)));
 	}
-	glColor4f(1.0f, 1.0f, 1.0f, offscreenArrowAlpha);
+	(SpriteRegistry::borderArrows->*SpriteSheet::setSpriteColor)(1.0f, 1.0f, 1.0f, offscreenArrowAlpha);
 	(SpriteRegistry::borderArrows->*SpriteSheet::renderSpriteAtScreenPosition)(
 		arrowSpriteHorizontalIndex, arrowSpriteVerticalIndex, drawArrowLeftX, drawArrowTopY);
-	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+	(SpriteRegistry::borderArrows->*SpriteSheet::setSpriteColor)(1.0f, 1.0f, 1.0f, 1.0f);
 }
