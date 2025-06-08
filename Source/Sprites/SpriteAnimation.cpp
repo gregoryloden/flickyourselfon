@@ -27,6 +27,7 @@ sprite(pSprite)
 	totalTicksDuration = frameSearchPredecingTicksDuration;
 }
 SpriteAnimation::~SpriteAnimation() {
+	//don't delete the sprite, it's stored elsewhere
 	for (Frame* frame : frames)
 		delete frame;
 	delete[] frameSearchPredecingTicksDurations;
