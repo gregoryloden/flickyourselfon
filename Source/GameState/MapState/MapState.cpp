@@ -1816,13 +1816,17 @@ void MapState::editorRenderRailsAndSwitches(SDL_Renderer* mapRenderer) {
 		}
 	};
 	auto renderRails = [mapRenderer, &renderResetSwitches]() {
+		for (Rail* rail : rails)
+			rail->renderShadow(0, 0);
 		for (Rail* rail : rails) {
 			newInPlaceWithArgs(RailState, railState, rail);
-			rail->renderShadow(0, 0);
 			railState.renderBelowPlayer(0, 0, 0);
 			railState.renderAbovePlayer(0, 0);
+		}
+		for (Rail* rail : rails) {
 			if (rail->getGroups().empty())
 				continue;
+			newInPlaceWithArgs(RailState, railState, rail);
 			railState.renderMovementDirections(0, 0);
 			rail->renderGroups(0, 0);
 		}
