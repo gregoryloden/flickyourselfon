@@ -21,6 +21,8 @@ void ResetSwitch::Segment::render(int screenLeftWorldX, int screenTopWorldY) {
 	(SpriteRegistry::rails->*SpriteSheet::renderSpriteAtScreenPosition)(spriteHorizontalIndex, 0, drawLeftX, drawTopY);
 }
 void ResetSwitch::Segment::renderGroup(int screenLeftWorldX, int screenTopWorldY) {
+	if (group == 0)
+		return;
 	GLint drawLeftX = (GLint)(x * MapState::tileSize - screenLeftWorldX);
 	GLint drawTopY = (GLint)(y * MapState::tileSize - screenTopWorldY);
 	MapState::renderGroupRect(group, drawLeftX + 2, drawTopY + 2, drawLeftX + 4, drawTopY + 4);
