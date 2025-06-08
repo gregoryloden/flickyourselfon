@@ -627,6 +627,8 @@ void RailState::renderMovementDirections(int screenLeftWorldX, int screenTopWorl
 		return;
 
 	Rail::Segment* endSegments[] { rail->getSegment(0), rail->getSegment(rail->getSegmentCount() - 1) };
+	static constexpr GLfloat movementDirectionColor = 0.75f;
+	SpriteSheet::setRectangleColor(movementDirectionColor, movementDirectionColor, movementDirectionColor, 1.0f);
 	for (Rail::Segment* segment : endSegments) {
 		char movementMagnitude = rail->getMovementMagnitude();
 		GLint centerX = (GLint)(segment->x * MapState::tileSize - screenLeftWorldX + MapState::halfTileSize);
@@ -638,20 +640,12 @@ void RailState::renderMovementDirections(int screenLeftWorldX, int screenTopWorl
 		for (char i = 0; i < movementMagnitude; i++) {
 			GLint topY = baseTopY + i * arrowSize;
 			for (int j = 1; j <= arrowSize; j++) {
-				static constexpr GLfloat movementDirectionColor = 0.75f;
 				GLint arrowTopY = topY + (nextMovementDirection < 0 ? j - 1 : arrowSize - j);
-				SpriteSheet::renderFilledRectangle(
-					movementDirectionColor,
-					movementDirectionColor,
-					movementDirectionColor,
-					1.0f,
-					centerX - j,
-					arrowTopY,
-					centerX + j,
-					arrowTopY + 1);
+				SpriteSheet::renderPreColoredRectangle(centerX - j, arrowTopY, centerX + j, arrowTopY + 1);
 			}
 		}
 	}
+	SpriteSheet::setRectangleColor(1.0f, 1.0f, 1.0f, 1.0f);
 }
 bool RailState::loadState(char pTileOffset, char pNextMovementDirection, bool animateMovement) {
 	bool isDifferent = targetTileOffset != pTileOffset;

@@ -1045,6 +1045,7 @@ void MapState::renderBelowPlayer(EntityState* camera, float playerWorldGroundY, 
 	if (Editor::isActive) {
 		//darken tiles that don't match the selected height in the editor, if one is selected
 		char editorSelectedHeight = Editor::getSelectedHeight();
+		SpriteSheet::setRectangleColor(0.0f, 0.0f, 0.0f, 0.5f);
 		if (editorSelectedHeight != invalidHeight) {
 			for (int y = tileMinY; y < tileMaxY; y++) {
 				for (int x = tileMinX; x < tileMaxX; x++) {
@@ -1055,11 +1056,11 @@ void MapState::renderBelowPlayer(EntityState* camera, float playerWorldGroundY, 
 
 					GLint leftX = (GLint)(x * tileSize - screenLeftWorldX);
 					GLint topY = (GLint)(y * tileSize - screenTopWorldY);
-					SpriteSheet::renderFilledRectangle(
-						0.0f, 0.0f, 0.0f, 0.5f, leftX, topY, leftX + (GLint)tileSize, topY + (GLint)tileSize);
+					SpriteSheet::renderPreColoredRectangle(leftX, topY, leftX + (GLint)tileSize, topY + (GLint)tileSize);
 				}
 			}
 		}
+		SpriteSheet::setRectangleColor(1.0f, 1.0f, 1.0f, 1.0f);
 
 		//stop here if we only render tiles
 		if (editorHideNonTiles)
