@@ -411,5 +411,7 @@ public:
 	static char editorGetRailSwitchFloorSaveData(int x, int y);
 	//render tiles to the map image
 	static void editorRenderTiles(SDL_Renderer* mapRenderer);
+	//render rails, switches, and reset switches to the map image
+	static void editorRenderRailsAndSwitches(SDL_Renderer* mapRenderer);
 };
 #endif

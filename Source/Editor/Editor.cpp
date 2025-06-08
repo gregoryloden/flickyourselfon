@@ -226,6 +226,10 @@ void Editor::ExportMapButton::onClick() {
 	MapState::editorRenderTiles(mapRenderer);
 	FileUtils::saveImage(mapSurface, "maptiles.png");
 
+	//write it with tiles and other things
+	MapState::editorRenderRailsAndSwitches(mapRenderer);
+	FileUtils::saveImage(mapSurface, "mapfull.png");
+
 	//cleanup
 	SDL_DestroyRenderer(mapRenderer);
 	SDL_FreeSurface(mapSurface);
