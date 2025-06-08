@@ -1805,42 +1805,38 @@ void MapState::editorRenderTiles(SDL_Renderer* mapRenderer) {
 		});
 }
 void MapState::editorRenderRailsAndSwitches(SDL_Renderer* mapRenderer) {
-	SpriteRegistry::radioTower->withRenderTexture(
-		mapRenderer,
-		[]() {
-			(SpriteRegistry::radioTower->*SpriteSheet::renderSpriteAtScreenPosition)(
-				0, 0, (GLint)radioTowerLeftXOffset, (GLint)radioTowerTopYOffset);
-		});
-	SpriteRegistry::rails->withRenderTexture(
-		mapRenderer,
-		[mapRenderer]() {
-			for (Rail* rail : rails) {
-				newInPlaceWithArgs(RailState, railState, rail);
-				rail->renderShadow(0, 0);
-				railState.renderBelowPlayer(0, 0, 0);
-				railState.renderAbovePlayer(0, 0);
-				if (rail->getGroups().empty())
-					continue;
-				railState.renderMovementDirections(0, 0);
-				rail->renderGroups(0, 0);
-			}
-			SpriteRegistry::resetSwitch->withRenderTexture(
-				mapRenderer,
-				[]() {
-					for (ResetSwitch* resetSwitch : resetSwitches) {
-						resetSwitch->render(0, 0, false);
-						resetSwitch->renderGroups(0, 0);
-					}
-				});
-		});
-	SpriteRegistry::switches->withRenderTexture(
-		mapRenderer,
-		[]() {
-			for (Switch* switch0 : switches) {
-				if (switch0->getGroup() == 0)
-					continue;
-				switch0->render(0, 0, MapState::colorCount, 0, true);
-				switch0->renderGroup(0, 0);
-			}
-		});
+	auto renderRadioTower = []() {
+		(SpriteRegistry::radioTower->*SpriteSheet::renderSpriteAtScreenPosition)(
+			0, 0, (GLint)radioTowerLeftXOffset, (GLint)radioTowerTopYOffset);
+	};
+	auto renderResetSwitches = []() {
+		for (ResetSwitch* resetSwitch : resetSwitches) {
+			resetSwitch->render(0, 0, false);
+			resetSwitch->renderGroups(0, 0);
+		}
+	};
+	auto renderRails = [mapRenderer, &renderResetSwitches]() {
+		for (Rail* rail : rails) {
+			newInPlaceWithArgs(RailState, railState, rail);
+			rail->renderShadow(0, 0);
+			railState.renderBelowPlayer(0, 0, 0);
+			railState.renderAbovePlayer(0, 0);
+			if (rail->getGroups().empty())
+				continue;
+			railState.renderMovementDirections(0, 0);
+			rail->renderGroups(0, 0);
+		}
+		SpriteRegistry::resetSwitch->withRenderTexture(mapRenderer, renderResetSwitches);
+	};
+	auto renderSwitches = []() {
+		for (Switch* switch0 : switches) {
+			if (switch0->getGroup() == 0)
+				continue;
+			switch0->render(0, 0, MapState::colorCount, 0, true);
+			switch0->renderGroup(0, 0);
+		}
+	};
+	SpriteRegistry::radioTower->withRenderTexture(mapRenderer, renderRadioTower);
+	SpriteRegistry::rails->withRenderTexture(mapRenderer, renderRails);
+	SpriteRegistry::switches->withRenderTexture(mapRenderer, renderSwitches);
 }
