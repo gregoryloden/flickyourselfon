@@ -220,7 +220,8 @@ void Editor::ExportMapButton::onClick() {
 		0xFF,
 		0xFF000000);
 	SDL_Renderer* mapRenderer = SDL_CreateSoftwareRenderer(mapSurface);
-	SpriteSheet::renderWithRenderer();
+	SDL_SetRenderDrawBlendMode(mapRenderer, SDL_BLENDMODE_BLEND);
+	SpriteSheet::renderWithRenderer(mapRenderer);
 
 	//write it with just tiles
 	MapState::editorRenderTiles(mapRenderer);

@@ -696,14 +696,14 @@ void LevelTypes::Plane::getHintRenderBounds(int* outLeftWorldX, int* outTopWorld
 	*outBottomWorldY = renderBottomTileY * MapState::tileSize;
 }
 void LevelTypes::Plane::renderHint(int screenLeftWorldX, int screenTopWorldY, float alpha) {
-	glColor4f(1.0f, 1.0f, 1.0f, alpha);
+	SpriteSheet::setRectangleColor(1.0f, 1.0f, 1.0f, alpha);
 	for (Tile& tile : tiles) {
 		GLint leftX = (GLint)(tile.x * MapState::tileSize - screenLeftWorldX);
 		GLint topY = (GLint)(tile.y * MapState::tileSize - screenTopWorldY);
 		SpriteSheet::renderPreColoredRectangle(
 			leftX, topY, leftX + (GLint)MapState::tileSize, topY + (GLint)MapState::tileSize);
 	}
-	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+	SpriteSheet::setRectangleColor(1.0f, 1.0f, 1.0f, 1.0f);
 }
 #ifdef RENDER_PLANE_IDS
 	void LevelTypes::Plane::renderId(int screenLeftWorldX, int screenTopWorldY)  {

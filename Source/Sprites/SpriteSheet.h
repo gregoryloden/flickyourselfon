@@ -7,6 +7,8 @@
 
 class SpriteSheet onlyInDebug(: public ObjCounter) {
 private:
+	static SDL_Renderer* activeRectangleRenderer;
+
 	GLuint textureId;
 	SDL_Surface* renderSurface;
 	SDL_Renderer* activeRenderer;
@@ -40,7 +42,7 @@ public:
 	//render using OpenGL rendering functions
 	static void renderWithOpenGL();
 	//render using SDL_Renderer/SDL_Texture rendering functions
-	static void renderWithRenderer();
+	static void renderWithRenderer(SDL_Renderer* rectangleRenderer);
 	//load a render texture for the given renderer, writing the old renderer and texture to the given out parameters
 	void loadRenderTexture(SDL_Renderer* renderer, SDL_Renderer** outOldRenderer, SDL_Texture** outOldTexture);
 	//destroy the texture on this SpriteSheet and restore it with the given texture and renderer
@@ -95,15 +97,22 @@ public:
 	//draw the specified sprite image with its center at the specified coordinate
 	void renderSpriteCenteredAtScreenPosition(
 		int spriteHorizontalIndex, int spriteVerticalIndex, float drawCenterX, float drawCenterY);
+	//set the color for a rectangle
+	static void (* setRectangleColor)(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
+	//set the color for a rectangle to use with OpenGL
+	static void setRectangleColorOpenGL(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
+	//set the color for a rectangle to use with the renderer
+	static void setRectangleColorRenderer(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
 	//render a rectangle filled with the specified color at the specified region of the screen
 	static void renderFilledRectangle(
 		GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha, GLint leftX, GLint topY, GLint rightX, GLint bottomY);
-	//render a rectangle at the specified region of the screen with the current color
-	static void renderPreColoredRectangle(GLint leftX, GLint topY, GLint rightX, GLint bottomY);
+	//render a rectangle with the current color at the specified region
+	static void (* renderPreColoredRectangle)(GLint leftX, GLint topY, GLint rightX, GLint bottomY);
+	//render a rectangle with the current color at the specified region of the screen
+	static void renderPreColoredRectangleOpenGL(GLint leftX, GLint topY, GLint rightX, GLint bottomY);
+	//render a rectangle with the current color at the specified region in the renderer
+	static void renderPreColoredRectangleRenderer(GLint leftX, GLint topY, GLint rightX, GLint bottomY);
 	//render a rectangle outline using the specified color at the specified region of the screen
 	static void renderRectangleOutline(
 		GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha, GLint leftX, GLint topY, GLint rightX, GLint bottomY);
-private:
-	//set the color for a rectangle and enable blending as determined by the alpha
-	static void setRectangleColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
 };

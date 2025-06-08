@@ -1086,7 +1086,7 @@ void MapState::renderBelowPlayer(EntityState* camera, float playerWorldGroundY, 
 					continue;
 
 				if (mapHeight > playerZ)
-					glColor4f(
+					SpriteSheet::setRectangleColor(
 						1.0f,
 						1.0f,
 						1.0f,
@@ -1094,7 +1094,7 @@ void MapState::renderBelowPlayer(EntityState* camera, float playerWorldGroundY, 
 							? (mapHeight - playerZ) * nearHeightsMultiplier
 							: (mapHeight - playerZ - nearHeightsEnd) * farHeightsMultiplier + nearHeightsMaxAlpha);
 				else
-					glColor4f(
+					SpriteSheet::setRectangleColor(
 						0.0f,
 						0.0f,
 						0.0f,
@@ -1106,7 +1106,7 @@ void MapState::renderBelowPlayer(EntityState* camera, float playerWorldGroundY, 
 				SpriteSheet::renderPreColoredRectangle(leftX, topY, leftX + (GLint)tileSize, topY + (GLint)tileSize);
 			}
 		}
-		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+		SpriteSheet::setRectangleColor(1.0f, 1.0f, 1.0f, 1.0f);
 	}
 
 	//draw the radio tower immediately after drawing and coloring the tiles
@@ -1205,7 +1205,7 @@ void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int 
 			alpha *= (float)(ticksTime - waveformStartTicksTime) / (float)waveformStartEndBufferTicks;
 		else if (waveformEndTicksTime - ticksTime < waveformStartEndBufferTicks)
 			alpha *= (float)(waveformEndTicksTime - ticksTime) / (float)waveformStartEndBufferTicks;
-		glColor4f(radioWavesR, radioWavesG, radioWavesB, alpha);
+		SpriteSheet::setRectangleColor(radioWavesR, radioWavesG, radioWavesB, alpha);
 		float animationPeriodCycle =
 			(float)(ticksTime - waveformStartTicksTime)
 				/ (float)(waveformEndTicksTime - waveformStartTicksTime)
@@ -1235,6 +1235,7 @@ void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int 
 			lastPointTop = pointTop;
 			lastPointBottom = pointBottom;
 		}
+		SpriteSheet::setRectangleColor(1.0f, 1.0f, 1.0f, 1.0f);
 
 		//draw the edge rails
 		static constexpr int waveformRailSpacing = 1;
@@ -1812,13 +1813,25 @@ void MapState::editorRenderRailsAndSwitches(SDL_Renderer* mapRenderer) {
 		});
 	SpriteRegistry::rails->withRenderTexture(
 		mapRenderer,
-		[]() {
+		[mapRenderer]() {
 			for (Rail* rail : rails) {
 				newInPlaceWithArgs(RailState, railState, rail);
 				rail->renderShadow(0, 0);
 				railState.renderBelowPlayer(0, 0, 0);
 				railState.renderAbovePlayer(0, 0);
+				if (rail->getGroups().empty())
+					continue;
+				railState.renderMovementDirections(0, 0);
+				rail->renderGroups(0, 0);
 			}
+			SpriteRegistry::resetSwitch->withRenderTexture(
+				mapRenderer,
+				[]() {
+					for (ResetSwitch* resetSwitch : resetSwitches) {
+						resetSwitch->render(0, 0, false);
+						resetSwitch->renderGroups(0, 0);
+					}
+				});
 		});
 	SpriteRegistry::switches->withRenderTexture(
 		mapRenderer,
@@ -1827,13 +1840,7 @@ void MapState::editorRenderRailsAndSwitches(SDL_Renderer* mapRenderer) {
 				if (switch0->getGroup() == 0)
 					continue;
 				switch0->render(0, 0, MapState::colorCount, 0, true);
-			}
-		});
-	SpriteRegistry::resetSwitch->withRenderTexture(
-		mapRenderer,
-		[]() {
-			for (ResetSwitch* resetSwitch : resetSwitches) {
-				resetSwitch->render(0, 0, false);
+				switch0->renderGroup(0, 0);
 			}
 		});
 }

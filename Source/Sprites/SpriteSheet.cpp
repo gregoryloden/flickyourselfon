@@ -17,6 +17,11 @@ void (SpriteSheet::* SpriteSheet::renderSpriteAtScreenPosition)(
 	&SpriteSheet::renderSpriteAtScreenPositionOpenGL;
 void (SpriteSheet::* SpriteSheet::setSpriteColor)(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha) =
 	&SpriteSheet::setSpriteColorOpenGL;
+void (* SpriteSheet::setRectangleColor)(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha) =
+	&SpriteSheet::setRectangleColorOpenGL;
+void (* SpriteSheet::renderPreColoredRectangle)(GLint leftX, GLint topY, GLint rightX, GLint bottomY) =
+	&SpriteSheet::renderPreColoredRectangleOpenGL;
+SDL_Renderer* SpriteSheet::activeRectangleRenderer = nullptr;
 SpriteSheet::SpriteSheet(
 	objCounterParametersComma()
 	SDL_Surface* imageSurface,
@@ -87,11 +92,17 @@ void SpriteSheet::renderWithOpenGL() {
 	renderSpriteSheetRegionAtScreenRegion = &renderSpriteSheetRegionAtScreenRegionOpenGL;
 	renderSpriteAtScreenPosition = &renderSpriteAtScreenPositionOpenGL;
 	setSpriteColor = &SpriteSheet::setSpriteColorOpenGL;
+	setRectangleColor = &SpriteSheet::setRectangleColorOpenGL;
+	renderPreColoredRectangle = &SpriteSheet::renderPreColoredRectangleOpenGL;
+	activeRectangleRenderer = nullptr;
 }
-void SpriteSheet::renderWithRenderer() {
+void SpriteSheet::renderWithRenderer(SDL_Renderer* rectangleRenderer) {
+	activeRectangleRenderer = rectangleRenderer;
 	renderSpriteSheetRegionAtScreenRegion = &renderSpriteSheetRegionAtScreenRegionRenderer;
 	renderSpriteAtScreenPosition = &renderSpriteAtScreenPositionRenderer;
 	setSpriteColor = &SpriteSheet::setSpriteColorRenderer;
+	setRectangleColor = &SpriteSheet::setRectangleColorRenderer;
+	renderPreColoredRectangle = &SpriteSheet::renderPreColoredRectangleRenderer;
 }
 void SpriteSheet::loadRenderTexture(SDL_Renderer* renderer, SDL_Renderer** outOldRenderer, SDL_Texture** outOldTexture) {
 	if (outOldRenderer != nullptr)
@@ -190,6 +201,13 @@ void SpriteSheet::renderSpriteCenteredAtScreenPosition(
 	(this->*renderSpriteAtScreenPosition)(
 		spriteHorizontalIndex, spriteVerticalIndex, (GLint)(drawCenterX - centerAnchorX), (GLint)(drawCenterY - centerAnchorY));
 }
+void SpriteSheet::setRectangleColorOpenGL(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha) {
+	glColor4f(red, green, blue, alpha);
+}
+void SpriteSheet::setRectangleColorRenderer(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha) {
+	SDL_SetRenderDrawColor(
+		activeRectangleRenderer, (Uint8)(red * 255), (Uint8)(green * 255), (Uint8)(blue * 255), (Uint8)(alpha * 255));
+}
 void SpriteSheet::renderFilledRectangle(
 	GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha, GLint leftX, GLint topY, GLint rightX, GLint bottomY)
 {
@@ -197,13 +215,17 @@ void SpriteSheet::renderFilledRectangle(
 	renderPreColoredRectangle(leftX, topY, rightX, bottomY);
 	setRectangleColor(1.0f, 1.0f, 1.0f, 1.0f);
 }
-void SpriteSheet::renderPreColoredRectangle(GLint leftX, GLint topY, GLint rightX, GLint bottomY) {
+void SpriteSheet::renderPreColoredRectangleOpenGL(GLint leftX, GLint topY, GLint rightX, GLint bottomY) {
 	glBegin(GL_QUADS);
 	glVertex2i(leftX, topY);
 	glVertex2i(rightX, topY);
 	glVertex2i(rightX, bottomY);
 	glVertex2i(leftX, bottomY);
 	glEnd();
+}
+void SpriteSheet::renderPreColoredRectangleRenderer(GLint leftX, GLint topY, GLint rightX, GLint bottomY) {
+	SDL_Rect rect { (int)leftX, (int)topY, (int)(rightX - leftX), (int)(bottomY - topY) };
+	SDL_RenderFillRect(activeRectangleRenderer, &rect);
 }
 //TODO: this doesn't draw it pixellated, do something different so that its pixel grid matches the game screen pixel grid
 void SpriteSheet::renderRectangleOutline(
@@ -213,7 +235,7 @@ void SpriteSheet::renderRectangleOutline(
 	GLfloat lineTopY = (GLfloat)topY - 0.5f;
 	GLfloat lineRightX = (GLfloat)rightX + 0.5f;
 	GLfloat lineBottomY = (GLfloat)bottomY + 0.5f;
-	setRectangleColor(red, green, blue, alpha);
+	glColor4f(red, green, blue, alpha);
 	//TODO: make this correct
 	glLineWidth(3.0f);
 	glBegin(GL_LINE_LOOP);
@@ -223,7 +245,4 @@ void SpriteSheet::renderRectangleOutline(
 	glVertex2f(lineLeftX, lineBottomY);
 	glEnd();
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-}
-void SpriteSheet::setRectangleColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha) {
-	glColor4f(red, green, blue, alpha);
 }

@@ -334,14 +334,14 @@ void Rail::renderGroups(int screenLeftWorldX, int screenTopWorldY) {
 	}
 }
 void Rail::renderHint(int screenLeftWorldX, int screenTopWorldY, float alpha) {
-	glColor4f(1.0f, 1.0f, 1.0f, alpha);
+	SpriteSheet::setRectangleColor(1.0f, 1.0f, 1.0f, alpha);
 	for (Segment& segment : *segments) {
 		GLint leftX = (GLint)(segment.x * MapState::tileSize - screenLeftWorldX);
 		GLint topY = (GLint)(segment.y * MapState::tileSize - screenTopWorldY);
 		SpriteSheet::renderPreColoredRectangle(
 			leftX, topY, leftX + (GLint)MapState::tileSize, topY + (GLint)MapState::tileSize);
 	}
-	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+	SpriteSheet::setRectangleColor(1.0f, 1.0f, 1.0f, 1.0f);
 }
 bool Rail::editorRemoveGroup(char group) {
 	for (int i = 0; i < (int)groups.size(); i++) {
