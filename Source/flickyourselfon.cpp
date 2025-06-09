@@ -30,8 +30,10 @@ int gameMain(int argc, char* argv[]) {
 	srand((unsigned int)time(nullptr));
 	//initialize SDL before we do anything else, we need it to log timestamps
 	int initResult = SDL_Init(SDL_INIT_EVERYTHING);
-	if (initResult < 0)
+	if (initResult < 0) {
+		MessageBoxA(nullptr, "Error initializing SDL", "Initialization Error", MB_OK);
 		return initResult;
+	}
 
 	for (int i = 1; i < argc; i++) {
 		if (strcmp(argv[i], "--editor") == 0 && !Editor::isActive) {
