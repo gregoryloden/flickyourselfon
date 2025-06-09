@@ -91,18 +91,18 @@ SpriteSheet* SpriteSheet::produce(
 void SpriteSheet::renderWithOpenGL() {
 	renderSpriteSheetRegionAtScreenRegion = &renderSpriteSheetRegionAtScreenRegionOpenGL;
 	renderSpriteAtScreenPosition = &renderSpriteAtScreenPositionOpenGL;
-	setSpriteColor = &SpriteSheet::setSpriteColorOpenGL;
-	setRectangleColor = &SpriteSheet::setRectangleColorOpenGL;
-	renderPreColoredRectangle = &SpriteSheet::renderPreColoredRectangleOpenGL;
+	setSpriteColor = &setSpriteColorOpenGL;
+	setRectangleColor = &setRectangleColorOpenGL;
+	renderPreColoredRectangle = &renderPreColoredRectangleOpenGL;
 	activeRectangleRenderer = nullptr;
 }
 void SpriteSheet::renderWithRenderer(SDL_Renderer* rectangleRenderer) {
 	activeRectangleRenderer = rectangleRenderer;
 	renderSpriteSheetRegionAtScreenRegion = &renderSpriteSheetRegionAtScreenRegionRenderer;
 	renderSpriteAtScreenPosition = &renderSpriteAtScreenPositionRenderer;
-	setSpriteColor = &SpriteSheet::setSpriteColorRenderer;
-	setRectangleColor = &SpriteSheet::setRectangleColorRenderer;
-	renderPreColoredRectangle = &SpriteSheet::renderPreColoredRectangleRenderer;
+	setSpriteColor = &setSpriteColorRenderer;
+	setRectangleColor = &setRectangleColorRenderer;
+	renderPreColoredRectangle = &renderPreColoredRectangleRenderer;
 }
 void SpriteSheet::loadRenderTexture(SDL_Renderer* renderer, SDL_Renderer** outOldRenderer, SDL_Texture** outOldTexture) {
 	if (outOldRenderer != nullptr)
