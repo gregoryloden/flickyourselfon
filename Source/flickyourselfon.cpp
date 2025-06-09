@@ -154,11 +154,6 @@ int gameMain(int argc, char* argv[]) {
 
 	//cleanup
 	#ifdef DEBUG
-		if (Editor::isActive)
-			Editor::unloadButtons();
-		PauseState::unloadMenus();
-		SpriteRegistry::unloadAll();
-		Text::unloadFont();
 		MapState::deleteMap();
 		Audio::unloadSounds();
 		Audio::tearDown();
@@ -280,5 +275,13 @@ void renderLoop(CircularStateQueue<GameState>* gameStateQueue) {
 		if (remainingDelay >= 2)
 			SDL_Delay(remainingDelay);
 	}
+	//cleanup
+	#ifdef DEBUG
+		if (Editor::isActive)
+			Editor::unloadButtons();
+		PauseState::unloadMenus();
+		SpriteRegistry::unloadAll();
+		Text::unloadFont();
+	#endif
 	Logger::debugLogger.log("Render thread ended");
 }
