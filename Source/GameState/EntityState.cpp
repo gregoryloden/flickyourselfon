@@ -29,6 +29,7 @@ void EntityState::copyEntityState(EntityState* other) {
 	y.set(other->y.get());
 	renderInterpolatedY = other->renderInterpolatedY;
 	entityAnimation.set(other->entityAnimation.get());
+	zoom.set(other->zoom.get());
 	lastUpdateTicksTime = other->lastUpdateTicksTime;
 }
 void EntityState::setupZoomFrameBuffers() {
