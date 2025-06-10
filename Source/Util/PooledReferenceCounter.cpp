@@ -111,6 +111,7 @@ template class ObjectPool<MoveUndoState>;
 template class ObjectPool<NoOpUndoState>;
 template class ObjectPool<PiecewiseValue>;
 template class ObjectPool<RideRailUndoState>;
+template class ObjectPool<TimeFunctionValue>;
 //superclasses only need holders, the classes themselves are not allocated
 template class ReferenceCounterHolder<DynamicValue>;
 template class ReferenceCounterHolder<EntityAnimationTypes::Component>;

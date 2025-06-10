@@ -198,3 +198,31 @@ float PiecewiseValue::getValue(float ticksElapsed) {
 	ValueAtTime& activeValueAtTime = valuesAtTimes[activeValueIndex];
 	return activeValueAtTime.getValue()->getValue(ticksElapsed - activeValueAtTime.getAtTicksTime());
 }
+
+//////////////////////////////// TimeFunctionValue ////////////////////////////////
+TimeFunctionValue::TimeFunctionValue(objCounterParameters())
+: DynamicValue(objCounterArguments())
+, innerValue(nullptr)
+, timeFunction(nullptr) {
+}
+TimeFunctionValue::~TimeFunctionValue() {}
+TimeFunctionValue* TimeFunctionValue::produce(
+	objCounterParametersComma() DynamicValue* pInnerValue, DynamicValue* pTimeFunction)
+{
+	initializeWithNewFromPool(t, TimeFunctionValue)
+	t->innerValue.set(pInnerValue);
+	t->timeFunction.set(pTimeFunction);
+	return t;
+}
+pooledReferenceCounterDefineRelease(TimeFunctionValue)
+void TimeFunctionValue::prepareReturnToPool() {
+	innerValue.set(nullptr);
+	timeFunction.set(nullptr);
+}
+DynamicValue* TimeFunctionValue::copyWithConstantValue(float pConstantValue) {
+	//TODO not supported, needs a SumValue because the value at 0 is not controlled by this value
+	return this;
+}
+float TimeFunctionValue::getValue(float ticksElapsed) {
+	return innerValue.get()->getValue(timeFunction.get()->getValue(ticksElapsed));
+}

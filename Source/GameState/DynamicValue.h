@@ -8,6 +8,7 @@
 #define newExponentialValue(baseExponent, baseDuration) produceWithArgs(ExponentialValue, baseExponent, baseDuration)
 #define newLinearInterpolatedValue(valuesAtTimes) produceWithArgs(LinearInterpolatedValue, valuesAtTimes)
 #define newPiecewiseValue(valuesAtTimes) produceWithArgs(PiecewiseValue, valuesAtTimes)
+#define newTimeFunctionValue(innerValue, timeFunction) produceWithArgs(TimeFunctionValue, innerValue, timeFunction)
 
 //each DynamicValue is only held in one place at a time
 class DynamicValue: public PooledReferenceCounter {
@@ -154,5 +155,27 @@ public:
 	virtual DynamicValue* copyWithConstantValue(float pConstantValue);
 	//get the value at the given time
 	//assumes there is at least one value
+	virtual float getValue(float ticksElapsed);
+};
+class TimeFunctionValue: public DynamicValue {
+private:
+	ReferenceCounterHolder<DynamicValue> innerValue;
+	ReferenceCounterHolder<DynamicValue> timeFunction;
+
+public:
+	TimeFunctionValue(objCounterParameters());
+	virtual ~TimeFunctionValue();
+
+	//initialize and return a TimeFunctionValue
+	static TimeFunctionValue* produce(objCounterParametersComma() DynamicValue* pInnerValue, DynamicValue* pTimeFunction);
+	//release a reference to this TimeFunctionValue and return it to the pool if applicable
+	virtual void release();
+protected:
+	//release the inner values before this is returned to the pool
+	virtual void prepareReturnToPool();
+public:
+	//return a new value shifted so that it's the given value at time 0
+	virtual DynamicValue* copyWithConstantValue(float pConstantValue);
+	//get the value at the given time
 	virtual float getValue(float ticksElapsed);
 };

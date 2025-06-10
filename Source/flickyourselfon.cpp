@@ -175,6 +175,7 @@ int gameMain(int argc, char* argv[]) {
 		ObjectPool<EntityAnimation::SetScreenOverlayColor>::clearPool();
 		ObjectPool<EntityAnimation::SetVelocity>::clearPool();
 		ObjectPool<PiecewiseValue>::clearPool();
+		ObjectPool<TimeFunctionValue>::clearPool();
 		ObjectPool<ConstantValue>::clearPool();
 		ObjectPool<CompositeQuarticValue>::clearPool();
 		ObjectPool<ExponentialValue>::clearPool();
