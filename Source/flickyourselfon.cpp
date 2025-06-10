@@ -177,6 +177,7 @@ int gameMain(int argc, char* argv[]) {
 		ObjectPool<PiecewiseValue>::clearPool();
 		ObjectPool<ConstantValue>::clearPool();
 		ObjectPool<CompositeQuarticValue>::clearPool();
+		ObjectPool<ExponentialValue>::clearPool();
 		ObjectPool<LinearInterpolatedValue>::clearPool();
 		ObjectPool<EntityAnimation::Delay>::clearPool();
 		ObjectPool<EntityAnimation::SetPosition>::clearPool();
