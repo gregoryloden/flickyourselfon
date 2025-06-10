@@ -74,18 +74,9 @@ bool EntityAnimation::SetVelocity::handle(EntityState* entityState, int ticksTim
 EntityAnimation::SetVelocity* EntityAnimation::SetVelocity::cubicInterpolation(
 	float xMoveDistance, float yMoveDistance, float ticksDuration)
 {
-	//vy = at(t-1) = at^2-at   (a < 0)
-	//y = at^3/3-at^2/2
-	//1 = a1^3/3-a1^2/2 = a(1/3 - 1/2) = a(-1/6)
-	//a = 1/(-1/6) = -6
-	//y = -2t^3+3t^2
-	float ticksDurationSquared = ticksDuration * ticksDuration;
-	float ticksDurationCubed = ticksDuration * ticksDurationSquared;
 	return newEntityAnimationSetVelocity(
-		newCompositeQuarticValue(
-			0.0f, 0.0f, 3.0f * xMoveDistance / ticksDurationSquared, -2.0f * xMoveDistance / ticksDurationCubed, 0.0f),
-		newCompositeQuarticValue(
-			0.0f, 0.0f, 3.0f * yMoveDistance / ticksDurationSquared, -2.0f * yMoveDistance / ticksDurationCubed, 0.0f));
+		CompositeQuarticValue::cubicInterpolation(xMoveDistance, ticksDuration),
+		CompositeQuarticValue::cubicInterpolation(yMoveDistance, ticksDuration));
 }
 
 //////////////////////////////// EntityAnimation::SetSpriteAnimation ////////////////////////////////

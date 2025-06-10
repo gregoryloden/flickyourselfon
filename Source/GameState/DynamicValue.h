@@ -63,6 +63,8 @@ public:
 	virtual DynamicValue* copyWithConstantValue(float pConstantValue);
 	//get the value at the given time
 	virtual float getValue(int ticksElapsed);
+	//return a CompositeQuarticValue that follows a curve from (0, 0) to (1, 1) with 0 slope at (0, 0) and (1, 1)
+	static CompositeQuarticValue* cubicInterpolation(float targetValue, float ticksDuration);
 };
 class ExponentialValue: public DynamicValue {
 private:

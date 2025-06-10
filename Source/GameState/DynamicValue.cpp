@@ -66,6 +66,17 @@ float CompositeQuarticValue::getValue(int ticksElapsed) {
 		+ cubicValuePerTick * ticksElapsedCubed
 		+ quarticValuePerTick * ticksElapsedCubed * floatTicksElapsed;
 }
+CompositeQuarticValue* CompositeQuarticValue::cubicInterpolation(float targetValue, float ticksDuration) {
+	//vy = at(t-1) = at^2-at   (a < 0)
+	//y = at^3/3-at^2/2
+	//1 = a1^3/3-a1^2/2 = a(1/3 - 1/2) = a(-1/6)
+	//a = 1/(-1/6) = -6
+	//y = -2t^3+3t^2
+	float ticksDurationSquared = ticksDuration * ticksDuration;
+	float ticksDurationCubed = ticksDuration * ticksDurationSquared;
+	return newCompositeQuarticValue(
+		0.0f, 0.0f, 3.0f * targetValue / ticksDurationSquared, -2.0f * targetValue / ticksDurationCubed, 0.0f);
+}
 
 //////////////////////////////// ExponentialValue ////////////////////////////////
 ExponentialValue::ExponentialValue(objCounterParameters())

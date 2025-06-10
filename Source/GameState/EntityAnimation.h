@@ -97,7 +97,7 @@ public:
 	public:
 		//return that the animation should continue updating after setting the velocity on the entity state
 		virtual bool handle(EntityState* entityState, int ticksTime);
-		//return a SetVelocity that follows a curve from (0, 0) to (1, 1) with 0 slope at (0, 0) and (1, 1)
+		//return a SetVelocity with x and y that each follow a curve from (0, 0) to (1, 1) with 0 slope at (0, 0) and (1, 1)
 		static SetVelocity* cubicInterpolation(float xMoveDistance, float yMoveDistance, float ticksDuration);
 	};
 	class SetSpriteAnimation: public EntityAnimationTypes::Component {
