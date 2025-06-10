@@ -143,6 +143,10 @@ public:
 	static PiecewiseValue* produce(objCounterParametersComma() vector<ValueAtTime> valuesAtTimes);
 	//release a reference to this PiecewiseValue and return it to the pool if applicable
 	virtual void release();
+protected:
+	//release the inner values before this is returned to the pool
+	virtual void prepareReturnToPool();
+public:
 	//return a new value with all the values shifted so that it's the given value at time 0
 	//assumes there is at least one value
 	virtual DynamicValue* copyWithConstantValue(float pConstantValue);

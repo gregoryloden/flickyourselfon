@@ -160,6 +160,9 @@ PiecewiseValue* PiecewiseValue::produce(objCounterParametersComma() vector<Value
 	return p;
 }
 pooledReferenceCounterDefineRelease(PiecewiseValue)
+void PiecewiseValue::prepareReturnToPool() {
+	valuesAtTimes.clear();
+}
 DynamicValue* PiecewiseValue::copyWithConstantValue(float pConstantValue) {
 	static vector<ValueAtTime> newValuesAtTimes;
 	newValuesAtTimes.clear();
