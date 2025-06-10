@@ -351,7 +351,7 @@ void GameState::render(int ticksTime) {
 	Editor::EditingMutexLocker editingMutexLocker;
 	int gameTicksTime = (pauseState.get() != nullptr ? pauseStartTicksTime : ticksTime) - gameTimeOffsetTicksDuration;
 
-	float zoomValue = camera->beginZoom(gameTicksTime);
+	float zoomValue = camera->renderBeginZoom(gameTicksTime);
 	Opengl::clearBackground();
 
 	//map and player rendering
@@ -395,7 +395,7 @@ void GameState::render(int ticksTime) {
 	}
 
 	if (zoomValue != 1)
-		camera->endZoom(zoomValue);
+		camera->renderEndZoom(zoomValue);
 
 	if (pauseState.get() != nullptr)
 		pauseState.get()->render();

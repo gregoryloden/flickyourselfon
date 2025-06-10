@@ -133,7 +133,7 @@ void EntityState::beginEntityAnimation(
 	//update it once to get it started
 	entityAnimation.get()->update(this, ticksTime);
 }
-float EntityState::beginZoom(int ticksTime) {
+float EntityState::renderBeginZoom(int ticksTime) {
 	float zoomValue = zoom.get()->getValue(ticksTime - lastUpdateTicksTime);
 	if (zoomValue == 1)
 		return 1;
@@ -142,7 +142,7 @@ float EntityState::beginZoom(int ticksTime) {
 	glViewport(0, 0, (GLsizei)Config::windowScreenWidth, (GLsizei)Config::windowScreenHeight);
 	return zoomValue;
 }
-void EntityState::endZoom(float zoomValue) {
+void EntityState::renderEndZoom(float zoomValue) {
 	//render the image zoomed
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, postZoomFrameBufferId);
 	Opengl::orientRenderTarget(true);
