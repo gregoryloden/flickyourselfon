@@ -34,6 +34,13 @@ bool Opengl::initExtensions() {
 	#endif
 	return true;
 }
+void Opengl::orientRenderTarget(bool topDown) {
+	glLoadIdentity();
+	if (topDown)
+		glOrtho(0, (GLdouble)Config::windowScreenWidth, (GLdouble)Config::windowScreenHeight, 0, -1, 1);
+	else
+		glOrtho(0, (GLdouble)Config::windowScreenWidth, 0, (GLdouble)Config::windowScreenHeight, -1, 1);
+}
 void Opengl::clearBackground() {
 	glClearColor(Config::backgroundColorRed, Config::backgroundColorGreen, Config::backgroundColorBlue, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);

@@ -43,6 +43,8 @@ public:
 	//init all OpenGL extensions
 	//returns false if any failed
 	static bool initExtensions();
+	//setup the display to render in the right orientation
+	static void orientRenderTarget(bool topDown);
 	//clear the background with a solid color
 	static void clearBackground();
 	#ifdef DEBUG

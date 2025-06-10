@@ -229,7 +229,7 @@ void renderLoop(CircularStateQueue<GameState>* gameStateQueue) {
 	SDL_GL_SetSwapInterval(1);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_BLEND);
-	glOrtho(0, (GLdouble)Config::windowScreenWidth, (GLdouble)Config::windowScreenHeight, 0, -1, 1);
+	Opengl::orientRenderTarget(true);
 
 	//load all the sprites now that our context has been created
 	Logger::debugLogger.log("OpenGL set up /// Loading sprites and game state...");

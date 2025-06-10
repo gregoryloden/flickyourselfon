@@ -138,16 +138,14 @@ float EntityState::beginZoom(int ticksTime) {
 	if (zoomValue == 1)
 		return 1;
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, preZoomFrameBufferId);
-	glLoadIdentity();
-	glOrtho(0, (GLdouble)Config::windowScreenWidth, 0, (GLdouble)Config::windowScreenHeight, -1, 1);
+	Opengl::orientRenderTarget(false);
 	glViewport(0, 0, (GLsizei)Config::windowScreenWidth, (GLsizei)Config::windowScreenHeight);
 	return zoomValue;
 }
 void EntityState::endZoom(float zoomValue) {
 	//render the image zoomed
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, postZoomFrameBufferId);
-	glLoadIdentity();
-	glOrtho(0, (GLdouble)Config::windowScreenWidth, (GLdouble)Config::windowScreenHeight, 0, -1, 1);
+	Opengl::orientRenderTarget(true);
 	float topLeftBorder = (zoomValue - 1.0f) / zoomValue * 0.5f;
 	float bottomRightBorder = 1.0f - topLeftBorder;
 	glEnable(GL_TEXTURE_2D);
