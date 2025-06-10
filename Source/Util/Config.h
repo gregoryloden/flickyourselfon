@@ -117,6 +117,8 @@ public:
 	static float currentPixelHeight;
 	static int windowScreenWidth;
 	static int windowScreenHeight;
+	static int windowDisplayWidth;
+	static int windowDisplayHeight;
 	static int refreshRate;
 	static vector<ConfigTypes::KeyBindingSetting*> allKeyBindingSettings;
 	static ConfigTypes::KeyBindingSetting upKeyBinding;

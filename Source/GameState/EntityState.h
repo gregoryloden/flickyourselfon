@@ -22,12 +22,19 @@ enum class SpriteDirection: int {
 	Down = 3
 };
 class EntityState: public PooledReferenceCounter {
+private:
+	static GLuint postZoomFrameBufferId;
+	static GLuint postZoomRenderBufferId;
+	static GLuint preZoomFrameBufferId;
+	static GLuint preZoomTextureId;
+
 protected:
 	ReferenceCounterHolder<DynamicValue> x;
 	bool renderInterpolatedX;
 	ReferenceCounterHolder<DynamicValue> y;
 	bool renderInterpolatedY;
 	ReferenceCounterHolder<EntityAnimation> entityAnimation;
+	ReferenceCounterHolder<DynamicValue> zoom;
 	int lastUpdateTicksTime;
 
 public:
@@ -57,6 +64,8 @@ public:
 	virtual void generateHint(Hint* useHint, int ticksTime) {}
 	//copy the state of the other EntityState
 	void copyEntityState(EntityState* other);
+	//load the framebuffers to use for zooming
+	static void setupZoomFrameBuffers();
 	//return the entity's x coordinate at the given time that we should use for rendering the world
 	float getRenderCenterWorldX(int ticksTime);
 	//return the entity's y coordinate at the given time that we should use for rendering the world
@@ -81,6 +90,12 @@ public:
 	void setVelocity(DynamicValue* vx, DynamicValue* vy, int pLastUpdateTicksTime);
 	//start the given entity animation
 	void beginEntityAnimation(vector<ReferenceCounterHolder<EntityAnimationTypes::Component>>* components, int ticksTime);
+	//setup rendering to render a zoomed image
+	//returns the zoom level being used; if the value is 1, zoom is not applied and endZoom() is not neeeded
+	float beginZoom(int ticksTime);
+	//finish rendering the zoomed image at the given zoom value (returned by beginZoom()), and render it to the screen
+	//not needed if beginZoom() returned 1
+	void endZoom(float zoomValue);
 	//set the camera on the next game state, based on this being the previous game state's camera
 	virtual void setNextCamera(GameState* nextGameState, int ticksTime) = 0;
 };

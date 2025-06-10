@@ -4,10 +4,8 @@
 	#include <SDL.h>
 	#include <SDL_image.h>
 	#include <SDL_mixer.h>
-	#include <SDL_opengl.h>
 #else
 	#include <SDL2/SDL.h>
-	#include <SDL2/SDL_opengl.h>
 	#include <SDL2_image/SDL_image.h>
 	#include <SDL2_mixer/SDL_mixer.h>
 #endif
@@ -23,6 +21,7 @@
 #include <vector>
 #include "MathUtils.h"
 #include "MemoryManagement.h"
+#include "Opengl.h"
 using namespace std;
 
 #undef RGB

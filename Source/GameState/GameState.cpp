@@ -348,6 +348,9 @@ void GameState::render(int ticksTime) {
 	Editor::EditingMutexLocker editingMutexLocker;
 	int gameTicksTime = (pauseState.get() != nullptr ? pauseStartTicksTime : ticksTime) - gameTimeOffsetTicksDuration;
 
+	float zoomValue = camera->beginZoom(gameTicksTime);
+	Opengl::clearBackground();
+
 	//map and player rendering
 	bool showConnections = mapState.get()->getShowConnections(playerState.get()->showTutorialConnectionsForKickAction());
 	char playerZ = (char)(floorf(playerState.get()->getDynamicZ(gameTicksTime) + 0.5f));
@@ -387,6 +390,9 @@ void GameState::render(int ticksTime) {
 		Text::Metrics winMetrics = Text::getMetrics(win, 2.0f);
 		Text::render(win, 10.0f, 10.0f + winMetrics.aboveBaseline, 2.0f);
 	}
+
+	if (zoomValue != 1)
+		camera->endZoom(zoomValue);
 
 	if (pauseState.get() != nullptr)
 		pauseState.get()->render();

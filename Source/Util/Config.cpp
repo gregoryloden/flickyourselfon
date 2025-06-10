@@ -112,6 +112,8 @@ float Config::currentPixelWidth = Config::defaultPixelWidth;
 float Config::currentPixelHeight = Config::defaultPixelHeight;
 int Config::windowScreenWidth = Config::gameScreenWidth;
 int Config::windowScreenHeight = Config::gameScreenHeight;
+int Config::windowDisplayWidth = 0;
+int Config::windowDisplayHeight = 0;
 int Config::refreshRate = 60;
 vector<KeyBindingSetting*> Config::allKeyBindingSettings;
 KeyBindingSetting Config::upKeyBinding (SDL_SCANCODE_UP, "upKey ", Config::allKeyBindingSettings);

@@ -25,6 +25,7 @@ const int maxGameStates = 6;
 SDL_Window* window = nullptr;
 SDL_GLContext glContext = nullptr;
 bool renderThreadReadyForUpdates = false;
+bool renderThreadCriticalError = false;
 
 int gameMain(int argc, char* argv[]) {
 	srand((unsigned int)time(nullptr));
@@ -103,8 +104,13 @@ int gameMain(int argc, char* argv[]) {
 
 	//wait for the render thread to sync up
 	Logger::debugLogger.log("Render thread created, waiting for it to be ready for updates...");
-	while (!renderThreadReadyForUpdates)
+	while (!renderThreadReadyForUpdates) {
+		if (renderThreadCriticalError) {
+			renderLoopThread.join();
+			return 1;
+		}
 		SDL_Delay(1);
+	}
 	Logger::debugLogger.log("Beginning update loop");
 
 	//begin the update loop
@@ -200,7 +206,6 @@ int gameMain(int argc, char* argv[]) {
 	Logger::debugLogger.endLogging();
 	//end SDL after we end logging since we use SDL_GetTicks for logging
 	#ifdef DEBUG
-		SDL_GL_DeleteContext(glContext);
 		SDL_DestroyWindow(window);
 		SDL_Quit();
 	#endif
@@ -213,6 +218,14 @@ void renderLoop(CircularStateQueue<GameState>* gameStateQueue) {
 	//setup opengl
 	Logger::debugLogger.log("Render thread began /// Setting up OpenGL...");
 	glContext = SDL_GL_CreateContext(window);
+	SDL_GL_LoadLibrary(nullptr);
+	if (!Opengl::initExtensions()) {
+		SDL_GL_UnloadLibrary();
+		MessageBoxA(nullptr, "Error initializing OpenGL extensions", "Initialization Error", MB_OK);
+		renderThreadCriticalError = true;
+		return;
+	}
+	EntityState::setupZoomFrameBuffers();
 	SDL_GL_SetSwapInterval(1);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_BLEND);
@@ -234,8 +247,8 @@ void renderLoop(CircularStateQueue<GameState>* gameStateQueue) {
 	Logger::debugLogger.log("Sprites and game state loaded /// Beginning render loop");
 
 	//begin the render loop
-	int lastWindowWidth = 0;
-	int lastWindowHeight = 0;
+	int lastWindowDisplayWidth = 0;
+	int lastWindowDisplayHeight = 0;
 	int minMsPerFrame = Config::ticksPerSecond / Config::refreshRate;
 	int lagFrameMs = minMsPerFrame * 3 / 2;
 	while (true) {
@@ -247,19 +260,15 @@ void renderLoop(CircularStateQueue<GameState>* gameStateQueue) {
 		GameState* gameState = gameStateQueue->advanceToLastReadableState();
 
 		//adjust the viewport so that we scale the game window with the size of the screen
-		int windowWidth = 0;
-		int windowHeight = 0;
-		SDL_GetWindowSize(window, &windowWidth, &windowHeight);
-		if (windowWidth != lastWindowWidth || windowHeight != lastWindowHeight) {
-			glViewport(0, 0, windowWidth, windowHeight);
-			lastWindowWidth = windowWidth;
-			lastWindowHeight = windowHeight;
-			Config::currentPixelWidth = (float)lastWindowWidth / (float)Config::windowScreenWidth;
-			Config::currentPixelHeight = (float)lastWindowHeight / (float)Config::windowScreenHeight;
+		SDL_GetWindowSize(window, &Config::windowDisplayWidth, &Config::windowDisplayHeight);
+		if (Config::windowDisplayWidth != lastWindowDisplayWidth || Config::windowDisplayHeight != lastWindowDisplayHeight) {
+			glViewport(0, 0, (GLsizei)Config::windowDisplayWidth, (GLsizei)Config::windowDisplayHeight);
+			Config::currentPixelWidth = (float)Config::windowDisplayWidth / (float)Config::windowScreenWidth;
+			Config::currentPixelHeight = (float)Config::windowDisplayHeight / (float)Config::windowScreenHeight;
+			lastWindowDisplayWidth = Config::windowDisplayWidth;
+			lastWindowDisplayHeight = Config::windowDisplayHeight;
 		}
 
-		glClearColor(Config::backgroundColorRed, Config::backgroundColorGreen, Config::backgroundColorBlue, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
 		gameState->render(preRenderTicksTime);
 		renderThreadReadyForUpdates = true;
 		glFlush();
@@ -284,6 +293,8 @@ void renderLoop(CircularStateQueue<GameState>* gameStateQueue) {
 		PauseState::unloadMenus();
 		SpriteRegistry::unloadAll();
 		Text::unloadFont();
+		SDL_GL_UnloadLibrary();
+		SDL_GL_DeleteContext(glContext);
 	#endif
 	Logger::debugLogger.log("Render thread ended");
 }

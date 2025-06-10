@@ -8,6 +8,10 @@
 #include "Util/Config.h"
 
 //////////////////////////////// EntityState ////////////////////////////////
+GLuint EntityState::postZoomFrameBufferId = 0;
+GLuint EntityState::postZoomRenderBufferId = 0;
+GLuint EntityState::preZoomFrameBufferId = 0;
+GLuint EntityState::preZoomTextureId = 0;
 EntityState::EntityState(objCounterParameters())
 : PooledReferenceCounter(objCounterArguments())
 , x(newConstantValue(0.0f))
@@ -15,6 +19,7 @@ EntityState::EntityState(objCounterParameters())
 , y(newConstantValue(0.0f))
 , renderInterpolatedY(true)
 , entityAnimation(nullptr)
+, zoom(newConstantValue(1.0f))
 , lastUpdateTicksTime(0) {
 }
 EntityState::~EntityState() {}
@@ -25,6 +30,43 @@ void EntityState::copyEntityState(EntityState* other) {
 	renderInterpolatedY = other->renderInterpolatedY;
 	entityAnimation.set(other->entityAnimation.get());
 	lastUpdateTicksTime = other->lastUpdateTicksTime;
+}
+void EntityState::setupZoomFrameBuffers() {
+	//set up the post-zoom frame buffer, which uses a render buffer
+	glGenFramebuffers(1, &postZoomFrameBufferId);
+	glBindFramebuffer(GL_FRAMEBUFFER, postZoomFrameBufferId);
+	glGenRenderbuffers(1, &postZoomRenderBufferId);
+	glBindRenderbuffer(GL_RENDERBUFFER, postZoomRenderBufferId);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_RGB8, (GLsizei)Config::windowScreenWidth, (GLsizei)Config::windowScreenHeight);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, postZoomRenderBufferId);
+	#ifdef DEBUG
+		Opengl::checkAndLogFrameBufferStatus(GL_FRAMEBUFFER, "postZoomFrameBuffer");
+	#endif
+
+	//set up the pre-zoom frame buffer, which uses a texture
+	glGenFramebuffers(1, &preZoomFrameBufferId);
+	glBindFramebuffer(GL_FRAMEBUFFER, preZoomFrameBufferId);
+	glGenTextures(1, &preZoomTextureId);
+	glBindTexture(GL_TEXTURE_2D, preZoomTextureId);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexImage2D(
+		GL_TEXTURE_2D,
+		0,
+		//image format + size
+		GL_RGB, (GLsizei)Config::windowScreenWidth, (GLsizei)Config::windowScreenHeight,
+		0,
+		//image source format + data
+		GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, preZoomTextureId, 0);
+	#ifdef DEBUG
+		Opengl::checkAndLogFrameBufferStatus(GL_FRAMEBUFFER, "preZoomFrameBuffer");
+	#endif
+
+	//return to the default framebuffer
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 float EntityState::getRenderCenterWorldX(int ticksTime) {
 	return x.get()->getValue(renderInterpolatedX ? ticksTime - lastUpdateTicksTime : 0);
@@ -90,6 +132,49 @@ void EntityState::beginEntityAnimation(
 	renderInterpolatedY = true;
 	//update it once to get it started
 	entityAnimation.get()->update(this, ticksTime);
+}
+float EntityState::beginZoom(int ticksTime) {
+	float zoomValue = zoom.get()->getValue(ticksTime - lastUpdateTicksTime);
+	if (zoomValue == 1)
+		return 1;
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, preZoomFrameBufferId);
+	glLoadIdentity();
+	glOrtho(0, (GLdouble)Config::windowScreenWidth, 0, (GLdouble)Config::windowScreenHeight, -1, 1);
+	glViewport(0, 0, (GLsizei)Config::windowScreenWidth, (GLsizei)Config::windowScreenHeight);
+	return zoomValue;
+}
+void EntityState::endZoom(float zoomValue) {
+	//render the image zoomed
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, postZoomFrameBufferId);
+	glLoadIdentity();
+	glOrtho(0, (GLdouble)Config::windowScreenWidth, (GLdouble)Config::windowScreenHeight, 0, -1, 1);
+	float topLeftBorder = (zoomValue - 1.0f) / zoomValue * 0.5f;
+	float bottomRightBorder = 1.0f - topLeftBorder;
+	glEnable(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D, preZoomTextureId);
+	glBegin(GL_QUADS);
+	glTexCoord2f(topLeftBorder, topLeftBorder);
+	glVertex2i(0, 0);
+	glTexCoord2f(bottomRightBorder, topLeftBorder);
+	glVertex2i((GLint)Config::windowScreenWidth, 0);
+	glTexCoord2f(bottomRightBorder, bottomRightBorder);
+	glVertex2i((GLint)Config::windowScreenWidth, (GLint)Config::windowScreenHeight);
+	glTexCoord2f(topLeftBorder, bottomRightBorder);
+	glVertex2i(0, (GLint)Config::windowScreenHeight);
+	glEnd();
+	glDisable(GL_TEXTURE_2D);
+
+	//render the zoomed image to the screen
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, postZoomFrameBufferId);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+	glViewport(0, 0, (GLint)Config::windowDisplayWidth, (GLint)Config::windowDisplayHeight);
+	glBlitFramebuffer(
+		//source
+		0, 0, (GLint)Config::windowScreenWidth, (GLint)Config::windowScreenHeight,
+		//destination
+		0, 0, (GLint)Config::windowDisplayWidth, (GLint)Config::windowDisplayHeight,
+		GL_COLOR_BUFFER_BIT,
+		GL_NEAREST);
 }
 
 //////////////////////////////// DynamicCameraAnchor ////////////////////////////////
