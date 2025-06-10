@@ -433,7 +433,7 @@ void GameState::renderTextDisplay(int gameTicksTime) {
 				{ "Your local radio tower", "lost connection", "with its", "master transmitter relay.", " ", " ", " ", " " };
 			textFadeInStartTicksTime = introAnimationStartTicksTime + 11000;
 			textFadeInTicksDuration = 500;
-			textDisplayTicksDuration = 3500;
+			textDisplayTicksDuration = 4500;
 			textFadeOutTicksDuration = 500;
 			nextTextDisplayType = TextDisplayType::GoalExplanation;
 			break;
