@@ -64,8 +64,8 @@ EntityAnimation::SetVelocity* EntityAnimation::SetVelocity::produce(
 }
 pooledReferenceCounterDefineRelease(EntityAnimation::SetVelocity)
 void EntityAnimation::SetVelocity::prepareReturnToPool() {
-	vx.set(nullptr);
-	vy.set(nullptr);
+	vx.clear();
+	vy.clear();
 }
 bool EntityAnimation::SetVelocity::handle(EntityState* entityState, int ticksTime) {
 	entityState->setVelocity(vx.get(), vy.get(), ticksTime);
@@ -165,10 +165,10 @@ EntityAnimation::SetScreenOverlayColor* EntityAnimation::SetScreenOverlayColor::
 }
 pooledReferenceCounterDefineRelease(EntityAnimation::SetScreenOverlayColor)
 void EntityAnimation::SetScreenOverlayColor::prepareReturnToPool() {
-	r.set(nullptr);
-	g.set(nullptr);
-	b.set(nullptr);
-	a.set(nullptr);
+	r.clear();
+	g.clear();
+	b.clear();
+	a.clear();
 }
 bool EntityAnimation::SetScreenOverlayColor::handle(EntityState* entityState, int ticksTime) {
 	entityState->setScreenOverlayColor(r.get(), g.get(), b.get(), a.get(), ticksTime);
@@ -215,7 +215,7 @@ EntityAnimation::MapKickResetSwitch* EntityAnimation::MapKickResetSwitch::produc
 }
 pooledReferenceCounterDefineRelease(EntityAnimation::MapKickResetSwitch)
 void EntityAnimation::MapKickResetSwitch::prepareReturnToPool() {
-	kickResetSwitchUndoState.set(nullptr);
+	kickResetSwitchUndoState.clear();
 }
 bool EntityAnimation::MapKickResetSwitch::handle(EntityState* entityState, int ticksTime) {
 	entityState->mapKickResetSwitch(resetSwitchId, kickResetSwitchUndoState.get(), ticksTime);

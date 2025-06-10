@@ -439,7 +439,7 @@ PauseState* PauseState::produceHomeScreen(int levelsUnlocked) {
 }
 pooledReferenceCounterDefineRelease(PauseState)
 void PauseState::prepareReturnToPool() {
-	parentState.set(nullptr);
+	parentState.clear();
 }
 void PauseState::loadMenus() {
 	baseMenu = newPauseMenu(

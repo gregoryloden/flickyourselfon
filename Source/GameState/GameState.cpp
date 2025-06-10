@@ -51,10 +51,10 @@ GameState::~GameState() {
 }
 void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 	//first things first: dump all our previous state so that we can start fresh
-	mapState.set(nullptr);
-	playerState.set(nullptr);
-	dynamicCameraAnchor.set(nullptr);
-	pauseState.set(nullptr);
+	mapState.clear();
+	playerState.clear();
+	dynamicCameraAnchor.clear();
+	pauseState.clear();
 
 	//copy values that don't usually change from state to state
 	levelsUnlocked = prev->levelsUnlocked;
@@ -933,16 +933,16 @@ void GameState::resetGame(int ticksTime) {
 	Audio::stopAll();
 	levelsUnlocked = 0;
 	gameTimeOffsetTicksDuration = 0;
-	pauseState.set(nullptr);
+	pauseState.clear();
 	//discard old states before assigning new states and resetting them, that way we reuse states only if they aren't in use by
 	//a previous paused state
-	mapState.set(nullptr);
+	mapState.clear();
 	mapState.set(newMapState());
 	mapState.get()->resetMap();
-	playerState.set(nullptr);
+	playerState.clear();
 	playerState.set(newPlayerState(mapState.get()));
 	playerState.get()->reset();
-	dynamicCameraAnchor.set(nullptr);
+	dynamicCameraAnchor.clear();
 	dynamicCameraAnchor.set(newDynamicCameraAnchor());
 
 	beginIntroAnimation(ticksTime);

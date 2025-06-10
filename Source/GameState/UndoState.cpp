@@ -14,7 +14,7 @@ UndoState::UndoState(objCounterParameters())
 }
 UndoState::~UndoState() {}
 void UndoState::prepareReturnToPool() {
-	next.set(nullptr);
+	next.clear();
 }
 int UndoState::getNextClassTypeIdentifier() {
 	static int nextClassTypeIdentifier = 0;

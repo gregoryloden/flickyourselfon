@@ -43,6 +43,8 @@ public:
 	ReferenceCountedObject* get() const { return object; }
 	//hold the new object and release/retain objects as appropriate
 	void set(ReferenceCountedObject* pObject);
+	//release the inner object as appropriate and set the inner object to nullptr
+	void clear();
 
 	ReferenceCounterHolder<ReferenceCountedObject>& operator =(const ReferenceCounterHolder<ReferenceCountedObject>& other);
 	ReferenceCounterHolder<ReferenceCountedObject>& operator =(ReferenceCounterHolder<ReferenceCountedObject>&& other);

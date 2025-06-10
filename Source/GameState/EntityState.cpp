@@ -210,7 +210,7 @@ void DynamicCameraAnchor::updateWithPreviousDynamicCameraAnchor(
 	if (entityAnimation.get() != nullptr) {
 		if (entityAnimation.get()->update(this, ticksTime))
 			return;
-		entityAnimation.set(nullptr);
+		entityAnimation.clear();
 	} else if (hasKeyboardControl) {
 		static constexpr float speedPerSecond = 120.0f;
 		static constexpr float diagonalSpeedPerSecond = speedPerSecond * (float)MathUtils::sqrtConst(0.5);
@@ -317,7 +317,7 @@ bool Particle::updateWithPreviousParticle(Particle* prev, int ticksTime) {
 	if (prev->entityAnimation.get() != nullptr) {
 		if (entityAnimation.get()->update(this, ticksTime))
 			return true;
-		entityAnimation.set(nullptr);
+		entityAnimation.clear();
 	}
 	return false;
 }

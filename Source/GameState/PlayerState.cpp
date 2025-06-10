@@ -79,7 +79,7 @@ PlayerState* PlayerState::produce(objCounterParametersComma() MapState* mapState
 	p->z = 0;
 	p->hasBoot = false;
 	p->mapState.set(mapState);
-	p->availableKickAction.set(nullptr);
+	p->availableKickAction.clear();
 	return p;
 }
 void PlayerState::copyPlayerState(PlayerState* other) {
@@ -123,13 +123,13 @@ void PlayerState::copyPlayerState(PlayerState* other) {
 }
 pooledReferenceCounterDefineRelease(PlayerState)
 void PlayerState::prepareReturnToPool() {
-	ghostSpriteX.set(nullptr);
-	ghostSpriteY.set(nullptr);
-	mapState.set(nullptr);
-	availableKickAction.set(nullptr);
-	worldGroundY.set(nullptr);
-	undoState.set(nullptr);
-	redoState.set(nullptr);
+	ghostSpriteX.clear();
+	ghostSpriteY.clear();
+	mapState.clear();
+	availableKickAction.clear();
+	worldGroundY.clear();
+	undoState.clear();
+	redoState.clear();
 	hint = &Hint::none;
 }
 float PlayerState::getWorldGroundY(int ticksTime) {
@@ -169,8 +169,8 @@ void PlayerState::setGhostSprite(bool show, float pX, float pY, SpriteDirection 
 		ghostSpriteDirection = direction;
 		ghostSpriteStartTicksTime = ticksTime;
 	} else {
-		ghostSpriteX.set(nullptr);
-		ghostSpriteY.set(nullptr);
+		ghostSpriteX.clear();
+		ghostSpriteY.clear();
 	}
 }
 void PlayerState::mapKickSwitch(short switchId, bool moveRailsForward, bool allowRadioTowerAnimation, int ticksTime) {
@@ -268,11 +268,11 @@ void PlayerState::updateWithPreviousPlayerState(PlayerState* prev, bool hasKeybo
 	}
 	//if the previous play state had an animation, we copied it already so clear it
 	//if not, we might have a leftover entity animation from a previous state
-	entityAnimation.set(nullptr);
+	entityAnimation.clear();
 	lastStepSound = prev->lastStepSound;
 	ghostSpriteX.set(prev->ghostSpriteX.get());
 	ghostSpriteY.set(prev->ghostSpriteY.get());
-	worldGroundY.set(nullptr);
+	worldGroundY.clear();
 	worldGroundYOffset = 0.0f;
 	finishedMoveTutorial = prev->finishedMoveTutorial;
 	finishedKickTutorial = prev->finishedKickTutorial;
@@ -530,7 +530,7 @@ void PlayerState::updateSpriteWithPreviousPlayerState(
 void PlayerState::setKickAction() {
 	float xPosition = x.get()->getValue(0);
 	float yPosition = y.get()->getValue(0);
-	availableKickAction.set(nullptr);
+	availableKickAction.clear();
 	setRailKickAction(xPosition, yPosition)
 		|| setSwitchKickAction(xPosition, yPosition)
 		|| setResetSwitchKickAction(xPosition, yPosition)
@@ -941,7 +941,7 @@ void PlayerState::beginKicking(int ticksTime) {
 			kickAir(ticksTime);
 			break;
 	}
-	availableKickAction.set(nullptr);
+	availableKickAction.clear();
 }
 void PlayerState::kickAir(int ticksTime) {
 	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> kickAnimationComponents ({
@@ -1669,11 +1669,11 @@ void PlayerState::setInitialZ() {
 		(int)(y.get()->getValue(0) + boundingBoxCenterYOffset) / MapState::tileSize);
 }
 void PlayerState::reset() {
-	availableKickAction.set(nullptr);
+	availableKickAction.clear();
 	z = 0;
 	hasBoot = false;
-	ghostSpriteX.set(nullptr);
-	ghostSpriteY.set(nullptr);
+	ghostSpriteX.clear();
+	ghostSpriteY.clear();
 	autoKickStartTicksTime = -1;
 	canImmediatelyAutoKick = false;
 	lastControlledX = 0;

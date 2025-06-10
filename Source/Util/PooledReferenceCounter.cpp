@@ -53,6 +53,12 @@ void ReferenceCounterHolder<ReferenceCountedObject>::set(ReferenceCountedObject*
 	if (oldObject != nullptr)
 		oldObject->release();
 }
+template <class ReferenceCountedObject> void ReferenceCounterHolder<ReferenceCountedObject>::clear() {
+	if (object != nullptr) {
+		object->release();
+		object = nullptr;
+	}
+}
 template <class ReferenceCountedObject>
 ReferenceCounterHolder<ReferenceCountedObject>& ReferenceCounterHolder<ReferenceCountedObject>::operator =(
 	const ReferenceCounterHolder<ReferenceCountedObject>& other)

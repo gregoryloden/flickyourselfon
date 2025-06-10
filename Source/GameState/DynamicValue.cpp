@@ -216,8 +216,8 @@ TimeFunctionValue* TimeFunctionValue::produce(
 }
 pooledReferenceCounterDefineRelease(TimeFunctionValue)
 void TimeFunctionValue::prepareReturnToPool() {
-	innerValue.set(nullptr);
-	timeFunction.set(nullptr);
+	innerValue.clear();
+	timeFunction.clear();
 }
 DynamicValue* TimeFunctionValue::copyWithConstantValue(float pConstantValue) {
 	//TODO not supported, needs a SumValue because the value at 0 is not controlled by this value

@@ -117,7 +117,7 @@ MapState* MapState::produce(objCounterParameters()) {
 pooledReferenceCounterDefineRelease(MapState)
 void MapState::prepareReturnToPool() {
 	particles.clear();
-	hintState.set(nullptr);
+	hintState.clear();
 }
 void MapState::buildMap() {
 	SDL_Surface* floor = FileUtils::loadImage(floorFileName);
