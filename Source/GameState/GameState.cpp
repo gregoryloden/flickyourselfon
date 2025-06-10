@@ -146,8 +146,8 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 		if (levelsUnlocked == 0) {
 			MapState::setIntroAnimationBootTile(false);
 			playerState.get()->setInitialZ();
-		//the player beat a level, spawn goal sparks
-		} else
+		//the player beat a level, spawn goal sparks if it's not the last level
+		} else if (playerLevelN < MapState::getLevelCount())
 			mapState.get()->spawnGoalSparks(playerLevelN, gameTicksTime);
 		levelsUnlocked = playerLevelN;
 		//save the game if it's the last level
