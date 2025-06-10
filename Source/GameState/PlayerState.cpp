@@ -134,16 +134,16 @@ void PlayerState::prepareReturnToPool() {
 }
 float PlayerState::getWorldGroundY(int ticksTime) {
 	return worldGroundY.get() != nullptr
-		? worldGroundY.get()->getValue(ticksTime - worldGroundYStartTicksTime)
-		: y.get()->getValue(ticksTime - lastUpdateTicksTime)
+		? worldGroundY.get()->getValue((float)(ticksTime - worldGroundYStartTicksTime))
+		: y.get()->getValue((float)(ticksTime - lastUpdateTicksTime))
 			+ z / 2 * MapState::tileSize
 			+ boundingBoxCenterYOffset
 			+ worldGroundYOffset;
 }
 float PlayerState::getDynamicZ(int ticksTime) {
 	return worldGroundY.get() != nullptr
-		? (worldGroundY.get()->getValue(ticksTime - worldGroundYStartTicksTime)
-				- y.get()->getValue(ticksTime - lastUpdateTicksTime)
+		? (worldGroundY.get()->getValue((float)(ticksTime - worldGroundYStartTicksTime))
+				- y.get()->getValue((float)(ticksTime - lastUpdateTicksTime))
 				- boundingBoxCenterYOffset
 				- worldGroundYOffset)
 			* 2
@@ -202,7 +202,7 @@ void PlayerState::generateHint(Hint* useHint, int ticksTime) {
 		hint = useHint;
 	else {
 		hint = &Hint::calculatingHint;
-		int timeDiff = lastUpdateTicksTime - ticksTime;
+		float timeDiff = (float)(lastUpdateTicksTime - ticksTime);
 		float hintX = x.get()->getValue(timeDiff);
 		float hintY = y.get()->getValue(timeDiff) + boundingBoxCenterYOffset;
 		ReferenceCounterHolder<MapState> mapStateCapture (mapState.get());
@@ -327,7 +327,7 @@ void PlayerState::updatePositionWithPreviousPlayerState(PlayerState* prev, const
 	else if (keyboardState[Config::sprintKeyBinding.value] != 0)
 		speedPerTick *= sprintModifier;
 
-	int ticksSinceLastUpdate = ticksTime - prev->lastUpdateTicksTime;
+	float ticksSinceLastUpdate = (float)(ticksTime - prev->lastUpdateTicksTime);
 	DynamicValue* prevX = prev->x.get();
 	DynamicValue* prevY = prev->y.get();
 	float newX = prevX->getValue(ticksSinceLastUpdate);
@@ -1005,12 +1005,12 @@ void PlayerState::kickClimb(float currentX, float currentY, float targetX, float
 		//set the climb velocity
 		newEntityAnimationSetVelocity(
 			newPiecewiseValue({
-				PiecewiseValue::ValueAtTime(xVelocity, 0) COMMA
-				PiecewiseValue::ValueAtTime(newConstantValue(xMoveDistance), moveDuration) COMMA
+				PiecewiseValue::ValueAtTime(xVelocity, 0.0f) COMMA
+				PiecewiseValue::ValueAtTime(newConstantValue(xMoveDistance), floatMoveDuration) COMMA
 			}),
 			newPiecewiseValue({
-				PiecewiseValue::ValueAtTime(yVelocity, 0) COMMA
-				PiecewiseValue::ValueAtTime(newConstantValue(yMoveDistance), moveDuration) COMMA
+				PiecewiseValue::ValueAtTime(yVelocity, 0.0f) COMMA
+				PiecewiseValue::ValueAtTime(newConstantValue(yMoveDistance), floatMoveDuration) COMMA
 			})),
 		newEntityAnimationPlaySound(Audio::climbSound, 0),
 		//then delay for the rest of the animation and stop the player
@@ -1028,8 +1028,8 @@ void PlayerState::kickClimb(float currentX, float currentY, float targetX, float
 	worldGroundY.set(
 		newLinearInterpolatedValue({
 			LinearInterpolatedValue::ValueAtTime(
-				currentWorldGroundY, SpriteRegistry::playerFastKickingAnimationTicksPerFrame) COMMA
-			LinearInterpolatedValue::ValueAtTime(newWorldGroundY, climbAnimationDuration) COMMA
+				currentWorldGroundY, (float)SpriteRegistry::playerFastKickingAnimationTicksPerFrame) COMMA
+			LinearInterpolatedValue::ValueAtTime(newWorldGroundY, (float)climbAnimationDuration) COMMA
 		}));
 	worldGroundYStartTicksTime = ticksTime;
 	z += 2;
@@ -1104,12 +1104,12 @@ void PlayerState::kickFall(float currentX, float currentY, float targetX, float 
 		//set the fall velocity
 		newEntityAnimationSetVelocity(
 			newPiecewiseValue({
-				PiecewiseValue::ValueAtTime(xVelocity, 0) COMMA
-				PiecewiseValue::ValueAtTime(newConstantValue(xMoveDistance), moveDuration) COMMA
+				PiecewiseValue::ValueAtTime(xVelocity, 0.0f) COMMA
+				PiecewiseValue::ValueAtTime(newConstantValue(xMoveDistance), floatMoveDuration) COMMA
 			}),
 			newPiecewiseValue({
-				PiecewiseValue::ValueAtTime(yVelocity, 0) COMMA
-				PiecewiseValue::ValueAtTime(newConstantValue(yMoveDistance), moveDuration) COMMA
+				PiecewiseValue::ValueAtTime(yVelocity, 0.0f) COMMA
+				PiecewiseValue::ValueAtTime(newConstantValue(yMoveDistance), floatMoveDuration) COMMA
 			})),
 		newEntityAnimationPlaySound(Audio::jumpSound, 0),
 		//then delay for the rest of the animation and stop the player
@@ -1127,8 +1127,8 @@ void PlayerState::kickFall(float currentX, float currentY, float targetX, float 
 	float newWorldGroundY = currentWorldGroundY + yMoveDistance + (fallHeight - z) / 2 * MapState::tileSize;
 	worldGroundY.set(
 		newLinearInterpolatedValue({
-			LinearInterpolatedValue::ValueAtTime(currentWorldGroundY, fallAnimationFirstFrameTicks) COMMA
-			LinearInterpolatedValue::ValueAtTime(newWorldGroundY, fallAnimationDuration) COMMA
+			LinearInterpolatedValue::ValueAtTime(currentWorldGroundY, (float)fallAnimationFirstFrameTicks) COMMA
+			LinearInterpolatedValue::ValueAtTime(newWorldGroundY, (float)fallAnimationDuration) COMMA
 		}));
 	worldGroundYStartTicksTime = ticksTime;
 	z = fallHeight;
@@ -1338,12 +1338,12 @@ void PlayerState::addRailRideComponents(
 		{
 			newEntityAnimationSetVelocity(
 				newLinearInterpolatedValue({
-					LinearInterpolatedValue::ValueAtTime(targetXPosition, 0) COMMA
-					LinearInterpolatedValue::ValueAtTime(finalXPosition, bootLiftDuration) COMMA
+					LinearInterpolatedValue::ValueAtTime(targetXPosition, 0.0f) COMMA
+					LinearInterpolatedValue::ValueAtTime(finalXPosition, (float)bootLiftDuration) COMMA
 				}),
 				newLinearInterpolatedValue({
-					LinearInterpolatedValue::ValueAtTime(targetYPosition, 0) COMMA
-					LinearInterpolatedValue::ValueAtTime(finalYPosition, bootLiftDuration) COMMA
+					LinearInterpolatedValue::ValueAtTime(targetYPosition, 0.0f) COMMA
+					LinearInterpolatedValue::ValueAtTime(finalYPosition, (float)bootLiftDuration) COMMA
 				})),
 			newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerBootLiftAnimation),
 			newEntityAnimationDelay(bootLiftDuration),
@@ -1557,10 +1557,9 @@ int PlayerState::getLevelN() {
 }
 void PlayerState::render(EntityState* camera, int ticksTime) {
 	if (ghostSpriteX.get() != nullptr && ghostSpriteY.get() != nullptr) {
-		float ghostRenderCenterX = getRenderCenterScreenXFromWorldX(
-			ghostSpriteX.get()->getValue(ticksTime - ghostSpriteStartTicksTime), camera, ticksTime);
-		float ghostRenderCenterY = getRenderCenterScreenYFromWorldY(
-			ghostSpriteY.get()->getValue(ticksTime - ghostSpriteStartTicksTime), camera, ticksTime);
+		float timediff = (float)(ticksTime - ghostSpriteStartTicksTime);
+		float ghostRenderCenterX = getRenderCenterScreenXFromWorldX(ghostSpriteX.get()->getValue(timediff), camera, ticksTime);
+		float ghostRenderCenterY = getRenderCenterScreenYFromWorldY(ghostSpriteY.get()->getValue(timediff), camera, ticksTime);
 
 		(SpriteRegistry::player->*SpriteSheet::setSpriteColor)(1.0f, 1.0f, 1.0f, 0.5f);
 		SpriteRegistry::player->renderSpriteCenteredAtScreenPosition(

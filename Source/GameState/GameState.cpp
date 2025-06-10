@@ -863,10 +863,10 @@ void GameState::beginIntroAnimation(int ticksTime) {
 			newConstantValue(0.0f),
 			newConstantValue(0.0f),
 			newLinearInterpolatedValue({
-				LinearInterpolatedValue::ValueAtTime(1.0f, introAnimationStartTicksTime) COMMA
-				LinearInterpolatedValue::ValueAtTime(0.125f, blackScreenFadeOutEndTime) COMMA
-				LinearInterpolatedValue::ValueAtTime(0.125f, legLiftStartTime) COMMA
-				LinearInterpolatedValue::ValueAtTime(0.0f, animationEndTicksTime)
+				LinearInterpolatedValue::ValueAtTime(1.0f, (float)introAnimationStartTicksTime) COMMA
+				LinearInterpolatedValue::ValueAtTime(0.125f, (float)blackScreenFadeOutEndTime) COMMA
+				LinearInterpolatedValue::ValueAtTime(0.125f, (float)legLiftStartTime) COMMA
+				LinearInterpolatedValue::ValueAtTime(0.0f, (float)animationEndTicksTime) COMMA
 			})),
 		newEntityAnimationDelay(animationEndTicksTime),
 		newEntityAnimationSetScreenOverlayColor(

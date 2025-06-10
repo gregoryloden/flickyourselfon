@@ -18,7 +18,7 @@ public:
 	//copy this DynamicValue such that at 0 ticks elapsed, it equals the provided constant value
 	virtual DynamicValue* copyWithConstantValue(float pConstantValue) = 0;
 	//return the value after the given amount of time has elapsed
-	virtual float getValue(int ticksElapsed) = 0;
+	virtual float getValue(float ticksElapsed) = 0;
 };
 class ConstantValue: public DynamicValue {
 private:
@@ -35,7 +35,7 @@ public:
 	//return a new ConstantValue with the provided value
 	virtual DynamicValue* copyWithConstantValue(float pConstantValue);
 	//get the value at the given time
-	virtual float getValue(int ticksElapsed);
+	virtual float getValue(float ticksElapsed);
 };
 class CompositeQuarticValue: public DynamicValue {
 private:
@@ -62,27 +62,27 @@ public:
 	//set the constant value to the provided value
 	virtual DynamicValue* copyWithConstantValue(float pConstantValue);
 	//get the value at the given time
-	virtual float getValue(int ticksElapsed);
+	virtual float getValue(float ticksElapsed);
 	//return a CompositeQuarticValue that follows a curve from (0, 0) to (1, 1) with 0 slope at (0, 0) and (1, 1)
 	static CompositeQuarticValue* cubicInterpolation(float targetValue, float ticksDuration);
 };
 class ExponentialValue: public DynamicValue {
 private:
 	float baseExponent;
-	int baseDuration;
+	float baseDuration;
 
 public:
 	ExponentialValue(objCounterParameters());
 	virtual ~ExponentialValue();
 
 	//initialize and return an ExponentialValue
-	static ExponentialValue* produce(objCounterParametersComma() float pBaseExponent, int pBaseDuration);
+	static ExponentialValue* produce(objCounterParametersComma() float pBaseExponent, float pBaseDuration);
 	//release a reference to this ExponentialValue and return it to the pool if applicable
 	virtual void release();
 	//set the constant value to the provided value
 	virtual DynamicValue* copyWithConstantValue(float pConstantValue);
 	//get the value at the given time
-	virtual float getValue(int ticksElapsed);
+	virtual float getValue(float ticksElapsed);
 };
 class LinearInterpolatedValue: public DynamicValue {
 public:
@@ -90,14 +90,14 @@ public:
 	class ValueAtTime {
 	private:
 		float value;
-		int atTicksTime;
+		float atTicksTime;
 
 	public:
-		ValueAtTime(float pValue, int pAtTicksTime);
+		ValueAtTime(float pValue, float pAtTicksTime);
 		virtual ~ValueAtTime();
 
 		float getValue() { return value; }
-		int getAtTicksTime() { return atTicksTime; }
+		float getAtTicksTime() { return atTicksTime; }
 	};
 
 private:
@@ -116,7 +116,7 @@ public:
 	virtual DynamicValue* copyWithConstantValue(float pConstantValue);
 	//get the value at the given time
 	//assumes there is at least one value
-	virtual float getValue(int ticksElapsed);
+	virtual float getValue(float ticksElapsed);
 };
 class PiecewiseValue: public DynamicValue {
 public:
@@ -124,14 +124,14 @@ public:
 	class ValueAtTime {
 	private:
 		ReferenceCounterHolder<DynamicValue> value;
-		int atTicksTime;
+		float atTicksTime;
 
 	public:
-		ValueAtTime(DynamicValue* pValue, int pAtTicksTime);
+		ValueAtTime(DynamicValue* pValue, float pAtTicksTime);
 		virtual ~ValueAtTime();
 
 		DynamicValue* getValue() { return value.get(); }
-		int getAtTicksTime() { return atTicksTime; }
+		float getAtTicksTime() { return atTicksTime; }
 	};
 
 private:
@@ -154,5 +154,5 @@ public:
 	virtual DynamicValue* copyWithConstantValue(float pConstantValue);
 	//get the value at the given time
 	//assumes there is at least one value
-	virtual float getValue(int ticksElapsed);
+	virtual float getValue(float ticksElapsed);
 };

@@ -70,10 +70,10 @@ void EntityState::setupZoomFrameBuffers() {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 float EntityState::getRenderCenterWorldX(int ticksTime) {
-	return x.get()->getValue(renderInterpolatedX ? ticksTime - lastUpdateTicksTime : 0);
+	return x.get()->getValue(renderInterpolatedX ? (float)(ticksTime - lastUpdateTicksTime) : 0.0f);
 }
 float EntityState::getRenderCenterWorldY(int ticksTime) {
-	return y.get()->getValue(renderInterpolatedY ? ticksTime - lastUpdateTicksTime : 0);
+	return y.get()->getValue(renderInterpolatedY ? (float)(ticksTime - lastUpdateTicksTime) : 0.0f);
 }
 float EntityState::getRenderCenterScreenX(EntityState* camera, int ticksTime) {
 	return getRenderCenterScreenXFromWorldX(getRenderCenterWorldX(ticksTime), camera, ticksTime);
@@ -112,7 +112,7 @@ void EntityState::setPosition(float pX, float pY, int pLastUpdateTicksTime) {
 	float originalXPosition = x.get()->getValue(0);
 	float originalYPosition = y.get()->getValue(0);
 	//find how far we have to go
-	int timediff = pLastUpdateTicksTime - lastUpdateTicksTime;
+	float timediff = (float)(pLastUpdateTicksTime - lastUpdateTicksTime);
 	float addX = pX - x.get()->getValue(timediff);
 	float addY = pY - y.get()->getValue(timediff);
 	//set a new position offset by how far we have to move
@@ -120,7 +120,7 @@ void EntityState::setPosition(float pX, float pY, int pLastUpdateTicksTime) {
 	y.set(y.get()->copyWithConstantValue(originalYPosition + addY));
 }
 void EntityState::setVelocity(DynamicValue* vx, DynamicValue* vy, int pLastUpdateTicksTime) {
-	int timediff = pLastUpdateTicksTime - lastUpdateTicksTime;
+	float timediff = (float)(pLastUpdateTicksTime - lastUpdateTicksTime);
 	x.set(vx->copyWithConstantValue(x.get()->getValue(timediff)));
 	y.set(vy->copyWithConstantValue(y.get()->getValue(timediff)));
 	lastUpdateTicksTime = pLastUpdateTicksTime;
@@ -135,7 +135,7 @@ void EntityState::beginEntityAnimation(
 	entityAnimation.get()->update(this, ticksTime);
 }
 float EntityState::renderBeginZoom(int ticksTime) {
-	float zoomValue = zoom.get()->getValue(ticksTime - lastUpdateTicksTime);
+	float zoomValue = zoom.get()->getValue((float)(ticksTime - lastUpdateTicksTime));
 	if (zoomValue == 1)
 		return 1;
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, preZoomFrameBufferId);
@@ -222,7 +222,7 @@ void DynamicCameraAnchor::updateWithPreviousDynamicCameraAnchor(
 			((xDirection & yDirection) != 0 ? diagonalSpeedPerSecond : speedPerSecond) / (float)Config::ticksPerSecond;
 		if (keyboardState[Config::sprintKeyBinding.value] != 0)
 			speedPerTick *= sprintModifier;
-		int ticksSinceLastUpdate = ticksTime - lastUpdateTicksTime;
+		float ticksSinceLastUpdate = (float)(ticksTime - lastUpdateTicksTime);
 		float newX = x.get()->getValue(ticksSinceLastUpdate);
 		float newY = y.get()->getValue(ticksSinceLastUpdate);
 		x.set(newCompositeQuarticValue(newX, (float)xDirection * speedPerTick, 0.0f, 0.0f, 0.0f));
@@ -246,7 +246,7 @@ void DynamicCameraAnchor::setNextCamera(GameState* nextGameState, int ticksTime)
 		nextGameState->setDynamicCamera();
 }
 void DynamicCameraAnchor::render(int ticksTime) {
-	int timediff = ticksTime - lastUpdateTicksTime;
+	float timediff = (float)(ticksTime - lastUpdateTicksTime);
 	GLfloat r = (GLfloat)screenOverlayR.get()->getValue(timediff);
 	GLfloat g = (GLfloat)screenOverlayG.get()->getValue(timediff);
 	GLfloat b = (GLfloat)screenOverlayB.get()->getValue(timediff);

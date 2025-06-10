@@ -21,7 +21,7 @@ pooledReferenceCounterDefineRelease(ConstantValue)
 DynamicValue* ConstantValue::copyWithConstantValue(float pConstantValue) {
 	return newConstantValue(pConstantValue);
 }
-float ConstantValue::getValue(int ticksElapsed) {
+float ConstantValue::getValue(float ticksElapsed) {
 	return value;
 }
 
@@ -56,15 +56,14 @@ DynamicValue* CompositeQuarticValue::copyWithConstantValue(float pConstantValue)
 	return newCompositeQuarticValue(
 		pConstantValue, linearValuePerTick, quadraticValuePerTick, cubicValuePerTick, quarticValuePerTick);
 }
-float CompositeQuarticValue::getValue(int ticksElapsed) {
-	float floatTicksElapsed = (float)ticksElapsed;
-	float ticksElapsedSquared = floatTicksElapsed * floatTicksElapsed;
-	float ticksElapsedCubed = ticksElapsedSquared * floatTicksElapsed;
+float CompositeQuarticValue::getValue(float ticksElapsed) {
+	float ticksElapsedSquared = ticksElapsed * ticksElapsed;
+	float ticksElapsedCubed = ticksElapsedSquared * ticksElapsed;
 	return constantValue
-		+ linearValuePerTick * floatTicksElapsed
+		+ linearValuePerTick * ticksElapsed
 		+ quadraticValuePerTick * ticksElapsedSquared
 		+ cubicValuePerTick * ticksElapsedCubed
-		+ quarticValuePerTick * ticksElapsedCubed * floatTicksElapsed;
+		+ quarticValuePerTick * ticksElapsedCubed * ticksElapsed;
 }
 CompositeQuarticValue* CompositeQuarticValue::cubicInterpolation(float targetValue, float ticksDuration) {
 	//vy = at(t-1) = at^2-at   (a < 0)
@@ -85,7 +84,7 @@ ExponentialValue::ExponentialValue(objCounterParameters())
 , baseDuration(1) {
 }
 ExponentialValue::~ExponentialValue() {}
-ExponentialValue* ExponentialValue::produce(objCounterParametersComma() float pBaseExponent, int pBaseDuration) {
+ExponentialValue* ExponentialValue::produce(objCounterParametersComma() float pBaseExponent, float pBaseDuration) {
 	initializeWithNewFromPool(e, ExponentialValue)
 	e->baseExponent = pBaseExponent;
 	e->baseDuration = pBaseDuration;
@@ -96,12 +95,12 @@ DynamicValue* ExponentialValue::copyWithConstantValue(float pConstantValue) {
 	//TODO not supported, needs a SumValue because the value at 0 is always 1
 	return this;
 }
-float ExponentialValue::getValue(int ticksElapsed) {
-	return powf(baseExponent, (float)ticksElapsed / baseDuration);
+float ExponentialValue::getValue(float ticksElapsed) {
+	return powf(baseExponent, ticksElapsed / baseDuration);
 }
 
 //////////////////////////////// LinearInterpolatedValue::ValueAtTime ////////////////////////////////
-LinearInterpolatedValue::ValueAtTime::ValueAtTime(float pValue, int pAtTicksTime)
+LinearInterpolatedValue::ValueAtTime::ValueAtTime(float pValue, float pAtTicksTime)
 : value(pValue)
 , atTicksTime(pAtTicksTime) {
 }
@@ -123,7 +122,7 @@ pooledReferenceCounterDefineRelease(LinearInterpolatedValue)
 DynamicValue* LinearInterpolatedValue::copyWithConstantValue(float pConstantValue) {
 	return this;
 }
-float LinearInterpolatedValue::getValue(int ticksElapsed) {
+float LinearInterpolatedValue::getValue(float ticksElapsed) {
 	//use the last value if we're after the last ticks time
 	int highIndex = (int)valuesAtTimes.size() - 1;
 	ValueAtTime* highValueAtTime = &valuesAtTimes[highIndex];
@@ -153,7 +152,7 @@ float LinearInterpolatedValue::getValue(int ticksElapsed) {
 }
 
 //////////////////////////////// PiecewiseValue::ValueAtTime ////////////////////////////////
-PiecewiseValue::ValueAtTime::ValueAtTime(DynamicValue* pValue, int pAtTicksTime)
+PiecewiseValue::ValueAtTime::ValueAtTime(DynamicValue* pValue, float pAtTicksTime)
 : value(pValue)
 , atTicksTime(pAtTicksTime) {
 }
@@ -185,7 +184,7 @@ DynamicValue* PiecewiseValue::copyWithConstantValue(float pConstantValue) {
 	}
 	return newPiecewiseValue(newValuesAtTimes);
 }
-float PiecewiseValue::getValue(int ticksElapsed) {
+float PiecewiseValue::getValue(float ticksElapsed) {
 	int activeValueIndex = 0;
 	int futureValueIndex = (int)valuesAtTimes.size();
 	while (activeValueIndex < futureValueIndex - 1) {
