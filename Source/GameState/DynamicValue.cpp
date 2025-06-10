@@ -67,6 +67,28 @@ float CompositeQuarticValue::getValue(int ticksElapsed) {
 		+ quarticValuePerTick * ticksElapsedCubed * floatTicksElapsed;
 }
 
+//////////////////////////////// ExponentialValue ////////////////////////////////
+ExponentialValue::ExponentialValue(objCounterParameters())
+: DynamicValue(objCounterArguments())
+, baseExponent(1.0f)
+, baseDuration(1) {
+}
+ExponentialValue::~ExponentialValue() {}
+ExponentialValue* ExponentialValue::produce(objCounterParametersComma() float pBaseExponent, int pBaseDuration) {
+	initializeWithNewFromPool(e, ExponentialValue)
+	e->baseExponent = pBaseExponent;
+	e->baseDuration = pBaseDuration;
+	return e;
+}
+pooledReferenceCounterDefineRelease(ExponentialValue)
+DynamicValue* ExponentialValue::copyWithConstantValue(float pConstantValue) {
+	//TODO not supported, needs a SumValue because the value at 0 is always 1
+	return this;
+}
+float ExponentialValue::getValue(int ticksElapsed) {
+	return powf(baseExponent, (float)ticksElapsed / baseDuration);
+}
+
 //////////////////////////////// LinearInterpolatedValue::ValueAtTime ////////////////////////////////
 LinearInterpolatedValue::ValueAtTime::ValueAtTime(float pValue, int pAtTicksTime)
 : value(pValue)

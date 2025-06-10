@@ -5,6 +5,7 @@
 		constantValue, linearValuePerTick, quadraticValuePerTick, cubicValuePerTick, quarticValuePerTick) \
 	produceWithArgs(\
 		CompositeQuarticValue, constantValue, linearValuePerTick, quadraticValuePerTick, cubicValuePerTick, quarticValuePerTick)
+#define newExponentialValue(baseExponent, baseDuration) produceWithArgs(ExponentialValue, baseExponent, baseDuration)
 #define newLinearInterpolatedValue(valuesAtTimes) produceWithArgs(LinearInterpolatedValue, valuesAtTimes)
 #define newPiecewiseValue(valuesAtTimes) produceWithArgs(PiecewiseValue, valuesAtTimes)
 
@@ -57,6 +58,24 @@ public:
 		float pCubicValuePerTick,
 		float pQuarticValuePerTick);
 	//release a reference to this CompositeQuarticValue and return it to the pool if applicable
+	virtual void release();
+	//set the constant value to the provided value
+	virtual DynamicValue* copyWithConstantValue(float pConstantValue);
+	//get the value at the given time
+	virtual float getValue(int ticksElapsed);
+};
+class ExponentialValue: public DynamicValue {
+private:
+	float baseExponent;
+	int baseDuration;
+
+public:
+	ExponentialValue(objCounterParameters());
+	virtual ~ExponentialValue();
+
+	//initialize and return an ExponentialValue
+	static ExponentialValue* produce(objCounterParametersComma() float pBaseExponent, int pBaseDuration);
+	//release a reference to this ExponentialValue and return it to the pool if applicable
 	virtual void release();
 	//set the constant value to the provided value
 	virtual DynamicValue* copyWithConstantValue(float pConstantValue);
