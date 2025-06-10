@@ -150,6 +150,9 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 		} else
 			mapState.get()->spawnGoalSparks(playerLevelN, gameTicksTime);
 		levelsUnlocked = playerLevelN;
+		//save the game if it's the last level
+		if (playerLevelN == MapState::getLevelCount())
+			saveState(gameTicksTime);
 	}
 	if (mapState.get()->requestsHint() || perpetualHints)
 		mapState.get()->setHint(playerState.get()->getHint(), gameTicksTime);
