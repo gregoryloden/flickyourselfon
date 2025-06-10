@@ -174,10 +174,10 @@ int gameMain(int argc, char* argv[]) {
 		ObjectPool<EntityAnimation>::clearPool();
 		ObjectPool<EntityAnimation::SetScreenOverlayColor>::clearPool();
 		ObjectPool<EntityAnimation::SetVelocity>::clearPool();
+		ObjectPool<PiecewiseValue>::clearPool();
 		ObjectPool<ConstantValue>::clearPool();
 		ObjectPool<CompositeQuarticValue>::clearPool();
 		ObjectPool<LinearInterpolatedValue>::clearPool();
-		ObjectPool<PiecewiseValue>::clearPool();
 		ObjectPool<EntityAnimation::Delay>::clearPool();
 		ObjectPool<EntityAnimation::SetPosition>::clearPool();
 		ObjectPool<EntityAnimation::SetGhostSprite>::clearPool();
