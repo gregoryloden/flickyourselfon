@@ -79,7 +79,7 @@ public:
 	static ExponentialValue* produce(objCounterParametersComma() float pBaseExponent, float pBaseDuration);
 	//release a reference to this ExponentialValue and return it to the pool if applicable
 	virtual void release();
-	//set the constant value to the provided value
+	//return a new value shifted so that it's the given value at time 0
 	virtual DynamicValue* copyWithConstantValue(float pConstantValue);
 	//get the value at the given time
 	virtual float getValue(float ticksElapsed);
