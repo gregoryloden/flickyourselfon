@@ -959,6 +959,7 @@ void GameState::beginOutroAnimation(int ticksTime) {
 
 	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> playerAnimationComponents ({
 		newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f)),
+		newEntityAnimationDelay(EntityAnimation::getComponentTotalTicksDuration(dynamicCameraAnchorAnimationComponents)),
 	});
 	playerState.get()->beginEntityAnimation(&playerAnimationComponents, ticksTime);
 }
