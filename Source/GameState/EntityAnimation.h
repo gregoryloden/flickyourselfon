@@ -320,6 +320,10 @@ public:
 	bool update(EntityState* entityState, int ticksTime);
 	//return the total ticks duration of all the components (really just the Delays)
 	static int getComponentTotalTicksDuration(vector<ReferenceCounterHolder<EntityAnimationTypes::Component>>& pComponents);
+	//add a Delay to the first components so that their delay sum equals the second components'
+	static void delayToEndOf(
+		vector<ReferenceCounterHolder<EntityAnimationTypes::Component>>& pComponents,
+		vector<ReferenceCounterHolder<EntityAnimationTypes::Component>>& componentsWithTargetDelay);
 	//get the total ticks duration of this animation's components
 	int getTotalTicksDuration();
 };

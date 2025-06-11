@@ -332,16 +332,13 @@ void GameState::startRadioTowerAnimation(int ticksTime) {
 	dynamicCameraAnchor.get()->beginEntityAnimation(&dynamicCameraAnchorAnimationComponents, ticksTime);
 
 	//delay the player for the duration of the animation
-	int remainingKickingAimationTicksDuration =
-		SpriteRegistry::playerKickingAnimation->getTotalTicksDuration()
-			- SpriteRegistry::playerKickingAnimationTicksPerFrame;
 	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> playerAnimationComponents ({
-		newEntityAnimationDelay(remainingKickingAimationTicksDuration),
-		newEntityAnimationSetSpriteAnimation(nullptr),
 		newEntityAnimationDelay(
-			EntityAnimation::getComponentTotalTicksDuration(dynamicCameraAnchorAnimationComponents)
-				- remainingKickingAimationTicksDuration),
+			SpriteRegistry::playerKickingAnimation->getTotalTicksDuration()
+				- SpriteRegistry::playerKickingAnimationTicksPerFrame),
+		newEntityAnimationSetSpriteAnimation(nullptr),
 	});
+	EntityAnimation::delayToEndOf(playerAnimationComponents, dynamicCameraAnchorAnimationComponents);
 	playerState.get()->beginEntityAnimation(&playerAnimationComponents, ticksTime);
 	playerState.get()->clearUndoRedoStates();
 
@@ -979,10 +976,7 @@ void GameState::beginOutroAnimation(int ticksTime) {
 			newEntityAnimationSetZoom(newConstantValue(maxZoom)),
 			newEntityAnimationDelay(foreverDuration),
 		});
-	playerAnimationComponents.push_back(
-		newEntityAnimationDelay(
-			EntityAnimation::getComponentTotalTicksDuration(dynamicCameraAnchorAnimationComponents)
-				- EntityAnimation::getComponentTotalTicksDuration(playerAnimationComponents)));
+	EntityAnimation::delayToEndOf(playerAnimationComponents, dynamicCameraAnchorAnimationComponents);
 
 	dynamicCameraAnchor.get()->beginEntityAnimation(&dynamicCameraAnchorAnimationComponents, ticksTime);
 	playerState.get()->beginEntityAnimation(&playerAnimationComponents, ticksTime);

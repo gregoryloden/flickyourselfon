@@ -364,6 +364,14 @@ int EntityAnimation::getComponentTotalTicksDuration(vector<ReferenceCounterHolde
 		totalTicksDuration += component.get()->getDelayTicksDuration();
 	return totalTicksDuration;
 }
+void EntityAnimation::delayToEndOf(
+	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>>& pComponents,
+	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>>& componentsWithTargetDelay)
+{
+	pComponents.push_back(
+		newEntityAnimationDelay(
+			getComponentTotalTicksDuration(componentsWithTargetDelay) - getComponentTotalTicksDuration(pComponents)));
+}
 int EntityAnimation::getTotalTicksDuration() {
 	return getComponentTotalTicksDuration(components);
 }
