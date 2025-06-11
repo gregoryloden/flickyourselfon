@@ -210,6 +210,7 @@ DynamicCameraAnchor* DynamicCameraAnchor::produce(objCounterParameters()) {
 	d->screenOverlayG.set(newConstantValue(0.0f));
 	d->screenOverlayB.set(newConstantValue(0.0f));
 	d->screenOverlayA.set(newConstantValue(0.0f));
+	d->zoom.set(newConstantValue(1.0f));
 	d->shouldSwitchToPlayerCamera = false;
 	return d;
 }
