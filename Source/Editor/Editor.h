@@ -13,14 +13,14 @@ class Editor {
 private:
 	enum class Zone: unsigned char {
 		Right,
-		Bottom
+		Bottom,
 	};
 	enum class MouseDragAction: unsigned char {
 		None,
 		RaiseLowerTile,
 		AddRemoveRail,
 		AddRemoveSwitch,
-		AddRemoveResetSwitch
+		AddRemoveResetSwitch,
 	};
 public:
 	//Should only be allocated on the stack

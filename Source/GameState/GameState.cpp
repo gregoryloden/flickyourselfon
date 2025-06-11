@@ -278,7 +278,7 @@ void GameState::startRadioTowerAnimation(int ticksTime) {
 			radioTowerAntennaX - playerX, radioTowerAntennaY - playerY, (float)playerToRadioTowerAnimationTicks),
 		newEntityAnimationDelay(playerToRadioTowerAnimationTicks),
 		stopMoving,
-		newEntityAnimationDelay(preRadioWavesAnimationTicks)
+		newEntityAnimationDelay(preRadioWavesAnimationTicks),
 	});
 
 	//add the radio waves animation
@@ -335,7 +335,7 @@ void GameState::startRadioTowerAnimation(int ticksTime) {
 		newEntityAnimationSetSpriteAnimation(nullptr),
 		newEntityAnimationDelay(
 			EntityAnimation::getComponentTotalTicksDuration(dynamicCameraAnchorAnimationComponents)
-				- remainingKickingAimationTicksDuration)
+				- remainingKickingAimationTicksDuration),
 	});
 	playerState.get()->beginEntityAnimation(&playerAnimationComponents, ticksTime);
 	playerState.get()->clearUndoRedoStates();
@@ -585,7 +585,7 @@ void GameState::loadSaveFile() {
 					{
 						newEntityAnimationSetPosition(
 							PlayerState::introAnimationPlayerCenterX, PlayerState::introAnimationPlayerCenterY),
-						newEntityAnimationDelay(timestamp)
+						newEntityAnimationDelay(timestamp),
 					});
 				lastTimestamp = timestamp;
 				lastX = PlayerState::introAnimationPlayerCenterX;
@@ -622,7 +622,7 @@ void GameState::loadSaveFile() {
 					{
 						newEntityAnimationSetGhostSprite(false, 0.0f, 0.0f, SpriteDirection::Down),
 						newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f)),
-						newEntityAnimationSetSpriteAnimation(nullptr)
+						newEntityAnimationSetSpriteAnimation(nullptr),
 					});
 				lastTimestamp = timestamp + climbDuration;
 			} else if (StringUtils::startsWith(logMessageString, "  fall ")) {
@@ -651,7 +651,7 @@ void GameState::loadSaveFile() {
 					{
 						newEntityAnimationSetGhostSprite(false, 0.0f, 0.0f, SpriteDirection::Down),
 						newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f)),
-						newEntityAnimationSetSpriteAnimation(nullptr)
+						newEntityAnimationSetSpriteAnimation(nullptr),
 					});
 				lastTimestamp = timestamp + fallDuration;
 			} else if (StringUtils::startsWith(logMessageString, "  rail ")) {
@@ -666,7 +666,7 @@ void GameState::loadSaveFile() {
 					replayComponents.end(),
 					{
 						newEntityAnimationSetGhostSprite(false, 0.0f, 0.0f, SpriteDirection::Down),
-						newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f))
+						newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f)),
 					});
 				PlayerState::addRailRideComponents(
 					MapState::getIdFromRailIndex(railIndex),
@@ -694,7 +694,7 @@ void GameState::loadSaveFile() {
 					replayComponents.end(),
 					{
 						newEntityAnimationSetGhostSprite(false, 0.0f, 0.0f, SpriteDirection::Down),
-						newEntityAnimationSetDirection(SpriteDirection::Down)
+						newEntityAnimationSetDirection(SpriteDirection::Down),
 					});
 				PlayerState::addKickSwitchComponents(
 					MapState::getIdFromSwitchIndex(switchIndex), &replayComponents, true, false, &Hint::none);
@@ -716,7 +716,7 @@ void GameState::loadSaveFile() {
 					replayComponents.end(),
 					{
 						newEntityAnimationSetGhostSprite(false, 0.0f, 0.0f, SpriteDirection::Down),
-						newEntityAnimationSetDirection(SpriteDirection::Down)
+						newEntityAnimationSetDirection(SpriteDirection::Down),
 					});
 				PlayerState::addKickResetSwitchComponents(
 					MapState::getIdFromResetSwitchIndex(resetSwitchIndex), &replayComponents, nullptr, &Hint::none);
@@ -757,7 +757,7 @@ void GameState::loadSaveFile() {
 				newEntityAnimationSetVelocity(
 					newCompositeQuarticValue(0.0f, moveX, 0.0f, 0.0f, 0.0f),
 					newCompositeQuarticValue(0.0f, moveY, 0.0f, 0.0f, 0.0f)),
-				entityAnimationDirectionForDelay(spriteDirection, ticksDuration)
+				entityAnimationDirectionForDelay(spriteDirection, ticksDuration),
 			});
 	}
 #endif
@@ -870,7 +870,7 @@ void GameState::beginIntroAnimation(int ticksTime) {
 		newEntityAnimationDelay(animationEndTicksTime),
 		newEntityAnimationSetScreenOverlayColor(
 			newConstantValue(0.0f), newConstantValue(0.0f), newConstantValue(0.0f), newConstantValue(0.0f)),
-		newEntityAnimationSwitchToPlayerCamera()
+		newEntityAnimationSwitchToPlayerCamera(),
 	});
 	dynamicCameraAnchor.get()->beginEntityAnimation(&cameraAnimationComponents, ticksTime);
 }

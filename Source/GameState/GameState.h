@@ -17,7 +17,7 @@ private:
 		BootExplanation,
 		RadioTowerExplanation,
 		GoalExplanation,
-		Outro
+		Outro,
 	};
 
 	//title/text animation timing

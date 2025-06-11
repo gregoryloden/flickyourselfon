@@ -58,12 +58,12 @@ void SpriteRegistry::loadAll() {
 			newSpriteAnimationFrame(0, SpriteAnimation::absentSpriteIndex, playerWalkingAnimationTicksPerFrame) COMMA
 			newSpriteAnimationFrame(1, SpriteAnimation::absentSpriteIndex, playerWalkingAnimationTicksPerFrame) COMMA
 			newSpriteAnimationFrame(0, SpriteAnimation::absentSpriteIndex, playerWalkingAnimationTicksPerFrame) COMMA
-			newSpriteAnimationFrame(2, SpriteAnimation::absentSpriteIndex, playerWalkingAnimationTicksPerFrame)
+			newSpriteAnimationFrame(2, SpriteAnimation::absentSpriteIndex, playerWalkingAnimationTicksPerFrame) COMMA
 		});
 	playerLegLiftAnimation = newSpriteAnimation(
 		player,
 		{
-			newSpriteAnimationFrame(3, SpriteAnimation::absentSpriteIndex, playerKickingAnimationTicksPerFrame)
+			newSpriteAnimationFrame(3, SpriteAnimation::absentSpriteIndex, playerKickingAnimationTicksPerFrame) COMMA
 		});
 	playerBootWalkingAnimation = newSpriteAnimation(
 		player,
@@ -71,7 +71,7 @@ void SpriteRegistry::loadAll() {
 			newSpriteAnimationFrame(4, SpriteAnimation::absentSpriteIndex, playerWalkingAnimationTicksPerFrame) COMMA
 			newSpriteAnimationFrame(5, SpriteAnimation::absentSpriteIndex, playerWalkingAnimationTicksPerFrame) COMMA
 			newSpriteAnimationFrame(4, SpriteAnimation::absentSpriteIndex, playerWalkingAnimationTicksPerFrame) COMMA
-			newSpriteAnimationFrame(6, SpriteAnimation::absentSpriteIndex, playerWalkingAnimationTicksPerFrame)
+			newSpriteAnimationFrame(6, SpriteAnimation::absentSpriteIndex, playerWalkingAnimationTicksPerFrame) COMMA
 		});
 	playerBootSprintingAnimation = newSpriteAnimation(
 		player,
@@ -87,21 +87,21 @@ void SpriteRegistry::loadAll() {
 			newSpriteAnimationFrame(4, SpriteAnimation::absentSpriteIndex, playerFastWalkingAnimationTicksPerFrame) COMMA
 			newSpriteAnimationFrame(5, SpriteAnimation::absentSpriteIndex, playerFastWalkingAnimationTicksPerFrame + 1) COMMA
 			newSpriteAnimationFrame(4, SpriteAnimation::absentSpriteIndex, playerFastWalkingAnimationTicksPerFrame) COMMA
-			newSpriteAnimationFrame(6, SpriteAnimation::absentSpriteIndex, playerFastWalkingAnimationTicksPerFrame + 1)
+			newSpriteAnimationFrame(6, SpriteAnimation::absentSpriteIndex, playerFastWalkingAnimationTicksPerFrame + 1) COMMA
 		});
 	playerKickingAnimation = newSpriteAnimation(
 		player,
 		{
 			newSpriteAnimationFrame(7, SpriteAnimation::absentSpriteIndex, playerKickingAnimationTicksPerFrame) COMMA
 			newSpriteAnimationFrame(8, SpriteAnimation::absentSpriteIndex, playerKickingAnimationTicksPerFrame) COMMA
-			newSpriteAnimationFrame(7, SpriteAnimation::absentSpriteIndex, playerKickingAnimationTicksPerFrame)
+			newSpriteAnimationFrame(7, SpriteAnimation::absentSpriteIndex, playerKickingAnimationTicksPerFrame) COMMA
 		});
 	playerFastKickingAnimation = newSpriteAnimation(
 		player,
 		{
 			newSpriteAnimationFrame(7, SpriteAnimation::absentSpriteIndex, playerFastKickingAnimationTicksPerFrame) COMMA
 			newSpriteAnimationFrame(8, SpriteAnimation::absentSpriteIndex, playerFastKickingAnimationTicksPerFrame) COMMA
-			newSpriteAnimationFrame(7, SpriteAnimation::absentSpriteIndex, playerFastKickingAnimationTicksPerFrame)
+			newSpriteAnimationFrame(7, SpriteAnimation::absentSpriteIndex, playerFastKickingAnimationTicksPerFrame) COMMA
 		});
 	playerBootLiftAnimation = newSpriteAnimation(player, { newSpriteAnimationFrame(7, SpriteAnimation::absentSpriteIndex, 1) });
 	playerRidingRailAnimation =
@@ -115,7 +115,7 @@ void SpriteRegistry::loadAll() {
 			newSpriteAnimationFrame(4, 0, radioWaveAnimationTicksPerFrame) COMMA
 			newSpriteAnimationFrame(1, 0, radioWaveAnimationTicksPerFrame) COMMA
 			newSpriteAnimationFrame(2, 0, radioWaveAnimationTicksPerFrame) COMMA
-			newSpriteAnimationFrame(3, 0, radioWaveAnimationTicksPerFrame)
+			newSpriteAnimationFrame(3, 0, radioWaveAnimationTicksPerFrame) COMMA
 		});
 	radioWavesAnimation->disableLooping();
 	railWavesAnimation = newSpriteAnimation(
@@ -125,7 +125,7 @@ void SpriteRegistry::loadAll() {
 			newSpriteAnimationFrame(1, 0, radioWaveAnimationTicksPerFrame) COMMA
 			newSpriteAnimationFrame(3, 0, radioWaveAnimationTicksPerFrame) COMMA
 			newSpriteAnimationFrame(1, 0, radioWaveAnimationTicksPerFrame) COMMA
-			newSpriteAnimationFrame(2, 0, radioWaveAnimationTicksPerFrame)
+			newSpriteAnimationFrame(2, 0, radioWaveAnimationTicksPerFrame) COMMA
 		});
 	railWavesAnimation->disableLooping();
 	switchWavesAnimation = newSpriteAnimation(
@@ -135,7 +135,7 @@ void SpriteRegistry::loadAll() {
 			newSpriteAnimationFrame(1, 0, radioWaveAnimationTicksPerFrame) COMMA
 			newSpriteAnimationFrame(3, 0, radioWaveAnimationTicksPerFrame) COMMA
 			newSpriteAnimationFrame(1, 0, radioWaveAnimationTicksPerFrame) COMMA
-			newSpriteAnimationFrame(2, 0, radioWaveAnimationTicksPerFrame)
+			newSpriteAnimationFrame(2, 0, radioWaveAnimationTicksPerFrame) COMMA
 		});
 	switchWavesAnimation->disableLooping();
 	switchWavesShortAnimation = newSpriteAnimation(

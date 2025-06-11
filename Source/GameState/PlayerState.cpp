@@ -1262,7 +1262,7 @@ void PlayerState::addRailRideComponents(
 						newCompositeQuarticValue(0.0f, yMoveDistance / bootLiftDuration, 0.0f, 0.0f, 0.0f)),
 					newEntityAnimationDelay(bootLiftDuration),
 					newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerRidingRailAnimation),
-					newEntityAnimationSetDirection(nextSpriteDirection)
+					newEntityAnimationSetDirection(nextSpriteDirection),
 				});
 			if (rideRailSpeed == RideRailSpeed::Forward)
 				components->push_back(newEntityAnimationPlaySound(Audio::stepOnRailSound, 0));
@@ -1275,7 +1275,7 @@ void PlayerState::addRailRideComponents(
 					newEntityAnimationSetVelocity(
 						newCompositeQuarticValue(0.0f, xMoveDistance / floatRailToRailTicksDuration, 0.0f, 0.0f, 0.0f),
 						newCompositeQuarticValue(0.0f, yMoveDistance / floatRailToRailTicksDuration, 0.0f, 0.0f, 0.0f)),
-					newEntityAnimationDelay(railToRailTicksDuration)
+					newEntityAnimationDelay(railToRailTicksDuration),
 				});
 		//curved section
 		} else {
@@ -1307,7 +1307,7 @@ void PlayerState::addRailRideComponents(
 				{
 					newEntityAnimationDelay(halfRailToRailTicksDuration),
 					newEntityAnimationSetDirection(nextSpriteDirection),
-					newEntityAnimationDelay(railToRailTicksDuration - halfRailToRailTicksDuration)
+					newEntityAnimationDelay(railToRailTicksDuration - halfRailToRailTicksDuration),
 				});
 		}
 		if (rideRailSpeed == RideRailSpeed::Forward)
@@ -1387,7 +1387,7 @@ void PlayerState::addKickSwitchComponents(
 			newEntityAnimationGenerateHint(useHint),
 			newEntityAnimationDelay(
 				SpriteRegistry::playerKickingAnimation->getTotalTicksDuration()
-					- SpriteRegistry::playerKickingAnimationTicksPerFrame)
+					- SpriteRegistry::playerKickingAnimationTicksPerFrame),
 		});
 }
 void PlayerState::kickResetSwitch(short resetSwitchId, int ticksTime) {
@@ -1417,7 +1417,7 @@ void PlayerState::addKickResetSwitchComponents(
 			newEntityAnimationGenerateHint(useHint),
 			newEntityAnimationDelay(
 				SpriteRegistry::playerKickingAnimation->getTotalTicksDuration()
-					- SpriteRegistry::playerKickingAnimationTicksPerFrame)
+					- SpriteRegistry::playerKickingAnimationTicksPerFrame),
 		});
 }
 void PlayerState::setUndoState(ReferenceCounterHolder<UndoState>& holder, UndoState* newUndoState) {
