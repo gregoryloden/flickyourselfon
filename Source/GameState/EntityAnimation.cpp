@@ -79,6 +79,26 @@ EntityAnimation::SetVelocity* EntityAnimation::SetVelocity::cubicInterpolation(
 		CompositeQuarticValue::cubicInterpolation(yMoveDistance, ticksDuration));
 }
 
+//////////////////////////////// EntityAnimation::SetZoom ////////////////////////////////
+EntityAnimation::SetZoom::SetZoom(objCounterParameters())
+: Component(objCounterArguments())
+, zoom(nullptr) {
+}
+EntityAnimation::SetZoom::~SetZoom() {}
+EntityAnimation::SetZoom* EntityAnimation::SetZoom::produce(objCounterParametersComma() DynamicValue* pZoom) {
+	initializeWithNewFromPool(s, EntityAnimation::SetZoom)
+	s->zoom.set(pZoom);
+	return s;
+}
+pooledReferenceCounterDefineRelease(EntityAnimation::SetZoom)
+void EntityAnimation::SetZoom::prepareReturnToPool() {
+	zoom.clear();
+}
+bool EntityAnimation::SetZoom::handle(EntityState* entityState, int ticksTime) {
+	entityState->setZoom(zoom.get());
+	return true;
+}
+
 //////////////////////////////// EntityAnimation::SetSpriteAnimation ////////////////////////////////
 EntityAnimation::SetSpriteAnimation::SetSpriteAnimation(objCounterParameters())
 : Component(objCounterArguments())

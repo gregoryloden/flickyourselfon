@@ -108,6 +108,7 @@ template class ObjectPool<EntityAnimation::SetScreenOverlayColor>;
 template class ObjectPool<EntityAnimation::SetSpriteAnimation>;
 template class ObjectPool<EntityAnimation::SetDirection>;
 template class ObjectPool<EntityAnimation::SetVelocity>;
+template class ObjectPool<EntityAnimation::SetZoom>;
 template class ObjectPool<EntityAnimation::SpawnParticle>;
 template class ObjectPool<EntityAnimation::SwitchToPlayerCamera>;
 template class ObjectPool<ExponentialValue>;

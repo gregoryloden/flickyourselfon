@@ -67,7 +67,8 @@ PlayerState::PlayerState(objCounterParameters())
 , pauseY(nullptr)
 , pauseSpriteDirection(SpriteDirection::Down)
 , pauseZ(0)
-, noClip(false) {
+, noClip(false)
+, shouldEndGame(false) {
 }
 PlayerState::~PlayerState() {
 	delete collisionRect;
@@ -120,6 +121,7 @@ void PlayerState::copyPlayerState(PlayerState* other) {
 	pauseSpriteDirection = other->pauseSpriteDirection;
 	pauseZ = other->pauseZ;
 	noClip = other->noClip;
+	shouldEndGame = other->shouldEndGame;
 }
 pooledReferenceCounterDefineRelease(PlayerState)
 void PlayerState::prepareReturnToPool() {
@@ -258,9 +260,10 @@ void PlayerState::setLevelSelectState(int levelN) {
 	}
 }
 void PlayerState::updateWithPreviousPlayerState(PlayerState* prev, bool hasKeyboardControl, int ticksTime) {
-	bool previousStateHadEntityAnimation = prev->entityAnimation.get() != nullptr;
+	shouldEndGame = false;
 
 	//if we have an entity animation, update with that instead
+	bool previousStateHadEntityAnimation = prev->entityAnimation.get() != nullptr;
 	if (previousStateHadEntityAnimation) {
 		copyPlayerState(prev);
 		if (entityAnimation.get()->update(this, ticksTime))
@@ -665,8 +668,10 @@ bool PlayerState::setResetSwitchKickAction(float xPosition, float yPosition) {
 	if (resetSwitchMapX == -1 || resetSwitchMapY == -1 || MapState::getHeight(resetSwitchMapX, resetSwitchMapY) != z)
 		return false;
 
+	KickActionType kickActionType =
+		getLevelN() == MapState::getLevelCount() ? KickActionType::EndGame : KickActionType::ResetSwitch;
 	short resetSwitchId = MapState::getRailSwitchId(resetSwitchMapX, resetSwitchMapY);
-	availableKickAction.set(newRailSwitchKickAction(KickActionType::ResetSwitch, resetSwitchId, -1));
+	availableKickAction.set(newRailSwitchKickAction(kickActionType, resetSwitchId, -1));
 	return true;
 }
 bool PlayerState::setClimbKickAction(float xPosition, float yPosition) {
@@ -936,6 +941,9 @@ void PlayerState::beginKicking(int ticksTime) {
 			break;
 		case KickActionType::ResetSwitch:
 			kickResetSwitch(kickAction->getRailSwitchId(), ticksTime);
+			break;
+		case KickActionType::EndGame:
+			shouldEndGame = true;
 			break;
 		default:
 			kickAir(ticksTime);

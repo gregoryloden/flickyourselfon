@@ -87,6 +87,7 @@ private:
 	SpriteDirection pauseSpriteDirection;
 	char pauseZ;
 	bool noClip;
+	bool shouldEndGame;
 
 public:
 	PlayerState(objCounterParameters());
@@ -94,6 +95,7 @@ public:
 
 	Hint* getHint() { return hint; }
 	void obtainBoot() { hasBoot = true; }
+	bool getShouldEndGame() { return shouldEndGame; }
 	//initialize and return a PlayerState
 	static PlayerState* produce(objCounterParametersComma() MapState* mapState);
 	//copy the state of the other PlayerState

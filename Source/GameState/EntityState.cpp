@@ -130,6 +130,9 @@ void EntityState::setVelocity(DynamicValue* vx, DynamicValue* vy, int pLastUpdat
 	y.set(vy->copyWithConstantValue(y.get()->getValue(timediff)));
 	lastUpdateTicksTime = pLastUpdateTicksTime;
 }
+void EntityState::setZoom(DynamicValue* pZoom) {
+	zoom.set(pZoom);
+}
 void EntityState::beginEntityAnimation(
 	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>>* components, int ticksTime)
 {

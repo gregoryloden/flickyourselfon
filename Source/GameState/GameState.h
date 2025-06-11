@@ -106,6 +106,8 @@ private:
 	#endif
 	//give the camera and player their intro animations
 	void beginIntroAnimation(int ticksTime);
+	//give the camera and player their outro animations
+	void beginOutroAnimation(int ticksTime);
 	//add components to make the player start or continue walking, including sound effects
 	//returns the length of this walking animation so far, which is equal to the given duration plus the previous duration
 	int introAnimationWalk(

@@ -56,6 +56,7 @@ void KickAction::render(float centerX, float bottomY, bool hasRailsToReset) {
 			break;
 		case KickActionType::Undo:
 		case KickActionType::Redo:
+		case KickActionType::EndGame:
 			showKickIndicator = true;
 			break;
 		case KickActionType::ResetSwitch: {

@@ -91,6 +91,8 @@ public:
 	void setPosition(float pX, float pY, int pLastUpdateTicksTime);
 	//set the velocity to the given velocity at the given time, preserving the position
 	void setVelocity(DynamicValue* vx, DynamicValue* vy, int pLastUpdateTicksTime);
+	//set the zoom to be the given zoom
+	void setZoom(DynamicValue* pZoom);
 	//start the given entity animation
 	void beginEntityAnimation(vector<ReferenceCounterHolder<EntityAnimationTypes::Component>>* components, int ticksTime);
 	//setup rendering to render a zoomed image

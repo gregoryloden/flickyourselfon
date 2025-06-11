@@ -4,6 +4,7 @@
 #define newEntityAnimationDelay(ticksDuration) produceWithArgs(EntityAnimation::Delay, ticksDuration)
 #define newEntityAnimationSetPosition(x, y) produceWithArgs(EntityAnimation::SetPosition, x, y)
 #define newEntityAnimationSetVelocity(vx, vy) produceWithArgs(EntityAnimation::SetVelocity, vx, vy)
+#define newEntityAnimationSetZoom(zoom) produceWithArgs(EntityAnimation::SetZoom, zoom)
 #define newEntityAnimationSetSpriteAnimation(animation) produceWithArgs(EntityAnimation::SetSpriteAnimation, animation)
 #define newEntityAnimationSetDirection(direction) produceWithArgs(EntityAnimation::SetDirection, direction)
 #define newEntityAnimationSetGhostSprite(show, x, y, direction) \
@@ -99,6 +100,25 @@ public:
 		virtual bool handle(EntityState* entityState, int ticksTime);
 		//return a SetVelocity with x and y that each follow a curve from (0, 0) to (1, 1) with 0 slope at (0, 0) and (1, 1)
 		static SetVelocity* cubicInterpolation(float xMoveDistance, float yMoveDistance, float ticksDuration);
+	};
+	class SetZoom: public EntityAnimationTypes::Component {
+	private:
+		ReferenceCounterHolder<DynamicValue> zoom;
+
+	public:
+		SetZoom(objCounterParameters());
+		virtual ~SetZoom();
+
+		//initialize and return a SetZoom
+		static SetZoom* produce(objCounterParametersComma() DynamicValue* pZoom);
+		//release a reference to this SetZoom and return it to the pool if applicable
+		virtual void release();
+	protected:
+		//release components before this is returned to the pool
+		virtual void prepareReturnToPool();
+	public:
+		//return that the animation should continue updating after setting the zoom on the entity state
+		virtual bool handle(EntityState* entityState, int ticksTime);
 	};
 	class SetSpriteAnimation: public EntityAnimationTypes::Component {
 	private:

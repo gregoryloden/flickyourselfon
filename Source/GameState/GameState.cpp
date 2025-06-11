@@ -219,6 +219,11 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 		}
 	}
 
+	if (playerState.get()->getShouldEndGame()) {
+		beginOutroAnimation(gameTicksTime);
+		setDynamicCamera();
+	}
+
 	//if we saved the floor file, the editor requests that we save the game too, since rail/switch ids may have changed
 	if (Editor::needsGameStateSave) {
 		saveState(gameTicksTime);
@@ -927,6 +932,35 @@ int GameState::introAnimationWalk(
 		playerAnimationComponents.push_back(newEntityAnimationDelay(stepInterval));
 		durationRemaining -= stepInterval;
 	}
+}
+void GameState::beginOutroAnimation(int ticksTime) {
+	float playerX = playerState.get()->getRenderCenterWorldX(ticksTime);
+	float playerY = playerState.get()->getRenderCenterWorldY(ticksTime);
+	static constexpr int foreverDuration = 3600 * 1000;
+	static constexpr float maxZoom = 13.0f;
+	static constexpr int zoomDuration = 2000;
+	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> dynamicCameraAnchorAnimationComponents ({
+		newEntityAnimationSetPosition(playerX, playerY),
+		newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f)),
+		newEntityAnimationSetZoom(
+			newPiecewiseValue({
+				PiecewiseValue::ValueAtTime(
+					newTimeFunctionValue(
+						newExponentialValue(maxZoom, (float)zoomDuration),
+						newCompositeQuarticValue(0.0f, 0.0f, 0.5f / zoomDuration, 0.5f / zoomDuration / zoomDuration, 0.0f)),
+					0) COMMA
+				PiecewiseValue::ValueAtTime(newConstantValue(maxZoom), zoomDuration) COMMA
+			})),
+		newEntityAnimationDelay(zoomDuration),
+		newEntityAnimationSetZoom(newConstantValue(maxZoom)),
+		newEntityAnimationDelay(foreverDuration),
+	});
+	dynamicCameraAnchor.get()->beginEntityAnimation(&dynamicCameraAnchorAnimationComponents, ticksTime);
+
+	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> playerAnimationComponents ({
+		newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f)),
+	});
+	playerState.get()->beginEntityAnimation(&playerAnimationComponents, ticksTime);
 }
 void GameState::resetGame(int ticksTime) {
 	Audio::stopAll();
