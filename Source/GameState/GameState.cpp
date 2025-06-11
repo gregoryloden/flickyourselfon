@@ -934,33 +934,57 @@ int GameState::introAnimationWalk(
 	}
 }
 void GameState::beginOutroAnimation(int ticksTime) {
+	EntityAnimation::SetVelocity* stopMoving = newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f));
+
+	//first, have the player kick the end-game reset switch
+	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> playerAnimationComponents ({
+		stopMoving,
+		newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerKickingAnimation),
+		newEntityAnimationDelay(SpriteRegistry::playerKickingAnimationTicksPerFrame),
+		newEntityAnimationPlaySound(Audio::kickSound, 0),
+		newEntityAnimationDelay(
+			SpriteRegistry::playerKickingAnimation->getTotalTicksDuration()
+				- SpriteRegistry::playerKickingAnimationTicksPerFrame),
+		newEntityAnimationSetSpriteAnimation(nullptr),
+	});
 	float playerX = playerState.get()->getRenderCenterWorldX(ticksTime);
 	float playerY = playerState.get()->getRenderCenterWorldY(ticksTime);
-	static constexpr int foreverDuration = 3600 * 1000;
-	static constexpr float maxZoom = 13.0f;
-	static constexpr int zoomDuration = 2000;
 	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> dynamicCameraAnchorAnimationComponents ({
 		newEntityAnimationSetPosition(playerX, playerY),
-		newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f)),
-		newEntityAnimationSetZoom(
-			newPiecewiseValue({
-				PiecewiseValue::ValueAtTime(
-					newTimeFunctionValue(
-						newExponentialValue(maxZoom, (float)zoomDuration),
-						newCompositeQuarticValue(0.0f, 0.0f, 0.5f / zoomDuration, 0.5f / zoomDuration / zoomDuration, 0.0f)),
-					0) COMMA
-				PiecewiseValue::ValueAtTime(newConstantValue(maxZoom), zoomDuration) COMMA
-			})),
-		newEntityAnimationDelay(zoomDuration),
-		newEntityAnimationSetZoom(newConstantValue(maxZoom)),
-		newEntityAnimationDelay(foreverDuration),
+		stopMoving,
+		newEntityAnimationDelay(EntityAnimation::getComponentTotalTicksDuration(playerAnimationComponents)),
 	});
-	dynamicCameraAnchor.get()->beginEntityAnimation(&dynamicCameraAnchorAnimationComponents, ticksTime);
 
-	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> playerAnimationComponents ({
-		newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f)),
-		newEntityAnimationDelay(EntityAnimation::getComponentTotalTicksDuration(dynamicCameraAnchorAnimationComponents)),
-	});
+	//then, zoom in
+	static constexpr int preZoomPauseDuration = 1000;
+	static constexpr float maxZoom = 13.0f;
+	static constexpr int zoomDuration = 2000;
+	static constexpr int foreverDuration = 3600 * 1000;
+	dynamicCameraAnchorAnimationComponents.insert(
+		dynamicCameraAnchorAnimationComponents.end(),
+		{
+			newEntityAnimationDelay(preZoomPauseDuration),
+			stopMoving,
+			newEntityAnimationSetZoom(
+				newPiecewiseValue({
+					PiecewiseValue::ValueAtTime(
+						newTimeFunctionValue(
+							newExponentialValue(maxZoom, (float)zoomDuration),
+							newCompositeQuarticValue(
+								0.0f, 0.0f, 0.5f / zoomDuration, 0.5f / zoomDuration / zoomDuration, 0.0f)),
+						0) COMMA
+					PiecewiseValue::ValueAtTime(newConstantValue(maxZoom), zoomDuration) COMMA
+				})),
+			newEntityAnimationDelay(zoomDuration),
+			newEntityAnimationSetZoom(newConstantValue(maxZoom)),
+			newEntityAnimationDelay(foreverDuration),
+		});
+	playerAnimationComponents.push_back(
+		newEntityAnimationDelay(
+			EntityAnimation::getComponentTotalTicksDuration(dynamicCameraAnchorAnimationComponents)
+				- EntityAnimation::getComponentTotalTicksDuration(playerAnimationComponents)));
+
+	dynamicCameraAnchor.get()->beginEntityAnimation(&dynamicCameraAnchorAnimationComponents, ticksTime);
 	playerState.get()->beginEntityAnimation(&playerAnimationComponents, ticksTime);
 }
 void GameState::resetGame(int ticksTime) {
