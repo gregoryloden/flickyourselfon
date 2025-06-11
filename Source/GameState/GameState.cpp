@@ -446,8 +446,13 @@ void GameState::renderTextDisplay(int gameTicksTime) {
 			textFadeOutTicksDuration = 500;
 			break;
 		case TextDisplayType::Outro:
-			//TODO: outro text
-			return;
+			textDisplayStrings = { titleGameName, " ", titleCreditsLine1, titleCreditsLine2, " ", "Thanks for playing!" };
+			textDisplayMetrics = { Text::getMetrics(titleGameName, 2.0f) };
+			textFadeInStartTicksTime = 7000 + SpriteRegistry::playerKickingAnimation->getTotalTicksDuration();
+			textFadeInTicksDuration = 1000;
+			textDisplayTicksDuration = foreverDuration - textFadeInStartTicksTime - textFadeInTicksDuration;
+			textFadeOutTicksDuration = 0;
+			break;
 		case TextDisplayType::None:
 		default:
 			return;
@@ -930,6 +935,9 @@ int GameState::introAnimationWalk(
 	}
 }
 void GameState::beginOutroAnimation(int ticksTime) {
+	textDisplayType = TextDisplayType::Outro;
+	titleAnimationStartTicksTime = ticksTime;
+
 	EntityAnimation::SetVelocity* stopMoving = newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f));
 
 	//first, have the player kick the end-game reset switch
@@ -955,7 +963,6 @@ void GameState::beginOutroAnimation(int ticksTime) {
 	static constexpr int preZoomPauseDuration = 1000;
 	static constexpr float maxZoom = 13.0f;
 	static constexpr int zoomDuration = 2000;
-	static constexpr int foreverDuration = 3600 * 1000;
 	dynamicCameraAnchorAnimationComponents.insert(
 		dynamicCameraAnchorAnimationComponents.end(),
 		{
@@ -973,11 +980,34 @@ void GameState::beginOutroAnimation(int ticksTime) {
 				})),
 			newEntityAnimationDelay(zoomDuration),
 			newEntityAnimationSetZoom(newConstantValue(maxZoom)),
-			newEntityAnimationDelay(foreverDuration),
 		});
-	EntityAnimation::delayToEndOf(playerAnimationComponents, dynamicCameraAnchorAnimationComponents);
 
+	//finally, fade out
+	static constexpr int preFadeOutPauseDuration = 1000;
+	static constexpr int fadeOutDuration = 2000;
+	dynamicCameraAnchorAnimationComponents.insert(
+		dynamicCameraAnchorAnimationComponents.end(),
+		{
+			newEntityAnimationDelay(preFadeOutPauseDuration),
+			stopMoving,
+			newEntityAnimationSetScreenOverlayColor(
+				newConstantValue(0.0f),
+				newConstantValue(0.0f),
+				newConstantValue(0.0f),
+				newLinearInterpolatedValue({
+					LinearInterpolatedValue::ValueAtTime(0.0f, 0.0f) COMMA
+					LinearInterpolatedValue::ValueAtTime(1.0f, fadeOutDuration) COMMA
+				})),
+			newEntityAnimationDelay(fadeOutDuration),
+			newEntityAnimationSetScreenOverlayColor(
+				newConstantValue(0.0f), newConstantValue(0.0f), newConstantValue(0.0f), newConstantValue(1.0f)),
+		});
+
+	//and begin the animations
+	dynamicCameraAnchorAnimationComponents.push_back(newEntityAnimationDelay(foreverDuration));
 	dynamicCameraAnchor.get()->beginEntityAnimation(&dynamicCameraAnchorAnimationComponents, ticksTime);
+
+	EntityAnimation::delayToEndOf(playerAnimationComponents, dynamicCameraAnchorAnimationComponents);
 	playerState.get()->beginEntityAnimation(&playerAnimationComponents, ticksTime);
 }
 void GameState::resetGame(int ticksTime) {

@@ -31,6 +31,7 @@ private:
 			+ introTitleDisplayTicksDuration
 			+ introTitleFadeOutTicksDuration
 			+ 500;
+	static constexpr int foreverDuration = 3600 * 1000;
 	//save icon timing
 	static constexpr int saveIconShowDuration = 3000;
 	//title screen and intro explanation text
@@ -39,7 +40,6 @@ public:
 private:
 	static constexpr char* titleCreditsLine1 = "A game by";
 	static constexpr char* titleCreditsLine2 = "Gregory Loden";
-	static constexpr char* titlePostCreditsMessage = "Thanks for playing!";
 	//save file names and values
 	static constexpr char* savedGameFileName = "kyo.sav";
 	static constexpr char* levelsUnlockedFilePrefix = "levelsUnlocked ";
