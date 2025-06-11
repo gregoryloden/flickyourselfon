@@ -47,6 +47,7 @@ void SpriteRegistry::loadAll() {
 	switchWaves = newSpriteSheetWithImagePath("switchwaves.png", 4, 1, true);
 	resetSwitch = newSpriteSheetWithImagePath("resetswitch.png", 2, 1, true);
 	kickIndicator = newSpriteSheetWithImagePath("kickindicator.png", 14, 1, true);
+	kickIndicator->setBottomAnchorY();
 	sparks = newSpriteSheetWithImagePath("sparks.png", 6, 4, true);
 	borderArrows = newSpriteSheetWithImagePath("borderarrows.png", 3, 3, false);
 	wavesActivated = newSpriteSheetWithImagePath("wavesactivated.png", 1, 4, false);

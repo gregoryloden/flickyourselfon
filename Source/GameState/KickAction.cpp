@@ -77,6 +77,5 @@ void KickAction::render(float centerX, float bottomY, bool hasRailsToReset) {
 	}
 	if (!showKickIndicator)
 		return;
-	SpriteRegistry::kickIndicator->renderSpriteCenteredAtScreenPosition(
-		(int)type, 0, centerX, bottomY - 1.0f - (float)SpriteRegistry::kickIndicator->getSpriteHeight() / 2.0f);
+	SpriteRegistry::kickIndicator->renderSpriteCenteredAtScreenPosition((int)type, 0, centerX, bottomY - 1.0f);
 }
