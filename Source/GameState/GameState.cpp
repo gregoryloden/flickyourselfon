@@ -373,6 +373,8 @@ void GameState::render(int ticksTime) {
 		mapState.get()->renderGroupsForSwitchesFromRail(camera, contextualGroupsRailSwitchId, gameTicksTime);
 	playerState.get()->renderKickAction(camera, hasRailsToReset, gameTicksTime);
 
+	camera->renderEndZoom(zoomValue);
+
 	if (levelsUnlocked > 0 && !camera->hasAnimation())
 		playerState.get()->renderTutorials() || mapState.get()->renderTutorials(showConnections);
 	if (camera == dynamicCameraAnchor.get())
@@ -393,8 +395,6 @@ void GameState::render(int ticksTime) {
 		Text::Metrics winMetrics = Text::getMetrics(win, 2.0f);
 		Text::render(win, 10.0f, 10.0f + winMetrics.aboveBaseline, 2.0f);
 	}
-
-	camera->renderEndZoom(zoomValue);
 
 	if (pauseState.get() != nullptr)
 		pauseState.get()->render();
