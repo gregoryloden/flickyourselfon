@@ -444,7 +444,6 @@ void GameState::renderTextDisplay(int gameTicksTime) {
 			textFadeInTicksDuration = 500;
 			textDisplayTicksDuration = 2500;
 			textFadeOutTicksDuration = 500;
-			nextTextDisplayType = TextDisplayType::None;
 			break;
 		case TextDisplayType::Outro:
 			//TODO: outro text
