@@ -4,6 +4,7 @@
 
 #define newDynamicCameraAnchor() produceWithoutArgs(DynamicCameraAnchor)
 #define newParticle(x, y, r, g, b, isAbovePlayer) produceWithArgs(Particle, x, y, r, g, b, isAbovePlayer)
+#define PIXELLATED_ZOOM
 
 class DynamicValue;
 class EntityAnimation;
@@ -23,8 +24,10 @@ enum class SpriteDirection: int {
 };
 class EntityState: public PooledReferenceCounter {
 private:
-	static GLuint postZoomFrameBufferId;
-	static GLuint postZoomRenderBufferId;
+	#ifdef PIXELLATED_ZOOM
+		static GLuint postZoomFrameBufferId;
+		static GLuint postZoomRenderBufferId;
+	#endif
 	static GLuint preZoomFrameBufferId;
 	static GLuint preZoomTextureId;
 

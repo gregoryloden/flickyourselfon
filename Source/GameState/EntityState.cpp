@@ -8,8 +8,10 @@
 #include "Util/Config.h"
 
 //////////////////////////////// EntityState ////////////////////////////////
-GLuint EntityState::postZoomFrameBufferId = 0;
-GLuint EntityState::postZoomRenderBufferId = 0;
+#ifdef PIXELLATED_ZOOM
+	GLuint EntityState::postZoomFrameBufferId = 0;
+	GLuint EntityState::postZoomRenderBufferId = 0;
+#endif
 GLuint EntityState::preZoomFrameBufferId = 0;
 GLuint EntityState::preZoomTextureId = 0;
 EntityState::EntityState(objCounterParameters())
@@ -33,15 +35,18 @@ void EntityState::copyEntityState(EntityState* other) {
 	lastUpdateTicksTime = other->lastUpdateTicksTime;
 }
 void EntityState::setupZoomFrameBuffers() {
-	//set up the post-zoom frame buffer, which uses a render buffer
-	glGenFramebuffers(1, &postZoomFrameBufferId);
-	glBindFramebuffer(GL_FRAMEBUFFER, postZoomFrameBufferId);
-	glGenRenderbuffers(1, &postZoomRenderBufferId);
-	glBindRenderbuffer(GL_RENDERBUFFER, postZoomRenderBufferId);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_RGB8, (GLsizei)Config::windowScreenWidth, (GLsizei)Config::windowScreenHeight);
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, postZoomRenderBufferId);
-	#ifdef DEBUG
-		Opengl::checkAndLogFrameBufferStatus(GL_FRAMEBUFFER, "postZoomFrameBuffer");
+	#ifdef PIXELLATED_ZOOM
+		//set up the post-zoom frame buffer, which uses a render buffer
+		glGenFramebuffers(1, &postZoomFrameBufferId);
+		glBindFramebuffer(GL_FRAMEBUFFER, postZoomFrameBufferId);
+		glGenRenderbuffers(1, &postZoomRenderBufferId);
+		glBindRenderbuffer(GL_RENDERBUFFER, postZoomRenderBufferId);
+		glRenderbufferStorage(
+			GL_RENDERBUFFER, GL_RGB8, (GLsizei)Config::windowScreenWidth, (GLsizei)Config::windowScreenHeight);
+		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, postZoomRenderBufferId);
+		#ifdef DEBUG
+			Opengl::checkAndLogFrameBufferStatus(GL_FRAMEBUFFER, "postZoomFrameBuffer");
+		#endif
 	#endif
 
 	//set up the pre-zoom frame buffer, which uses a texture
@@ -148,7 +153,12 @@ void EntityState::renderEndZoom(float zoomValue) {
 		return;
 
 	//render the image zoomed
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, postZoomFrameBufferId);
+	#ifdef PIXELLATED_ZOOM
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, postZoomFrameBufferId);
+	#else
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+		glViewport(0, 0, (GLint)Config::windowDisplayWidth, (GLint)Config::windowDisplayHeight);
+	#endif
 	Opengl::orientRenderTarget(true);
 	float topLeftBorder = (zoomValue - 1.0f) / zoomValue * 0.5f;
 	float bottomRightBorder = 1.0f - topLeftBorder;
@@ -166,17 +176,19 @@ void EntityState::renderEndZoom(float zoomValue) {
 	glEnd();
 	glDisable(GL_TEXTURE_2D);
 
-	//render the zoomed image to the screen
-	glBindFramebuffer(GL_READ_FRAMEBUFFER, postZoomFrameBufferId);
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-	glViewport(0, 0, (GLint)Config::windowDisplayWidth, (GLint)Config::windowDisplayHeight);
-	glBlitFramebuffer(
-		//source
-		0, 0, (GLint)Config::windowScreenWidth, (GLint)Config::windowScreenHeight,
-		//destination
-		0, 0, (GLint)Config::windowDisplayWidth, (GLint)Config::windowDisplayHeight,
-		GL_COLOR_BUFFER_BIT,
-		GL_NEAREST);
+	#ifdef PIXELLATED_ZOOM
+		//render the zoomed image to the screen
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, postZoomFrameBufferId);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+		glViewport(0, 0, (GLint)Config::windowDisplayWidth, (GLint)Config::windowDisplayHeight);
+		glBlitFramebuffer(
+			//source
+			0, 0, (GLint)Config::windowScreenWidth, (GLint)Config::windowScreenHeight,
+			//destination
+			0, 0, (GLint)Config::windowDisplayWidth, (GLint)Config::windowDisplayHeight,
+			GL_COLOR_BUFFER_BIT,
+			GL_NEAREST);
+	#endif
 }
 
 //////////////////////////////// DynamicCameraAnchor ////////////////////////////////
