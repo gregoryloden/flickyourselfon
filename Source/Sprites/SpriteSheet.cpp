@@ -66,6 +66,14 @@ textureId(0)
 	}
 	centerAnchorX = spriteWidth * 0.5f;
 	centerAnchorY = spriteHeight * 0.5f;
+	#ifdef DEBUG
+		if (imageSurface->w % spriteWidth != (hasBottomRightPixelBorder ? 1 : 0)
+				|| imageSurface->h % spriteHeight != (hasBottomRightPixelBorder ? 1 : 0))
+			Logger::debugLogger.logString(
+				"ERROR: texture " + to_string(imageSurface->w) + "x" + to_string(imageSurface->h)
+					+ (hasBottomRightPixelBorder ? "(-1,-1)" : "") + " not evenly divisible into "
+					 + to_string(spriteWidth) + "x" + to_string(spriteHeight));
+	#endif
 }
 SpriteSheet::~SpriteSheet() {
 	SDL_FreeSurface(renderSurface);
