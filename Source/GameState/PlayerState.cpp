@@ -121,7 +121,7 @@ void PlayerState::copyPlayerState(PlayerState* other) {
 	pauseSpriteDirection = other->pauseSpriteDirection;
 	pauseZ = other->pauseZ;
 	noClip = other->noClip;
-	shouldEndGame = other->shouldEndGame;
+	shouldEndGame = false;
 }
 pooledReferenceCounterDefineRelease(PlayerState)
 void PlayerState::prepareReturnToPool() {
@@ -260,8 +260,6 @@ void PlayerState::setLevelSelectState(int levelN) {
 	}
 }
 void PlayerState::updateWithPreviousPlayerState(PlayerState* prev, bool hasKeyboardControl, int ticksTime) {
-	shouldEndGame = false;
-
 	//if we have an entity animation, update with that instead
 	bool previousStateHadEntityAnimation = prev->entityAnimation.get() != nullptr;
 	if (previousStateHadEntityAnimation) {
@@ -284,6 +282,7 @@ void PlayerState::updateWithPreviousPlayerState(PlayerState* prev, bool hasKeybo
 	setUndoState(undoState, prev->undoState.get());
 	setUndoState(redoState, prev->redoState.get());
 	noClip = prev->noClip;
+	shouldEndGame = false;
 
 	//if we can control the player then that must mean the player has the boot
 	hasBoot = true;
