@@ -22,6 +22,7 @@ enum class KickActionType: int {
 	Sine = 10,
 	Undo = 11,
 	Redo = 12,
+	EndGame = 13,
 	ResetSwitch = 100,
 };
 class KickAction: public PooledReferenceCounter {
