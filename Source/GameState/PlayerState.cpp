@@ -1492,8 +1492,14 @@ bool PlayerState::undoMove(float fromX, float fromY, char fromHeight, Hint* from
 	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> undoAnimationComponents ({
 		newEntityAnimationSetGhostSprite(true, fromX, fromY, undoSpriteDirection),
 		newEntityAnimationSetVelocity(
-			newCompositeQuarticValue(0.0f, xDist / totalTicksDuration, 0.0f, 0.0f, 0.0f),
-			newCompositeQuarticValue(0.0f, yDist / totalTicksDuration, 0.0f, 0.0f, 0.0f)),
+			newLinearInterpolatedValue({
+				LinearInterpolatedValue::ValueAtTime(currentX, 0.0f) COMMA
+				LinearInterpolatedValue::ValueAtTime(fromX, (float)totalTicksDuration) COMMA
+			}),
+			newLinearInterpolatedValue({
+				LinearInterpolatedValue::ValueAtTime(currentY, 0.0f) COMMA
+				LinearInterpolatedValue::ValueAtTime(fromY, (float)totalTicksDuration) COMMA
+			})),
 		newEntityAnimationSetSpriteAnimation(moveAnimation),
 		newEntityAnimationSetDirection(undoSpriteDirection),
 		newEntityAnimationDelay(totalTicksDuration),
