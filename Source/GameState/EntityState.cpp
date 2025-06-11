@@ -144,6 +144,9 @@ float EntityState::renderBeginZoom(int ticksTime) {
 	return zoomValue;
 }
 void EntityState::renderEndZoom(float zoomValue) {
+	if (zoomValue == 1)
+		return;
+
 	//render the image zoomed
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, postZoomFrameBufferId);
 	Opengl::orientRenderTarget(true);

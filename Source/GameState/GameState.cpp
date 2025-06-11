@@ -394,8 +394,7 @@ void GameState::render(int ticksTime) {
 		Text::render(win, 10.0f, 10.0f + winMetrics.aboveBaseline, 2.0f);
 	}
 
-	if (zoomValue != 1)
-		camera->renderEndZoom(zoomValue);
+	camera->renderEndZoom(zoomValue);
 
 	if (pauseState.get() != nullptr)
 		pauseState.get()->render();

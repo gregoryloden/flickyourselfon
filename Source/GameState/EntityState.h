@@ -91,10 +91,9 @@ public:
 	//start the given entity animation
 	void beginEntityAnimation(vector<ReferenceCounterHolder<EntityAnimationTypes::Component>>* components, int ticksTime);
 	//setup rendering to render a zoomed image
-	//returns the zoom level being used; if the value is 1, zoom is not applied and endZoom() is not neeeded
+	//returns the zoom level being used, which should be passed back to renderEndZoom()
 	float renderBeginZoom(int ticksTime);
-	//finish rendering the zoomed image at the given zoom value (returned by beginZoom()), and render it to the screen
-	//not needed if beginZoom() returned 1
+	//finish rendering the zoomed image at the given zoom value (returned by renderBeginZoom()), and render it to the screen
 	void renderEndZoom(float zoomValue);
 	//set the camera on the next game state, based on this being the previous game state's camera
 	virtual void setNextCamera(GameState* nextGameState, int ticksTime) = 0;
