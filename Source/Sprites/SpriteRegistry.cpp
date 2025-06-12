@@ -36,7 +36,7 @@ SpriteAnimation* SpriteRegistry::sparksAnimationB = nullptr;
 SpriteAnimation* SpriteRegistry::sparksSlowAnimationA = nullptr;
 SpriteAnimation* SpriteRegistry::sparksSlowAnimationB = nullptr;
 void SpriteRegistry::loadAll() {
-	player = newSpriteSheetWithImagePath("player.png", 10, 4, false);
+	player = newSpriteSheetWithImagePath("player.png", 11, 4, false);
 	tiles = loadTiles();
 	radioTower = newSpriteSheetWithImagePath("radiotower.png", 1, 1, false);
 	rails = newSpriteSheetWithImagePath("rails.png", 22, 1, true);
