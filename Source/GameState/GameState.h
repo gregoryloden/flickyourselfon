@@ -34,7 +34,9 @@ private:
 	static constexpr int outroPostKickPauseDuration = 1000;
 	static constexpr int outroPlayerToRadioTowerDuration = 3000;
 	static constexpr int outroRadioTowerPauseDuration = 1000;
-	static constexpr int outroRadioTowerToBootDuration = 3000;
+	static constexpr int outroRadioTowerToBootPanBeforeZoomDuration = 2000;
+	static constexpr int outroRadioTowerToBootPanAndZoomDuration = 1000;
+	static constexpr int outroRadioTowerToBootZoomAfterPanDuration = 1000;
 	static constexpr int outroPreFadeOutPauseDuration = 1000;
 	static constexpr int outroFadeOutDuration = 2000;
 	static constexpr int outroForeverDuration = 3600 * 1000;

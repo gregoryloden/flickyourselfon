@@ -439,7 +439,9 @@ void GameState::renderTextDisplay(int gameTicksTime) {
 				outroPostKickPauseDuration
 					+ outroPlayerToRadioTowerDuration
 					+ outroRadioTowerPauseDuration
-					+ outroRadioTowerToBootDuration
+					+ outroRadioTowerToBootPanBeforeZoomDuration
+					+ outroRadioTowerToBootPanAndZoomDuration
+					+ outroRadioTowerToBootZoomAfterPanDuration
 					+ outroPreFadeOutPauseDuration
 					+ outroFadeOutDuration
 					+ outroPreTitlePauseDuration;
@@ -973,6 +975,12 @@ void GameState::beginOutroAnimation(int ticksTime) {
 
 	//pan to the boot and zoom in
 	static constexpr float maxZoom = 13.0f;
+	static constexpr int radioTowerToBootPanDuration =
+		outroRadioTowerToBootPanBeforeZoomDuration + outroRadioTowerToBootPanAndZoomDuration;
+	static constexpr int radioTowerToBootZoomDuration =
+		outroRadioTowerToBootPanAndZoomDuration + outroRadioTowerToBootZoomAfterPanDuration;
+	static constexpr int radioTowerToBootPanAndZoomFullDuration =
+		radioTowerToBootPanDuration + outroRadioTowerToBootZoomAfterPanDuration;
 	dynamicCameraAnchorAnimationComponents.push_back(newEntityAnimationDelay(outroRadioTowerPauseDuration));
 	EntityAnimation::delayToEndOf(playerAnimationComponents, dynamicCameraAnchorAnimationComponents);
 	dynamicCameraAnchorAnimationComponents.insert(
@@ -981,22 +989,23 @@ void GameState::beginOutroAnimation(int ticksTime) {
 			EntityAnimation::SetVelocity::cubicInterpolation(
 				playerState.get()->getEndGameBootX(ticksTime) - radioTowerAntennaX,
 				playerState.get()->getEndGameBootY(ticksTime) - radioTowerAntennaY,
-				(float)outroRadioTowerToBootDuration),
+				(float)radioTowerToBootPanDuration),
 			newEntityAnimationSetZoom(
 				newPiecewiseValue({
+					PiecewiseValue::ValueAtTime(newConstantValue(1.0f), 0.0f) COMMA
 					PiecewiseValue::ValueAtTime(
 						newTimeFunctionValue(
-							newExponentialValue(maxZoom, (float)outroRadioTowerToBootDuration),
+							newExponentialValue(maxZoom, (float)radioTowerToBootZoomDuration),
 							newCompositeQuarticValue(
 								0.0f,
 								0.0f,
-								0.5f / outroRadioTowerToBootDuration,
-								0.5f / outroRadioTowerToBootDuration / outroRadioTowerToBootDuration,
+								0.5f / radioTowerToBootZoomDuration,
+								0.5f / radioTowerToBootZoomDuration / radioTowerToBootZoomDuration,
 								0.0f)),
-						0.0f) COMMA
-					PiecewiseValue::ValueAtTime(newConstantValue(maxZoom), (float)outroRadioTowerToBootDuration) COMMA
+						outroRadioTowerToBootPanBeforeZoomDuration) COMMA
+					PiecewiseValue::ValueAtTime(newConstantValue(maxZoom), (float)radioTowerToBootPanAndZoomFullDuration) COMMA
 				})),
-			newEntityAnimationDelay(outroRadioTowerToBootDuration),
+			newEntityAnimationDelay(radioTowerToBootPanAndZoomFullDuration),
 			stopMoving,
 			newEntityAnimationSetZoom(newConstantValue(maxZoom)),
 		});
