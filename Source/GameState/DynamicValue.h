@@ -10,6 +10,8 @@
 #define newPiecewiseValue(valuesAtTimes) produceWithArgs(PiecewiseValue, valuesAtTimes)
 #define newTimeFunctionValue(innerValue, timeFunction) produceWithArgs(TimeFunctionValue, innerValue, timeFunction)
 
+class PiecewiseValue;
+
 //each DynamicValue is only held in one place at a time
 class DynamicValue: public PooledReferenceCounter {
 public:
@@ -64,8 +66,9 @@ public:
 	virtual DynamicValue* copyWithConstantValue(float pConstantValue);
 	//get the value at the given time
 	virtual float getValue(float ticksElapsed);
-	//return a CompositeQuarticValue that follows a curve from (0, 0) to (1, 1) with 0 slope at (0, 0) and (1, 1)
-	static CompositeQuarticValue* cubicInterpolation(float targetValue, float ticksDuration);
+	//return a CompositeQuarticValue that follows a curve from (0, 0) to (1, 1) with 0 slope at (0, 0) and (1, 1), wrapped in a
+	//	PiecewiseValue that clamps it at y=1 past x=1
+	static PiecewiseValue* cubicInterpolation(float targetValue, float ticksDuration);
 };
 class ExponentialValue: public DynamicValue {
 private:
