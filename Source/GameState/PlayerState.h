@@ -247,7 +247,7 @@ public:
 		Hint* useHint);
 private:
 	//set the undo/redo state to the given state, with special handling if we're deleting it
-	void setUndoState(ReferenceCounterHolder<UndoState>& holder, UndoState* newUndoState);
+	static void setUndoState(ReferenceCounterHolder<UndoState>& holder, UndoState* newUndoState);
 	//prepare for adding a new undo state; add a no-op undo state if there isn't one already, and clear the redo state
 	void prepForNewUndoState();
 public:
