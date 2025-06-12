@@ -436,8 +436,10 @@ void GameState::renderTextDisplay(int gameTicksTime) {
 		case TextDisplayType::Outro: {
 			static constexpr int outroPreTitlePauseDuration = 1000;
 			static constexpr int outroTitleStartTimeMinusKick =
-				outroPrePanAndZoomPauseDuration
-					+ outroPanAndZoomDuration
+				outroPostKickPauseDuration
+					+ outroPlayerToRadioTowerDuration
+					+ outroRadioTowerPauseDuration
+					+ outroRadioTowerToBootDuration
 					+ outroPreFadeOutPauseDuration
 					+ outroFadeOutDuration
 					+ outroPreTitlePauseDuration;
@@ -956,40 +958,49 @@ void GameState::beginOutroAnimation(int ticksTime) {
 		newEntityAnimationDelay(EntityAnimation::getComponentTotalTicksDuration(playerAnimationComponents)),
 	});
 
-	//then, pan to the boot and zoom in
-	static constexpr float maxZoom = 13.0f;
+	//pan to the radio tower antenna
+	float radioTowerAntennaX = MapState::antennaCenterWorldX();
+	float radioTowerAntennaY = MapState::antennaCenterWorldY();
 	dynamicCameraAnchorAnimationComponents.insert(
 		dynamicCameraAnchorAnimationComponents.end(),
 		{
-			newEntityAnimationDelay(outroPrePanAndZoomPauseDuration),
+			newEntityAnimationDelay(outroPostKickPauseDuration),
 			EntityAnimation::SetVelocity::cubicInterpolation(
-				playerState.get()->getEndGameBootX(ticksTime) - playerX,
-				playerState.get()->getEndGameBootY(ticksTime) - playerY,
-				(float)outroPanAndZoomDuration),
+				radioTowerAntennaX - playerX, radioTowerAntennaY - playerY, (float)outroPlayerToRadioTowerDuration),
+			newEntityAnimationDelay(outroPlayerToRadioTowerDuration),
+			stopMoving,
+		});
+
+	//pan to the boot and zoom in
+	static constexpr float maxZoom = 13.0f;
+	dynamicCameraAnchorAnimationComponents.push_back(newEntityAnimationDelay(outroRadioTowerPauseDuration));
+	EntityAnimation::delayToEndOf(playerAnimationComponents, dynamicCameraAnchorAnimationComponents);
+	dynamicCameraAnchorAnimationComponents.insert(
+		dynamicCameraAnchorAnimationComponents.end(),
+		{
+			EntityAnimation::SetVelocity::cubicInterpolation(
+				playerState.get()->getEndGameBootX(ticksTime) - radioTowerAntennaX,
+				playerState.get()->getEndGameBootY(ticksTime) - radioTowerAntennaY,
+				(float)outroRadioTowerToBootDuration),
 			newEntityAnimationSetZoom(
 				newPiecewiseValue({
 					PiecewiseValue::ValueAtTime(
 						newTimeFunctionValue(
-							newExponentialValue(maxZoom, (float)outroPanAndZoomDuration),
+							newExponentialValue(maxZoom, (float)outroRadioTowerToBootDuration),
 							newCompositeQuarticValue(
 								0.0f,
 								0.0f,
-								0.5f / outroPanAndZoomDuration,
-								0.5f / outroPanAndZoomDuration / outroPanAndZoomDuration,
+								0.5f / outroRadioTowerToBootDuration,
+								0.5f / outroRadioTowerToBootDuration / outroRadioTowerToBootDuration,
 								0.0f)),
 						0.0f) COMMA
-					PiecewiseValue::ValueAtTime(newConstantValue(maxZoom), (float)outroPanAndZoomDuration) COMMA
+					PiecewiseValue::ValueAtTime(newConstantValue(maxZoom), (float)outroRadioTowerToBootDuration) COMMA
 				})),
-			newEntityAnimationDelay(outroPanAndZoomDuration),
+			newEntityAnimationDelay(outroRadioTowerToBootDuration),
 			stopMoving,
 			newEntityAnimationSetZoom(newConstantValue(maxZoom)),
 		});
-	playerAnimationComponents.insert(
-		playerAnimationComponents.end(),
-		{
-			newEntityAnimationDelay(outroPrePanAndZoomPauseDuration),
-			newEntityAnimationSetDirection(SpriteDirection::Right),
-		});
+	playerAnimationComponents.push_back(newEntityAnimationSetDirection(SpriteDirection::Right));
 
 	//finally, fade out
 	dynamicCameraAnchorAnimationComponents.insert(
@@ -1009,7 +1020,7 @@ void GameState::beginOutroAnimation(int ticksTime) {
 				newConstantValue(0.0f), newConstantValue(0.0f), newConstantValue(0.0f), newConstantValue(1.0f)),
 		});
 
-	//and begin the animations
+	//now that we've assembled the animations, begin them
 	dynamicCameraAnchorAnimationComponents.insert(
 		dynamicCameraAnchorAnimationComponents.end(),
 		{
