@@ -321,6 +321,7 @@ Music::WaveformMusicSet Audio::radioWavesSounds;
 Music::WaveformMusicSet Audio::switchesFadeInSounds;
 Music::WaveformMusicSet Audio::railSwitchWavesSounds;
 Music::WaveformMusicSet Audio::resetSwitchWavesSounds;
+Music* Audio::endGameWavesSound = nullptr;
 Music* Audio::victorySound = nullptr;
 array<Sound*, Audio::stepSoundsCount> Audio::stepSounds;
 Sound* Audio::climbSound = nullptr;
@@ -388,6 +389,7 @@ void Audio::loadSounds() {
 		railSwitchWavesReverbRepetitions,
 		railSwitchWavesReverbSingleDelay,
 		railSwitchWavesReverbFalloff);
+	Music::WaveformMusicSet endGameWavesSounds;
 	Music::WaveformMusicSet victorySounds;
 	vector<Sound*> sounds ({
 		climbSound = newSound("climb.wav", -1),
@@ -453,6 +455,13 @@ void Audio::loadSounds() {
 		},
 		resetSwitchWavesSounds);
 	loadWaveformMusicSet(
+		"endgamewaves",
+		true,
+		-1,
+		radioWavesSoundEffectSpecs,
+		{ radioWavesSoundSquareVolume, radioWavesSoundTriangleVolume, radioWavesSoundSawVolume, radioWavesSoundSineVolume },
+		endGameWavesSounds);
+	loadWaveformMusicSet(
 		"victory",
 		true,
 		-1,
@@ -467,6 +476,13 @@ void Audio::loadSounds() {
 	musics[(int)Music::Waveform::Triangle]->overlay(musics[(int)Music::Waveform::Square]);
 	musics[(int)Music::Waveform::Saw]->overlay(musics[(int)Music::Waveform::Triangle]);
 	musics[(int)Music::Waveform::Sine]->overlay(musics[(int)Music::Waveform::Saw]);
+	endGameWavesSound = endGameWavesSounds[(int)Music::Waveform::Square];
+	endGameWavesSound->overlay(endGameWavesSounds[(int)Music::Waveform::Triangle]);
+	endGameWavesSound->overlay(endGameWavesSounds[(int)Music::Waveform::Saw]);
+	endGameWavesSound->overlay(endGameWavesSounds[(int)Music::Waveform::Sine]);
+	delete endGameWavesSounds[(int)Music::Waveform::Triangle];
+	delete endGameWavesSounds[(int)Music::Waveform::Saw];
+	delete endGameWavesSounds[(int)Music::Waveform::Sine];
 	victorySound = victorySounds[(int)Music::Waveform::Square];
 	victorySound->overlay(victorySounds[(int)Music::Waveform::Triangle]);
 	victorySound->overlay(victorySounds[(int)Music::Waveform::Saw]);
@@ -508,6 +524,7 @@ void Audio::unloadSounds() {
 	unloadWaveformMusicSet(switchesFadeInSounds);
 	unloadWaveformMusicSet(railSwitchWavesSounds);
 	unloadWaveformMusicSet(resetSwitchWavesSounds);
+	delete endGameWavesSound;
 	delete victorySound;
 	unloadSoundSet(stepSounds);
 	delete climbSound;

@@ -438,7 +438,9 @@ void GameState::renderTextDisplay(int gameTicksTime) {
 			static constexpr int outroTitleStartTimeMinusKick =
 				outroPostKickPauseDuration
 					+ outroPlayerToRadioTowerDuration
-					+ outroRadioTowerPauseDuration
+					+ outroPreRadioWavesPauseDuration
+					+ outroInterRadioWavesPauseDuration
+					+ outroPostRadioWavesPauseDuration
 					+ outroRadioTowerToBootPanBeforeZoomDuration
 					+ outroRadioTowerToBootPanAndZoomDuration
 					+ outroRadioTowerToBootZoomAfterPanDuration
@@ -448,7 +450,10 @@ void GameState::renderTextDisplay(int gameTicksTime) {
 			textDisplayStrings = { titleGameName, " ", titleCreditsLine1, titleCreditsLine2, " ", "Thanks for playing!" };
 			textDisplayMetrics = { Text::getMetrics(titleGameName, 2.0f) };
 			textFadeInStartTicksTime =
-				outroTitleStartTimeMinusKick + SpriteRegistry::playerKickingAnimation->getTotalTicksDuration();
+				outroTitleStartTimeMinusKick
+					+ SpriteRegistry::playerKickingAnimation->getTotalTicksDuration()
+					//TODO: read from the animation
+					+ SpriteRegistry::radioWaveAnimationTicksPerFrame * 14;
 			textFadeInTicksDuration = 1000;
 			textDisplayTicksDuration = outroForeverDuration - outroPreTitlePauseDuration - textFadeInTicksDuration;
 			textFadeOutTicksDuration = 0;
@@ -973,6 +978,18 @@ void GameState::beginOutroAnimation(int ticksTime) {
 			stopMoving,
 		});
 
+	//show the end-game radio waves
+	dynamicCameraAnchorAnimationComponents.insert(
+		dynamicCameraAnchorAnimationComponents.end(),
+		{
+			newEntityAnimationDelay(outroPreRadioWavesPauseDuration),
+			newEntityAnimationPlaySound(Audio::endGameWavesSound, 0),
+			newEntityAnimationDelay(outroInterRadioWavesPauseDuration),
+			//TODO: read from the animation
+			newEntityAnimationDelay(SpriteRegistry::radioWaveAnimationTicksPerFrame * 14),
+			newEntityAnimationDelay(outroPostRadioWavesPauseDuration),
+		});
+
 	//pan to the boot and zoom in
 	static constexpr float maxZoom = 13.0f;
 	static constexpr int radioTowerToBootPanDuration =
@@ -981,8 +998,8 @@ void GameState::beginOutroAnimation(int ticksTime) {
 		outroRadioTowerToBootPanAndZoomDuration + outroRadioTowerToBootZoomAfterPanDuration;
 	static constexpr int radioTowerToBootPanAndZoomFullDuration =
 		radioTowerToBootPanDuration + outroRadioTowerToBootZoomAfterPanDuration;
-	dynamicCameraAnchorAnimationComponents.push_back(newEntityAnimationDelay(outroRadioTowerPauseDuration));
 	EntityAnimation::delayToEndOf(playerAnimationComponents, dynamicCameraAnchorAnimationComponents);
+	playerAnimationComponents.push_back(newEntityAnimationSetDirection(SpriteDirection::Right));
 	dynamicCameraAnchorAnimationComponents.insert(
 		dynamicCameraAnchorAnimationComponents.end(),
 		{
@@ -1009,7 +1026,6 @@ void GameState::beginOutroAnimation(int ticksTime) {
 			stopMoving,
 			newEntityAnimationSetZoom(newConstantValue(maxZoom)),
 		});
-	playerAnimationComponents.push_back(newEntityAnimationSetDirection(SpriteDirection::Right));
 
 	//finally, fade out
 	dynamicCameraAnchorAnimationComponents.insert(
