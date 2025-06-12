@@ -110,6 +110,10 @@ public:
 	float getWorldGroundY(int ticksTime);
 	//get the Z that the player appears at based on animation
 	float getDynamicZ(int ticksTime);
+	//get the X to zoom in on in the end-game outro animation
+	float getEndGameBootX(int ticksTime);
+	//get the Y to zoom in on in the end-game outro animation
+	float getEndGameBootY(int ticksTime);
 	//set the sprite direction, and also set x and y directions to match
 	virtual void setDirection(SpriteDirection pSpriteDirection);
 	//tell the game state to use the player as the next camera anchor, we will handle actually switching to a different camera

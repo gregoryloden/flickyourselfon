@@ -436,8 +436,8 @@ void GameState::renderTextDisplay(int gameTicksTime) {
 		case TextDisplayType::Outro: {
 			static constexpr int outroPreTitlePauseDuration = 1000;
 			static constexpr int outroTitleStartTimeMinusKick =
-				outroPreZoomPauseDuration
-					+ outroZoomDuration
+				outroPrePanAndZoomPauseDuration
+					+ outroPanAndZoomDuration
 					+ outroPreFadeOutPauseDuration
 					+ outroFadeOutDuration
 					+ outroPreTitlePauseDuration;
@@ -935,9 +935,11 @@ void GameState::beginOutroAnimation(int ticksTime) {
 	textDisplayType = TextDisplayType::Outro;
 	titleAnimationStartTicksTime = ticksTime;
 
+	EntityAnimation::SetVelocity* stopMoving = newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f));
+
 	//first, have the player kick the end-game reset switch
 	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> playerAnimationComponents ({
-		newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f)),
+		stopMoving,
 		newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerKickingAnimation),
 		newEntityAnimationDelay(SpriteRegistry::playerKickingAnimationTicksPerFrame),
 		newEntityAnimationPlaySound(Audio::kickSound, 0),
@@ -950,28 +952,43 @@ void GameState::beginOutroAnimation(int ticksTime) {
 	float playerY = playerState.get()->getRenderCenterWorldY(ticksTime);
 	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> dynamicCameraAnchorAnimationComponents ({
 		newEntityAnimationSetPosition(playerX, playerY),
-		newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f)),
+		stopMoving,
 		newEntityAnimationDelay(EntityAnimation::getComponentTotalTicksDuration(playerAnimationComponents)),
 	});
 
-	//then, zoom in
+	//then, pan to the boot and zoom in
 	static constexpr float maxZoom = 13.0f;
 	dynamicCameraAnchorAnimationComponents.insert(
 		dynamicCameraAnchorAnimationComponents.end(),
 		{
-			newEntityAnimationDelay(outroPreZoomPauseDuration),
+			newEntityAnimationDelay(outroPrePanAndZoomPauseDuration),
+			EntityAnimation::SetVelocity::cubicInterpolation(
+				playerState.get()->getEndGameBootX(ticksTime) - playerX,
+				playerState.get()->getEndGameBootY(ticksTime) - playerY,
+				(float)outroPanAndZoomDuration),
 			newEntityAnimationSetZoom(
 				newPiecewiseValue({
 					PiecewiseValue::ValueAtTime(
 						newTimeFunctionValue(
-							newExponentialValue(maxZoom, (float)outroZoomDuration),
+							newExponentialValue(maxZoom, (float)outroPanAndZoomDuration),
 							newCompositeQuarticValue(
-								0.0f, 0.0f, 0.5f / outroZoomDuration, 0.5f / outroZoomDuration / outroZoomDuration, 0.0f)),
-						0) COMMA
-					PiecewiseValue::ValueAtTime(newConstantValue(maxZoom), outroZoomDuration) COMMA
+								0.0f,
+								0.0f,
+								0.5f / outroPanAndZoomDuration,
+								0.5f / outroPanAndZoomDuration / outroPanAndZoomDuration,
+								0.0f)),
+						0.0f) COMMA
+					PiecewiseValue::ValueAtTime(newConstantValue(maxZoom), (float)outroPanAndZoomDuration) COMMA
 				})),
-			newEntityAnimationDelay(outroZoomDuration),
+			newEntityAnimationDelay(outroPanAndZoomDuration),
+			stopMoving,
 			newEntityAnimationSetZoom(newConstantValue(maxZoom)),
+		});
+	playerAnimationComponents.insert(
+		playerAnimationComponents.end(),
+		{
+			newEntityAnimationDelay(outroPrePanAndZoomPauseDuration),
+			newEntityAnimationSetDirection(SpriteDirection::Right),
 		});
 
 	//finally, fade out
@@ -999,6 +1016,7 @@ void GameState::beginOutroAnimation(int ticksTime) {
 			newEntityAnimationDelay(outroForeverDuration),
 			//the player probably alreaty quit before this, but if not, return them to where they just were
 			newEntityAnimationSetZoom(newConstantValue(1.0f)),
+			newEntityAnimationSetPosition(playerX, playerY),
 			newEntityAnimationSetScreenOverlayColor(
 				newConstantValue(0.0f), newConstantValue(0.0f), newConstantValue(0.0f), newConstantValue(0.0f)),
 			newEntityAnimationSwitchToPlayerCamera(),
@@ -1006,6 +1024,7 @@ void GameState::beginOutroAnimation(int ticksTime) {
 	dynamicCameraAnchor.get()->beginEntityAnimation(&dynamicCameraAnchorAnimationComponents, ticksTime);
 
 	EntityAnimation::delayToEndOf(playerAnimationComponents, dynamicCameraAnchorAnimationComponents);
+	playerAnimationComponents.push_back(newEntityAnimationSetDirection(SpriteDirection::Up));
 	playerState.get()->beginEntityAnimation(&playerAnimationComponents, ticksTime);
 }
 void GameState::resetGame(int ticksTime) {
