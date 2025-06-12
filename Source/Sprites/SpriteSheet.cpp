@@ -72,7 +72,7 @@ textureId(0)
 			Logger::debugLogger.logString(
 				"ERROR: texture " + to_string(imageSurface->w) + "x" + to_string(imageSurface->h)
 					+ (hasBottomRightPixelBorder ? "(-1,-1)" : "") + " not evenly divisible into "
-					+ to_string(spriteWidth) + "x" + to_string(spriteHeight));
+					+ to_string(horizontalSpriteCount) + "x" + to_string(verticalSpriteCount));
 	#endif
 }
 SpriteSheet::~SpriteSheet() {
