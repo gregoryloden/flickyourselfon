@@ -993,7 +993,16 @@ void GameState::beginOutroAnimation(int ticksTime) {
 		});
 
 	//and begin the animations
-	dynamicCameraAnchorAnimationComponents.push_back(newEntityAnimationDelay(outroForeverDuration));
+	dynamicCameraAnchorAnimationComponents.insert(
+		dynamicCameraAnchorAnimationComponents.end(),
+		{
+			newEntityAnimationDelay(outroForeverDuration),
+			//the player probably alreaty quit before this, but if not, return them to where they just were
+			newEntityAnimationSetZoom(newConstantValue(1.0f)),
+			newEntityAnimationSetScreenOverlayColor(
+				newConstantValue(0.0f), newConstantValue(0.0f), newConstantValue(0.0f), newConstantValue(0.0f)),
+			newEntityAnimationSwitchToPlayerCamera(),
+		});
 	dynamicCameraAnchor.get()->beginEntityAnimation(&dynamicCameraAnchorAnimationComponents, ticksTime);
 
 	EntityAnimation::delayToEndOf(playerAnimationComponents, dynamicCameraAnchorAnimationComponents);
