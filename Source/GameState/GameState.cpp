@@ -386,18 +386,6 @@ void GameState::render(int ticksTime) {
 	if (gameTicksTime < lastSaveTicksTime + saveIconShowDuration && lastSaveTicksTime > 0)
 		renderSaveIcon(gameTicksTime);
 
-	//TODO: real win condition
-	int winTileX = 103;
-	int winTileY = 112;
-	float px = playerState.get()->getRenderCenterWorldX(gameTicksTime);
-	float py = playerState.get()->getRenderCenterWorldY(gameTicksTime);
-	if (abs(px / MapState::tileSize - winTileX - 0.5f) <= 1.5f
-			&& abs((py + 7.0f) / MapState::tileSize - winTileY - 0.5f) <= 1.5f) {
-		const char* win = "Win!";
-		Text::Metrics winMetrics = Text::getMetrics(win, 2.0f);
-		Text::render(win, 10.0f, 10.0f + winMetrics.aboveBaseline, 2.0f);
-	}
-
 	if (pauseState.get() != nullptr)
 		pauseState.get()->render();
 	if (Editor::isActive)
