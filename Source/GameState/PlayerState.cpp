@@ -125,6 +125,7 @@ void PlayerState::copyPlayerState(PlayerState* other) {
 }
 pooledReferenceCounterDefineRelease(PlayerState)
 void PlayerState::prepareReturnToPool() {
+	EntityState::prepareReturnToPool();
 	ghostSpriteX.clear();
 	ghostSpriteY.clear();
 	mapState.clear();
@@ -272,24 +273,24 @@ void PlayerState::updateWithPreviousPlayerState(PlayerState* prev, bool hasKeybo
 		copyPlayerState(prev);
 		if (entityAnimation.get()->update(this, ticksTime))
 			return;
+		//if we get here, we just finished the entity animation, so clear it
+		entityAnimation.clear();
+	} else {
+		copyEntityState(prev);
+		lastStepSound = prev->lastStepSound;
+		ghostSpriteX.set(prev->ghostSpriteX.get());
+		ghostSpriteY.set(prev->ghostSpriteY.get());
+		finishedMoveTutorial = prev->finishedMoveTutorial;
+		finishedKickTutorial = prev->finishedKickTutorial;
+		undoRedoTutorialUnlocked = prev->undoRedoTutorialUnlocked;
+		finishedUndoRedoTutorial = prev->finishedUndoRedoTutorial;
+		setUndoState(undoState, prev->undoState.get());
+		setUndoState(redoState, prev->redoState.get());
+		noClip = prev->noClip;
 	}
-	//if the previous play state had an animation, we copied it already so clear it
-	//if not, we might have a leftover entity animation from a previous state
-	entityAnimation.clear();
-	lastStepSound = prev->lastStepSound;
-	ghostSpriteX.set(prev->ghostSpriteX.get());
-	ghostSpriteY.set(prev->ghostSpriteY.get());
 	worldGroundY.clear();
 	worldGroundYOffset = 0.0f;
-	finishedMoveTutorial = prev->finishedMoveTutorial;
-	finishedKickTutorial = prev->finishedKickTutorial;
-	undoRedoTutorialUnlocked = prev->undoRedoTutorialUnlocked;
-	finishedUndoRedoTutorial = prev->finishedUndoRedoTutorial;
-	setUndoState(undoState, prev->undoState.get());
-	setUndoState(redoState, prev->redoState.get());
-	noClip = prev->noClip;
 	shouldEndGame = false;
-
 	//if we can control the player then that must mean the player has the boot
 	hasBoot = true;
 

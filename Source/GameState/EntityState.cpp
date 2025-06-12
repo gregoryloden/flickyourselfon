@@ -34,6 +34,12 @@ void EntityState::copyEntityState(EntityState* other) {
 	zoom.set(other->zoom.get());
 	lastUpdateTicksTime = other->lastUpdateTicksTime;
 }
+void EntityState::prepareReturnToPool() {
+	x.clear();
+	y.clear();
+	entityAnimation.clear();
+	zoom.clear();
+}
 void EntityState::setupZoomFrameBuffers() {
 	#ifdef PIXELLATED_ZOOM
 		//set up the post-zoom frame buffer, which uses a render buffer
@@ -223,6 +229,13 @@ void DynamicCameraAnchor::copyDynamicCameraAnchor(DynamicCameraAnchor* other) {
 	screenOverlayA.set(other->screenOverlayA.get());
 }
 pooledReferenceCounterDefineRelease(DynamicCameraAnchor)
+void DynamicCameraAnchor::prepareReturnToPool() {
+	EntityState::prepareReturnToPool();
+	screenOverlayR.clear();
+	screenOverlayG.clear();
+	screenOverlayB.clear();
+	screenOverlayA.clear();
+}
 void DynamicCameraAnchor::updateWithPreviousDynamicCameraAnchor(
 	DynamicCameraAnchor* prev, bool hasKeyboardControl, int ticksTime)
 {

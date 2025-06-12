@@ -67,6 +67,10 @@ public:
 	virtual void generateHint(Hint* useHint, int ticksTime) {}
 	//copy the state of the other EntityState
 	void copyEntityState(EntityState* other);
+protected:
+	//release held states before this is returned to the pool
+	virtual void prepareReturnToPool();
+public:
 	//load the framebuffers to use for zooming
 	static void setupZoomFrameBuffers();
 	//return the entity's x coordinate at the given time that we should use for rendering the world
@@ -122,6 +126,10 @@ public:
 	void copyDynamicCameraAnchor(DynamicCameraAnchor* other);
 	//release a reference to this DynamicCameraAnchor and return it to the pool if applicable
 	virtual void release();
+protected:
+	//release held states before this is returned to the pool
+	virtual void prepareReturnToPool();
+public:
 	//update this DynamicCameraAnchor by reading from the previous state
 	void updateWithPreviousDynamicCameraAnchor(DynamicCameraAnchor* prev, bool hasKeyboardControl, int ticksTime);
 	//use this color to render an overlay on the screen
