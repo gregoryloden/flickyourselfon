@@ -95,7 +95,7 @@ void EntityAnimation::SetZoom::prepareReturnToPool() {
 	zoom.clear();
 }
 bool EntityAnimation::SetZoom::handle(EntityState* entityState, int ticksTime) {
-	entityState->setZoom(zoom.get());
+	entityState->setZoom(zoom.get(), ticksTime);
 	return true;
 }
 

@@ -938,11 +938,9 @@ void GameState::beginOutroAnimation(int ticksTime) {
 	textDisplayType = TextDisplayType::Outro;
 	titleAnimationStartTicksTime = ticksTime;
 
-	EntityAnimation::SetVelocity* stopMoving = newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f));
-
 	//first, have the player kick the end-game reset switch
 	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> playerAnimationComponents ({
-		stopMoving,
+		newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f)),
 		newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerKickingAnimation),
 		newEntityAnimationDelay(SpriteRegistry::playerKickingAnimationTicksPerFrame),
 		newEntityAnimationPlaySound(Audio::kickSound, 0),
@@ -955,7 +953,7 @@ void GameState::beginOutroAnimation(int ticksTime) {
 	float playerY = playerState.get()->getRenderCenterWorldY(ticksTime);
 	vector<ReferenceCounterHolder<EntityAnimationTypes::Component>> dynamicCameraAnchorAnimationComponents ({
 		newEntityAnimationSetPosition(playerX, playerY),
-		stopMoving,
+		newEntityAnimationSetVelocity(newConstantValue(0.0f), newConstantValue(0.0f)),
 		newEntityAnimationDelay(EntityAnimation::getComponentTotalTicksDuration(playerAnimationComponents)),
 	});
 
@@ -967,7 +965,6 @@ void GameState::beginOutroAnimation(int ticksTime) {
 		dynamicCameraAnchorAnimationComponents.end(),
 		{
 			newEntityAnimationDelay(preZoomPauseDuration),
-			stopMoving,
 			newEntityAnimationSetZoom(
 				newPiecewiseValue({
 					PiecewiseValue::ValueAtTime(
@@ -989,7 +986,6 @@ void GameState::beginOutroAnimation(int ticksTime) {
 		dynamicCameraAnchorAnimationComponents.end(),
 		{
 			newEntityAnimationDelay(preFadeOutPauseDuration),
-			stopMoving,
 			newEntityAnimationSetScreenOverlayColor(
 				newConstantValue(0.0f),
 				newConstantValue(0.0f),
