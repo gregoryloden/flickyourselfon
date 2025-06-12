@@ -433,14 +433,23 @@ void GameState::renderTextDisplay(int gameTicksTime) {
 			textDisplayTicksDuration = 2500;
 			textFadeOutTicksDuration = 500;
 			break;
-		case TextDisplayType::Outro:
+		case TextDisplayType::Outro: {
+			static constexpr int outroPreTitlePauseDuration = 1000;
+			static constexpr int outroTitleStartTimeMinusKick =
+				outroPreZoomPauseDuration
+					+ outroZoomDuration
+					+ outroPreFadeOutPauseDuration
+					+ outroFadeOutDuration
+					+ outroPreTitlePauseDuration;
 			textDisplayStrings = { titleGameName, " ", titleCreditsLine1, titleCreditsLine2, " ", "Thanks for playing!" };
 			textDisplayMetrics = { Text::getMetrics(titleGameName, 2.0f) };
-			textFadeInStartTicksTime = 7000 + SpriteRegistry::playerKickingAnimation->getTotalTicksDuration();
+			textFadeInStartTicksTime =
+				outroTitleStartTimeMinusKick + SpriteRegistry::playerKickingAnimation->getTotalTicksDuration();
 			textFadeInTicksDuration = 1000;
-			textDisplayTicksDuration = foreverDuration - textFadeInStartTicksTime - textFadeInTicksDuration;
+			textDisplayTicksDuration = outroForeverDuration - outroPreTitlePauseDuration - textFadeInTicksDuration;
 			textFadeOutTicksDuration = 0;
 			break;
+		}
 		case TextDisplayType::None:
 		default:
 			return;
@@ -946,49 +955,45 @@ void GameState::beginOutroAnimation(int ticksTime) {
 	});
 
 	//then, zoom in
-	static constexpr int preZoomPauseDuration = 1000;
 	static constexpr float maxZoom = 13.0f;
-	static constexpr int zoomDuration = 2000;
 	dynamicCameraAnchorAnimationComponents.insert(
 		dynamicCameraAnchorAnimationComponents.end(),
 		{
-			newEntityAnimationDelay(preZoomPauseDuration),
+			newEntityAnimationDelay(outroPreZoomPauseDuration),
 			newEntityAnimationSetZoom(
 				newPiecewiseValue({
 					PiecewiseValue::ValueAtTime(
 						newTimeFunctionValue(
-							newExponentialValue(maxZoom, (float)zoomDuration),
+							newExponentialValue(maxZoom, (float)outroZoomDuration),
 							newCompositeQuarticValue(
-								0.0f, 0.0f, 0.5f / zoomDuration, 0.5f / zoomDuration / zoomDuration, 0.0f)),
+								0.0f, 0.0f, 0.5f / outroZoomDuration, 0.5f / outroZoomDuration / outroZoomDuration, 0.0f)),
 						0) COMMA
-					PiecewiseValue::ValueAtTime(newConstantValue(maxZoom), zoomDuration) COMMA
+					PiecewiseValue::ValueAtTime(newConstantValue(maxZoom), outroZoomDuration) COMMA
 				})),
-			newEntityAnimationDelay(zoomDuration),
+			newEntityAnimationDelay(outroZoomDuration),
 			newEntityAnimationSetZoom(newConstantValue(maxZoom)),
 		});
 
 	//finally, fade out
-	static constexpr int preFadeOutPauseDuration = 1000;
-	static constexpr int fadeOutDuration = 2000;
 	dynamicCameraAnchorAnimationComponents.insert(
 		dynamicCameraAnchorAnimationComponents.end(),
 		{
-			newEntityAnimationDelay(preFadeOutPauseDuration),
+			newEntityAnimationDelay(outroPreFadeOutPauseDuration),
 			newEntityAnimationSetScreenOverlayColor(
 				newConstantValue(0.0f),
 				newConstantValue(0.0f),
 				newConstantValue(0.0f),
 				newLinearInterpolatedValue({
 					LinearInterpolatedValue::ValueAtTime(0.0f, 0.0f) COMMA
-					LinearInterpolatedValue::ValueAtTime(1.0f, fadeOutDuration) COMMA
+					LinearInterpolatedValue::ValueAtTime(1.0f, outroFadeOutDuration) COMMA
 				})),
-			newEntityAnimationDelay(fadeOutDuration),
+			newEntityAnimationDelay(outroFadeOutDuration),
 			newEntityAnimationSetScreenOverlayColor(
 				newConstantValue(0.0f), newConstantValue(0.0f), newConstantValue(0.0f), newConstantValue(1.0f)),
 		});
 
 	//and begin the animations
-	dynamicCameraAnchorAnimationComponents.push_back(newEntityAnimationDelay(foreverDuration));
+	dynamicCameraAnchorAnimationComponents.push_back(newEntityAnimationDelay(outroForeverDuration));
 	dynamicCameraAnchor.get()->beginEntityAnimation(&dynamicCameraAnchorAnimationComponents, ticksTime);
 
 	EntityAnimation::delayToEndOf(playerAnimationComponents, dynamicCameraAnchorAnimationComponents);

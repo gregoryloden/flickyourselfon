@@ -31,7 +31,11 @@ private:
 			+ introTitleDisplayTicksDuration
 			+ introTitleFadeOutTicksDuration
 			+ 500;
-	static constexpr int foreverDuration = 3600 * 1000;
+	static constexpr int outroPreZoomPauseDuration = 1000;
+	static constexpr int outroZoomDuration = 2000;
+	static constexpr int outroPreFadeOutPauseDuration = 1000;
+	static constexpr int outroFadeOutDuration = 2000;
+	static constexpr int outroForeverDuration = 3600 * 1000;
 	//save icon timing
 	static constexpr int saveIconShowDuration = 3000;
 	//title screen and intro explanation text
