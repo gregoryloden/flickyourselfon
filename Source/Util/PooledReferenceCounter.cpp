@@ -12,6 +12,7 @@
 
 #define instantiateObjectPoolAndReferenceCounterHolder(className) \
 	template class ObjectPool<className>; template class ReferenceCounterHolder<className>;
+#define ENABLE_POOLING
 
 //////////////////////////////// PooledReferenceCounter ////////////////////////////////
 PooledReferenceCounter::PooledReferenceCounter(objCounterParameters())
@@ -85,7 +86,11 @@ template <class PooledObject> PooledObject* ObjectPool<PooledObject>::newFromPoo
 	return new PooledObject(objCounterArguments());
 }
 template <class PooledObject> void ObjectPool<PooledObject>::returnToPool(PooledObject* p) {
-	pool.push_back(p);
+	#ifdef ENABLE_POOLING
+		pool.push_back(p);
+	#else
+		delete p;
+	#endif
 }
 template <class PooledObject> void ObjectPool<PooledObject>::clearPool() {
 	for (PooledObject* p : pool)
