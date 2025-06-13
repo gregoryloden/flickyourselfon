@@ -37,6 +37,7 @@ public:
 	static SpriteAnimation* playerFastKickingAnimation;
 	static SpriteAnimation* playerBootLiftAnimation;
 	static SpriteAnimation* playerRidingRailAnimation;
+	static SpriteAnimation* playerBootOnAnimation;
 	static SpriteAnimation* radioWavesAnimation;
 	static SpriteAnimation* endGameWavesAnimation;
 	static SpriteAnimation* railWavesAnimation;

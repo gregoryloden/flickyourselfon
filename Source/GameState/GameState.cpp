@@ -445,7 +445,8 @@ void GameState::renderTextDisplay(int gameTicksTime) {
 					+ outroRadioTowerToBootPanBeforeZoomDuration
 					+ outroRadioTowerToBootPanAndZoomDuration
 					+ outroRadioTowerToBootZoomAfterPanDuration
-					+ outroPreFadeOutPauseDuration
+					+ outroPreTurnOnPauseDuration
+					+ outroPostTurnOnPauseDuration
 					+ outroFadeOutDuration
 					+ outroPreTitlePauseDuration;
 			textDisplayStrings = { titleGameName, " ", titleCreditsLine1, titleCreditsLine2, " ", "Thanks for playing!" };
@@ -1034,11 +1035,21 @@ void GameState::beginOutroAnimation(int ticksTime) {
 			newEntityAnimationSetZoom(newConstantValue(maxZoom)),
 		});
 
+	//big reveal - turn the boot on
+	//TODO and show waves coming out of it
+	dynamicCameraAnchorAnimationComponents.push_back(newEntityAnimationDelay(outroPreTurnOnPauseDuration));
+	EntityAnimation::delayToEndOf(playerAnimationComponents, dynamicCameraAnchorAnimationComponents);
+	dynamicCameraAnchorAnimationComponents.insert(
+		dynamicCameraAnchorAnimationComponents.end(),
+		{
+			newEntityAnimationDelay(outroPostTurnOnPauseDuration),
+		});
+	playerAnimationComponents.push_back(newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerBootOnAnimation));
+
 	//finally, fade out
 	dynamicCameraAnchorAnimationComponents.insert(
 		dynamicCameraAnchorAnimationComponents.end(),
 		{
-			newEntityAnimationDelay(outroPreFadeOutPauseDuration),
 			newEntityAnimationSetScreenOverlayColor(
 				newConstantValue(0.0f),
 				newConstantValue(0.0f),
@@ -1068,7 +1079,13 @@ void GameState::beginOutroAnimation(int ticksTime) {
 	dynamicCameraAnchor.get()->beginEntityAnimation(&dynamicCameraAnchorAnimationComponents, ticksTime);
 
 	EntityAnimation::delayToEndOf(playerAnimationComponents, dynamicCameraAnchorAnimationComponents);
-	playerAnimationComponents.push_back(newEntityAnimationSetDirection(SpriteDirection::Up));
+	playerAnimationComponents.insert(
+		playerAnimationComponents.end(),
+		{
+			//the player probably alreaty quit before this, but if not, return them to where they just were
+			newEntityAnimationSetDirection(SpriteDirection::Up),
+			newEntityAnimationSetSpriteAnimation(nullptr),
+		});
 	playerState.get()->beginEntityAnimation(&playerAnimationComponents, ticksTime);
 }
 void GameState::resetGame(int ticksTime) {
