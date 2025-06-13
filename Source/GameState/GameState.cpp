@@ -1043,6 +1043,7 @@ void GameState::beginOutroAnimation(int ticksTime) {
 		dynamicCameraAnchorAnimationComponents.end(),
 		{
 			newEntityAnimationPlaySound(Audio::switchOnSound, 0),
+			newEntityAnimationPlaySound(Audio::victorySound, 0),
 			newEntityAnimationDelay(outroPostTurnOnPauseDuration),
 		});
 	playerAnimationComponents.push_back(newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerBootOnAnimation));
