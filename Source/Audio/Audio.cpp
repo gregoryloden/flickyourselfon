@@ -494,27 +494,9 @@ void Audio::loadSounds() {
 	musics[(int)Music::Waveform::Triangle]->overlay(musics[(int)Music::Waveform::Square]);
 	musics[(int)Music::Waveform::Saw]->overlay(musics[(int)Music::Waveform::Triangle]);
 	musics[(int)Music::Waveform::Sine]->overlay(musics[(int)Music::Waveform::Saw]);
-	endGameWavesSound = endGameWavesSounds[(int)Music::Waveform::Square];
-	endGameWavesSound->overlay(endGameWavesSounds[(int)Music::Waveform::Triangle]);
-	endGameWavesSound->overlay(endGameWavesSounds[(int)Music::Waveform::Saw]);
-	endGameWavesSound->overlay(endGameWavesSounds[(int)Music::Waveform::Sine]);
-	delete endGameWavesSounds[(int)Music::Waveform::Triangle];
-	delete endGameWavesSounds[(int)Music::Waveform::Saw];
-	delete endGameWavesSounds[(int)Music::Waveform::Sine];
-	victorySound = victorySounds[(int)Music::Waveform::Square];
-	victorySound->overlay(victorySounds[(int)Music::Waveform::Triangle]);
-	victorySound->overlay(victorySounds[(int)Music::Waveform::Saw]);
-	victorySound->overlay(victorySounds[(int)Music::Waveform::Sine]);
-	delete victorySounds[(int)Music::Waveform::Triangle];
-	delete victorySounds[(int)Music::Waveform::Saw];
-	delete victorySounds[(int)Music::Waveform::Sine];
-	endGameVictorySound = endGameVictorySounds[(int)Music::Waveform::Square];
-	endGameVictorySound->overlay(endGameVictorySounds[(int)Music::Waveform::Triangle]);
-	endGameVictorySound->overlay(endGameVictorySounds[(int)Music::Waveform::Saw]);
-	endGameVictorySound->overlay(endGameVictorySounds[(int)Music::Waveform::Sine]);
-	delete endGameVictorySounds[(int)Music::Waveform::Triangle];
-	delete endGameVictorySounds[(int)Music::Waveform::Saw];
-	delete endGameVictorySounds[(int)Music::Waveform::Sine];
+	endGameWavesSound = combineWaveformMusicSet(endGameWavesSounds);
+	victorySound = combineWaveformMusicSet(victorySounds);
+	endGameVictorySound = combineWaveformMusicSet(endGameVictorySounds);
 	#ifdef ENABLE_SKIP_BEATS
 		musics[(int)Music::Waveform::Square]->skipBeats();
 		musics[(int)Music::Waveform::Triangle]->skipBeats();
@@ -542,6 +524,15 @@ template <int count> void Audio::loadSoundSet(const char* prefix, array<Sound*, 
 		soundSet[i] = newSound(prefix + to_string(i + 1) + ".wav", -1);
 		soundSet[i]->load();
 	}
+}
+Music* Audio::combineWaveformMusicSet(Music::WaveformMusicSet& waveformMusicSet) {
+	Music* music = waveformMusicSet[0];
+	for (int i = 1; i < (int)Music::Waveform::Count; i++) {
+		music->overlay(waveformMusicSet[i]);
+		delete waveformMusicSet[i];
+	}
+	waveformMusicSet = {};
+	return music;
 }
 void Audio::unloadSounds() {
 	unloadWaveformMusicSet(musics);

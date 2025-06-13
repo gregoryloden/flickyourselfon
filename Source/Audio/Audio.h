@@ -157,6 +157,8 @@ private:
 		AudioTypes::Music::WaveformMusicSet& waveformMusicSet);
 	//load multiple sound files with the same name prefix
 	template <int count> static void loadSoundSet(const char* prefix, array<AudioTypes::Sound*, count>& soundSet);
+	//combine all the musics in the given waveform set into one, and delete the unused ones
+	static AudioTypes::Music* combineWaveformMusicSet(AudioTypes::Music::WaveformMusicSet& waveformMusicSet);
 public:
 	//clean up the sound files
 	static void unloadSounds();
