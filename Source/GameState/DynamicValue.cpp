@@ -178,15 +178,14 @@ void PiecewiseValue::prepareReturnToPool() {
 	valuesAtTimes.clear();
 }
 DynamicValue* PiecewiseValue::copyWithConstantValue(float pConstantValue) {
-	static vector<ValueAtTime> newValuesAtTimes;
-	newValuesAtTimes.clear();
+	PiecewiseValue* copyValue = newPiecewiseValue({});
 	float shift = pConstantValue - valuesAtTimes.front().getValue()->getValue(0);
 	for (ValueAtTime valueAtTime : valuesAtTimes) {
-		DynamicValue* value = valueAtTime.getValue();
-		newValuesAtTimes.push_back(
-			ValueAtTime(value->copyWithConstantValue(value->getValue(0) + shift), valueAtTime.getAtTicksTime()));
+		DynamicValue* pieceValue = valueAtTime.getValue();
+		copyValue->valuesAtTimes.push_back(
+			ValueAtTime(pieceValue->copyWithConstantValue(pieceValue->getValue(0) + shift), valueAtTime.getAtTicksTime()));
 	}
-	return newPiecewiseValue(newValuesAtTimes);
+	return copyValue;
 }
 float PiecewiseValue::getValue(float ticksElapsed) {
 	int activeValueIndex = 0;
