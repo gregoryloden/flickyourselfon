@@ -313,10 +313,6 @@ void PlayerState::updateWithPreviousPlayerState(PlayerState* prev, bool hasKeybo
 		tryAutoKick(prev, ticksTime);
 		tryCollectCompletedHint(prev);
 	}
-
-	//copy the position to the save values
-	lastControlledX = x.get()->getValue(0);
-	lastControlledY = y.get()->getValue(0);
 }
 void PlayerState::updatePositionWithPreviousPlayerState(PlayerState* prev, const Uint8* keyboardState, int ticksTime) {
 	if (keyboardState != nullptr) {
@@ -349,6 +345,8 @@ void PlayerState::updatePositionWithPreviousPlayerState(PlayerState* prev, const
 	renderInterpolatedX = true;
 	renderInterpolatedY = true;
 	z = prev->z;
+	lastControlledX = x.get()->getValue(0);
+	lastControlledY = y.get()->getValue(0);
 
 	if ((xDirection | yDirection) != 0) {
 		finishedMoveTutorial = true;
