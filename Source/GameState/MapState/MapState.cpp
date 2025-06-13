@@ -889,6 +889,7 @@ void MapState::writeCurrentRailStates(short resetSwitchId, KickResetSwitchUndoSt
 }
 int MapState::startRadioWavesAnimation(int initialTicksDelay, int ticksTime) {
 	static constexpr int interRadioWavesAnimationTicks = 1500;
+	AudioTypes::Music* radioWavesSound = Audio::radioWavesSounds[lastActivatedSwitchColor];
 	Particle* particle = queueParticleWithWaveColor(
 		antennaCenterWorldX(),
 		antennaCenterWorldY(),
@@ -896,10 +897,11 @@ int MapState::startRadioWavesAnimation(int initialTicksDelay, int ticksTime) {
 		true,
 		{
 			newEntityAnimationDelay(initialTicksDelay),
-			newEntityAnimationPlaySound(Audio::radioWavesSounds[lastActivatedSwitchColor], 0),
+			newEntityAnimationPlaySound(radioWavesSound, 0),
 			entityAnimationSpriteAnimationWithDelay(SpriteRegistry::radioWavesAnimation),
 			newEntityAnimationSetSpriteAnimation(nullptr),
 			newEntityAnimationDelay(interRadioWavesAnimationTicks),
+			newEntityAnimationPlaySound(radioWavesSound, 0),
 			entityAnimationSpriteAnimationWithDelay(SpriteRegistry::radioWavesAnimation),
 		},
 		ticksTime);

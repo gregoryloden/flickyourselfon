@@ -977,12 +977,9 @@ void GameState::beginOutroAnimation(int ticksTime) {
 		});
 
 	//show the end-game radio waves
-	static constexpr int interSingleRadioWavesPauseDuration =
-		outroSingleRadioWavePauseDuration * 3 + outroSingleRadioWaveSoundDuration + outroInterRadioWavesPauseDuration;
-	static constexpr int radioWavesAndPostPauseDuration =
-		(outroSingleRadioWavePauseDuration * 3 + outroSingleRadioWaveSoundDuration) * 2
-			+ outroInterRadioWavesPauseDuration
-			+ outroPostRadioWavesPauseDuration;
+	static constexpr int singleRadioWavesDuration = outroSingleRadioWavePauseDuration * 3 + outroSingleRadioWaveSoundDuration;
+	static constexpr int interSingleRadioWavesPauseDuration = singleRadioWavesDuration + outroInterRadioWavesPauseDuration;
+	static constexpr int singleRadioWavesAndPostPauseDuration = singleRadioWavesDuration + outroPostRadioWavesPauseDuration;
 	dynamicCameraAnchorAnimationComponents.push_back(newEntityAnimationDelay(outroPreRadioWavesPauseDuration));
 	int radioWavesStartTime = EntityAnimation::getComponentTotalTicksDuration(dynamicCameraAnchorAnimationComponents);
 	for (int color = 0; color < MapState::colorCount; color++)
@@ -995,7 +992,9 @@ void GameState::beginOutroAnimation(int ticksTime) {
 		dynamicCameraAnchorAnimationComponents.end(),
 		{
 			newEntityAnimationPlaySound(Audio::endGameWavesSound, 0),
-			newEntityAnimationDelay(radioWavesAndPostPauseDuration),
+			newEntityAnimationDelay(interSingleRadioWavesPauseDuration),
+			newEntityAnimationPlaySound(Audio::endGameWavesSound, 0),
+			newEntityAnimationDelay(singleRadioWavesAndPostPauseDuration),
 		});
 
 	//pan to the boot and zoom in
