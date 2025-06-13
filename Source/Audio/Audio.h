@@ -119,6 +119,7 @@ public:
 	static AudioTypes::Music::WaveformMusicSet resetSwitchWavesSounds;
 	static AudioTypes::Music* endGameWavesSound;
 	static AudioTypes::Music* victorySound;
+	static AudioTypes::Music* endGameVictorySound;
 	static array<AudioTypes::Sound*, stepSoundsCount> stepSounds;
 	static AudioTypes::Sound* climbSound;
 	static AudioTypes::Sound* jumpSound;

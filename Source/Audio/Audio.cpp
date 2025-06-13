@@ -323,6 +323,7 @@ Music::WaveformMusicSet Audio::railSwitchWavesSounds;
 Music::WaveformMusicSet Audio::resetSwitchWavesSounds;
 Music* Audio::endGameWavesSound = nullptr;
 Music* Audio::victorySound = nullptr;
+Music* Audio::endGameVictorySound = nullptr;
 array<Sound*, Audio::stepSoundsCount> Audio::stepSounds;
 Sound* Audio::climbSound = nullptr;
 Sound* Audio::jumpSound = nullptr;
@@ -373,6 +374,9 @@ void Audio::loadSounds() {
 	static constexpr float victorySoundTriangleVolume = 12.0f / 64.0f;
 	static constexpr float victorySoundSawVolume = 3.5f / 64.0f;
 	static constexpr float victorySoundSineVolume = 13.5f / 64.0f;
+	static constexpr int endGameVictoryReverbRepetitions = 8;
+	static constexpr float endGameVictoryReverbSingleDelay = 1.5f / 32.0f;
+	static constexpr float endGameVictoryReverbFalloff = 2.0f / 8.0f;
 
 	Music::SoundEffectSpecs musicSoundEffectSpecs (1, Music::SoundEffectSpecs::VolumeEffect::Full, 0, 0, 0);
 	Music::SoundEffectSpecs radioWavesSoundEffectSpecs (
@@ -389,8 +393,15 @@ void Audio::loadSounds() {
 		railSwitchWavesReverbRepetitions,
 		railSwitchWavesReverbSingleDelay,
 		railSwitchWavesReverbFalloff);
+	Music::SoundEffectSpecs endGameVictorySoundEffectSpecs (
+		1,
+		Music::SoundEffectSpecs::VolumeEffect::Full,
+		endGameVictoryReverbRepetitions,
+		endGameVictoryReverbSingleDelay,
+		endGameVictoryReverbFalloff);
 	Music::WaveformMusicSet endGameWavesSounds;
 	Music::WaveformMusicSet victorySounds;
+	Music::WaveformMusicSet endGameVictorySounds;
 	vector<Sound*> sounds ({
 		climbSound = newSound("climb.wav", -1),
 		jumpSound = newSound("jump.wav", -1),
@@ -468,6 +479,13 @@ void Audio::loadSounds() {
 		musicSoundEffectSpecs,
 		{ victorySoundSquareVolume, victorySoundTriangleVolume, victorySoundSawVolume, victorySoundSineVolume },
 		victorySounds);
+	loadWaveformMusicSet(
+		"victory",
+		true,
+		-1,
+		endGameVictorySoundEffectSpecs,
+		{ victorySoundSquareVolume, victorySoundTriangleVolume, victorySoundSawVolume, victorySoundSineVolume },
+		endGameVictorySounds);
 
 	loadSoundSet("step", stepSounds);
 	loadSoundSet("ride rail", rideRailSounds);
@@ -490,6 +508,13 @@ void Audio::loadSounds() {
 	delete victorySounds[(int)Music::Waveform::Triangle];
 	delete victorySounds[(int)Music::Waveform::Saw];
 	delete victorySounds[(int)Music::Waveform::Sine];
+	endGameVictorySound = endGameVictorySounds[(int)Music::Waveform::Square];
+	endGameVictorySound->overlay(endGameVictorySounds[(int)Music::Waveform::Triangle]);
+	endGameVictorySound->overlay(endGameVictorySounds[(int)Music::Waveform::Saw]);
+	endGameVictorySound->overlay(endGameVictorySounds[(int)Music::Waveform::Sine]);
+	delete endGameVictorySounds[(int)Music::Waveform::Triangle];
+	delete endGameVictorySounds[(int)Music::Waveform::Saw];
+	delete endGameVictorySounds[(int)Music::Waveform::Sine];
 	#ifdef ENABLE_SKIP_BEATS
 		musics[(int)Music::Waveform::Square]->skipBeats();
 		musics[(int)Music::Waveform::Triangle]->skipBeats();
@@ -526,6 +551,7 @@ void Audio::unloadSounds() {
 	unloadWaveformMusicSet(resetSwitchWavesSounds);
 	delete endGameWavesSound;
 	delete victorySound;
+	delete endGameVictorySound;
 	unloadSoundSet(stepSounds);
 	delete climbSound;
 	delete jumpSound;
