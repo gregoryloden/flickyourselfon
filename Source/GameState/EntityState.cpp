@@ -25,6 +25,11 @@ EntityState::EntityState(objCounterParameters())
 , lastUpdateTicksTime(0) {
 }
 EntityState::~EntityState() {}
+void EntityState::initEntityState(float pX, float pY, float pZoom) {
+	x.set(newConstantValue(pX));
+	y.set(newConstantValue(pY));
+	zoom.set(newConstantValue(pZoom));
+}
 void EntityState::copyEntityState(EntityState* other) {
 	x.set(other->x.get());
 	renderInterpolatedX = other->renderInterpolatedX;
@@ -213,11 +218,11 @@ DynamicCameraAnchor::DynamicCameraAnchor(objCounterParameters())
 DynamicCameraAnchor::~DynamicCameraAnchor() {}
 DynamicCameraAnchor* DynamicCameraAnchor::produce(objCounterParameters()) {
 	initializeWithNewFromPool(d, DynamicCameraAnchor)
+	d->initEntityState(0.0f, 0.0f, 1.0f);
 	d->screenOverlayR.set(newConstantValue(0.0f));
 	d->screenOverlayG.set(newConstantValue(0.0f));
 	d->screenOverlayB.set(newConstantValue(0.0f));
 	d->screenOverlayA.set(newConstantValue(0.0f));
-	d->zoom.set(newConstantValue(1.0f));
 	d->shouldSwitchToPlayerCamera = false;
 	return d;
 }
@@ -318,8 +323,7 @@ Particle::~Particle() {
 }
 Particle* Particle::produce(objCounterParametersComma() float pX, float pY, float pR, float pG, float pB, bool pIsAbovePlayer) {
 	initializeWithNewFromPool(p, Particle)
-	p->x.set(newConstantValue(pX));
-	p->y.set(newConstantValue(pY));
+	p->initEntityState(pX, pY, 1.0f);
 	p->spriteAnimation = nullptr;
 	p->r = pR;
 	p->g = pG;

@@ -65,6 +65,8 @@ public:
 		float pX, float pY, SpriteAnimation* pAnimation, SpriteDirection pDirection, int particleStartTicksTime) {}
 	//generate a hint based on our current state, or use the given state if present
 	virtual void generateHint(Hint* useHint, int ticksTime) {}
+	//initialize this EntityState with the given values
+	void initEntityState(float pX, float pY, float pZoom);
 	//copy the state of the other EntityState
 	void copyEntityState(EntityState* other);
 protected:

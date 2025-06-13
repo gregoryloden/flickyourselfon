@@ -77,6 +77,7 @@ PlayerState::~PlayerState() {
 }
 PlayerState* PlayerState::produce(objCounterParametersComma() MapState* mapState) {
 	initializeWithNewFromPool(p, PlayerState)
+	p->initEntityState(0.0f, 0.0f, 1.0f);
 	p->z = 0;
 	p->hasBoot = false;
 	p->mapState.set(mapState);
