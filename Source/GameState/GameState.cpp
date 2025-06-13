@@ -1042,6 +1042,7 @@ void GameState::beginOutroAnimation(int ticksTime) {
 	dynamicCameraAnchorAnimationComponents.insert(
 		dynamicCameraAnchorAnimationComponents.end(),
 		{
+			newEntityAnimationPlaySound(Audio::switchOnSound, 0),
 			newEntityAnimationDelay(outroPostTurnOnPauseDuration),
 		});
 	playerAnimationComponents.push_back(newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerBootOnAnimation));
