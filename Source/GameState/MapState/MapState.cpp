@@ -909,6 +909,21 @@ int MapState::startRadioWavesAnimation(int initialTicksDelay, int ticksTime) {
 	waveformEndTicksTime = waveformFadedInStartTicksTime + radioWavesDuration + waveformStartEndBufferTicks;
 	return radioWavesDuration;
 }
+void MapState::startEndGameWavesAnimation(int initialTicksDelay, char color, int interWavesDelay, int ticksTime) {
+	queueParticleWithWaveColor(
+		antennaCenterWorldX(),
+		antennaCenterWorldY(),
+		color,
+		true,
+		{
+			newEntityAnimationDelay(initialTicksDelay),
+			entityAnimationSpriteAnimationWithDelay(SpriteRegistry::endGameWavesAnimation),
+			newEntityAnimationSetSpriteAnimation(nullptr),
+			newEntityAnimationDelay(interWavesDelay - SpriteRegistry::endGameWavesAnimation->getTotalTicksDuration()),
+			entityAnimationSpriteAnimationWithDelay(SpriteRegistry::endGameWavesAnimation),
+		},
+		ticksTime);
+}
 void MapState::startSwitchesFadeInAnimation(int initialTicksDelay, int ticksTime) {
 	shouldPlayRadioTowerAnimation = false;
 	switchesAnimationFadeInStartTicksTime = ticksTime + initialTicksDelay;

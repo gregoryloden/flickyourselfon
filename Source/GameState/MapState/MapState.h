@@ -327,6 +327,8 @@ public:
 	//begin a radio waves animation
 	//returns the duration of the animation that takes place after the initial delay
 	int startRadioWavesAnimation(int initialTicksDelay, int ticksTime);
+	//begin the end-game radio waves animation for the given color
+	void startEndGameWavesAnimation(int initialTicksDelay, char color, int interWavesDelay, int ticksTime);
 	//set the start of the fade-in animation for the next switch color and show radio waves for them
 	void startSwitchesFadeInAnimation(int initialTicksDelay, int ticksTime);
 	//spawn sparks over the start tile for the given level, which we just reached

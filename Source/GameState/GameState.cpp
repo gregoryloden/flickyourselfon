@@ -439,7 +439,9 @@ void GameState::renderTextDisplay(int gameTicksTime) {
 				outroPostKickPauseDuration
 					+ outroPlayerToRadioTowerDuration
 					+ outroPreRadioWavesPauseDuration
+					+ (outroSingleRadioWavePauseDuration * 3 + outroSingleRadioWaveSoundDuration)
 					+ outroInterRadioWavesPauseDuration
+					+ (outroSingleRadioWavePauseDuration * 3 + outroSingleRadioWaveSoundDuration)
 					+ outroPostRadioWavesPauseDuration
 					+ outroRadioTowerToBootPanBeforeZoomDuration
 					+ outroRadioTowerToBootPanAndZoomDuration
@@ -450,10 +452,7 @@ void GameState::renderTextDisplay(int gameTicksTime) {
 			textDisplayStrings = { titleGameName, " ", titleCreditsLine1, titleCreditsLine2, " ", "Thanks for playing!" };
 			textDisplayMetrics = { Text::getMetrics(titleGameName, 2.0f) };
 			textFadeInStartTicksTime =
-				outroTitleStartTimeMinusKick
-					+ SpriteRegistry::playerKickingAnimation->getTotalTicksDuration()
-					//TODO: read from the animation
-					+ SpriteRegistry::radioWaveAnimationTicksPerFrame * 14;
+				outroTitleStartTimeMinusKick + SpriteRegistry::playerKickingAnimation->getTotalTicksDuration();
 			textFadeInTicksDuration = 1000;
 			textDisplayTicksDuration = outroForeverDuration - outroPreTitlePauseDuration - textFadeInTicksDuration;
 			textFadeOutTicksDuration = 0;
@@ -979,15 +978,25 @@ void GameState::beginOutroAnimation(int ticksTime) {
 		});
 
 	//show the end-game radio waves
+	static constexpr int interSingleRadioWavesPauseDuration =
+		outroSingleRadioWavePauseDuration * 3 + outroSingleRadioWaveSoundDuration + outroInterRadioWavesPauseDuration;
+	static constexpr int radioWavesAndPostPauseDuration =
+		(outroSingleRadioWavePauseDuration * 3 + outroSingleRadioWaveSoundDuration) * 2
+			+ outroInterRadioWavesPauseDuration
+			+ outroPostRadioWavesPauseDuration;
+	dynamicCameraAnchorAnimationComponents.push_back(newEntityAnimationDelay(outroPreRadioWavesPauseDuration));
+	int radioWavesStartTime = EntityAnimation::getComponentTotalTicksDuration(dynamicCameraAnchorAnimationComponents);
+	for (int color = 0; color < MapState::colorCount; color++)
+		mapState.get()->startEndGameWavesAnimation(
+			radioWavesStartTime + outroSingleRadioWavePauseDuration * color,
+			(char)color,
+			interSingleRadioWavesPauseDuration,
+			ticksTime);
 	dynamicCameraAnchorAnimationComponents.insert(
 		dynamicCameraAnchorAnimationComponents.end(),
 		{
-			newEntityAnimationDelay(outroPreRadioWavesPauseDuration),
 			newEntityAnimationPlaySound(Audio::endGameWavesSound, 0),
-			newEntityAnimationDelay(outroInterRadioWavesPauseDuration),
-			//TODO: read from the animation
-			newEntityAnimationDelay(SpriteRegistry::radioWaveAnimationTicksPerFrame * 14),
-			newEntityAnimationDelay(outroPostRadioWavesPauseDuration),
+			newEntityAnimationDelay(radioWavesAndPostPauseDuration),
 		});
 
 	//pan to the boot and zoom in
