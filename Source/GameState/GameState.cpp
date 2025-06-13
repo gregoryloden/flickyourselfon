@@ -434,7 +434,6 @@ void GameState::renderTextDisplay(int gameTicksTime) {
 			textFadeOutTicksDuration = 500;
 			break;
 		case TextDisplayType::Outro: {
-			static constexpr int outroPreTitlePauseDuration = 1000;
 			static constexpr int outroTitleStartTimeMinusKick =
 				outroPostKickPauseDuration
 					+ outroPlayerToRadioTowerDuration
@@ -453,8 +452,8 @@ void GameState::renderTextDisplay(int gameTicksTime) {
 			textDisplayMetrics = { Text::getMetrics(titleGameName, 2.0f) };
 			textFadeInStartTicksTime =
 				outroTitleStartTimeMinusKick + SpriteRegistry::playerKickingAnimation->getTotalTicksDuration();
-			textFadeInTicksDuration = 1000;
-			textDisplayTicksDuration = outroForeverDuration - outroPreTitlePauseDuration - textFadeInTicksDuration;
+			textFadeInTicksDuration = outroTextFadeInTicksDuration;
+			textDisplayTicksDuration = outroForeverDuration;
 			textFadeOutTicksDuration = 0;
 			break;
 		}
@@ -1055,10 +1054,11 @@ void GameState::beginOutroAnimation(int ticksTime) {
 		});
 
 	//now that we've assembled the animations, begin them
+	static constexpr int finalPauseDuration = outroPreTitlePauseDuration + outroTextFadeInTicksDuration + outroForeverDuration;
 	dynamicCameraAnchorAnimationComponents.insert(
 		dynamicCameraAnchorAnimationComponents.end(),
 		{
-			newEntityAnimationDelay(outroForeverDuration),
+			newEntityAnimationDelay(finalPauseDuration),
 			//the player probably alreaty quit before this, but if not, return them to where they just were
 			newEntityAnimationSetZoom(newConstantValue(1.0f)),
 			newEntityAnimationSetPosition(playerX, playerY),

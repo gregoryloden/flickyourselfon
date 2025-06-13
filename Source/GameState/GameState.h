@@ -43,6 +43,8 @@ private:
 	static constexpr int outroRadioTowerToBootZoomAfterPanDuration = 1000;
 	static constexpr int outroPreFadeOutPauseDuration = 1000;
 	static constexpr int outroFadeOutDuration = 2000;
+	static constexpr int outroPreTitlePauseDuration = 1000;
+	static constexpr int outroTextFadeInTicksDuration = 1000;
 	static constexpr int outroForeverDuration = 3600 * 1000;
 	//save icon timing
 	static constexpr int saveIconShowDuration = 3000;
