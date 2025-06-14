@@ -41,6 +41,7 @@ levelsUnlocked(0)
 , dynamicCameraAnchor(nullptr)
 , camera(nullptr)
 , lastSaveTicksTime(0)
+, savePerformed(false)
 , pauseState(nullptr)
 , pauseStartTicksTime(-1)
 , gameTimeOffsetTicksDuration(0)
@@ -62,6 +63,7 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 	textDisplayType = prev->textDisplayType;
 	titleAnimationStartTicksTime = prev->titleAnimationStartTicksTime;
 	lastSaveTicksTime = prev->lastSaveTicksTime;
+	savePerformed = prev->savePerformed;
 
 	//don't update any state if we're paused
 	PauseState* lastPauseState = prev->pauseState.get();
@@ -383,7 +385,7 @@ void GameState::render(int ticksTime) {
 		dynamicCameraAnchor.get()->render(gameTicksTime);
 	if (textDisplayType != TextDisplayType::None)
 		renderTextDisplay(gameTicksTime);
-	if (gameTicksTime < lastSaveTicksTime + saveIconShowDuration && lastSaveTicksTime > 0)
+	if (gameTicksTime < lastSaveTicksTime + saveIconShowDuration && savePerformed)
 		renderSaveIcon(gameTicksTime);
 
 	if (pauseState.get() != nullptr)
@@ -509,6 +511,7 @@ void GameState::saveState(int gameTicksTime) {
 	mapState.get()->saveState(file);
 	file.close();
 	lastSaveTicksTime = gameTicksTime;
+	savePerformed = true;
 }
 void GameState::loadInitialState(int ticksTime) {
 	//first things first, we need some state
@@ -1103,6 +1106,8 @@ void GameState::beginOutroAnimation(int ticksTime) {
 void GameState::resetGame(int ticksTime) {
 	Audio::stopAll();
 	levelsUnlocked = 0;
+	lastSaveTicksTime = ticksTime;
+	savePerformed = false;
 	gameTimeOffsetTicksDuration = 0;
 	pauseState.clear();
 	//discard old states before assigning new states and resetting them, that way we reuse states only if they aren't in use by

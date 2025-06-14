@@ -69,6 +69,7 @@ private:
 	ReferenceCounterHolder<DynamicCameraAnchor> dynamicCameraAnchor;
 	EntityState* camera;
 	int lastSaveTicksTime;
+	bool savePerformed;
 	ReferenceCounterHolder<PauseState> pauseState;
 	int pauseStartTicksTime;
 	int gameTimeOffsetTicksDuration;
