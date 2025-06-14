@@ -199,18 +199,16 @@ HintState* HintState::produce(objCounterParametersComma() Hint* pHint, int anima
 }
 pooledReferenceCounterDefineRelease(HintState)
 void HintState::render(int screenLeftWorldX, int screenTopWorldY, int ticksTime) {
+	//only certain types render with offscreen arrows, reset it by default, we'll set it later if applicable
+	offscreenArrowAlpha = 0;
 	//this is a temporary hint, always show this and at full alpha
 	if (hint->type == Hint::Type::CalculatingHint) {
 		MapState::renderControlsTutorial("(calculating hint...)", {});
-		//text doesn't have an offscreen arrow
-		offscreenArrowAlpha = 0;
 		return;
 	}
 	//animation is over, don't render the hint or offscreen arrow
-	if (ticksTime >= animationEndTicksTime) {
-		offscreenArrowAlpha = 0;
+	if (ticksTime >= animationEndTicksTime)
 		return;
-	}
 	int progressTicks = ticksTime + totalDisplayTicks - animationEndTicksTime;
 	float progress = (float)progressTicks / totalDisplayTicks;
 	float alpha = 0.5f - (progress + progress * progress) * 0.25f;
@@ -219,15 +217,11 @@ void HintState::render(int screenLeftWorldX, int screenTopWorldY, int ticksTime)
 		Text::setRenderColor(1.0f, 1.0f, 1.0f, alpha * 2.0f);
 		MapState::renderControlsTutorial("(unable to calculate hint)", {});
 		Text::setRenderColor(1.0f, 1.0f, 1.0f, 1.0f);
-		//text doesn't have an offscreen arrow
-		offscreenArrowAlpha = 0;
 		return;
 	}
 	bool isOn = (progressTicks % flashOnOffTotalTicks) < flashOnOffTicks;
-	if (!isOn) {
-		offscreenArrowAlpha = 0;
+	if (!isOn)
 		return;
-	}
 	switch (hint->type) {
 		case Hint::Type::Plane:
 			hint->data.plane->renderHint(screenLeftWorldX, screenTopWorldY, alpha);
