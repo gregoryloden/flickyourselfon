@@ -18,6 +18,7 @@ SpriteSheet* SpriteRegistry::sparks = nullptr;
 SpriteSheet* SpriteRegistry::borderArrows = nullptr;
 SpriteSheet* SpriteRegistry::wavesActivated = nullptr;
 SpriteSheet* SpriteRegistry::save = nullptr;
+SpriteSheet* SpriteRegistry::endGameBootWaves = nullptr;
 SpriteAnimation* SpriteRegistry::playerWalkingAnimation = nullptr;
 SpriteAnimation* SpriteRegistry::playerLegLiftAnimation = nullptr;
 SpriteAnimation* SpriteRegistry::playerBootWalkingAnimation = nullptr;
@@ -29,10 +30,11 @@ SpriteAnimation* SpriteRegistry::playerBootLiftAnimation = nullptr;
 SpriteAnimation* SpriteRegistry::playerRidingRailAnimation = nullptr;
 SpriteAnimation* SpriteRegistry::playerBootOnAnimation = nullptr;
 SpriteAnimation* SpriteRegistry::radioWavesAnimation = nullptr;
-SpriteAnimation* SpriteRegistry::endGameWavesAnimation = nullptr;
+SpriteAnimation* SpriteRegistry::endGameRadioWavesAnimation = nullptr;
 SpriteAnimation* SpriteRegistry::railWavesAnimation = nullptr;
 SpriteAnimation* SpriteRegistry::switchWavesAnimation = nullptr;
 SpriteAnimation* SpriteRegistry::switchWavesShortAnimation = nullptr;
+SpriteAnimation* SpriteRegistry::endGameBootWavesAnimation = nullptr;
 SpriteAnimation* SpriteRegistry::sparksAnimationA = nullptr;
 SpriteAnimation* SpriteRegistry::sparksAnimationB = nullptr;
 SpriteAnimation* SpriteRegistry::sparksSlowAnimationA = nullptr;
@@ -54,6 +56,7 @@ void SpriteRegistry::loadAll() {
 	borderArrows = newSpriteSheetWithImagePath("borderarrows.png", 3, 3, false);
 	wavesActivated = newSpriteSheetWithImagePath("wavesactivated.png", 1, 4, false);
 	save = newSpriteSheetWithImagePath("save.png", 1, 1, false);
+	endGameBootWaves = newSpriteSheetWithImagePath("endgamewaves.png", 4, 1, true);
 	playerWalkingAnimation = newSpriteAnimation(
 		player,
 		{
@@ -122,7 +125,7 @@ void SpriteRegistry::loadAll() {
 			newSpriteAnimationFrame(3, 0, radioWaveAnimationTicksPerFrame) COMMA
 		});
 	radioWavesAnimation->disableLooping();
-	endGameWavesAnimation = newSpriteAnimation(
+	endGameRadioWavesAnimation = newSpriteAnimation(
 		radioWaves,
 		{
 			newSpriteAnimationFrame(0, 0, radioWaveAnimationTicksPerFrame) COMMA
@@ -130,7 +133,7 @@ void SpriteRegistry::loadAll() {
 			newSpriteAnimationFrame(2, 0, radioWaveAnimationTicksPerFrame) COMMA
 			newSpriteAnimationFrame(3, 0, radioWaveAnimationTicksPerFrame) COMMA
 		});
-	endGameWavesAnimation->disableLooping();
+	endGameRadioWavesAnimation->disableLooping();
 	railWavesAnimation = newSpriteAnimation(
 		railWaves,
 		{
@@ -159,6 +162,15 @@ void SpriteRegistry::loadAll() {
 			newSpriteAnimationFrame(2, 0, radioWaveAnimationTicksPerFrame) COMMA
 		});
 	switchWavesShortAnimation->disableLooping();
+	endGameBootWavesAnimation = newSpriteAnimation(
+		endGameBootWaves,
+		{
+			newSpriteAnimationFrame(0, 0, endGameBootWaveAnimationTicksPerFrame) COMMA
+			newSpriteAnimationFrame(1, 0, endGameBootWaveAnimationTicksPerFrame) COMMA
+			newSpriteAnimationFrame(2, 0, endGameBootWaveAnimationTicksPerFrame) COMMA
+			newSpriteAnimationFrame(3, 0, endGameBootWaveAnimationTicksPerFrame) COMMA
+		});
+	endGameBootWavesAnimation->disableLooping();
 	sparksAnimationA = newSpriteAnimation(
 		sparks,
 		{
@@ -237,10 +249,11 @@ void SpriteRegistry::unloadAll() {
 	delete playerRidingRailAnimation;
 	delete playerBootOnAnimation;
 	delete radioWavesAnimation;
-	delete endGameWavesAnimation;
+	delete endGameRadioWavesAnimation;
 	delete railWavesAnimation;
 	delete switchWavesAnimation;
 	delete switchWavesShortAnimation;
+	delete endGameBootWavesAnimation;
 	delete sparksAnimationA;
 	delete sparksAnimationB;
 	delete sparksSlowAnimationA;
@@ -259,4 +272,5 @@ void SpriteRegistry::unloadAll() {
 	delete borderArrows;
 	delete wavesActivated;
 	delete save;
+	delete endGameBootWaves;
 }

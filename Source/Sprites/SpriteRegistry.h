@@ -11,6 +11,7 @@ public:
 	static constexpr int playerKickingAnimationTicksPerFrame = 300;
 	static constexpr int playerFastKickingAnimationTicksPerFrame = 250;
 	static constexpr int radioWaveAnimationTicksPerFrame = 80;
+	static constexpr int endGameBootWaveAnimationTicksPerFrame = 120;
 	static constexpr int sparksTicksPerFrame = 50;
 	static constexpr int sparksSlowTicksPerFrame = 100;
 
@@ -28,6 +29,7 @@ public:
 	static SpriteSheet* borderArrows;
 	static SpriteSheet* wavesActivated;
 	static SpriteSheet* save;
+	static SpriteSheet* endGameBootWaves;
 	static SpriteAnimation* playerWalkingAnimation;
 	static SpriteAnimation* playerLegLiftAnimation;
 	static SpriteAnimation* playerBootWalkingAnimation;
@@ -39,10 +41,11 @@ public:
 	static SpriteAnimation* playerRidingRailAnimation;
 	static SpriteAnimation* playerBootOnAnimation;
 	static SpriteAnimation* radioWavesAnimation;
-	static SpriteAnimation* endGameWavesAnimation;
+	static SpriteAnimation* endGameRadioWavesAnimation;
 	static SpriteAnimation* railWavesAnimation;
 	static SpriteAnimation* switchWavesAnimation;
 	static SpriteAnimation* switchWavesShortAnimation;
+	static SpriteAnimation* endGameBootWavesAnimation;
 	static SpriteAnimation* sparksAnimationA;
 	static SpriteAnimation* sparksAnimationB;
 	static SpriteAnimation* sparksSlowAnimationA;

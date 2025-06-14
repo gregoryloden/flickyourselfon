@@ -1006,15 +1006,15 @@ void GameState::beginOutroAnimation(int ticksTime) {
 		outroRadioTowerToBootPanAndZoomDuration + outroRadioTowerToBootZoomAfterPanDuration;
 	static constexpr int radioTowerToBootPanAndZoomFullDuration =
 		radioTowerToBootPanDuration + outroRadioTowerToBootZoomAfterPanDuration;
+	float bootX = playerState.get()->getEndGameBootX(ticksTime);
+	float bootY = playerState.get()->getEndGameBootY(ticksTime);
 	EntityAnimation::delayToEndOf(playerAnimationComponents, dynamicCameraAnchorAnimationComponents);
 	playerAnimationComponents.push_back(newEntityAnimationSetDirection(SpriteDirection::Right));
 	dynamicCameraAnchorAnimationComponents.insert(
 		dynamicCameraAnchorAnimationComponents.end(),
 		{
 			EntityAnimation::SetVelocity::cubicInterpolation(
-				playerState.get()->getEndGameBootX(ticksTime) - radioTowerAntennaX,
-				playerState.get()->getEndGameBootY(ticksTime) - radioTowerAntennaY,
-				(float)radioTowerToBootPanDuration),
+				bootX - radioTowerAntennaX, bootY - radioTowerAntennaY, (float)radioTowerToBootPanDuration),
 			newEntityAnimationSetZoom(
 				newPiecewiseValue({
 					PiecewiseValue::ValueAtTime(newConstantValue(1.0f), 0.0f) COMMA
@@ -1036,9 +1036,8 @@ void GameState::beginOutroAnimation(int ticksTime) {
 		});
 
 	//big reveal - turn the boot on
-	//TODO and show waves coming out of it
 	dynamicCameraAnchorAnimationComponents.push_back(newEntityAnimationDelay(outroPreTurnOnPauseDuration));
-	EntityAnimation::delayToEndOf(playerAnimationComponents, dynamicCameraAnchorAnimationComponents);
+	int bootTurnOnTime = EntityAnimation::getComponentTotalTicksDuration(dynamicCameraAnchorAnimationComponents);
 	dynamicCameraAnchorAnimationComponents.insert(
 		dynamicCameraAnchorAnimationComponents.end(),
 		{
@@ -1046,7 +1045,16 @@ void GameState::beginOutroAnimation(int ticksTime) {
 			newEntityAnimationPlaySound(Audio::endGameVictorySound, 0),
 			newEntityAnimationDelay(outroPostTurnOnPauseDuration),
 		});
-	playerAnimationComponents.push_back(newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerBootOnAnimation));
+	playerAnimationComponents.insert(
+		playerAnimationComponents.end(),
+		{
+			newEntityAnimationDelay(
+				bootTurnOnTime - EntityAnimation::getComponentTotalTicksDuration(playerAnimationComponents)),
+			newEntityAnimationSetSpriteAnimation(SpriteRegistry::playerBootOnAnimation),
+		});
+	for (int color = 0; color < MapState::colorCount; color++)
+		mapState.get()->spawnBootTurnOnWaves(
+			bootTurnOnTime + (Config::ticksPerSecond * color / 6), bootX, bootY, (char)color, ticksTime);
 
 	//finally, fade out
 	dynamicCameraAnchorAnimationComponents.insert(

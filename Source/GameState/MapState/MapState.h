@@ -333,6 +333,8 @@ public:
 	void spawnGoalSparks(int levelN, int ticksTime);
 	//begin the end-game radio waves animation for the given color
 	void startEndGameWavesAnimation(int initialTicksDelay, char color, int interWavesDelay, int ticksTime);
+	//show waves for the boot turning on for the given color
+	void spawnBootTurnOnWaves(int initialTicksDelay, float bootCenterX, float bootCenterY, char color, int ticksTime);
 	//toggle the state of showing connections, and any other relevant state
 	void toggleShowConnections();
 	//generate a hint based on the state of the map and the given player position

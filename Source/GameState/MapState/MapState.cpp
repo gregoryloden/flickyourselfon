@@ -973,10 +973,22 @@ void MapState::startEndGameWavesAnimation(int initialTicksDelay, char color, int
 		true,
 		{
 			newEntityAnimationDelay(initialTicksDelay),
-			entityAnimationSpriteAnimationWithDelay(SpriteRegistry::endGameWavesAnimation),
+			entityAnimationSpriteAnimationWithDelay(SpriteRegistry::endGameRadioWavesAnimation),
 			newEntityAnimationSetSpriteAnimation(nullptr),
-			newEntityAnimationDelay(interWavesDelay - SpriteRegistry::endGameWavesAnimation->getTotalTicksDuration()),
-			entityAnimationSpriteAnimationWithDelay(SpriteRegistry::endGameWavesAnimation),
+			newEntityAnimationDelay(interWavesDelay - SpriteRegistry::endGameRadioWavesAnimation->getTotalTicksDuration()),
+			entityAnimationSpriteAnimationWithDelay(SpriteRegistry::endGameRadioWavesAnimation),
+		},
+		ticksTime);
+}
+void MapState::spawnBootTurnOnWaves(int initialTicksDelay, float bootCenterX, float bootCenterY, char color, int ticksTime) {
+	queueParticleWithWaveColor(
+		bootCenterX,
+		bootCenterY,
+		color,
+		true,
+		{
+			newEntityAnimationDelay(initialTicksDelay),
+			entityAnimationSpriteAnimationWithDelay(SpriteRegistry::endGameBootWavesAnimation),
 		},
 		ticksTime);
 }
