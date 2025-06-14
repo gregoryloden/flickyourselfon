@@ -2,7 +2,7 @@
 #define HINT_STATE_H
 #include "Util/PooledReferenceCounter.h"
 
-#define newHintState(hint, animationEndTicksTime) produceWithArgs(HintState, hint, animationEndTicksTime)
+#define newHintState(hint, animationStartTicksTime) produceWithArgs(HintState, hint, animationStartTicksTime)
 #ifdef DEBUG
 	#define LOG_FOUND_HINT_STEPS
 #endif
