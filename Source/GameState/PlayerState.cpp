@@ -212,7 +212,7 @@ void PlayerState::generateHint(Hint* useHint, int ticksTime) {
 		hint = useHint;
 	else {
 		hint = &Hint::calculatingHint;
-		float timeDiff = (float)(lastUpdateTicksTime - ticksTime);
+		float timeDiff = (float)(ticksTime - lastUpdateTicksTime);
 		float hintX = x.get()->getValue(timeDiff);
 		float hintY = y.get()->getValue(timeDiff) + boundingBoxCenterYOffset;
 		ReferenceCounterHolder<MapState> mapStateCapture (mapState.get());
