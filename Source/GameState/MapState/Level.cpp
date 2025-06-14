@@ -1107,7 +1107,9 @@ Hint* Level::performHintSearch(HintState::PotentialLevelState* baseLevelState, P
 		int now = SDL_GetTicks();
 		if (now - startTime >= maxHintSearchTicks) {
 			Logger::debugLogger.logString("hint search timed out");
-			return &Hint::searchCanceledEarly;
+			return Config::solutionBlockedWarning.state == Config::solutionBlockedLooseValue
+				? &undoResetHint
+				: &Hint::searchCanceledEarly;
 		}
 
 		//the queue is empty, advance to the queue for the next step count

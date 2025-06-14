@@ -112,6 +112,8 @@ public:
 	static constexpr char* optionsFileName = "kyo.options";
 	static constexpr int heightBasedShadingOffValue = 1;
 	static constexpr int heightBasedShadingExtraValue = 2;
+	static constexpr int solutionBlockedLooseValue = 0;
+	static constexpr int solutionBlockedOffValue = 2;
 
 	static float currentPixelWidth;
 	static float currentPixelHeight;
@@ -142,6 +144,7 @@ public:
 	static ConfigTypes::OnOffSetting showActivatedSwitchWaves;
 	static ConfigTypes::OnOffSetting showBlockedFallEdges;
 	static ConfigTypes::OnOffSetting autosaveEnabled;
+	static ConfigTypes::MultiStateSetting solutionBlockedWarning;
 	static vector<ConfigTypes::ValueSelectionSetting*> allValueSelectionSettings;
 	static ConfigTypes::ValueSelectionSetting autosaveInterval;
 	static vector<ConfigTypes::VolumeSetting*> allVolumeSettings;

@@ -533,6 +533,7 @@ PauseState::PauseOption* PauseState::buildOptionsMenuOption() {
 							newMultiStateOption(&Config::heightBasedShading, "height-based shading") COMMA
 							newMultiStateOption(&Config::showActivatedSwitchWaves, "show activated switch waves") COMMA
 							newMultiStateOption(&Config::showBlockedFallEdges, "show blocked fall edges") COMMA
+							newMultiStateOption(&Config::solutionBlockedWarning, "\"solution blocked\" warning") COMMA
 							newNavigationOption("back", nullptr) COMMA
 						})) COMMA
 				newNavigationOption(

@@ -1631,7 +1631,7 @@ bool PlayerState::renderTutorials() {
 	else if (!finishedUndoRedoTutorial && undoState.get() != nullptr && undoRedoTutorialUnlocked)
 		MapState::renderControlsTutorial("Undo/Redo: ", { Config::undoKeyBinding.value, Config::redoKeyBinding.value });
 	//not exactly a tutorial, but it goes where tutorials are rendered and replaces any other tutorial that would render
-	else if (hint->type == Hint::Type::UndoReset) {
+	else if (hint->type == Hint::Type::UndoReset && Config::solutionBlockedWarning.state != Config::solutionBlockedOffValue) {
 		Text::setRenderColor(1.0f, 1.0f, 1.0f, 0.75f);
 		float afterUndoX = MapState::renderControlsTutorial("(solution blocked; Undo ", { Config::undoKeyBinding.value });
 		Text::render(" / Reset)", afterUndoX, MapState::tutorialBaselineY, 1.0f);

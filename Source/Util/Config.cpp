@@ -138,6 +138,8 @@ MultiStateSetting Config::heightBasedShading (
 OnOffSetting Config::showActivatedSwitchWaves ("showActivatedSwitchWaves ", Config::allMultiStateSettings);
 OnOffSetting Config::showBlockedFallEdges ("showBlockedFallEdges ", Config::allMultiStateSettings);
 OnOffSetting Config::autosaveEnabled ("autosaveEnabled ", Config::allMultiStateSettings);
+MultiStateSetting Config::solutionBlockedWarning(
+	{ "loose", "strict", "off" }, "solutionBlockedWarning ", Config::allMultiStateSettings);
 vector<ValueSelectionSetting*> Config::allValueSelectionSettings;
 ValueSelectionSetting Config::autosaveInterval (
 	{
