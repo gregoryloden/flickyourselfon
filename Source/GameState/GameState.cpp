@@ -1097,6 +1097,8 @@ void GameState::beginOutroAnimation(int ticksTime) {
 			newEntityAnimationSetSpriteAnimation(nullptr),
 		});
 	playerState.get()->beginEntityAnimation(&playerAnimationComponents, ticksTime);
+
+	Audio::fadeOutAll(3000);
 }
 void GameState::resetGame(int ticksTime) {
 	Audio::stopAll();
