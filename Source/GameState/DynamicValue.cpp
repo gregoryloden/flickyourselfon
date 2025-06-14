@@ -122,9 +122,12 @@ LinearInterpolatedValue* LinearInterpolatedValue::produce(objCounterParametersCo
 	return l;
 }
 pooledReferenceCounterDefineRelease(LinearInterpolatedValue)
-//TODO: find where 0 is and shift all the values properly
 DynamicValue* LinearInterpolatedValue::copyWithConstantValue(float pConstantValue) {
-	return this;
+	LinearInterpolatedValue* copyValue = newLinearInterpolatedValue({});
+	float shift = pConstantValue - valuesAtTimes.front().getValue();
+	for (ValueAtTime valueAtTime : valuesAtTimes)
+		copyValue->valuesAtTimes.push_back(ValueAtTime(valueAtTime.getValue() + shift, valueAtTime.getAtTicksTime()));
+	return copyValue;
 }
 float LinearInterpolatedValue::getValue(float ticksElapsed) {
 	//use the last value if we're after the last ticks time
