@@ -1366,7 +1366,7 @@ void MapState::renderGroupsForSwitchesFromRail(EntityState* camera, short railId
 	glDisable(GL_BLEND);
 	for (char group : rail->getGroups()) {
 		for (Switch* switch0 : switches) {
-			if (switch0->getGroup() != group)
+			if (switch0->getGroup() != group || switch0->getColor() != color)
 				continue;
 			switch0->renderGroup(screenLeftWorldX, screenTopWorldY);
 			break;
