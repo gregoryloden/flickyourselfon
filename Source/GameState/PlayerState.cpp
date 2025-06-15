@@ -207,6 +207,8 @@ void PlayerState::spawnParticle(
 		particleStartTicksTime);
 }
 void PlayerState::generateHint(Hint* useHint, int ticksTime) {
+	//if another hint is being generated, force-wait for it to finish, even if it delays the update
+	waitForHintThreadToFinish();
 	mapState.get()->setHint(hint->type == Hint::Type::UndoReset ? &Hint::checkingSolution : &Hint::none, 0);
 	if (useHint->isAdvancement())
 		hint = useHint;
@@ -216,8 +218,6 @@ void PlayerState::generateHint(Hint* useHint, int ticksTime) {
 		float hintX = x.get()->getValue(timeDiff);
 		float hintY = y.get()->getValue(timeDiff) + boundingBoxCenterYOffset;
 		ReferenceCounterHolder<MapState> mapStateCapture (mapState.get());
-		//if another hint is being generated, force-wait for it to finish, even if it delays the update
-		waitForHintThreadToFinish();
 		hintSearchThread = new thread([hintX, hintY, mapStateCapture]() {
 			Logger::setupLogQueue("H");
 			hintSearchStorage = mapStateCapture.get()->generateHint(hintX, hintY);
