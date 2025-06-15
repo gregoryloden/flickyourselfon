@@ -1,3 +1,17 @@
+Level plan:
+1 - R
+2a - R
+2b - B
+3a - RB
+3b - G
+4a - W
+4b - RBGW
+5a - RBGW final
+(Alt:)
+(+3c - RBG)
+(-4b)
+
+
 Level 1: three rails, two switches
 	side left is down, left is down, right is down
 	button 1 on bottom platform
