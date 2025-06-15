@@ -28,7 +28,7 @@ public:
 		CheckingSolution,
 	};
 	union Data {
-		bool none; //not necessary but it gives the None type a data counterpart and it's used in the constructor
+		void* none; //not necessary but it gives the None type a data counterpart and it's used in the constructor
 		LevelTypes::Plane* plane;
 		Rail* rail;
 		Switch* switch0;
