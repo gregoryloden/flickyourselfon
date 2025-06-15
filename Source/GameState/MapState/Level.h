@@ -260,9 +260,7 @@ private:
 	static vector<deque<HintState::PotentialLevelState*>*>* currentNextPotentialLevelStatesBySteps;
 	static vector<vector<deque<HintState::PotentialLevelState*>*>> nextPotentialLevelStatesByStepsByMilestone;
 	static int hintSearchCheckStateI;
-public:
 	static LevelTypes::Plane* cachedHintSearchVictoryPlane;
-private:
 	#ifdef LOG_SEARCH_STEPS_STATS
 		static int* statesAtStepsByPlane;
 		static int statesAtStepsByPlaneCount;
