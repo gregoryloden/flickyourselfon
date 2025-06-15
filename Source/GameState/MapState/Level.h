@@ -265,6 +265,7 @@ private:
 		static int* statesAtStepsByPlane;
 		static int statesAtStepsByPlaneCount;
 	#endif
+	static bool enableHintSearchTimeout;
 public:
 	#ifdef TRACK_HINT_SEARCH_STATS
 		static int hintSearchActionsChecked;

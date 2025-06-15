@@ -807,6 +807,7 @@ vector<deque<HintState::PotentialLevelState*>*>* Level::currentNextPotentialLeve
 vector<vector<deque<HintState::PotentialLevelState*>*>> Level::nextPotentialLevelStatesByStepsByMilestone;
 int Level::hintSearchCheckStateI = 0;
 Plane* Level::cachedHintSearchVictoryPlane = nullptr;
+bool Level::enableHintSearchTimeout = true;
 #ifdef LOG_SEARCH_STEPS_STATS
 	int* Level::statesAtStepsByPlane = nullptr;
 	int Level::statesAtStepsByPlaneCount = 0;
@@ -923,7 +924,9 @@ void Level::preAllocatePotentialLevelStates() {
 			*outMovementDirection = rail->getInitialMovementDirection();
 			*outTileOffset = rail->getInitialTileOffset();
 		};
+	enableHintSearchTimeout = false;
 	generateHint(planes[0], getRailState, minimumRailColor);
+	enableHintSearchTimeout = true;
 	#ifdef TEST_SOLUTIONS
 		testSolutions(getRailState);
 	#endif
@@ -1105,7 +1108,7 @@ Hint* Level::performHintSearch(HintState::PotentialLevelState* baseLevelState, P
 			static constexpr int maxHintSearchTicks = 5000;
 		#endif
 		int now = SDL_GetTicks();
-		if (now - startTime >= maxHintSearchTicks) {
+		if (now - startTime >= maxHintSearchTicks && enableHintSearchTimeout) {
 			Logger::debugLogger.logString("hint search timed out");
 			return Config::solutionBlockedWarning.state == Config::solutionBlockedWarningLooseValue
 				? &undoResetHint
