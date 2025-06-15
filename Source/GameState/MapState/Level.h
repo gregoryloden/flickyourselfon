@@ -271,9 +271,9 @@ public:
 		static int hintSearchComparisonsPerformed;
 	#endif
 	static int foundHintSearchTotalHintSteps;
+private:
 	static int foundHintSearchTotalSteps;
 
-private:
 	int levelN;
 	int startTile;
 	vector<LevelTypes::Plane*> planes;
