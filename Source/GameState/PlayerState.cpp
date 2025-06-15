@@ -209,10 +209,16 @@ void PlayerState::spawnParticle(
 void PlayerState::generateHint(Hint* useHint, int ticksTime) {
 	//if another hint is being generated, force-wait for it to finish, even if it delays the update
 	waitForHintThreadToFinish();
-	mapState.get()->setHint(hint->type == Hint::Type::UndoReset ? &Hint::checkingSolution : &Hint::none, 0);
-	if (useHint->isAdvancement())
+	if (useHint->isAdvancement()) {
 		hint = useHint;
-	else {
+		mapState.get()->setHint(&Hint::none, 0);
+	} else {
+		//if we were just showing an undo/reset hint, show the checking-solution hint now
+		if (hint->type == Hint::Type::UndoReset)
+			mapState.get()->setHint(&Hint::checkingSolution, 0);
+		//clear the hint being shown unless we're waiting for a hint to complete first
+		else if (!mapState.get()->requestsHintResetOnHintSearchEnded())
+			mapState.get()->setHint(&Hint::none, 0);
 		hint = &Hint::calculatingHint;
 		float timeDiff = (float)(ticksTime - lastUpdateTicksTime);
 		float hintX = x.get()->getValue(timeDiff);
@@ -312,7 +318,7 @@ void PlayerState::updateWithPreviousPlayerState(PlayerState* prev, bool hasKeybo
 	if (!Editor::isActive) {
 		setKickAction();
 		tryAutoKick(prev, ticksTime);
-		tryCollectCompletedHint(prev);
+		tryCollectCompletedHint(prev, ticksTime);
 	}
 }
 void PlayerState::updatePositionWithPreviousPlayerState(PlayerState* prev, const Uint8* keyboardState, int ticksTime) {
@@ -888,12 +894,16 @@ void PlayerState::tryAutoKick(PlayerState* prev, int ticksTime) {
 		canImmediatelyAutoKick = true;
 	}
 }
-void PlayerState::tryCollectCompletedHint(PlayerState* other) {
+void PlayerState::tryCollectCompletedHint(PlayerState* other, int ticksTime) {
 	if (hintSearchStorage == nullptr) {
 		hint = other->hint;
 		return;
 	}
-	if (mapState.get()->requestsHintResetOnHintSearchEnded())
+	if (mapState.get()->requestsHint())
+		mapState.get()->setHint(hintSearchStorage, ticksTime);
+	else if (hintSearchStorage->type == Hint::Type::UndoReset)
+		mapState.get()->setHint(&Hint::genericUndoReset, 0);
+	else if (mapState.get()->requestsHintResetOnHintSearchEnded())
 		mapState.get()->setHint(&Hint::none, 0);
 	hint = hintSearchStorage;
 	waitForHintThreadToFinish();
@@ -1632,15 +1642,7 @@ bool PlayerState::renderTutorials() {
 		MapState::renderControlsTutorial("Redo: ", { Config::redoKeyBinding.value });
 	else if (!finishedUndoRedoTutorial && undoState.get() != nullptr && undoRedoTutorialUnlocked)
 		MapState::renderControlsTutorial("Undo/Redo: ", { Config::undoKeyBinding.value, Config::redoKeyBinding.value });
-	//not exactly a tutorial, but it goes where tutorials are rendered and replaces any other tutorial that would render
-	else if (hint->type == Hint::Type::UndoReset
-		&& Config::solutionBlockedWarning.state != Config::solutionBlockedWarningOffValue)
-	{
-		Text::setRenderColor(1.0f, 1.0f, 1.0f, HintState::autoShownHintAlpha);
-		float afterUndoX = MapState::renderControlsTutorial("(solution blocked; Undo ", { Config::undoKeyBinding.value });
-		Text::render(" / Reset)", afterUndoX, MapState::tutorialBaselineY, 1.0f);
-		Text::setRenderColor(1.0f, 1.0f, 1.0f, 1.0f);
-	} else
+	else
 		return false;
 	return true;
 }

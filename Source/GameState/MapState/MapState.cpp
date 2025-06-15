@@ -1151,9 +1151,7 @@ void MapState::renderBelowPlayer(EntityState* camera, float playerWorldGroundY, 
 		(SpriteRegistry::radioTower->*SpriteSheet::setSpriteColor)(1.0f, 1.0f, 1.0f, 1.0f);
 
 	//draw hints below rails, if applicable
-	Hint::Type hintType = hintState.get()->getHintType();
-	if (hintType == Hint::Type::Plane)
-		hintState.get()->render(screenLeftWorldX, screenTopWorldY, ticksTime);
+	hintState.get()->renderBelowRails(screenLeftWorldX, screenTopWorldY, ticksTime);
 
 	//draw rail shadows, rails (that are below the player), and switches
 	renderRailStates.clear();
@@ -1189,8 +1187,7 @@ void MapState::renderBelowPlayer(EntityState* camera, float playerWorldGroundY, 
 	}
 
 	//draw hints above rails, if applicable
-	if (hintType == Hint::Type::Rail || hintType == Hint::Type::Switch || hintType == Hint::Type::UndoReset)
-		hintState.get()->render(screenLeftWorldX, screenTopWorldY, ticksTime);
+	hintState.get()->renderAboveRails(screenLeftWorldX, screenTopWorldY, ticksTime);
 }
 void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int ticksTime) {
 	if (Editor::isActive && editorHideNonTiles)
@@ -1289,13 +1286,9 @@ void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int 
 		(SpriteRegistry::rails->*SpriteSheet::setSpriteColor)(1.0f, 1.0f, 1.0f, 1.0f);
 	}
 
-	Hint::Type hintType = hintState.get()->getHintType();
-	if (hintType == Hint::Type::CalculatingHint
-			|| hintType == Hint::Type::SearchCanceledEarly
-			|| hintType == Hint::Type::CheckingSolution)
-		hintState.get()->render(screenLeftWorldX, screenTopWorldY, ticksTime);
-	else
-		hintState.get()->renderOffscreenArrow(screenLeftWorldX, screenTopWorldY);
+	//draw hints over the world, if applicable
+	hintState.get()->renderText(screenLeftWorldX, screenTopWorldY, ticksTime);
+	hintState.get()->renderOffscreenArrow(screenLeftWorldX, screenTopWorldY);
 
 	if (Config::showActivatedSwitchWaves.isOn()) {
 		static constexpr int wavesActivatedEdgeSpacing = 10;

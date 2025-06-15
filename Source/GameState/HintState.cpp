@@ -14,6 +14,7 @@
 
 //////////////////////////////// Hint ////////////////////////////////
 Hint Hint::none (Hint::Type::None);
+Hint Hint::genericUndoReset (Hint::Type::UndoReset);
 Hint Hint::calculatingHint (Hint::Type::CalculatingHint);
 Hint Hint::searchCanceledEarly (Hint::Type::SearchCanceledEarly);
 Hint Hint::checkingSolution (Hint::Type::CheckingSolution);
@@ -175,6 +176,7 @@ HintState* HintState::produce(objCounterParametersComma() Hint* pHint, int anima
 	initializeWithNewFromPool(h, HintState)
 	h->hint = pHint;
 	h->animationEndTicksTime = animationStartTicksTime + totalDisplayTicks;
+	h->offscreenArrowAlpha = 0;
 	switch (pHint->type) {
 		case Hint::Type::Plane:
 			pHint->data.plane->getHintRenderBounds(
@@ -189,63 +191,97 @@ HintState* HintState::produce(objCounterParametersComma() Hint* pHint, int anima
 				&h->renderLeftWorldX, &h->renderTopWorldY, &h->renderRightWorldX, &h->renderBottomWorldY);
 			break;
 		case Hint::Type::UndoReset:
-			pHint->data.resetSwitch->getHintRenderBounds(
-				&h->renderLeftWorldX, &h->renderTopWorldY, &h->renderRightWorldX, &h->renderBottomWorldY);
+			if (pHint->data.resetSwitch != nullptr)
+				pHint->data.resetSwitch->getHintRenderBounds(
+					&h->renderLeftWorldX, &h->renderTopWorldY, &h->renderRightWorldX, &h->renderBottomWorldY);
 			break;
 		default:
-			h->offscreenArrowAlpha = 0;
 			break;
 	}
 	return h;
 }
 pooledReferenceCounterDefineRelease(HintState)
-void HintState::render(int screenLeftWorldX, int screenTopWorldY, int ticksTime) {
-	//only certain types render with offscreen arrows, reset it by default, we'll set it later if applicable
-	offscreenArrowAlpha = 0;
-	//this is a temporary hint, always show this and at full alpha
-	if (hint->type == Hint::Type::CalculatingHint) {
-		MapState::renderControlsTutorial("(calculating hint...)", {});
-		return;
-	//this is a temporary hint, always show this and at full alpha
-	} else if (hint->type == Hint::Type::CheckingSolution) {
-		Text::setRenderColor(1.0f, 1.0f, 1.0f, HintState::autoShownHintAlpha);
-		MapState::renderControlsTutorial("(checking solution...)", {});
-		Text::setRenderColor(1.0f, 1.0f, 1.0f, 1.0f);
-		return;
-	}
-	//animation is over, don't render the hint or offscreen arrow
+float HintState::getFadeOutAlpha(int ticksTime, bool applyBlinking) {
+	//animation is over, don't render the hint
 	if (ticksTime >= animationEndTicksTime)
-		return;
+		return 0.0f;
 	int progressTicks = ticksTime + totalDisplayTicks - animationEndTicksTime;
 	float progress = (float)progressTicks / totalDisplayTicks;
-	float alpha = 0.5f - (progress + progress * progress) * 0.25f;
-	//if we couldn't find a hint, show a tutorial-area message
-	if (hint->type == Hint::Type::SearchCanceledEarly) {
-		Text::setRenderColor(1.0f, 1.0f, 1.0f, alpha * 2.0f);
-		MapState::renderControlsTutorial("(unable to calculate hint)", {});
-		Text::setRenderColor(1.0f, 1.0f, 1.0f, 1.0f);
+	return !applyBlinking || (progressTicks % flashOnOffTotalTicks) < flashOnOffTicks
+		? (1.0f - (progress + progress * progress) * 0.5f)
+		: 0.0f;
+}
+void HintState::renderBelowRails(int screenLeftWorldX, int screenTopWorldY, int ticksTime) {
+	if (hint->type != Hint::Type::Plane)
 		return;
-	}
-	bool isOn = (progressTicks % flashOnOffTotalTicks) < flashOnOffTicks;
-	if (!isOn)
+	float alpha = (offscreenArrowAlpha = getFadeOutAlpha(ticksTime, true) * worldRenderHintAlpha);
+	if (alpha == 0.0f)
 		return;
+	hint->data.plane->renderHint(screenLeftWorldX, screenTopWorldY, alpha);
+}
+void HintState::renderAboveRails(int screenLeftWorldX, int screenTopWorldY, int ticksTime) {
 	switch (hint->type) {
-		case Hint::Type::Plane:
-			hint->data.plane->renderHint(screenLeftWorldX, screenTopWorldY, alpha);
-			break;
-		case Hint::Type::Rail:
+		case Hint::Type::Rail: {
+			float alpha = (offscreenArrowAlpha = getFadeOutAlpha(ticksTime, true) * worldRenderHintAlpha);
+			if (alpha == 0.0f)
+				return;
 			hint->data.rail->renderHint(screenLeftWorldX, screenTopWorldY, alpha);
-			break;
-		case Hint::Type::Switch:
+			return;
+		}
+		case Hint::Type::Switch: {
+			float alpha = (offscreenArrowAlpha = getFadeOutAlpha(ticksTime, true) * worldRenderHintAlpha);
+			if (alpha == 0.0f)
+				return;
 			hint->data.switch0->renderHint(screenLeftWorldX, screenTopWorldY, alpha);
-			break;
-		case Hint::Type::UndoReset:
+			return;
+		}
+		case Hint::Type::UndoReset: {
+			if (hint->data.resetSwitch == nullptr)
+				return;
+			float alpha = (offscreenArrowAlpha = getFadeOutAlpha(ticksTime, true) * worldRenderHintAlpha);
+			if (alpha == 0.0f)
+				return;
 			hint->data.resetSwitch->renderHint(screenLeftWorldX, screenTopWorldY, alpha);
-			break;
+			return;
+		}
 		default:
 			return;
 	}
-	offscreenArrowAlpha = alpha;
+}
+void HintState::renderText(int screenLeftWorldX, int screenTopWorldY, int ticksTime) {
+	switch (hint->type) {
+		case Hint::Type::UndoReset: {
+			if (Config::solutionBlockedWarning.state == Config::solutionBlockedWarningOffValue
+					&& hint->data.resetSwitch == nullptr)
+				return;
+			Text::setRenderColor(1.0f, 1.0f, 1.0f, autoShownHintAlpha);
+			float afterUndoX = MapState::renderControlsTutorial("(solution blocked; Undo ", { Config::undoKeyBinding.value });
+			Text::render(" / Reset)", afterUndoX, MapState::tutorialBaselineY, 1.0f);
+			Text::setRenderColor(1.0f, 1.0f, 1.0f, 1.0f);
+			return;
+		}
+		case Hint::Type::CalculatingHint:
+			MapState::renderControlsTutorial("(calculating hint...)", {});
+			return;
+		case Hint::Type::SearchCanceledEarly: {
+			float alpha = getFadeOutAlpha(ticksTime, false);
+			if (alpha == 0.0f)
+				return;
+			Text::setRenderColor(1.0f, 1.0f, 1.0f, alpha);
+			MapState::renderControlsTutorial("(unable to calculate hint)", {});
+			Text::setRenderColor(1.0f, 1.0f, 1.0f, 1.0f);
+			return;
+		}
+		case Hint::Type::CheckingSolution:
+			if (Config::solutionBlockedWarning.state == Config::solutionBlockedWarningOffValue)
+				return;
+			Text::setRenderColor(1.0f, 1.0f, 1.0f, autoShownHintAlpha);
+			MapState::renderControlsTutorial("(checking solution...)", {});
+			Text::setRenderColor(1.0f, 1.0f, 1.0f, 1.0f);
+			return;
+		default:
+			return;
+	}
 }
 void HintState::renderOffscreenArrow(int screenLeftWorldX, int screenTopWorldY) {
 	if (offscreenArrowAlpha == 0)

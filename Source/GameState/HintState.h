@@ -36,6 +36,7 @@ public:
 	};
 
 	static Hint none;
+	static Hint genericUndoReset;
 	static Hint calculatingHint;
 	static Hint searchCanceledEarly;
 	static Hint checkingSolution;
@@ -94,8 +95,9 @@ public:
 		#endif
 	};
 
-	static constexpr float autoShownHintAlpha = 0.75f;
 private:
+	static constexpr float worldRenderHintAlpha = 0.5f;
+	static constexpr float autoShownHintAlpha = 0.75f;
 	static constexpr int flashOnOffTicks = 350;
 	static constexpr int flashOnOffTotalTicks = flashOnOffTicks * 2;
 	static constexpr int flashTimes = 10;
@@ -118,9 +120,18 @@ public:
 	static HintState* produce(objCounterParametersComma() Hint* pHint, int animationStartTicksTime);
 	//release a reference to this HintState and return it to the pool if applicable
 	virtual void release();
-	//render this hint
-	void render(int screenLeftWorldX, int screenTopWorldY, int ticksTime);
-	//render an arrow pointing to this hint which is offscreen, using the alpha saved from render()
+private:
+	//get the alpha that this hint should render at, for hints that fade out, and possibly also accounting for blinking
+	float getFadeOutAlpha(int ticksTime, bool applyBlinking);
+public:
+	//render this hint if it renders below rails
+	void renderBelowRails(int screenLeftWorldX, int screenTopWorldY, int ticksTime);
+	//render this hint if it renders above rails
+	void renderAboveRails(int screenLeftWorldX, int screenTopWorldY, int ticksTime);
+	//render this hint if it renders text
+	void renderText(int screenLeftWorldX, int screenTopWorldY, int ticksTime);
+	//render an arrow pointing to this hint which is offscreen, using the alpha saved from one of the other render methods, if
+	//	applicable
 	void renderOffscreenArrow(int screenLeftWorldX, int screenTopWorldY);
 };
 #endif

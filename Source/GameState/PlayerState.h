@@ -196,7 +196,7 @@ private:
 	//auto-climb, auto-fall, or auto-ride-rail if we can
 	void tryAutoKick(PlayerState* prev, int ticksTime);
 	//collect the completed hint if applicable
-	void tryCollectCompletedHint(PlayerState* other);
+	void tryCollectCompletedHint(PlayerState* other, int ticksTime);
 	//wait for the hint thread to finish, and clear it
 	static void waitForHintThreadToFinish();
 public:

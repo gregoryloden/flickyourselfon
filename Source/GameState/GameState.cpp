@@ -156,7 +156,7 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 		if (playerLevelN == MapState::getLevelCount())
 			saveState(gameTicksTime);
 	}
-	if (mapState.get()->requestsHint() || perpetualHints)
+	if (perpetualHints)
 		mapState.get()->setHint(playerState.get()->getHint(), gameTicksTime);
 
 	//handle events after states have been updated
