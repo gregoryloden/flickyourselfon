@@ -211,14 +211,13 @@ void PlayerState::generateHint(Hint* useHint, int ticksTime) {
 	waitForHintThreadToFinish();
 	if (useHint->isAdvancement()) {
 		hint = useHint;
+		//we can definitely clear the shown hint if we have an advancement hint internally
 		mapState.get()->setHint(&Hint::none, 0);
 	} else {
-		//if we were just showing an undo/reset hint, show the checking-solution hint now
-		if (hint->type == Hint::Type::UndoReset)
-			mapState.get()->setHint(&Hint::checkingSolution, 0);
-		//clear the hint being shown unless we're waiting for a hint to complete first
-		else if (!mapState.get()->requestsHintResetOnHintSearchEnded())
-			mapState.get()->setHint(&Hint::none, 0);
+		//if the map is waiting for the hint search to finish before clearing its hint, set it to CheckingSolution for now
+		//otherwise, clear it while we search for a new hint
+		mapState.get()->setHint(
+			mapState.get()->requestsHintResetOnHintSearchEnded() ? &Hint::checkingSolution : &Hint::none, 0);
 		hint = &Hint::calculatingHint;
 		float timeDiff = (float)(ticksTime - lastUpdateTicksTime);
 		float hintX = x.get()->getValue(timeDiff);
