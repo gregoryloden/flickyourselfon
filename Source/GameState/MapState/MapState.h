@@ -343,6 +343,8 @@ public:
 	void setHint(Hint* hint, int ticksTime);
 	//returns true if this MapState should receive a new hint this update
 	bool requestsHint();
+	//returns true if this MapState should receive a None hint when the current hint search ends
+	bool requestsHintResetOnHintSearchEnded();
 	//get the level for the given position
 	int getLevelN(float playerX, float playerY);
 	//render the map

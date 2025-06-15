@@ -16,6 +16,7 @@
 Hint Hint::none (Hint::Type::None);
 Hint Hint::calculatingHint (Hint::Type::CalculatingHint);
 Hint Hint::searchCanceledEarly (Hint::Type::SearchCanceledEarly);
+Hint Hint::checkingSolution (Hint::Type::CheckingSolution);
 Hint::Hint(Type pType)
 : type(pType)
 , data() {
@@ -204,6 +205,12 @@ void HintState::render(int screenLeftWorldX, int screenTopWorldY, int ticksTime)
 	//this is a temporary hint, always show this and at full alpha
 	if (hint->type == Hint::Type::CalculatingHint) {
 		MapState::renderControlsTutorial("(calculating hint...)", {});
+		return;
+	//this is a temporary hint, always show this and at full alpha
+	} else if (hint->type == Hint::Type::CheckingSolution) {
+		Text::setRenderColor(1.0f, 1.0f, 1.0f, HintState::autoShownHintAlpha);
+		MapState::renderControlsTutorial("(checking solution...)", {});
+		Text::setRenderColor(1.0f, 1.0f, 1.0f, 1.0f);
 		return;
 	}
 	//animation is over, don't render the hint or offscreen arrow

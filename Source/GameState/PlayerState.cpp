@@ -207,7 +207,7 @@ void PlayerState::spawnParticle(
 		particleStartTicksTime);
 }
 void PlayerState::generateHint(Hint* useHint, int ticksTime) {
-	mapState.get()->setHint(&Hint::none, 0);
+	mapState.get()->setHint(hint->type == Hint::Type::UndoReset ? &Hint::checkingSolution : &Hint::none, 0);
 	if (useHint->isAdvancement())
 		hint = useHint;
 	else {
@@ -893,6 +893,8 @@ void PlayerState::tryCollectCompletedHint(PlayerState* other) {
 		hint = other->hint;
 		return;
 	}
+	if (mapState.get()->requestsHintResetOnHintSearchEnded())
+		mapState.get()->setHint(&Hint::none, 0);
 	hint = hintSearchStorage;
 	waitForHintThreadToFinish();
 }
@@ -1632,7 +1634,7 @@ bool PlayerState::renderTutorials() {
 		MapState::renderControlsTutorial("Undo/Redo: ", { Config::undoKeyBinding.value, Config::redoKeyBinding.value });
 	//not exactly a tutorial, but it goes where tutorials are rendered and replaces any other tutorial that would render
 	else if (hint->type == Hint::Type::UndoReset && Config::solutionBlockedWarning.state != Config::solutionBlockedOffValue) {
-		Text::setRenderColor(1.0f, 1.0f, 1.0f, 0.75f);
+		Text::setRenderColor(1.0f, 1.0f, 1.0f, HintState::autoShownHintAlpha);
 		float afterUndoX = MapState::renderControlsTutorial("(solution blocked; Undo ", { Config::undoKeyBinding.value });
 		Text::render(" / Reset)", afterUndoX, MapState::tutorialBaselineY, 1.0f);
 		Text::setRenderColor(1.0f, 1.0f, 1.0f, 1.0f);

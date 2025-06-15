@@ -1037,6 +1037,9 @@ void MapState::setHint(Hint* hint, int ticksTime) {
 bool MapState::requestsHint() {
 	return hintState.get()->getHintType() == Hint::Type::CalculatingHint;
 }
+bool MapState::requestsHintResetOnHintSearchEnded() {
+	return hintState.get()->getHintType() == Hint::Type::CheckingSolution;
+}
 int MapState::getLevelN(float playerX, float playerY) {
 	if (Editor::isActive)
 		return 0;
@@ -1287,7 +1290,9 @@ void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int 
 	}
 
 	Hint::Type hintType = hintState.get()->getHintType();
-	if (hintType == Hint::Type::CalculatingHint || hintType == Hint::Type::SearchCanceledEarly)
+	if (hintType == Hint::Type::CalculatingHint
+			|| hintType == Hint::Type::SearchCanceledEarly
+			|| hintType == Hint::Type::CheckingSolution)
 		hintState.get()->render(screenLeftWorldX, screenTopWorldY, ticksTime);
 	else
 		hintState.get()->renderOffscreenArrow(screenLeftWorldX, screenTopWorldY);

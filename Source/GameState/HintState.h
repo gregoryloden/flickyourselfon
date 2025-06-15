@@ -25,6 +25,7 @@ public:
 		UndoReset,
 		CalculatingHint,
 		SearchCanceledEarly,
+		CheckingSolution,
 	};
 	union Data {
 		bool none; //not necessary but it gives the None type a data counterpart and it's used in the constructor
@@ -37,6 +38,7 @@ public:
 	static Hint none;
 	static Hint calculatingHint;
 	static Hint searchCanceledEarly;
+	static Hint checkingSolution;
 
 	Type type;
 	Data data;
@@ -92,6 +94,7 @@ public:
 		#endif
 	};
 
+	static constexpr float autoShownHintAlpha = 0.75f;
 private:
 	static constexpr int flashOnOffTicks = 350;
 	static constexpr int flashOnOffTotalTicks = flashOnOffTicks * 2;
