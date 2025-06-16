@@ -432,7 +432,7 @@ void GameState::renderTextDisplay(int gameTicksTime) {
 			textDisplayStrings = { " ", " ", " ", " ", " ", " ", " ", " ", "Can you", "guide this person", "to turn it on?" };
 			textFadeInStartTicksTime = introAnimationStartTicksTime + 18000;
 			textFadeInTicksDuration = 500;
-			textDisplayTicksDuration = 2500;
+			textDisplayTicksDuration = 3000;
 			textFadeOutTicksDuration = 500;
 			break;
 		case TextDisplayType::Outro: {
