@@ -227,8 +227,12 @@ void Editor::ExportMapButton::onClick() {
 	MapState::editorRenderTiles(mapRenderer);
 	FileUtils::saveImage(mapSurface, "maptiles.png");
 
-	//write it with tiles and other things
+	//write it with tiles and other things, without groups or movement directions
 	MapState::editorRenderRailsAndSwitches(mapRenderer);
+	FileUtils::saveImage(mapSurface, "mapcontents.png");
+
+	//write it with everything: tiles, contents, and groups and movement directions
+	MapState::editorRenderGroupsAndMovementDirections(mapRenderer);
 	FileUtils::saveImage(mapSurface, "mapfull.png");
 
 	//cleanup

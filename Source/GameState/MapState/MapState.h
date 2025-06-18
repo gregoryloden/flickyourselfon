@@ -419,5 +419,7 @@ public:
 	static void editorRenderTiles(SDL_Renderer* mapRenderer);
 	//render rails, switches, and reset switches to the map image
 	static void editorRenderRailsAndSwitches(SDL_Renderer* mapRenderer);
+	//render groups and movement directions to the map image
+	static void editorRenderGroupsAndMovementDirections(SDL_Renderer* mapRenderer);
 };
 #endif

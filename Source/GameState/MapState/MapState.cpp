@@ -1839,10 +1839,8 @@ void MapState::editorRenderRailsAndSwitches(SDL_Renderer* mapRenderer) {
 			0, 0, (GLint)radioTowerLeftXOffset, (GLint)radioTowerTopYOffset);
 	};
 	auto renderResetSwitches = []() {
-		for (ResetSwitch* resetSwitch : resetSwitches) {
+		for (ResetSwitch* resetSwitch : resetSwitches)
 			resetSwitch->render(0, 0, false);
-			resetSwitch->renderGroups(0, 0);
-		}
 	};
 	auto renderRails = [mapRenderer, &renderResetSwitches]() {
 		for (Rail* rail : rails)
@@ -1852,13 +1850,6 @@ void MapState::editorRenderRailsAndSwitches(SDL_Renderer* mapRenderer) {
 			railState.renderBelowPlayer(0, 0, 0);
 			railState.renderAbovePlayer(0, 0);
 		}
-		for (Rail* rail : rails) {
-			if (rail->getGroups().empty())
-				continue;
-			newInPlaceWithArgs(RailState, railState, rail);
-			railState.renderMovementDirections(0, 0);
-			rail->renderGroups(0, 0);
-		}
 		SpriteRegistry::resetSwitch->withRenderTexture(mapRenderer, renderResetSwitches);
 	};
 	auto renderSwitches = []() {
@@ -1866,10 +1857,25 @@ void MapState::editorRenderRailsAndSwitches(SDL_Renderer* mapRenderer) {
 			if (switch0->getGroup() == 0)
 				continue;
 			switch0->render(0, 0, MapState::colorCount, 0, true);
-			switch0->renderGroup(0, 0);
 		}
 	};
 	SpriteRegistry::radioTower->withRenderTexture(mapRenderer, renderRadioTower);
 	SpriteRegistry::rails->withRenderTexture(mapRenderer, renderRails);
 	SpriteRegistry::switches->withRenderTexture(mapRenderer, renderSwitches);
+}
+void MapState::editorRenderGroupsAndMovementDirections(SDL_Renderer* mapRenderer) {
+	for (ResetSwitch* resetSwitch : resetSwitches)
+		resetSwitch->renderGroups(0, 0);
+	for (Rail* rail : rails) {
+		if (rail->getGroups().empty())
+			continue;
+		newInPlaceWithArgs(RailState, railState, rail);
+		railState.renderMovementDirections(0, 0);
+		rail->renderGroups(0, 0);
+	}
+	for (Switch* switch0 : switches) {
+		if (switch0->getGroup() == 0)
+			continue;
+		switch0->renderGroup(0, 0);
+	}
 }
