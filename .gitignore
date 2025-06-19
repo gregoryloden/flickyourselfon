@@ -23,3 +23,5 @@ Source/Windows/resource.h
 audio/*.wav
 audio/unused/*
 macos/*
+promotional/*
+images/map*
