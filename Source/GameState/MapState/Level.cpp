@@ -871,6 +871,13 @@ void Level::trackRailByteMaskBits(int nBits, int* outByteIndex, int* outBitShift
 		railByteMaskBitsTracked += nBits;
 }
 void Level::findMilestonesAndExtendConnections() {
+	#ifdef RENDER_PLANE_IDS
+		if (planes.size() >= 4) {
+			sort(planes.begin() + 1, planes.end() - 1, Plane::startTilesAreAscending);
+			for (int i = 1; i < (int)planes.size() - 1; i++)
+				planes[i]->setIndexInOwningLevel(i);
+		}
+	#endif
 	Plane::findMilestones(planes);
 	for (Plane* plane : planes)
 		plane->extendConnections();
@@ -919,11 +926,6 @@ void Level::deleteHelpers() {
 	nextPotentialLevelStatesByStepsByMilestone.clear();
 }
 void Level::preAllocatePotentialLevelStates() {
-	#ifdef RENDER_PLANE_IDS
-		sort(planes.begin() + 1, planes.end() - 1, Plane::startTilesAreAscending);
-		for (int i = 1; i < (int)planes.size() - 1; i++)
-			planes[i]->setIndexInOwningLevel(i);
-	#endif
 	auto getRailState =
 		[](short railId, Rail* rail, char* outMovementDirection, char* outTileOffset) {
 			*outMovementDirection = rail->getInitialMovementDirection();
