@@ -269,6 +269,9 @@ private:
 	static LevelTypes::Plane* cachedHintSearchVictoryPlane;
 	#ifdef LOG_SEARCH_STEPS_STATS
 		static int* statesAtStepsByPlane;
+	public:
+		static int* statesAtStepsFromPlane;
+	private:
 	#endif
 	static bool enableHintSearchTimeout;
 public:
