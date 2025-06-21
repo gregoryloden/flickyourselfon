@@ -876,7 +876,7 @@ void Level::trackRailByteMaskBits(int nBits, int* outByteIndex, int* outBitShift
 	} else
 		railByteMaskBitsTracked += nBits;
 }
-void Level::findMilestonesAndExtendConnections() {
+void Level::optimizePlanes() {
 	#ifdef RENDER_PLANE_IDS
 		if (planes.size() >= 4) {
 			sort(planes.begin() + 1, planes.end() - 1, Plane::startTilesAreAscending);

@@ -317,9 +317,11 @@ public:
 	//register the given number of bits in the rail byte mask, and write the byte index to outByteIndex and bit shift to
 	//	outBitShift
 	void trackRailByteMaskBits(int nBits, int* outByteIndex, int* outBitShift);
-	//find planes with milestone switches, add extended connections to the planes of this level, and remove plane-plane
-	//	connections to planes without switches
-	void findMilestonesAndExtendConnections();
+	//finish setup of planes:
+	//- find planes with milestone switches
+	//- add extended connections to the planes of this level
+	//- remove plane-plane connections to planes without switches
+	void optimizePlanes();
 	//setup helper objects used by all levels in hint searching
 	static void setupHintSearchHelpers(vector<Level*>& allLevels);
 	//delete helpers used in hint searching

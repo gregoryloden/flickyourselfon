@@ -459,9 +459,9 @@ void MapState::buildLevels() {
 		}
 	}
 
-	//add extended connections between planes
+	//finish setup for planes
 	for (Level* level : levels)
-		level->findMilestonesAndExtendConnections();
+		level->optimizePlanes();
 
 	for (Level* level : levels)
 		level->logStats();
