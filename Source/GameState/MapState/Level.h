@@ -95,6 +95,12 @@ namespace LevelTypes {
 		int getIndexInOwningLevel() { return indexInOwningLevel; }
 		bool getHasAction() { return hasAction; }
 		void setHasAction() { hasAction = true; }
+		#ifdef RENDER_PLANE_IDS
+			void setIndexInOwningLevel(int pIndexInOwningLevel) { indexInOwningLevel = pIndexInOwningLevel; }
+			static bool startTilesAreAscending(Plane* a, Plane* b) {
+				return a->tiles[0].y < b->tiles[0].y || (a->tiles[0].y == b->tiles[0].y && a->tiles[0].x < b->tiles[0].x);
+			}
+		#endif
 		//add a tile
 		void addTile(int x, int y);
 		//add a switch
