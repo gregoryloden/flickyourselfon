@@ -810,7 +810,6 @@ Plane* Level::cachedHintSearchVictoryPlane = nullptr;
 bool Level::enableHintSearchTimeout = true;
 #ifdef LOG_SEARCH_STEPS_STATS
 	int* Level::statesAtStepsByPlane = nullptr;
-	int Level::statesAtStepsByPlaneCount = 0;
 #endif
 #ifdef TRACK_HINT_SEARCH_STATS
 	int Level::hintSearchActionsChecked = 0;
@@ -906,6 +905,9 @@ void Level::setupHintSearchHelpers(vector<Level*>& allLevels) {
 	checkPlaneCounts = new int[maxPlaneCount] {};
 	checkedPlaneDatas = new CheckedPlaneData[maxPlaneCount];
 	checkedPlaneIndices = new int[maxPlaneCount];
+	#ifdef LOG_SEARCH_STEPS_STATS
+		statesAtStepsByPlane = new int[maxPlaneCount] {};
+	#endif
 }
 void Level::deleteHelpers() {
 	int maxPlaneCount = (int)potentialLevelStatesByBucketByPlane.size();
@@ -924,6 +926,9 @@ void Level::deleteHelpers() {
 		deleteNextPotentialLevelStatesBySteps.clear();
 	}
 	nextPotentialLevelStatesByStepsByMilestone.clear();
+	#ifdef LOG_SEARCH_STEPS_STATS
+		delete[] statesAtStepsByPlane;
+	#endif
 }
 void Level::preAllocatePotentialLevelStates() {
 	auto getRailState =
@@ -964,10 +969,6 @@ Hint* Level::generateHint(Plane* currentPlane, GetRailState getRailState, char l
 		return &Hint::none;
 
 	//prepare some logging helpers before we start the search
-	#ifdef LOG_SEARCH_STEPS_STATS
-		statesAtStepsByPlaneCount = planes.size();
-		statesAtStepsByPlane = new int[statesAtStepsByPlaneCount] {};
-	#endif
 	#ifdef TRACK_HINT_SEARCH_STATS
 		hintSearchActionsChecked = 0;
 		hintSearchComparisonsPerformed = 0;
@@ -1001,9 +1002,6 @@ Hint* Level::generateHint(Plane* currentPlane, GetRailState getRailState, char l
 	if (result->isAdvancement())
 		hintSearchPerformanceMessage << "  steps " << foundHintSearchTotalSteps << "(" << foundHintSearchTotalHintSteps << ")";
 	Logger::debugLogger.logString(hintSearchPerformanceMessage.str());
-	#ifdef LOG_SEARCH_STEPS_STATS
-		delete[] statesAtStepsByPlane;
-	#endif
 
 	hintSearchIsRunning = false;
 	return result;
@@ -1066,7 +1064,7 @@ Hint* Level::performHintSearch(HintState::PotentialLevelState* baseLevelState, P
 						+ to_string(currentNextPotentialLevelStates->size()) + " states:");
 				for (HintState::PotentialLevelState* potentialLevelState : *currentNextPotentialLevelStates)
 					statesAtStepsByPlane[potentialLevelState->plane->getIndexInOwningLevel()]++;
-				for (int planeI = 0; planeI < (int)statesAtStepsByPlaneCount; planeI++) {
+				for (int planeI = 0; planeI < (int)planes.size(); planeI++) {
 					int statesAtSteps = statesAtStepsByPlane[planeI];
 					if (statesAtSteps > 0) {
 						Logger::debugLogger.logString(
