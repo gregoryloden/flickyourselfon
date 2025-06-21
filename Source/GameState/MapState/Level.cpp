@@ -920,8 +920,8 @@ void Level::deleteHelpers() {
 }
 void Level::preAllocatePotentialLevelStates() {
 	#ifdef RENDER_PLANE_IDS
-		sort(planes.begin(), planes.end() - 1, Plane::startTilesAreAscending);
-		for (int i = 0; i < (int)planes.size() - 1; i++)
+		sort(planes.begin() + 1, planes.end() - 1, Plane::startTilesAreAscending);
+		for (int i = 1; i < (int)planes.size() - 1; i++)
 			planes[i]->setIndexInOwningLevel(i);
 	#endif
 	auto getRailState =
