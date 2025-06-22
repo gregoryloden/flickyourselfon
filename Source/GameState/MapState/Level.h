@@ -25,8 +25,8 @@ namespace LevelTypes {
 				char byteIndex;
 				char bitShift;
 			};
-			short id;
 			Data data;
+			unsigned short id;
 		};
 
 		short railId;
@@ -327,8 +327,8 @@ public:
 	//create a byte mask for a new rail
 	//returns the index into the internal byte mask vector for use in getRailByteMaskData()
 	int trackNextRail(short railId, Rail* rail);
-	//register the given number of bits in the rail byte mask, and write the bits data to outBits
-	void trackRailByteMaskBits(int nBits, LevelTypes::RailByteMaskData::BitsLocation* outBits);
+	//register the given number of bits in the rail byte mask, and return the bits data
+	LevelTypes::RailByteMaskData::BitsLocation trackRailByteMaskBits(int nBits);
 	//finish setup of planes:
 	//- find planes with milestone switches
 	//- add extended connections to the planes of this level

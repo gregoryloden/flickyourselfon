@@ -405,7 +405,7 @@ void LevelTypes::Plane::pathWalk(
 	delete[] seenPlanes;
 }
 void LevelTypes::Plane::trackAsMilestoneDestination() {
-	owningLevel->trackRailByteMaskBits(visitedMilestonesBitCount, &visitedMilestoneBits);
+	visitedMilestoneBits = owningLevel->trackRailByteMaskBits(visitedMilestonesBitCount);
 }
 void LevelTypes::Plane::findMiniPuzzles(vector<Plane*>& levelPlanes) {
 	//first things first, find all the switches
@@ -861,7 +861,7 @@ Level::CheckedPlaneData::~CheckedPlaneData() {
 
 //////////////////////////////// Level ////////////////////////////////
 RailByteMaskData::BitsLocation Level::absentBitsLocation = []() {
-	RailByteMaskData::BitsLocation bits;
+	RailByteMaskData::BitsLocation bits = {};
 	bits.data.byteIndex = absentRailByteIndex;
 	return bits;
 }();
@@ -930,21 +930,21 @@ void Level::assignResetSwitch(ResetSwitch* resetSwitch) {
 }
 int Level::trackNextRail(short railId, Rail* rail) {
 	minimumRailColor = MathUtils::max(rail->getColor(), minimumRailColor);
-	RailByteMaskData::BitsLocation railBits;
-	trackRailByteMaskBits(railByteMaskBitCount, &railBits);
-	allRailByteMaskData.push_back(RailByteMaskData(railId, railBits, rail));
+	allRailByteMaskData.push_back(RailByteMaskData(railId, trackRailByteMaskBits(railByteMaskBitCount), rail));
 	return (int)allRailByteMaskData.size() - 1;
 }
-void Level::trackRailByteMaskBits(int nBits, RailByteMaskData::BitsLocation* outBits) {
-	outBits->data.byteIndex = (char)(railByteMaskBitsTracked / 32);
-	outBits->data.bitShift = (char)(railByteMaskBitsTracked % 32);
+LevelTypes::RailByteMaskData::BitsLocation Level::trackRailByteMaskBits(int nBits) {
+	LevelTypes::RailByteMaskData::BitsLocation bits;
+	bits.data.byteIndex = (char)(railByteMaskBitsTracked / 32);
+	bits.data.bitShift = (char)(railByteMaskBitsTracked % 32);
 	//make sure there are enough bits to fit the new mask
-	if (outBits->data.bitShift + nBits > 32) {
-		outBits->data.byteIndex++;
-		outBits->data.bitShift = 0;
+	if (bits.data.bitShift + nBits > 32) {
+		bits.data.byteIndex++;
+		bits.data.bitShift = 0;
 		railByteMaskBitsTracked = (railByteMaskBitsTracked / 32 + 1) * 32 + nBits;
 	} else
 		railByteMaskBitsTracked += nBits;
+	return bits;
 }
 void Level::optimizePlanes() {
 	#ifdef RENDER_PLANE_IDS
