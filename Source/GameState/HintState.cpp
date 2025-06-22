@@ -252,7 +252,7 @@ void HintState::renderText(int screenLeftWorldX, int screenTopWorldY, int ticksT
 	switch (hint->type) {
 		case Hint::Type::UndoReset: {
 			if (Config::solutionBlockedWarning.state == Config::solutionBlockedWarningOffValue
-					&& hint->data.resetSwitch == nullptr)
+					&& (hint->data.resetSwitch == nullptr || ticksTime >= animationEndTicksTime))
 				return;
 			Text::setRenderColor(1.0f, 1.0f, 1.0f, autoShownHintAlpha);
 			float afterUndoX = MapState::renderControlsTutorial("(solution blocked; Undo ", { Config::undoKeyBinding.value });
