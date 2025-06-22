@@ -127,7 +127,7 @@ owningLevel(pOwningLevel)
 , connectionSwitches()
 , connections()
 , hasAction(false)
-, visitedMilestoneBits(Level::absentBitsLocation)
+, visitedMilestoneBit(Level::absentBitsLocation)
 , renderLeftTileX(MapState::getMapWidth())
 , renderTopTileY(MapState::getMapHeight())
 , renderRightTileX(0)
@@ -328,7 +328,7 @@ void LevelTypes::Plane::findMilestonesToThisPlane(vector<Plane*>& levelPlanes, v
 			matchingConnectionSwitch->isMilestone = true;
 			//if we haven't done so already, mark the plane as a milestone destination by having it track a bit for whether it's
 			//	been visited or not
-			if (plane->visitedMilestoneBits.data.byteIndex == Level::absentRailByteIndex)
+			if (plane->visitedMilestoneBit.data.byteIndex == Level::absentRailByteIndex)
 				plane->trackAsMilestoneDestination();
 		}
 		//if this switch is the only switch to control the rail (whether it's single-use or not), and the rail starts out
@@ -405,7 +405,7 @@ void LevelTypes::Plane::pathWalk(
 	delete[] seenPlanes;
 }
 void LevelTypes::Plane::trackAsMilestoneDestination() {
-	visitedMilestoneBits = owningLevel->trackRailByteMaskBits(visitedMilestonesBitCount);
+	visitedMilestoneBit = owningLevel->trackRailByteMaskBits(1);
 }
 void LevelTypes::Plane::findMiniPuzzles(vector<Plane*>& levelPlanes) {
 	//first things first, find all the switches
@@ -533,7 +533,7 @@ void LevelTypes::Plane::removeNonHasActionPlaneConnections() {
 #endif
 void LevelTypes::Plane::markVisitedMilestoneDestinationPlanesInDraftState(vector<Plane*>& levelPlanes) {
 	for (Plane* plane : levelPlanes) {
-		if (plane->visitedMilestoneBits.data.byteIndex == Level::absentRailByteIndex)
+		if (plane->visitedMilestoneBit.data.byteIndex == Level::absentRailByteIndex)
 			continue;
 		//find every milestone in this plane, and check that all its rails are raised
 		auto railIsLowered = [](RailByteMaskData* railByteMaskData) {
@@ -550,8 +550,8 @@ void LevelTypes::Plane::markVisitedMilestoneDestinationPlanesInDraftState(vector
 		//but never mark the victory plane as visited, it's registered as a milestone destination plane but has no switches
 		if (!VectorUtils::anyMatch(plane->connectionSwitches, hasLoweredMilestoneRails)
 				&& plane != plane->owningLevel->getVictoryPlane())
-			HintState::PotentialLevelState::draftState.railByteMasks[plane->visitedMilestoneBits.data.byteIndex] |=
-				baseVisitedMilestonesByteMask << plane->visitedMilestoneBits.data.bitShift;
+			HintState::PotentialLevelState::draftState.railByteMasks[plane->visitedMilestoneBit.data.byteIndex] |=
+				1 << plane->visitedMilestoneBit.data.bitShift;
 	}
 }
 void LevelTypes::Plane::pursueSolutionToPlanes(HintState::PotentialLevelState* currentState, int basePotentialLevelStateSteps) {
@@ -623,18 +623,18 @@ void LevelTypes::Plane::pursueSolutionToPlanes(HintState::PotentialLevelState* c
 
 				//if it goes to a milestone destination plane, and we haven't visited it yet from this state, check if the state
 				//	with the visited flag is new too
-				if (connectionToPlane->visitedMilestoneBits.data.byteIndex != Level::absentRailByteIndex
-					&& ((nextPotentialLevelState->railByteMasks[connectionToPlane->visitedMilestoneBits.data.byteIndex]
-								>> connectionToPlane->visitedMilestoneBits.data.bitShift)
-							& baseVisitedMilestonesByteMask)
+				if (connectionToPlane->visitedMilestoneBit.data.byteIndex != Level::absentRailByteIndex
+					&& ((nextPotentialLevelState->railByteMasks[connectionToPlane->visitedMilestoneBit.data.byteIndex]
+								>> connectionToPlane->visitedMilestoneBit.data.bitShift)
+							& 1)
 						== 0)
 				{
 					//get a new state with the visited flag set
 					for (int i = HintState::PotentialLevelState::currentRailByteMaskCount - 1; i >= 0; i--)
 						HintState::PotentialLevelState::draftState.railByteMasks[i] = nextPotentialLevelState->railByteMasks[i];
 					HintState::PotentialLevelState::draftState.railByteMasks[
-							connectionToPlane->visitedMilestoneBits.data.byteIndex] |=
-						baseVisitedMilestonesByteMask << connectionToPlane->visitedMilestoneBits.data.bitShift;
+							connectionToPlane->visitedMilestoneBit.data.byteIndex] |=
+						1 << connectionToPlane->visitedMilestoneBit.data.bitShift;
 					HintState::PotentialLevelState::draftState.setHash();
 					HintState::PotentialLevelState* milestoneDestinationPotentialLevelState =
 						HintState::PotentialLevelState::draftState.addNewState(

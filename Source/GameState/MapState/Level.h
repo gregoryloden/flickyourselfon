@@ -97,16 +97,13 @@ namespace LevelTypes {
 			bool requiresSwitchesOnPlane(Plane* plane);
 		};
 
-		static constexpr int visitedMilestonesBitCount = 1;
-		static constexpr int baseVisitedMilestonesByteMask = 1;
-
 		Level* owningLevel;
 		int indexInOwningLevel;
 		vector<Tile> tiles;
 		vector<ConnectionSwitch> connectionSwitches;
 		vector<Connection> connections;
 		bool hasAction;
-		RailByteMaskData::BitsLocation visitedMilestoneBits;
+		RailByteMaskData::BitsLocation visitedMilestoneBit;
 		int renderLeftTileX;
 		int renderTopTileY;
 		int renderRightTileX;
