@@ -305,6 +305,7 @@ private:
 	char minimumRailColor;
 	Hint radioTowerHint;
 	Hint undoResetHint;
+	Hint searchCanceledEarlyHint;
 
 public:
 	Level(objCounterParametersComma() int pLevelN, int pStartTile);

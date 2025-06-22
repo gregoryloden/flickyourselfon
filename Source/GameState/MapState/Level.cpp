@@ -904,7 +904,8 @@ levelN(pLevelN)
 , victoryPlane(nullptr)
 , minimumRailColor(0)
 , radioTowerHint(Hint::Type::None)
-, undoResetHint(Hint::Type::None) {
+, undoResetHint(Hint::Type::None)
+, searchCanceledEarlyHint(Hint::Type::None) {
 }
 Level::~Level() {
 	for (Plane* plane : planes)
@@ -927,6 +928,8 @@ void Level::assignRadioTowerSwitch(Switch* radioTowerSwitch) {
 void Level::assignResetSwitch(ResetSwitch* resetSwitch) {
 	undoResetHint.type = Hint::Type::UndoReset;
 	undoResetHint.data.resetSwitch = resetSwitch;
+	searchCanceledEarlyHint.type = Hint::Type::SearchCanceledEarly;
+	searchCanceledEarlyHint.data.resetSwitch = resetSwitch;
 }
 int Level::trackNextRail(short railId, Rail* rail) {
 	minimumRailColor = MathUtils::max(rail->getColor(), minimumRailColor);
@@ -1191,7 +1194,7 @@ Hint* Level::performHintSearch(HintState::PotentialLevelState* baseLevelState, P
 		//bail if the search was canceled or took too long
 		if (!hintSearchIsRunning) {
 			Logger::debugLogger.logString("hint search canceled");
-			return &Hint::searchCanceledEarly;
+			return &Hint::genericSearchCanceledEarly;
 		}
 		#ifdef DEBUG
 			static constexpr int maxHintSearchTicks = 30000;
@@ -1201,9 +1204,7 @@ Hint* Level::performHintSearch(HintState::PotentialLevelState* baseLevelState, P
 		int now = SDL_GetTicks();
 		if (now - startTime >= maxHintSearchTicks && enableHintSearchTimeout) {
 			Logger::debugLogger.logString("hint search timed out");
-			return Config::solutionBlockedWarning.state == Config::solutionBlockedWarningLooseValue
-				? &undoResetHint
-				: &Hint::searchCanceledEarly;
+			return &searchCanceledEarlyHint;
 		}
 
 		//the queue is empty, advance to the queue for the next step count

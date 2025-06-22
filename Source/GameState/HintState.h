@@ -38,7 +38,7 @@ public:
 	static Hint none;
 	static Hint genericUndoReset;
 	static Hint calculatingHint;
-	static Hint searchCanceledEarly;
+	static Hint genericSearchCanceledEarly;
 	static Hint checkingSolution;
 
 	Type type;
@@ -130,6 +130,10 @@ public:
 	void renderAboveRails(int screenLeftWorldX, int screenTopWorldY, int ticksTime);
 	//render this hint if it renders text
 	void renderText(int screenLeftWorldX, int screenTopWorldY, int ticksTime);
+private:
+	//render this hint if it renders text, using the given hint type
+	void renderTextAsHintType(int screenLeftWorldX, int screenTopWorldY, int ticksTime, Hint::Type hintType);
+public:
 	//render an arrow pointing to this hint which is offscreen, using the alpha saved from one of the other render methods, if
 	//	applicable
 	void renderOffscreenArrow(int screenLeftWorldX, int screenTopWorldY);

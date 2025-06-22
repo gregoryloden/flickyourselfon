@@ -16,7 +16,7 @@
 Hint Hint::none (Hint::Type::None);
 Hint Hint::genericUndoReset (Hint::Type::UndoReset);
 Hint Hint::calculatingHint (Hint::Type::CalculatingHint);
-Hint Hint::searchCanceledEarly (Hint::Type::SearchCanceledEarly);
+Hint Hint::genericSearchCanceledEarly (Hint::Type::SearchCanceledEarly);
 Hint Hint::checkingSolution (Hint::Type::CheckingSolution);
 Hint::Hint(Type pType)
 : type(pType)
@@ -191,6 +191,7 @@ HintState* HintState::produce(objCounterParametersComma() Hint* pHint, int anima
 				&h->renderLeftWorldX, &h->renderTopWorldY, &h->renderRightWorldX, &h->renderBottomWorldY);
 			break;
 		case Hint::Type::UndoReset:
+		case Hint::Type::SearchCanceledEarly:
 			if (pHint->data.resetSwitch != nullptr)
 				pHint->data.resetSwitch->getHintRenderBounds(
 					&h->renderLeftWorldX, &h->renderTopWorldY, &h->renderRightWorldX, &h->renderBottomWorldY);
@@ -235,6 +236,12 @@ void HintState::renderAboveRails(int screenLeftWorldX, int screenTopWorldY, int 
 			hint->data.switch0->renderHint(screenLeftWorldX, screenTopWorldY, alpha);
 			return;
 		}
+		case Hint::Type::SearchCanceledEarly:
+			//only possibly render a hint to the reset switch if the "solution blocked" warning is set to "loose"
+			if (Config::solutionBlockedWarning.state != Config::solutionBlockedWarningLooseValue) {
+				offscreenArrowAlpha = 0.0f;
+				return;
+			}
 		case Hint::Type::UndoReset: {
 			if (hint->data.resetSwitch == nullptr)
 				return;
@@ -249,7 +256,10 @@ void HintState::renderAboveRails(int screenLeftWorldX, int screenTopWorldY, int 
 	}
 }
 void HintState::renderText(int screenLeftWorldX, int screenTopWorldY, int ticksTime) {
-	switch (hint->type) {
+	renderTextAsHintType(screenLeftWorldX, screenTopWorldY, ticksTime, hint->type);
+}
+void HintState::renderTextAsHintType(int screenLeftWorldX, int screenTopWorldY, int ticksTime, Hint::Type hintType) {
+	switch (hintType) {
 		case Hint::Type::UndoReset: {
 			if (Config::solutionBlockedWarning.state == Config::solutionBlockedWarningOffValue
 					&& (hint->data.resetSwitch == nullptr || ticksTime >= animationEndTicksTime))
@@ -264,6 +274,12 @@ void HintState::renderText(int screenLeftWorldX, int screenTopWorldY, int ticksT
 			MapState::renderControlsTutorial("(calculating hint...)", {});
 			return;
 		case Hint::Type::SearchCanceledEarly: {
+			//render as an undo/reset hint if the "solution blocked" warning is set to "loose"
+			if (Config::solutionBlockedWarning.state == Config::solutionBlockedWarningLooseValue) {
+				renderTextAsHintType(screenLeftWorldX, screenTopWorldY, ticksTime, Hint::Type::UndoReset);
+				return;
+			}
+			//render normally otherwise
 			float alpha = getFadeOutAlpha(ticksTime, false);
 			if (alpha == 0.0f)
 				return;

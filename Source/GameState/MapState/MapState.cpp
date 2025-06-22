@@ -1039,7 +1039,9 @@ bool MapState::requestsHint() {
 }
 bool MapState::requestsHintResetOnHintSearchEnded() {
 	Hint::Type hintType = hintState.get()->getHintType();
-	return hintType == Hint::Type::UndoReset || hintType == Hint::Type::CheckingSolution;
+	return hintType == Hint::Type::UndoReset
+		|| hintType == Hint::Type::SearchCanceledEarly
+		|| hintType == Hint::Type::CheckingSolution;
 }
 int MapState::getLevelN(float playerX, float playerY) {
 	if (Editor::isActive)

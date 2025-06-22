@@ -900,8 +900,12 @@ void PlayerState::tryCollectCompletedHint(PlayerState* other, int ticksTime) {
 	}
 	if (mapState.get()->requestsHint())
 		mapState.get()->setHint(hintSearchStorage, ticksTime);
+	//we have an undo/reset hint, push the generic version to MapState so it can render it if applicable
 	else if (hintSearchStorage->type == Hint::Type::UndoReset)
 		mapState.get()->setHint(&Hint::genericUndoReset, 0);
+	//we have a search canceled early hint, push the generic version to MapState so it can render it if applicable
+	else if (hintSearchStorage->type == Hint::Type::SearchCanceledEarly)
+		mapState.get()->setHint(&Hint::genericSearchCanceledEarly, 0);
 	else if (mapState.get()->requestsHintResetOnHintSearchEnded())
 		mapState.get()->setHint(&Hint::none, 0);
 	hint = hintSearchStorage;
