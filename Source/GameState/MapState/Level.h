@@ -2,7 +2,7 @@
 
 #define newLevel(levelN, startTile) newWithArgs(Level, levelN, startTile)
 #ifdef DEBUG
-	#define LOG_FOUND_MILESTONES_AND_DESTINATION_PLANES
+	#define LOG_FOUND_PLANE_CONCLUSIONS
 	#define TRACK_HINT_SEARCH_STATS
 	//#define LOG_SEARCH_STEPS_STATS
 	//#define LOG_STEPS_AT_EVERY_MILESTONE
@@ -43,6 +43,7 @@ namespace LevelTypes {
 			Hint hint;
 			bool isSingleUse;
 			bool isMilestone;
+			vector<RailByteMaskData*> miniPuzzleOtherRails;
 
 			ConnectionSwitch(Switch* switch0);
 			virtual ~ConnectionSwitch();
@@ -143,6 +144,8 @@ namespace LevelTypes {
 		//track this plane as a milestone destination plane
 		void trackAsMilestoneDestination();
 	public:
+		//find sets of 2 or more switches that have rails in common
+		static void findMiniPuzzles(vector<Plane*>& levelPlanes);
 		//copy and add plane-plane and rail connections from all planes that are reachable through plane-plane connections from
 		//	this plane
 		void extendConnections();

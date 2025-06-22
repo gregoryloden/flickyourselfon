@@ -30,7 +30,8 @@ LevelTypes::Plane::ConnectionSwitch::ConnectionSwitch(Switch* switch0)
 : affectedRailByteMaskData()
 , hint(Hint::Type::Switch)
 , isSingleUse(true)
-, isMilestone(false) {
+, isMilestone(false)
+, miniPuzzleOtherRails() {
 	hint.data.switch0 = switch0;
 }
 LevelTypes::Plane::ConnectionSwitch::~ConnectionSwitch() {}
@@ -300,7 +301,7 @@ void LevelTypes::Plane::findMilestonesToThisPlane(vector<Plane*>& levelPlanes, v
 		//we found a matching switch for this rail
 		//if it's single-use, it's a milestone
 		if (matchingConnectionSwitch->isSingleUse) {
-			#ifdef LOG_FOUND_MILESTONES_AND_DESTINATION_PLANES
+			#ifdef LOG_FOUND_PLANE_CONCLUSIONS
 				stringstream newMilestoneMessage;
 				newMilestoneMessage << "level " << plane->owningLevel->getLevelN()
 					<< " milestone: c" << (int)matchingConnectionSwitch->hint.data.switch0->getColor() << " ";
@@ -320,12 +321,12 @@ void LevelTypes::Plane::findMilestonesToThisPlane(vector<Plane*>& levelPlanes, v
 			&& rail->getInitialTileOffset() != 0
 			&& !VectorUtils::includes(outDestinationPlanes, plane))
 		{
-			#ifdef LOG_FOUND_MILESTONES_AND_DESTINATION_PLANES
+			#ifdef LOG_FOUND_PLANE_CONCLUSIONS
 				stringstream destinationPlaneMessage;
 				destinationPlaneMessage << "level " << plane->owningLevel->getLevelN()
 					<< " destination plane " << plane->indexInOwningLevel << " with switches:";
 				for (ConnectionSwitch& connectionSwitch : plane->connectionSwitches) {
-					destinationPlaneMessage << " c" << (int)connectionSwitch.hint.data.switch0->getColor() << " ";
+					destinationPlaneMessage << "  c" << (int)connectionSwitch.hint.data.switch0->getColor() << " ";
 					MapState::logGroup(connectionSwitch.hint.data.switch0->getGroup(), &destinationPlaneMessage);
 				}
 				Logger::debugLogger.logString(destinationPlaneMessage.str());
@@ -388,6 +389,65 @@ void LevelTypes::Plane::pathWalk(
 }
 void LevelTypes::Plane::trackAsMilestoneDestination() {
 	owningLevel->trackRailByteMaskBits(visitedMilestonesBitCount, &visitedMilestonesByteIndex, &visitedMilestonesBitShift);
+}
+void LevelTypes::Plane::findMiniPuzzles(vector<Plane*>& levelPlanes) {
+	//first things first, find all the switches
+	vector<ConnectionSwitch*> allConnectionSwitches;
+	for (Plane* plane : levelPlanes) {
+		for (ConnectionSwitch& connectionSwitch : plane->connectionSwitches)
+			allConnectionSwitches.push_back(&connectionSwitch);
+	}
+
+	//go through the rails from found switches, look at their groups, and collect new switches and their rails
+	vector<ConnectionSwitch*> allMiniPuzzleSwitches;
+	for (ConnectionSwitch* connectionSwitch : allConnectionSwitches) {
+		//single-use rails will never be part of a mini puzzle, and skip any switches that are already part of a mini puzzle
+		if (connectionSwitch->isSingleUse || VectorUtils::includes(allMiniPuzzleSwitches, connectionSwitch))
+			continue;
+		vector<ConnectionSwitch*> miniPuzzleSwitches ({ connectionSwitch });
+		vector<RailByteMaskData*> miniPuzzleRails (connectionSwitch->affectedRailByteMaskData);
+		for (int miniPuzzleRailsI = 0; miniPuzzleRailsI < (int)miniPuzzleRails.size(); miniPuzzleRailsI++) {
+			RailByteMaskData* railByteMaskData = miniPuzzleRails[miniPuzzleRailsI];
+			//we know no other switch has this rail if there's only 1 group on it
+			if (railByteMaskData->rail->getGroups().size() == 1)
+				continue;
+			//look for all other switches with this rail, and add them to the list
+			for (ConnectionSwitch* otherConnectionSwitch : allConnectionSwitches) {
+				//irrelevant switch, or a switch we've already found
+				if (!VectorUtils::includes(otherConnectionSwitch->affectedRailByteMaskData, railByteMaskData)
+						|| VectorUtils::includes(miniPuzzleSwitches, otherConnectionSwitch))
+					continue;
+				//new switch in the mini puzzle, add it to the list and track any of its rails that are new
+				miniPuzzleSwitches.push_back(otherConnectionSwitch);
+				for (RailByteMaskData* otherRailByteMaskData : otherConnectionSwitch->affectedRailByteMaskData) {
+					if (!VectorUtils::includes(miniPuzzleRails, otherRailByteMaskData))
+						miniPuzzleRails.push_back(otherRailByteMaskData);
+				}
+			}
+		}
+
+		//if we didn't find any other switches, there's no mini puzzle
+		if (miniPuzzleSwitches.size() == 1)
+			continue;
+
+		//at this point, we have a mini puzzle; add all the rails to all the switches
+		#ifdef LOG_FOUND_PLANE_CONCLUSIONS
+			stringstream miniPuzzleMessage;
+			miniPuzzleMessage << "level " << levelPlanes[0]->owningLevel->getLevelN() << " mini puzzle with switches:";
+			for (ConnectionSwitch* miniPuzzleSwitch : miniPuzzleSwitches) {
+				miniPuzzleMessage << "  c" << (int)miniPuzzleSwitch->hint.data.switch0->getColor() << " ";
+				MapState::logGroup(miniPuzzleSwitch->hint.data.switch0->getGroup(), &miniPuzzleMessage);
+			}
+			Logger::debugLogger.logString(miniPuzzleMessage.str());
+		#endif
+		for (ConnectionSwitch* miniPuzzleSwitch : miniPuzzleSwitches) {
+			allMiniPuzzleSwitches.push_back(miniPuzzleSwitch);
+			for (RailByteMaskData* railByteMaskData : miniPuzzleRails) {
+				if (!VectorUtils::includes(miniPuzzleSwitch->affectedRailByteMaskData, railByteMaskData))
+					miniPuzzleSwitch->miniPuzzleOtherRails.push_back(railByteMaskData);
+			}
+		}
+	}
 }
 void LevelTypes::Plane::extendConnections() {
 	//look at the (growing) list of planes reachable from this plane (directly or indirectly), and see if there are any other
@@ -885,6 +945,7 @@ void Level::optimizePlanes() {
 		}
 	#endif
 	Plane::findMilestones(planes);
+	Plane::findMiniPuzzles(planes);
 	for (Plane* plane : planes)
 		plane->extendConnections();
 	for (Plane* plane : planes)
