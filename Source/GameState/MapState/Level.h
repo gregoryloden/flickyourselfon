@@ -20,13 +20,21 @@ namespace LevelTypes {
 	//Should only be allocated within an object, on the stack, or as a static object
 	class RailByteMaskData {
 	public:
+		union BitsLocation {
+			struct Data {
+				char byteIndex;
+				char bitShift;
+			};
+			short id;
+			Data data;
+		};
+
 		short railId;
-		int railByteIndex;
-		int railBitShift;
+		BitsLocation railBits;
 		Rail* rail;
 		unsigned int inverseRailByteMask;
 
-		RailByteMaskData(short railId, int pRailByteIndex, int pRailBitShift, Rail* pRail);
+		RailByteMaskData(short railId, BitsLocation pRailBits, Rail* pRail);
 		virtual ~RailByteMaskData();
 
 		//get the rail tile offset byte mask corresponding to the bit shift
@@ -64,13 +72,18 @@ namespace LevelTypes {
 		class Connection {
 		public:
 			Plane* toPlane;
-			int railByteIndex;
+			char railByteIndex;
 			unsigned int railTileOffsetByteMask;
 			int steps;
 			Hint hint;
 
 			Connection(
-				Plane* pToPlane, int pRailByteIndex, int pRailTileOffsetByteMask, int pSteps, Rail* rail, Plane* hintPlane);
+				Plane* pToPlane,
+				char pRailByteIndex,
+				unsigned int pRailTileOffsetByteMask,
+				int pSteps,
+				Rail* rail,
+				Plane* hintPlane);
 			virtual ~Connection();
 
 			//returns the first switch in the given list of planes that controls this rail, or nullptr if one was not found
@@ -93,8 +106,7 @@ namespace LevelTypes {
 		vector<ConnectionSwitch> connectionSwitches;
 		vector<Connection> connections;
 		bool hasAction;
-		int visitedMilestonesByteIndex;
-		int visitedMilestonesBitShift;
+		RailByteMaskData::BitsLocation visitedMilestoneBits;
 		int renderLeftTileX;
 		int renderTopTileY;
 		int renderRightTileX;
@@ -237,7 +249,7 @@ public:
 		virtual ~CheckedPlaneData();
 	};
 
-	static constexpr int absentRailByteIndex = -1;
+	static constexpr char absentRailByteIndex = -1;
 	static constexpr int railTileOffsetByteMaskBitCount = 3;
 	static constexpr int railMovementDirectionByteMaskBitCount = 1;
 	static constexpr int railByteMaskBitCount = railTileOffsetByteMaskBitCount + railMovementDirectionByteMaskBitCount;
@@ -246,6 +258,7 @@ public:
 		((1 << railMovementDirectionByteMaskBitCount) - 1) << railTileOffsetByteMaskBitCount;
 	static constexpr unsigned int baseRailByteMask = (1 << railByteMaskBitCount) - 1;
 
+	static LevelTypes::RailByteMaskData::BitsLocation absentBitsLocation;
 private:
 	static bool hintSearchIsRunning;
 public:
@@ -314,9 +327,8 @@ public:
 	//create a byte mask for a new rail
 	//returns the index into the internal byte mask vector for use in getRailByteMaskData()
 	int trackNextRail(short railId, Rail* rail);
-	//register the given number of bits in the rail byte mask, and write the byte index to outByteIndex and bit shift to
-	//	outBitShift
-	void trackRailByteMaskBits(int nBits, int* outByteIndex, int* outBitShift);
+	//register the given number of bits in the rail byte mask, and write the bits data to outBits
+	void trackRailByteMaskBits(int nBits, LevelTypes::RailByteMaskData::BitsLocation* outBits);
 	//finish setup of planes:
 	//- find planes with milestone switches
 	//- add extended connections to the planes of this level
