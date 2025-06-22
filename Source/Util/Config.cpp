@@ -139,7 +139,7 @@ OnOffSetting Config::showActivatedSwitchWaves ("showActivatedSwitchWaves ", Conf
 OnOffSetting Config::showBlockedFallEdges ("showBlockedFallEdges ", Config::allMultiStateSettings);
 OnOffSetting Config::autosaveEnabled ("autosaveEnabled ", Config::allMultiStateSettings);
 MultiStateSetting Config::solutionBlockedWarning(
-	{ "loose", "strict", "off" }, "solutionBlockedWarning ", Config::allMultiStateSettings);
+	{ "strict", "loose", "off" }, "solutionBlockedWarning ", Config::allMultiStateSettings);
 vector<ValueSelectionSetting*> Config::allValueSelectionSettings;
 ValueSelectionSetting Config::autosaveInterval (
 	{

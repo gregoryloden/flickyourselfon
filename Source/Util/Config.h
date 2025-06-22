@@ -112,7 +112,7 @@ public:
 	static constexpr char* optionsFileName = "kyo.options";
 	static constexpr int heightBasedShadingOffValue = 1;
 	static constexpr int heightBasedShadingExtraValue = 2;
-	static constexpr int solutionBlockedWarningLooseValue = 0;
+	static constexpr int solutionBlockedWarningLooseValue = 1;
 	static constexpr int solutionBlockedWarningOffValue = 2;
 
 	static float currentPixelWidth;
