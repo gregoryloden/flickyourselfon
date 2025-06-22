@@ -15,11 +15,23 @@ class Level;
 class Rail;
 class Switch;
 class ResetSwitch;
-namespace LevelTypes {
-	class RailByteMaskData;
-}
 
 namespace LevelTypes {
+	//Should only be allocated within an object, on the stack, or as a static object
+	class RailByteMaskData {
+	public:
+		short railId;
+		int railByteIndex;
+		int railBitShift;
+		Rail* rail;
+		unsigned int inverseRailByteMask;
+
+		RailByteMaskData(short railId, int pRailByteIndex, int pRailBitShift, Rail* pRail);
+		virtual ~RailByteMaskData();
+
+		//get the rail tile offset byte mask corresponding to the bit shift
+		int getRailTileOffsetByteMask();
+	};
 	class Plane onlyInDebug(: public ObjCounter) {
 	private:
 		enum class PathWalkCheckResult: unsigned char {
@@ -197,21 +209,6 @@ namespace LevelTypes {
 			//check if the given hint is for a milestone switch
 			bool isMilestoneSwitchHint(Hint* hint);
 		#endif
-	};
-	//Should only be allocated within an object, on the stack, or as a static object
-	class RailByteMaskData {
-	public:
-		short railId;
-		int railByteIndex;
-		int railBitShift;
-		Rail* rail;
-		unsigned int inverseRailByteMask;
-
-		RailByteMaskData(short railId, int pRailByteIndex, int pRailBitShift, Rail* pRail);
-		virtual ~RailByteMaskData();
-
-		//get the rail tile offset byte mask corresponding to the bit shift
-		int getRailTileOffsetByteMask();
 	};
 }
 class Level onlyInDebug(: public ObjCounter) {

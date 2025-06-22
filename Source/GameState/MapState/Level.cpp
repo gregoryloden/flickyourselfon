@@ -18,6 +18,19 @@
 
 #define newPlane(owningLevel, indexInOwningLevel) newWithArgs(Plane, owningLevel, indexInOwningLevel)
 
+//////////////////////////////// LevelTypes::RailByteMaskData ////////////////////////////////
+LevelTypes::RailByteMaskData::RailByteMaskData(short pRailId, int pRailByteIndex, int pRailBitShift, Rail* pRail)
+: railId(pRailId)
+, railByteIndex(pRailByteIndex)
+, railBitShift(pRailBitShift)
+, rail(pRail)
+, inverseRailByteMask(~(Level::baseRailByteMask << pRailBitShift)) {
+}
+LevelTypes::RailByteMaskData::~RailByteMaskData() {}
+int LevelTypes::RailByteMaskData::getRailTileOffsetByteMask() {
+	return Level::baseRailTileOffsetByteMask << railBitShift;
+}
+
 //////////////////////////////// LevelTypes::Plane::Tile ////////////////////////////////
 LevelTypes::Plane::Tile::Tile(int pX, int pY)
 : x(pX)
@@ -823,19 +836,6 @@ void LevelTypes::Plane::countSwitchesAndConnections(
 		return false;
 	}
 #endif
-
-//////////////////////////////// LevelTypes::RailByteMaskData ////////////////////////////////
-LevelTypes::RailByteMaskData::RailByteMaskData(short pRailId, int pRailByteIndex, int pRailBitShift, Rail* pRail)
-: railId(pRailId)
-, railByteIndex(pRailByteIndex)
-, railBitShift(pRailBitShift)
-, rail(pRail)
-, inverseRailByteMask(~(Level::baseRailByteMask << pRailBitShift)) {
-}
-LevelTypes::RailByteMaskData::~RailByteMaskData() {}
-int LevelTypes::RailByteMaskData::getRailTileOffsetByteMask() {
-	return Level::baseRailTileOffsetByteMask << railBitShift;
-}
 using namespace LevelTypes;
 
 //////////////////////////////// Level::PotentialLevelStatesByBucket ////////////////////////////////
