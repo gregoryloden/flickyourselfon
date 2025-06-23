@@ -64,6 +64,7 @@ namespace LevelTypes {
 			bool isSingleUse;
 			bool isMilestone;
 			vector<RailByteMaskData*> miniPuzzleOtherRails;
+			RailByteMaskData::BitsLocation canKickBit;
 
 			ConnectionSwitch(Switch* switch0);
 			virtual ~ConnectionSwitch();
@@ -104,6 +105,7 @@ namespace LevelTypes {
 		vector<Connection> connections;
 		bool hasAction;
 		RailByteMaskData::BitsLocation visitedMilestoneBit;
+		RailByteMaskData::BitsLocation canVisitBit;
 		int renderLeftTileX;
 		int renderTopTileY;
 		int renderRightTileX;
@@ -297,6 +299,7 @@ private:
 	int startTile;
 	vector<LevelTypes::Plane*> planes;
 	vector<LevelTypes::RailByteMaskData> allRailByteMaskData;
+	LevelTypes::RailByteMaskData::BitsLocation alwaysOnBit;
 	int railByteMaskBitsTracked;
 	LevelTypes::Plane* victoryPlane;
 	char minimumRailColor;
@@ -311,13 +314,14 @@ public:
 	int getLevelN() { return levelN; }
 	int getStartTile() { return startTile; }
 	LevelTypes::RailByteMaskData* getRailByteMaskData(int i) { return &allRailByteMaskData[i]; }
+	LevelTypes::RailByteMaskData::BitsLocation getAlwaysOnBit() { return alwaysOnBit; }
 	int getRailByteMaskCount() { return (railByteMaskBitsTracked + 31) / 32; }
 	LevelTypes::Plane* getVictoryPlane() { return victoryPlane; }
 	static void cancelHintSearch() { hintSearchIsRunning = false; }
 	//add a new plane to this level
 	LevelTypes::Plane* addNewPlane();
-	//add a special plane for use as the victory plane
-	void addVictoryPlane();
+	//take care of any extra tasks that need to happen after adding all planes to this level
+	void finalizeBuilding();
 	//set the switch for the radio tower hint
 	void assignRadioTowerSwitch(Switch* radioTowerSwitch);
 	//set the reset switch for the undo/reset hint
