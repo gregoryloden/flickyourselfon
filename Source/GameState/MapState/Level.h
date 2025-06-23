@@ -30,11 +30,11 @@ namespace LevelTypes {
 		};
 
 		short railId;
-		BitsLocation railBits;
 		Rail* rail;
+		BitsLocation railBits;
 		unsigned int inverseRailByteMask;
 
-		RailByteMaskData(short railId, BitsLocation pRailBits, Rail* pRail);
+		RailByteMaskData(short railId, Rail* pRail, BitsLocation pRailBits);
 		virtual ~RailByteMaskData();
 
 		//get the rail tile offset byte mask corresponding to the bit shift

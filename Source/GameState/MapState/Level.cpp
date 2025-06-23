@@ -19,10 +19,10 @@
 #define newPlane(owningLevel, indexInOwningLevel) newWithArgs(Plane, owningLevel, indexInOwningLevel)
 
 //////////////////////////////// LevelTypes::RailByteMaskData ////////////////////////////////
-LevelTypes::RailByteMaskData::RailByteMaskData(short pRailId, BitsLocation pRailBits, Rail* pRail)
+LevelTypes::RailByteMaskData::RailByteMaskData(short pRailId, Rail* pRail, BitsLocation pRailBits)
 : railId(pRailId)
-, railBits(pRailBits)
 , rail(pRail)
+, railBits(pRailBits)
 , inverseRailByteMask(~(Level::baseRailByteMask << pRailBits.data.bitShift)) {
 }
 LevelTypes::RailByteMaskData::~RailByteMaskData() {}
@@ -963,7 +963,7 @@ void Level::assignResetSwitch(ResetSwitch* resetSwitch) {
 }
 int Level::trackNextRail(short railId, Rail* rail) {
 	minimumRailColor = MathUtils::max(rail->getColor(), minimumRailColor);
-	allRailByteMaskData.push_back(RailByteMaskData(railId, trackRailByteMaskBits(railByteMaskBitCount), rail));
+	allRailByteMaskData.push_back(RailByteMaskData(railId, rail, trackRailByteMaskBits(railByteMaskBitCount)));
 	return (int)allRailByteMaskData.size() - 1;
 }
 LevelTypes::RailByteMaskData::BitsLocation Level::trackRailByteMaskBits(int nBits) {
