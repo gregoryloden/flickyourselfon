@@ -26,9 +26,10 @@ LevelTypes::RailByteMaskData::ByteMask::ByteMask(BitsLocation pLocation, unsigne
 }
 
 //////////////////////////////// LevelTypes::RailByteMaskData ////////////////////////////////
-LevelTypes::RailByteMaskData::RailByteMaskData(short pRailId, Rail* pRail, BitsLocation pRailBits)
-: railId(pRailId)
-, rail(pRail)
+LevelTypes::RailByteMaskData::RailByteMaskData(Rail* pRail, short pRailId, BitsLocation pRailBits)
+: rail(pRail)
+, railId(pRailId)
+, cachedRailColor(pRail->getColor())
 , railBits(pRailBits, Level::baseRailByteMask << pRailBits.data.bitShift) {
 }
 LevelTypes::RailByteMaskData::~RailByteMaskData() {}
@@ -735,7 +736,7 @@ void LevelTypes::Plane::pursueSolutionAfterSwitches(HintState::PotentialLevelSta
 			char movementDirection = (movementDirectionBit >> Level::railTileOffsetByteMaskBitCount) * 2 - 1;
 			char resultRailState =
 				railByteMaskData->rail->triggerMovement(movementDirection, &tileOffset)
-						&& railByteMaskData->rail->getColor() != MapState::sawColor
+						&& railByteMaskData->cachedRailColor != MapState::sawColor
 					? tileOffset | (movementDirectionBit ^ Level::baseRailMovementDirectionByteMask)
 					: tileOffset | movementDirectionBit;
 			*railByteMask =
@@ -990,7 +991,7 @@ void Level::assignResetSwitch(ResetSwitch* resetSwitch) {
 }
 int Level::trackNextRail(short railId, Rail* rail) {
 	minimumRailColor = MathUtils::max(rail->getColor(), minimumRailColor);
-	allRailByteMaskData.push_back(RailByteMaskData(railId, rail, trackRailByteMaskBits(railByteMaskBitCount)));
+	allRailByteMaskData.push_back(RailByteMaskData(rail, railId, trackRailByteMaskBits(railByteMaskBitCount)));
 	return (int)allRailByteMaskData.size() - 1;
 }
 LevelTypes::RailByteMaskData::BitsLocation Level::trackRailByteMaskBits(int nBits) {

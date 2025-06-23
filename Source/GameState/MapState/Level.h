@@ -38,11 +38,12 @@ namespace LevelTypes {
 			ByteMask(BitsLocation pLocation, unsigned int pByteMask);
 		};
 
-		short railId;
 		Rail* rail;
+		short railId;
+		char cachedRailColor;
 		ByteMask railBits;
 
-		RailByteMaskData(short railId, Rail* pRail, BitsLocation pRailBits);
+		RailByteMaskData(Rail* pRail, short pRailId, BitsLocation pRailBits);
 		virtual ~RailByteMaskData();
 
 		//get the rail tile offset byte mask corresponding to the bit shift
