@@ -324,9 +324,8 @@ void LevelTypes::Plane::findMilestonesToThisPlane(vector<Plane*>& levelPlanes, v
 		if (matchingConnectionSwitch->isSingleUse) {
 			#ifdef LOG_FOUND_PLANE_CONCLUSIONS
 				stringstream newMilestoneMessage;
-				newMilestoneMessage << "level " << plane->owningLevel->getLevelN()
-					<< " milestone: c" << (int)matchingConnectionSwitch->hint.data.switch0->getColor() << " ";
-				MapState::logGroup(matchingConnectionSwitch->hint.data.switch0->getGroup(), &newMilestoneMessage);
+				newMilestoneMessage << "level " << plane->owningLevel->getLevelN() << " milestone:";
+				MapState::logSwitchDescriptor(matchingConnectionSwitch->hint.data.switch0, &newMilestoneMessage);
 				Logger::debugLogger.logString(newMilestoneMessage.str());
 			#endif
 			matchingConnectionSwitch->isMilestone = true;
@@ -346,10 +345,8 @@ void LevelTypes::Plane::findMilestonesToThisPlane(vector<Plane*>& levelPlanes, v
 				stringstream destinationPlaneMessage;
 				destinationPlaneMessage << "level " << plane->owningLevel->getLevelN()
 					<< " destination plane " << plane->indexInOwningLevel << " with switches:";
-				for (ConnectionSwitch& connectionSwitch : plane->connectionSwitches) {
-					destinationPlaneMessage << "  c" << (int)connectionSwitch.hint.data.switch0->getColor() << " ";
-					MapState::logGroup(connectionSwitch.hint.data.switch0->getGroup(), &destinationPlaneMessage);
-				}
+				for (ConnectionSwitch& connectionSwitch : plane->connectionSwitches)
+					MapState::logSwitchDescriptor(connectionSwitch.hint.data.switch0, &destinationPlaneMessage);
 				Logger::debugLogger.logString(destinationPlaneMessage.str());
 			#endif
 			outDestinationPlanes.push_back(plane);
@@ -489,10 +486,8 @@ void LevelTypes::Plane::findMiniPuzzles(
 		#ifdef LOG_FOUND_PLANE_CONCLUSIONS
 			stringstream miniPuzzleMessage;
 			miniPuzzleMessage << "level " << level->getLevelN() << " mini puzzle with switches:";
-			for (ConnectionSwitch* miniPuzzleSwitch : miniPuzzleSwitches) {
-				miniPuzzleMessage << "  c" << (int)miniPuzzleSwitch->hint.data.switch0->getColor() << " ";
-				MapState::logGroup(miniPuzzleSwitch->hint.data.switch0->getGroup(), &miniPuzzleMessage);
-			}
+			for (ConnectionSwitch* miniPuzzleSwitch : miniPuzzleSwitches)
+				MapState::logSwitchDescriptor(miniPuzzleSwitch->hint.data.switch0, &miniPuzzleMessage);
 			Logger::debugLogger.logString(miniPuzzleMessage.str());
 		#endif
 		//add all the rails to all the switches, and mark switches and planes with a bit for this mini puzzle
@@ -569,10 +564,8 @@ void LevelTypes::Plane::removeNonHasActionPlaneConnections() {
 			Switch* switch0 = connectionSwitch.hint.data.switch0;
 			if (!resetSwitch->hasGroupForColor(switch0->getGroup(), switch0->getColor())) {
 				stringstream message;
-				message
-					<< "ERROR: level " << to_string(owningLevel->getLevelN())
-					<< ": reset switch missing c" << (int)switch0->getColor() << " ";
-				MapState::logGroup(switch0->getGroup(), &message);
+				message << "ERROR: level " << to_string(owningLevel->getLevelN()) << ": reset switch missing";
+				MapState::logSwitchDescriptor(switch0, &message);
 				Logger::debugLogger.logString(message.str());
 			}
 		}
@@ -769,9 +762,8 @@ void LevelTypes::Plane::pursueSolutionAfterSwitches(HintState::PotentialLevelSta
 					nextPotentialLevelState->logSteps();
 				#endif
 				stringstream milestoneMessage;
-				milestoneMessage << nextPotentialLevelState->steps << " steps, push milestone c"
-					<< (int)(connectionSwitch.hint.data.switch0->getColor()) << " ";
-				MapState::logGroup(connectionSwitch.hint.data.switch0->getGroup(), &milestoneMessage);
+				milestoneMessage << nextPotentialLevelState->steps << " steps, push milestone";
+				MapState::logSwitchDescriptor(connectionSwitch.hint.data.switch0, &milestoneMessage);
 				Logger::debugLogger.logString(milestoneMessage.str());
 			#endif
 		}
