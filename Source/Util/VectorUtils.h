@@ -8,6 +8,10 @@ public:
 	template <class Type> static unsigned int indexOf(vector<Type>& v, Type t) {
 		return (unsigned int)(std::find(v.begin(), v.end(), t) - v.begin());
 	}
+	//returns the number of items in the vector that match the given item
+	template <class Type> static int countOf(vector<Type>& v, Type t) {
+		return std::count(v.begin(), v.end(), t);
+	}
 	//check if the vector includes the given item
 	template <class Type> static bool includes(vector<Type>& v, Type t) {
 		return std::find(v.begin(), v.end(), t) != v.end();
