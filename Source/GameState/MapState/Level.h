@@ -29,19 +29,12 @@ namespace LevelTypes {
 			Data data;
 			unsigned short id;
 		};
-		//Should only be allocated within an object, on the stack, or as a static object
-		struct ByteMask {
-			BitsLocation location;
-			unsigned int byteMask;
-			unsigned int inverseByteMask;
-
-			ByteMask(BitsLocation pLocation, unsigned int baseByteMask);
-		};
 
 		Rail* rail;
 		short railId;
 		char cachedRailColor;
-		ByteMask railBits;
+		BitsLocation railBits;
+		unsigned int inverseRailByteMask;
 
 		RailByteMaskData(Rail* pRail, short pRailId, BitsLocation pRailBits);
 		virtual ~RailByteMaskData();
