@@ -487,7 +487,7 @@ void LevelTypes::Plane::findMiniPuzzles(vector<Plane*>& levelPlanes) {
 			//only track canVisitBit for this plane if every switch in the plane is in this mini puzzle
 			//if this is true for a plane with more than one switch, it's fine to write it multiple times
 			Plane* owningPlane = miniPuzzleOwningPlanes[miniPuzzleSwitchI];
-			if (VectorUtils::countOf(miniPuzzleOwningPlanes, owningPlane) == VectorUtils::countOf(allOwningPlanes, owningPlane))
+			if (VectorUtils::countOf(miniPuzzleOwningPlanes, owningPlane) == (int)owningPlane->connectionSwitches.size())
 				owningPlane->canVisitBit = miniPuzzleBit;
 		}
 	}
