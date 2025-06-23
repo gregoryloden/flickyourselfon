@@ -926,6 +926,7 @@ levelN(pLevelN)
 , startTile(pStartTile)
 , planes()
 , allRailByteMaskData()
+, alwaysOffBit(absentBitsLocation)
 , alwaysOnBit(absentBitsLocation)
 , railByteMaskBitsTracked(0)
 , victoryPlane(nullptr)
@@ -948,7 +949,8 @@ void Level::finalizeBuilding() {
 	//add a special plane for use as the victory plane
 	victoryPlane = addNewPlane();
 	victoryPlane->setHasAction();
-	//keep a multi-purpose bit that is always on for things that check a bit
+	//keep multi-purpose bits that are always on or off for things that check a bit
+	alwaysOffBit = trackRailByteMaskBits(1);
 	alwaysOnBit = trackRailByteMaskBits(1);
 }
 void Level::assignRadioTowerSwitch(Switch* radioTowerSwitch) {

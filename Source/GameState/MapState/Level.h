@@ -299,6 +299,7 @@ private:
 	int startTile;
 	vector<LevelTypes::Plane*> planes;
 	vector<LevelTypes::RailByteMaskData> allRailByteMaskData;
+	LevelTypes::RailByteMaskData::BitsLocation alwaysOffBit;
 	LevelTypes::RailByteMaskData::BitsLocation alwaysOnBit;
 	int railByteMaskBitsTracked;
 	LevelTypes::Plane* victoryPlane;
