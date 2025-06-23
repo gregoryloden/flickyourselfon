@@ -168,7 +168,10 @@ namespace LevelTypes {
 		void trackAsMilestoneDestination();
 	public:
 		//find sets of 2 or more switches that have rails in common
-		static void findMiniPuzzles(vector<Plane*>& levelPlanes);
+		static void findMiniPuzzles(
+			vector<Plane*>& levelPlanes,
+			RailByteMaskData::BitsLocation alwaysOffBit,
+			RailByteMaskData::BitsLocation alwaysOnBit);
 		//copy and add plane-plane and rail connections from all planes that are reachable through plane-plane connections from
 		//	this plane
 		void extendConnections();
@@ -315,7 +318,6 @@ public:
 	int getLevelN() { return levelN; }
 	int getStartTile() { return startTile; }
 	LevelTypes::RailByteMaskData* getRailByteMaskData(int i) { return &allRailByteMaskData[i]; }
-	LevelTypes::RailByteMaskData::BitsLocation getAlwaysOnBit() { return alwaysOnBit; }
 	int getRailByteMaskCount() { return (railByteMaskBitsTracked + 31) / 32; }
 	LevelTypes::Plane* getVictoryPlane() { return victoryPlane; }
 	static void cancelHintSearch() { hintSearchIsRunning = false; }

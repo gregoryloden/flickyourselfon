@@ -409,10 +409,29 @@ void LevelTypes::Plane::pathWalk(
 void LevelTypes::Plane::trackAsMilestoneDestination() {
 	milestoneIsNewBit = owningLevel->trackRailByteMaskBits(1);
 }
-void LevelTypes::Plane::findMiniPuzzles(vector<Plane*>& levelPlanes) {
+void LevelTypes::Plane::findMiniPuzzles(
+	vector<Plane*>& levelPlanes, RailByteMaskData::BitsLocation alwaysOffBit, RailByteMaskData::BitsLocation alwaysOnBit)
+{
 	Level* level = levelPlanes[0]->getOwningLevel();
 
-	//first things first, find all the switches and their planes
+	//first things first, set canVisitBit for planes and canKickBit for switches to always-on or always-off by default
+	//single-use switches also get their own bits
+	for (Plane* plane : levelPlanes) {
+		//by default, we can always visit a plane with switches (or the victory plane), and never visit a plane without switches
+		plane->canVisitBit =
+			(plane->connectionSwitches.size() > 0 || plane == level->getVictoryPlane()) ? alwaysOnBit : alwaysOffBit;
+		for (ConnectionSwitch& connectionSwitch : plane->connectionSwitches) {
+			if (connectionSwitch.isSingleUse) {
+				connectionSwitch.canKickBit = level->trackRailByteMaskBits(1);
+				//if this is the only switch in the plane, this bit can also serve as the canVisitBit
+				if (plane->connectionSwitches.size() == 1)
+					plane->canVisitBit = connectionSwitch.canKickBit;
+			} else
+				connectionSwitch.canKickBit = alwaysOnBit;
+		}
+	}
+
+	//find all the switches and their planes
 	//also mark every plane as always-can-visit and mark every switch as always-can-kick
 	vector<ConnectionSwitch*> allConnectionSwitches;
 	vector<Plane*> allOwningPlanes;
@@ -420,11 +439,10 @@ void LevelTypes::Plane::findMiniPuzzles(vector<Plane*>& levelPlanes) {
 		for (ConnectionSwitch& connectionSwitch : plane->connectionSwitches) {
 			allConnectionSwitches.push_back(&connectionSwitch);
 			allOwningPlanes.push_back(plane);
-			connectionSwitch.canKickBit = level->getAlwaysOnBit();
 		}
-		plane->canVisitBit = level->getAlwaysOnBit();
 	}
 
+	//now find mini puzzles
 	//go through the rails from found switches, look at their groups, and collect new switches and their rails
 	vector<ConnectionSwitch*> allMiniPuzzleSwitches;
 	for (int connectionSwitchI = 0; connectionSwitchI < (int)allConnectionSwitches.size(); connectionSwitchI++) {
@@ -990,7 +1008,7 @@ void Level::optimizePlanes() {
 		}
 	#endif
 	Plane::findMilestones(planes);
-	Plane::findMiniPuzzles(planes);
+	Plane::findMiniPuzzles(planes, alwaysOffBit, alwaysOnBit);
 	for (Plane* plane : planes)
 		plane->extendConnections();
 	for (Plane* plane : planes)
