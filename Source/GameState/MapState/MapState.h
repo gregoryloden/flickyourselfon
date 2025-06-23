@@ -195,7 +195,7 @@ public:
 private:
 	static short getPlaneId(int x, int y) { return planeIds[y * mapWidth + x]; }
 public:
-	static Rail* getRailFromId(int railId) { return rails[railId & railSwitchIndexBitmask]; }
+	static Rail* getRailFromId(short railId) { return rails[railId & railSwitchIndexBitmask]; }
 	static short getIdFromRailIndex(short railIndex) { return railIndex | railIdValue; }
 	static short getIdFromSwitchIndex(short switchIndex) { return switchIndex | switchIdValue; }
 	static short getIdFromResetSwitchIndex(short resetSwitchIndex) { return resetSwitchIndex | switchIdValue; }

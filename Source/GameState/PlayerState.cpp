@@ -867,7 +867,7 @@ void PlayerState::tryAutoKick(PlayerState* prev, int ticksTime) {
 			//no auto-ride-rail if the player isn't moving straight
 			if ((xDirection != 0) == (yDirection != 0))
 				return;
-			Rail* rail = mapState.get()->getRailFromId(availableKickAction.get()->getRailSwitchId());
+			Rail* rail = MapState::getRailFromId(availableKickAction.get()->getRailSwitchId());
 			Rail::Segment* startEndSegment = rail->getSegment(availableKickAction.get()->getRailSegmentIndex());
 			//ensure the rail matches our movement direction
 			if (Rail::endSegmentSpriteHorizontalIndex(xDirection, yDirection) != startEndSegment->spriteHorizontalIndex)
