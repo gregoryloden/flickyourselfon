@@ -67,6 +67,7 @@ namespace LevelTypes {
 			bool isMilestone;
 			vector<RailByteMaskData*> miniPuzzleOtherRails;
 			RailByteMaskData::BitsLocation canKickBit;
+			unsigned int canKickByteMask;
 
 			ConnectionSwitch(Switch* switch0);
 			virtual ~ConnectionSwitch();
@@ -105,10 +106,10 @@ namespace LevelTypes {
 		vector<Tile> tiles;
 		vector<ConnectionSwitch> connectionSwitches;
 		vector<Connection> connections;
-		bool hasAction;
 		RailByteMaskData::BitsLocation milestoneIsNewBit;
 		unsigned int milestoneIsNewByteMask;
 		RailByteMaskData::BitsLocation canVisitBit;
+		unsigned int canVisitByteMask;
 		int renderLeftTileX;
 		int renderTopTileY;
 		int renderRightTileX;
@@ -120,8 +121,7 @@ namespace LevelTypes {
 
 		Level* getOwningLevel() { return owningLevel; }
 		int getIndexInOwningLevel() { return indexInOwningLevel; }
-		bool getHasAction() { return hasAction; }
-		void setHasAction() { hasAction = true; }
+		bool hasSwitches() { return !connectionSwitches.empty(); }
 		#ifdef RENDER_PLANE_IDS
 			void setIndexInOwningLevel(int pIndexInOwningLevel) { indexInOwningLevel = pIndexInOwningLevel; }
 			static bool startTilesAreAscending(Plane* a, Plane* b) {
@@ -178,15 +178,16 @@ namespace LevelTypes {
 		//copy and add plane-plane and rail connections from all planes that are reachable through plane-plane connections from
 		//	this plane
 		void extendConnections();
-		//remove plane-plane connections to planes that aren't hasAction
-		void removeNonHasActionPlaneConnections();
+		//remove plane-plane connections to planes that don't have any switches
+		void removeEmptyPlaneConnections();
 		#ifdef DEBUG
 			//validate that the reset switch resets all the switches in this plane
 			void validateResetSwitch(ResetSwitch* resetSwitch);
 		#endif
-		//look for milestone destination planes, and if any of them have all their milestones activated, mark them as visited in
-		//	the draft state
-		static void markVisitedMilestoneDestinationPlanesInDraftState(vector<Plane*>& levelPlanes);
+		//set bits in the draft state where applicable:
+		//- set bits where milestones are new
+		//- set bits where switches can be kicked
+		static void markStatusBitsInDraftState(vector<Plane*>& levelPlanes, RailByteMaskData::BitsLocation alwaysOnBit);
 		//follow all possible paths to other planes, adding states at those planes to the current hint search queues
 		void pursueSolutionToPlanes(HintState::PotentialLevelState* currentState, int basePotentialLevelStateSteps);
 		//kick each switch in this plane, and then pursue solutions from those states
