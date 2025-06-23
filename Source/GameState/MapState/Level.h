@@ -104,7 +104,7 @@ namespace LevelTypes {
 		vector<ConnectionSwitch> connectionSwitches;
 		vector<Connection> connections;
 		bool hasAction;
-		RailByteMaskData::BitsLocation visitedMilestoneBit;
+		RailByteMaskData::BitsLocation milestoneIsNewBit;
 		RailByteMaskData::BitsLocation canVisitBit;
 		int renderLeftTileX;
 		int renderTopTileY;
