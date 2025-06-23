@@ -19,10 +19,10 @@
 #define newPlane(owningLevel, indexInOwningLevel) newWithArgs(Plane, owningLevel, indexInOwningLevel)
 
 //////////////////////////////// LevelTypes::RailByteMaskData::ByteMask ////////////////////////////////
-LevelTypes::RailByteMaskData::ByteMask::ByteMask(BitsLocation pLocation, unsigned int pByteMask)
+LevelTypes::RailByteMaskData::ByteMask::ByteMask(BitsLocation pLocation, unsigned int baseByteMask)
 : location(pLocation)
-, byteMask(pByteMask)
-, inverseByteMask(~pByteMask) {
+, byteMask(baseByteMask << pLocation.data.bitShift)
+, inverseByteMask(~byteMask) {
 }
 
 //////////////////////////////// LevelTypes::RailByteMaskData ////////////////////////////////
@@ -30,7 +30,7 @@ LevelTypes::RailByteMaskData::RailByteMaskData(Rail* pRail, short pRailId, BitsL
 : rail(pRail)
 , railId(pRailId)
 , cachedRailColor(pRail->getColor())
-, railBits(pRailBits, Level::baseRailByteMask << pRailBits.data.bitShift) {
+, railBits(pRailBits, Level::baseRailByteMask) {
 }
 LevelTypes::RailByteMaskData::~RailByteMaskData() {}
 int LevelTypes::RailByteMaskData::getRailTileOffsetByteMask() {

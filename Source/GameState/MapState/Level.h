@@ -35,7 +35,7 @@ namespace LevelTypes {
 			unsigned int byteMask;
 			unsigned int inverseByteMask;
 
-			ByteMask(BitsLocation pLocation, unsigned int pByteMask);
+			ByteMask(BitsLocation pLocation, unsigned int baseByteMask);
 		};
 
 		Rail* rail;
