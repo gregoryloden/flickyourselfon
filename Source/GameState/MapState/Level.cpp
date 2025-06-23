@@ -18,16 +18,22 @@
 
 #define newPlane(owningLevel, indexInOwningLevel) newWithArgs(Plane, owningLevel, indexInOwningLevel)
 
+//////////////////////////////// LevelTypes::RailByteMaskData::ByteMask ////////////////////////////////
+LevelTypes::RailByteMaskData::ByteMask::ByteMask(BitsLocation pLocation, unsigned int pByteMask)
+: location(pLocation)
+, byteMask(pByteMask)
+, inverseByteMask(~pByteMask) {
+}
+
 //////////////////////////////// LevelTypes::RailByteMaskData ////////////////////////////////
 LevelTypes::RailByteMaskData::RailByteMaskData(short pRailId, Rail* pRail, BitsLocation pRailBits)
 : railId(pRailId)
 , rail(pRail)
-, railBits(pRailBits)
-, inverseRailByteMask(~(Level::baseRailByteMask << pRailBits.data.bitShift)) {
+, railBits(pRailBits, Level::baseRailByteMask << pRailBits.data.bitShift) {
 }
 LevelTypes::RailByteMaskData::~RailByteMaskData() {}
 int LevelTypes::RailByteMaskData::getRailTileOffsetByteMask() {
-	return Level::baseRailTileOffsetByteMask << railBits.data.bitShift;
+	return Level::baseRailTileOffsetByteMask << railBits.location.data.bitShift;
 }
 
 //////////////////////////////// LevelTypes::Plane::Tile ////////////////////////////////
@@ -90,7 +96,7 @@ LevelTypes::Plane::ConnectionSwitch* LevelTypes::Plane::Connection::findMatching
 	return nullptr;
 }
 bool LevelTypes::Plane::Connection::matchesRail(RailByteMaskData* railByteMaskData) {
-	return railByteMaskData->railBits.data.byteIndex == railByteIndex
+	return railByteMaskData->railBits.location.data.byteIndex == railByteIndex
 		&& railByteMaskData->getRailTileOffsetByteMask() == railTileOffsetByteMask;
 }
 bool LevelTypes::Plane::Connection::requiresSwitchesOnPlane(Plane* plane) {
@@ -168,7 +174,7 @@ void LevelTypes::Plane::addRailConnection(Plane* toPlane, RailByteMaskData* rail
 	connections.push_back(
 		Connection(
 			toPlane,
-			railByteMaskData->railBits.data.byteIndex,
+			railByteMaskData->railBits.location.data.byteIndex,
 			railByteMaskData->getRailTileOffsetByteMask(),
 			1,
 			rail,
@@ -581,8 +587,9 @@ void LevelTypes::Plane::markVisitedMilestoneDestinationPlanesInDraftState(vector
 			continue;
 		//find every milestone in this plane, and check that all its rails are raised
 		auto railIsLowered = [](RailByteMaskData* railByteMaskData) {
-			return ((HintState::PotentialLevelState::draftState.railByteMasks[railByteMaskData->railBits.data.byteIndex]
-						>> railByteMaskData->railBits.data.bitShift)
+			RailByteMaskData::BitsLocation::Data railBitsLocation = railByteMaskData->railBits.location.data;
+			return ((HintState::PotentialLevelState::draftState.railByteMasks[railBitsLocation.byteIndex]
+						>> railBitsLocation.bitShift)
 					& Level::baseRailTileOffsetByteMask)
 				!= 0;
 		};
@@ -720,9 +727,9 @@ void LevelTypes::Plane::pursueSolutionAfterSwitches(HintState::PotentialLevelSta
 		//then, go through and modify the byte mask for each affected rail
 		char lastTileOffset;
 		for (RailByteMaskData* railByteMaskData : connectionSwitch.affectedRailByteMaskData) {
-			unsigned int* railByteMask =
-				&HintState::PotentialLevelState::draftState.railByteMasks[railByteMaskData->railBits.data.byteIndex];
-			char shiftedRailState = (char)(*railByteMask >> railByteMaskData->railBits.data.bitShift);
+			RailByteMaskData::BitsLocation::Data railBitsLocation = railByteMaskData->railBits.location.data;
+			unsigned int* railByteMask = &HintState::PotentialLevelState::draftState.railByteMasks[railBitsLocation.byteIndex];
+			char shiftedRailState = (char)(*railByteMask >> railBitsLocation.bitShift);
 			char movementDirectionBit = shiftedRailState & (char)Level::baseRailMovementDirectionByteMask;
 			char tileOffset = (lastTileOffset = shiftedRailState & (char)Level::baseRailTileOffsetByteMask);
 			char movementDirection = (movementDirectionBit >> Level::railTileOffsetByteMaskBitCount) * 2 - 1;
@@ -732,8 +739,8 @@ void LevelTypes::Plane::pursueSolutionAfterSwitches(HintState::PotentialLevelSta
 					? tileOffset | (movementDirectionBit ^ Level::baseRailMovementDirectionByteMask)
 					: tileOffset | movementDirectionBit;
 			*railByteMask =
-				(*railByteMask & railByteMaskData->inverseRailByteMask)
-					| ((unsigned int)resultRailState << railByteMaskData->railBits.data.bitShift);
+				(*railByteMask & railByteMaskData->railBits.inverseByteMask)
+					| ((unsigned int)resultRailState << railBitsLocation.bitShift);
 		}
 		HintState::PotentialLevelState::draftState.setHash();
 		unsigned int bucket =
@@ -1156,8 +1163,9 @@ HintState::PotentialLevelState* Level::loadBasePotentialLevelState(LevelTypes::P
 		char movementDirection, tileOffset;
 		getRailState(railByteMaskData.railId, railByteMaskData.rail, &movementDirection, &tileOffset);
 		char movementDirectionBit = ((movementDirection + 1) / 2) << Level::railTileOffsetByteMaskBitCount;
-		HintState::PotentialLevelState::draftState.railByteMasks[railByteMaskData.railBits.data.byteIndex] |=
-			(unsigned int)(movementDirectionBit | tileOffset) << railByteMaskData.railBits.data.bitShift;
+		RailByteMaskData::BitsLocation::Data railBitsLocation = railByteMaskData.railBits.location.data;
+		HintState::PotentialLevelState::draftState.railByteMasks[railBitsLocation.byteIndex] |=
+			(unsigned int)(movementDirectionBit | tileOffset) << railBitsLocation.bitShift;
 	}
 	Plane::markVisitedMilestoneDestinationPlanesInDraftState(planes);
 	HintState::PotentialLevelState::draftState.setHash();

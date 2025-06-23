@@ -20,6 +20,7 @@ namespace LevelTypes {
 	//Should only be allocated within an object, on the stack, or as a static object
 	class RailByteMaskData {
 	public:
+		//Should only be allocated within an object, on the stack, or as a static object
 		union BitsLocation {
 			struct Data {
 				char byteIndex;
@@ -28,11 +29,18 @@ namespace LevelTypes {
 			Data data;
 			unsigned short id;
 		};
+		//Should only be allocated within an object, on the stack, or as a static object
+		struct ByteMask {
+			BitsLocation location;
+			unsigned int byteMask;
+			unsigned int inverseByteMask;
+
+			ByteMask(BitsLocation pLocation, unsigned int pByteMask);
+		};
 
 		short railId;
 		Rail* rail;
-		BitsLocation railBits;
-		unsigned int inverseRailByteMask;
+		ByteMask railBits;
 
 		RailByteMaskData(short railId, Rail* pRail, BitsLocation pRailBits);
 		virtual ~RailByteMaskData();
