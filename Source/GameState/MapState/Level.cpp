@@ -130,6 +130,7 @@ owningLevel(pOwningLevel)
 , connections()
 , hasAction(false)
 , milestoneIsNewBit(Level::absentBitsLocation)
+, milestoneIsNewByteMask(0)
 , canVisitBit(Level::absentBitsLocation)
 , renderLeftTileX(MapState::getMapWidth())
 , renderTopTileY(MapState::getMapHeight())
@@ -409,6 +410,7 @@ void LevelTypes::Plane::pathWalk(
 }
 void LevelTypes::Plane::trackAsMilestoneDestination() {
 	milestoneIsNewBit = owningLevel->trackRailByteMaskBits(1);
+	milestoneIsNewByteMask = 1 << milestoneIsNewBit.data.bitShift;
 }
 void LevelTypes::Plane::findMiniPuzzles(
 	vector<Plane*>& levelPlanes, RailByteMaskData::BitsLocation alwaysOffBit, RailByteMaskData::BitsLocation alwaysOnBit)
@@ -597,7 +599,7 @@ void LevelTypes::Plane::markVisitedMilestoneDestinationPlanesInDraftState(vector
 		if (VectorUtils::anyMatch(plane->connectionSwitches, hasLoweredMilestoneRails)
 				|| plane == plane->owningLevel->getVictoryPlane())
 			HintState::PotentialLevelState::draftState.railByteMasks[plane->milestoneIsNewBit.data.byteIndex] |=
-				1 << plane->milestoneIsNewBit.data.bitShift;
+				plane->milestoneIsNewByteMask;
 	}
 }
 void LevelTypes::Plane::pursueSolutionToPlanes(HintState::PotentialLevelState* currentState, int basePotentialLevelStateSteps) {
@@ -670,9 +672,8 @@ void LevelTypes::Plane::pursueSolutionToPlanes(HintState::PotentialLevelState* c
 				//if it goes to a milestone destination plane, and we haven't visited it yet from this state, check if the state
 				//	with the visited flag is new too
 				if (connectionToPlane->milestoneIsNewBit.data.byteIndex != Level::absentRailByteIndex
-					&& ((nextPotentialLevelState->railByteMasks[connectionToPlane->milestoneIsNewBit.data.byteIndex]
-								>> connectionToPlane->milestoneIsNewBit.data.bitShift)
-							& 1)
+					&& (nextPotentialLevelState->railByteMasks[connectionToPlane->milestoneIsNewBit.data.byteIndex]
+							& connectionToPlane->milestoneIsNewByteMask)
 						!= 0)
 				{
 					//get a new state with the milestoneIsNew flag cleared
@@ -680,7 +681,7 @@ void LevelTypes::Plane::pursueSolutionToPlanes(HintState::PotentialLevelState* c
 						HintState::PotentialLevelState::draftState.railByteMasks[i] = nextPotentialLevelState->railByteMasks[i];
 					HintState::PotentialLevelState::draftState.railByteMasks[
 							connectionToPlane->milestoneIsNewBit.data.byteIndex] &=
-						~(1 << connectionToPlane->milestoneIsNewBit.data.bitShift);
+						~connectionToPlane->milestoneIsNewByteMask;
 					HintState::PotentialLevelState::draftState.setHash();
 					HintState::PotentialLevelState* milestoneDestinationPotentialLevelState =
 						HintState::PotentialLevelState::draftState.addNewState(
