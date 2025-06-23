@@ -326,8 +326,8 @@ public:
 	static void cancelHintSearch() { hintSearchIsRunning = false; }
 	//add a new plane to this level
 	LevelTypes::Plane* addNewPlane();
-	//take care of any extra tasks that need to happen after adding all planes to this level
-	void finalizeBuilding();
+	//add a special plane for use as the victory plane
+	void addVictoryPlane();
 	//set the switch for the radio tower hint
 	void assignRadioTowerSwitch(Switch* radioTowerSwitch);
 	//set the reset switch for the undo/reset hint
@@ -337,11 +337,14 @@ public:
 	int trackNextRail(short railId, Rail* rail);
 	//register the given number of bits in the rail byte mask, and return the bits data
 	LevelTypes::RailByteMaskData::BitsLocation trackRailByteMaskBits(int nBits);
-	//finish setup of planes:
+	//finish setup of this level:
+	//- add a dedicated victory plane
+	//- store multi-purpose bit locations
 	//- find planes with milestone switches
+	//- find mini puzzles
 	//- add extended connections to the planes of this level
 	//- remove plane-plane connections to planes without switches
-	void optimizePlanes();
+	void finalizeBuilding();
 	//setup helper objects used by all levels in hint searching
 	static void setupHintSearchHelpers(vector<Level*>& allLevels);
 	//delete helpers used in hint searching

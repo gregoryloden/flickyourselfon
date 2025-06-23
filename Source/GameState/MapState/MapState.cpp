@@ -347,7 +347,7 @@ void MapState::buildLevels() {
 				tileChecks.push_back(nextTile);
 				continue;
 			}
-			activeLevel->finalizeBuilding();
+			activeLevel->addVictoryPlane();
 			levels.push_back(activeLevel = newLevel(levels.size() + 1, nextTile));
 		}
 		allPlaneConnections.push_back(vector<PlaneConnection>());
@@ -459,9 +459,9 @@ void MapState::buildLevels() {
 		}
 	}
 
-	//finish setup for planes
+	//finish level setup
 	for (Level* level : levels)
-		level->optimizePlanes();
+		level->finalizeBuilding();
 
 	for (Level* level : levels)
 		level->logStats();

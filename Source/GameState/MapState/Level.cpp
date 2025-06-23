@@ -958,13 +958,9 @@ Plane* Level::addNewPlane() {
 	planes.push_back(plane);
 	return plane;
 }
-void Level::finalizeBuilding() {
-	//add a special plane for use as the victory plane
+void Level::addVictoryPlane() {
 	victoryPlane = addNewPlane();
 	victoryPlane->setHasAction();
-	//keep multi-purpose bits that are always on or off for things that check a bit
-	alwaysOffBit = trackRailByteMaskBits(1);
-	alwaysOnBit = trackRailByteMaskBits(1);
 }
 void Level::assignRadioTowerSwitch(Switch* radioTowerSwitch) {
 	radioTowerHint.type = Hint::Type::Switch;
@@ -994,7 +990,9 @@ LevelTypes::RailByteMaskData::BitsLocation Level::trackRailByteMaskBits(int nBit
 		railByteMaskBitsTracked += nBits;
 	return bits;
 }
-void Level::optimizePlanes() {
+void Level::finalizeBuilding() {
+	alwaysOffBit = trackRailByteMaskBits(1);
+	alwaysOnBit = trackRailByteMaskBits(1);
 	#ifdef RENDER_PLANE_IDS
 		if (planes.size() >= 4) {
 			sort(planes.begin() + 1, planes.end() - 1, Plane::startTilesAreAscending);
