@@ -914,11 +914,7 @@ Level::CheckedPlaneData::~CheckedPlaneData() {
 }
 
 //////////////////////////////// Level ////////////////////////////////
-RailByteMaskData::BitsLocation Level::absentBitsLocation = []() {
-	RailByteMaskData::BitsLocation bits = {};
-	bits.data.byteIndex = absentRailByteIndex;
-	return bits;
-}();
+RailByteMaskData::BitsLocation Level::absentBitsLocation (absentRailByteIndex, 0);
 bool Level::hintSearchIsRunning = false;
 vector<Level::PotentialLevelStatesByBucket> Level::potentialLevelStatesByBucketByPlane;
 vector<HintState::PotentialLevelState*> Level::replacedPotentialLevelStates;
@@ -992,17 +988,16 @@ int Level::trackNextRail(short railId, Rail* rail) {
 	return (int)allRailByteMaskData.size() - 1;
 }
 RailByteMaskData::ByteMask Level::trackRailByteMaskBits(int nBits) {
-	RailByteMaskData::BitsLocation bits;
-	bits.data.byteIndex = (char)(railByteMaskBitsTracked / 32);
-	bits.data.bitShift = (char)(railByteMaskBitsTracked % 32);
+	char byteIndex = (char)(railByteMaskBitsTracked / 32);
+	char bitShift = (char)(railByteMaskBitsTracked % 32);
 	//make sure there are enough bits to fit the new mask
-	if (bits.data.bitShift + nBits > 32) {
-		bits.data.byteIndex++;
-		bits.data.bitShift = 0;
+	if (bitShift + nBits > 32) {
+		byteIndex++;
+		bitShift = 0;
 		railByteMaskBitsTracked = (railByteMaskBitsTracked / 32 + 1) * 32 + nBits;
 	} else
 		railByteMaskBitsTracked += nBits;
-	return RailByteMaskData::ByteMask(bits, nBits);
+	return RailByteMaskData::ByteMask(RailByteMaskData::BitsLocation(byteIndex, bitShift), nBits);
 }
 void Level::finalizeBuilding() {
 	alwaysOffBit = trackRailByteMaskBits(1);

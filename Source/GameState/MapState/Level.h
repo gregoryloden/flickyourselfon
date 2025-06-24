@@ -28,6 +28,8 @@ namespace LevelTypes {
 			};
 			Data data;
 			unsigned short id;
+
+			BitsLocation(char byteIndex, char bitShift): data({ byteIndex, bitShift }) {}
 		};
 		//Should only be allocated within an object, on the stack, or as a static object
 		struct ByteMask {
