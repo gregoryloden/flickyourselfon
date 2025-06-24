@@ -200,7 +200,7 @@ void LevelTypes::Plane::addRailConnectionToSwitch(RailByteMaskData* railByteMask
 	if (rail->getGroups().size() > 1 || tileOffset != 0)
 		connectionSwitch.isSingleUse = false;
 }
-void LevelTypes::Plane::findMilestones(vector<Plane*>& levelPlanes) {
+void LevelTypes::Plane::findMilestones(vector<Plane*>& levelPlanes, RailByteMaskData::ByteMask alwaysOnBit) {
 	//can't find milestones to the victory plane without a victory plane
 	Plane* victoryPlane = levelPlanes[0]->owningLevel->getVictoryPlane();
 	if (victoryPlane == nullptr)
@@ -212,7 +212,7 @@ void LevelTypes::Plane::findMilestones(vector<Plane*>& levelPlanes) {
 		destinationPlanes[i]->findMilestonesToThisPlane(levelPlanes, destinationPlanes);
 
 	//and make sure to mark the victory plane as a milestone destination
-	victoryPlane->trackAsMilestoneDestination();
+	victoryPlane->milestoneIsNewBit = alwaysOnBit;
 }
 void LevelTypes::Plane::findMilestonesToThisPlane(vector<Plane*>& levelPlanes, vector<Plane*>& outDestinationPlanes) {
 	//find any path to this plane
@@ -1014,7 +1014,7 @@ void Level::finalizeBuilding() {
 				planes[i]->setIndexInOwningLevel(i);
 		}
 	#endif
-	Plane::findMilestones(planes);
+	Plane::findMilestones(planes, alwaysOnBit);
 	Plane::findMiniPuzzles(planes, alwaysOffBit, alwaysOnBit);
 	for (Plane* plane : planes)
 		plane->extendConnections();
