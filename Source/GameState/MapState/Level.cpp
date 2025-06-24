@@ -51,7 +51,7 @@ LevelTypes::Plane::ConnectionSwitch::ConnectionSwitch(Switch* switch0)
 , isSingleUse(true)
 , isMilestone(false)
 , miniPuzzleOtherRails()
-, canKickBit(Level::absentBitsLocation, 0) {
+, canKickBit(Level::absentBits) {
 	hint.data.switch0 = switch0;
 }
 LevelTypes::Plane::ConnectionSwitch::~ConnectionSwitch() {}
@@ -134,8 +134,8 @@ owningLevel(pOwningLevel)
 , tiles()
 , connectionSwitches()
 , connections()
-, milestoneIsNewBit(Level::absentBitsLocation, 0)
-, canVisitBit(Level::absentBitsLocation, 0)
+, milestoneIsNewBit(Level::absentBits)
+, canVisitBit(Level::absentBits)
 , renderLeftTileX(MapState::getMapWidth())
 , renderTopTileY(MapState::getMapHeight())
 , renderRightTileX(0)
@@ -914,7 +914,7 @@ Level::CheckedPlaneData::~CheckedPlaneData() {
 }
 
 //////////////////////////////// Level ////////////////////////////////
-RailByteMaskData::BitsLocation Level::absentBitsLocation (absentRailByteIndex, 0);
+RailByteMaskData::ByteMask Level::absentBits (RailByteMaskData::BitsLocation(absentRailByteIndex, 0), 0);
 bool Level::hintSearchIsRunning = false;
 vector<Level::PotentialLevelStatesByBucket> Level::potentialLevelStatesByBucketByPlane;
 vector<HintState::PotentialLevelState*> Level::replacedPotentialLevelStates;
@@ -950,8 +950,8 @@ levelN(pLevelN)
 , startTile(pStartTile)
 , planes()
 , allRailByteMaskData()
-, alwaysOffBit(absentBitsLocation, 1)
-, alwaysOnBit(absentBitsLocation, 1)
+, alwaysOffBit(absentBits)
+, alwaysOnBit(absentBits)
 , railByteMaskBitsTracked(0)
 , victoryPlane(nullptr)
 , minimumRailColor(0)

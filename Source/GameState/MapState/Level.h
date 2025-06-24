@@ -267,7 +267,7 @@ public:
 	static constexpr unsigned int baseRailMovementDirectionByteMask =
 		((1 << railMovementDirectionByteMaskBitCount) - 1) << railTileOffsetByteMaskBitCount;
 
-	static LevelTypes::RailByteMaskData::BitsLocation absentBitsLocation;
+	static LevelTypes::RailByteMaskData::ByteMask absentBits;
 private:
 	static bool hintSearchIsRunning;
 public:
