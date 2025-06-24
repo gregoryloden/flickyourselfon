@@ -18,13 +18,19 @@
 
 #define newPlane(owningLevel, indexInOwningLevel) newWithArgs(Plane, owningLevel, indexInOwningLevel)
 
+//////////////////////////////// LevelTypes::RailByteMaskData::ByteMask ////////////////////////////////
+LevelTypes::RailByteMaskData::ByteMask::ByteMask(BitsLocation pLocation, int nBits)
+: location(pLocation)
+, byteMask(((1 << nBits) - 1) << pLocation.data.bitShift) {
+}
+
 //////////////////////////////// LevelTypes::RailByteMaskData ////////////////////////////////
-LevelTypes::RailByteMaskData::RailByteMaskData(Rail* pRail, short pRailId, BitsLocation pRailBits)
+LevelTypes::RailByteMaskData::RailByteMaskData(Rail* pRail, short pRailId, ByteMask pRailBits)
 : rail(pRail)
 , railId(pRailId)
 , cachedRailColor(pRail->getColor())
-, railBits(pRailBits)
-, inverseRailByteMask(~(Level::baseRailByteMask << pRailBits.data.bitShift)) {
+, railBits(pRailBits.location)
+, inverseRailByteMask(~pRailBits.byteMask) {
 }
 LevelTypes::RailByteMaskData::~RailByteMaskData() {}
 int LevelTypes::RailByteMaskData::getRailTileOffsetByteMask() {
@@ -45,8 +51,7 @@ LevelTypes::Plane::ConnectionSwitch::ConnectionSwitch(Switch* switch0)
 , isSingleUse(true)
 , isMilestone(false)
 , miniPuzzleOtherRails()
-, canKickBit(Level::absentBitsLocation)
-, canKickByteMask(0) {
+, canKickBit(Level::absentBitsLocation, 0) {
 	hint.data.switch0 = switch0;
 }
 LevelTypes::Plane::ConnectionSwitch::~ConnectionSwitch() {}
@@ -129,10 +134,8 @@ owningLevel(pOwningLevel)
 , tiles()
 , connectionSwitches()
 , connections()
-, milestoneIsNewBit(Level::absentBitsLocation)
-, milestoneIsNewByteMask(0)
-, canVisitBit(Level::absentBitsLocation)
-, canVisitByteMask(0)
+, milestoneIsNewBit(Level::absentBitsLocation, 0)
+, canVisitBit(Level::absentBitsLocation, 0)
 , renderLeftTileX(MapState::getMapWidth())
 , renderTopTileY(MapState::getMapHeight())
 , renderRightTileX(0)
@@ -331,7 +334,7 @@ void LevelTypes::Plane::findMilestonesToThisPlane(vector<Plane*>& levelPlanes, v
 			matchingConnectionSwitch->isMilestone = true;
 			//if we haven't done so already, mark the plane as a milestone destination by having it track a bit for whether it's
 			//	been visited or not
-			if (plane->milestoneIsNewBit.data.byteIndex == Level::absentRailByteIndex)
+			if (plane->milestoneIsNewBit.location.data.byteIndex == Level::absentRailByteIndex)
 				plane->trackAsMilestoneDestination();
 		}
 		//if this switch is the only switch to control the rail (whether it's single-use or not), and the rail starts out
@@ -407,10 +410,9 @@ void LevelTypes::Plane::pathWalk(
 }
 void LevelTypes::Plane::trackAsMilestoneDestination() {
 	milestoneIsNewBit = owningLevel->trackRailByteMaskBits(1);
-	milestoneIsNewByteMask = 1 << milestoneIsNewBit.data.bitShift;
 }
 void LevelTypes::Plane::findMiniPuzzles(
-	vector<Plane*>& levelPlanes, RailByteMaskData::BitsLocation alwaysOffBit, RailByteMaskData::BitsLocation alwaysOnBit)
+	vector<Plane*>& levelPlanes, RailByteMaskData::ByteMask alwaysOffBit, RailByteMaskData::ByteMask alwaysOnBit)
 {
 	Level* level = levelPlanes[0]->getOwningLevel();
 
@@ -428,9 +430,7 @@ void LevelTypes::Plane::findMiniPuzzles(
 					plane->canVisitBit = connectionSwitch.canKickBit;
 			} else
 				connectionSwitch.canKickBit = alwaysOnBit;
-			connectionSwitch.canKickByteMask = 1 << connectionSwitch.canKickBit.data.bitShift;
 		}
-		plane->canVisitByteMask = 1 << plane->canVisitBit.data.bitShift;
 	}
 
 	//find all the switches and their planes
@@ -493,12 +493,11 @@ void LevelTypes::Plane::findMiniPuzzles(
 			Logger::debugLogger.logString(miniPuzzleMessage.str());
 		#endif
 		//add all the rails to all the switches, and mark switches and planes with a bit for this mini puzzle
-		RailByteMaskData::BitsLocation miniPuzzleBit = level->trackRailByteMaskBits(1);
+		RailByteMaskData::ByteMask miniPuzzleBit = level->trackRailByteMaskBits(1);
 		for (int miniPuzzleSwitchI = 0; miniPuzzleSwitchI < (int)miniPuzzleSwitches.size(); miniPuzzleSwitchI++) {
 			ConnectionSwitch* miniPuzzleSwitch = miniPuzzleSwitches[miniPuzzleSwitchI];
 			allMiniPuzzleSwitches.push_back(miniPuzzleSwitch);
 			miniPuzzleSwitch->canKickBit = miniPuzzleBit;
-			miniPuzzleSwitch->canKickByteMask = 1 << miniPuzzleBit.data.bitShift;
 			for (RailByteMaskData* railByteMaskData : miniPuzzleRails) {
 				if (!VectorUtils::includes(miniPuzzleSwitch->affectedRailByteMaskData, railByteMaskData))
 					miniPuzzleSwitch->miniPuzzleOtherRails.push_back(railByteMaskData);
@@ -506,10 +505,8 @@ void LevelTypes::Plane::findMiniPuzzles(
 			//only track canVisitBit for this plane if every switch in the plane is in this mini puzzle
 			//if this is true for a plane with more than one switch, it's fine to write it multiple times
 			Plane* owningPlane = miniPuzzleOwningPlanes[miniPuzzleSwitchI];
-			if (VectorUtils::countOf(miniPuzzleOwningPlanes, owningPlane) == (int)owningPlane->connectionSwitches.size()) {
-				owningPlane->canVisitBit = miniPuzzleSwitch->canKickBit;
-				owningPlane->canVisitByteMask = miniPuzzleSwitch->canKickByteMask;
-			}
+			if (VectorUtils::countOf(miniPuzzleOwningPlanes, owningPlane) == (int)owningPlane->connectionSwitches.size())
+				owningPlane->canVisitBit = miniPuzzleBit;
 		}
 	}
 }
@@ -576,10 +573,10 @@ void LevelTypes::Plane::removeEmptyPlaneConnections() {
 		}
 	}
 #endif
-void LevelTypes::Plane::markStatusBitsInDraftState(vector<Plane*>& levelPlanes, RailByteMaskData::BitsLocation alwaysOnBit) {
+void LevelTypes::Plane::markStatusBitsInDraftState(vector<Plane*>& levelPlanes, RailByteMaskData::ByteMask alwaysOnBit) {
 	//mark new milestones
 	for (Plane* plane : levelPlanes) {
-		if (plane->milestoneIsNewBit.data.byteIndex == Level::absentRailByteIndex)
+		if (plane->milestoneIsNewBit.location.data.byteIndex == Level::absentRailByteIndex)
 			continue;
 		//find every milestone in this plane, and check that all its rails are raised
 		auto railIsLowered = [](RailByteMaskData* railByteMaskData) {
@@ -597,17 +594,17 @@ void LevelTypes::Plane::markStatusBitsInDraftState(vector<Plane*>& levelPlanes, 
 		//and always mark the victory plane as new, it's registered as a milestone destination plane but has no switches
 		if (VectorUtils::anyMatch(plane->connectionSwitches, hasLoweredMilestoneRails)
 				|| plane == plane->owningLevel->getVictoryPlane())
-			HintState::PotentialLevelState::draftState.railByteMasks[plane->milestoneIsNewBit.data.byteIndex] |=
-				plane->milestoneIsNewByteMask;
+			HintState::PotentialLevelState::draftState.railByteMasks[plane->milestoneIsNewBit.location.data.byteIndex] |=
+				plane->milestoneIsNewBit.byteMask;
 	}
 
 	//mark whether planes can be visited
 	for (Plane* plane : levelPlanes) {
 		for (ConnectionSwitch& connectionSwitch : plane->connectionSwitches) {
 			//TODO: actually check the switches
-			if (connectionSwitch.canKickBit.id != alwaysOnBit.id)
-				HintState::PotentialLevelState::draftState.railByteMasks[connectionSwitch.canKickBit.data.byteIndex] |=
-					connectionSwitch.canKickByteMask;
+			if (connectionSwitch.canKickBit.location.id != alwaysOnBit.location.id)
+				HintState::PotentialLevelState::draftState.railByteMasks[connectionSwitch.canKickBit.location.data.byteIndex] |=
+					connectionSwitch.canKickBit.byteMask;
 		}
 	}
 }
@@ -664,7 +661,9 @@ void LevelTypes::Plane::pursueSolutionToPlanes(HintState::PotentialLevelState* c
 				if (connectionSteps > maxStepsSeen)
 					maxStepsSeen = connectionSteps;
 				//we're done if the state can't be visited
-				if ((railByteMasks[connectionToPlane->canVisitBit.data.byteIndex] & connectionToPlane->canVisitByteMask) == 0)
+				if ((railByteMasks[connectionToPlane->canVisitBit.location.data.byteIndex]
+							& connectionToPlane->canVisitBit.byteMask)
+						== 0)
 					continue;
 
 				//if it is hasAction, add a state to it
@@ -681,17 +680,17 @@ void LevelTypes::Plane::pursueSolutionToPlanes(HintState::PotentialLevelState* c
 
 				//if it goes to a milestone destination plane, and we haven't visited it yet from this state, check if the state
 				//	with the visited flag is new too
-				if (connectionToPlane->milestoneIsNewBit.data.byteIndex != Level::absentRailByteIndex
-					&& (railByteMasks[connectionToPlane->milestoneIsNewBit.data.byteIndex]
-							& connectionToPlane->milestoneIsNewByteMask)
+				if (connectionToPlane->milestoneIsNewBit.location.data.byteIndex != Level::absentRailByteIndex
+					&& (railByteMasks[connectionToPlane->milestoneIsNewBit.location.data.byteIndex]
+							& connectionToPlane->milestoneIsNewBit.byteMask)
 						!= 0)
 				{
 					//get a new state with the milestoneIsNew flag cleared
 					for (int i = HintState::PotentialLevelState::currentRailByteMaskCount - 1; i >= 0; i--)
 						HintState::PotentialLevelState::draftState.railByteMasks[i] = nextPotentialLevelState->railByteMasks[i];
 					HintState::PotentialLevelState::draftState.railByteMasks[
-							connectionToPlane->milestoneIsNewBit.data.byteIndex] &=
-						~connectionToPlane->milestoneIsNewByteMask;
+							connectionToPlane->milestoneIsNewBit.location.data.byteIndex] &=
+						~connectionToPlane->milestoneIsNewBit.byteMask;
 					HintState::PotentialLevelState::draftState.setHash();
 					HintState::PotentialLevelState* milestoneDestinationPotentialLevelState =
 						HintState::PotentialLevelState::draftState.addNewState(
@@ -955,8 +954,8 @@ levelN(pLevelN)
 , startTile(pStartTile)
 , planes()
 , allRailByteMaskData()
-, alwaysOffBit(absentBitsLocation)
-, alwaysOnBit(absentBitsLocation)
+, alwaysOffBit(absentBitsLocation, 1)
+, alwaysOnBit(absentBitsLocation, 1)
 , railByteMaskBitsTracked(0)
 , victoryPlane(nullptr)
 , minimumRailColor(0)
@@ -992,7 +991,7 @@ int Level::trackNextRail(short railId, Rail* rail) {
 	allRailByteMaskData.push_back(RailByteMaskData(rail, railId, trackRailByteMaskBits(railByteMaskBitCount)));
 	return (int)allRailByteMaskData.size() - 1;
 }
-LevelTypes::RailByteMaskData::BitsLocation Level::trackRailByteMaskBits(int nBits) {
+RailByteMaskData::ByteMask Level::trackRailByteMaskBits(int nBits) {
 	LevelTypes::RailByteMaskData::BitsLocation bits;
 	bits.data.byteIndex = (char)(railByteMaskBitsTracked / 32);
 	bits.data.bitShift = (char)(railByteMaskBitsTracked % 32);
@@ -1003,7 +1002,7 @@ LevelTypes::RailByteMaskData::BitsLocation Level::trackRailByteMaskBits(int nBit
 		railByteMaskBitsTracked = (railByteMaskBitsTracked / 32 + 1) * 32 + nBits;
 	} else
 		railByteMaskBitsTracked += nBits;
-	return bits;
+	return RailByteMaskData::ByteMask(bits, nBits);
 }
 void Level::finalizeBuilding() {
 	alwaysOffBit = trackRailByteMaskBits(1);
@@ -1168,7 +1167,7 @@ HintState::PotentialLevelState* Level::loadBasePotentialLevelState(LevelTypes::P
 		HintState::PotentialLevelState::draftState.railByteMasks[railBitsLocation.byteIndex] |=
 			(unsigned int)(movementDirectionBit | tileOffset) << railBitsLocation.bitShift;
 	}
-	HintState::PotentialLevelState::draftState.railByteMasks[alwaysOnBit.data.byteIndex] |= 1 << alwaysOnBit.data.bitShift;
+	HintState::PotentialLevelState::draftState.railByteMasks[alwaysOnBit.location.data.byteIndex] |= alwaysOnBit.byteMask;
 	Plane::markStatusBitsInDraftState(planes, alwaysOnBit);
 	HintState::PotentialLevelState::draftState.setHash();
 

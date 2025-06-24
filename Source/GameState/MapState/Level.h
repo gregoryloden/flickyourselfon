@@ -29,6 +29,13 @@ namespace LevelTypes {
 			Data data;
 			unsigned short id;
 		};
+		//Should only be allocated within an object, on the stack, or as a static object
+		struct ByteMask {
+			BitsLocation location;
+			unsigned int byteMask;
+
+			ByteMask(BitsLocation pLocation, int nBits);
+		};
 
 		Rail* rail;
 		short railId;
@@ -36,7 +43,7 @@ namespace LevelTypes {
 		BitsLocation railBits;
 		unsigned int inverseRailByteMask;
 
-		RailByteMaskData(Rail* pRail, short pRailId, BitsLocation pRailBits);
+		RailByteMaskData(Rail* pRail, short pRailId, ByteMask pRailBits);
 		virtual ~RailByteMaskData();
 
 		//get the rail tile offset byte mask corresponding to the bit shift
@@ -66,8 +73,7 @@ namespace LevelTypes {
 			bool isSingleUse;
 			bool isMilestone;
 			vector<RailByteMaskData*> miniPuzzleOtherRails;
-			RailByteMaskData::BitsLocation canKickBit;
-			unsigned int canKickByteMask;
+			RailByteMaskData::ByteMask canKickBit;
 
 			ConnectionSwitch(Switch* switch0);
 			virtual ~ConnectionSwitch();
@@ -106,10 +112,8 @@ namespace LevelTypes {
 		vector<Tile> tiles;
 		vector<ConnectionSwitch> connectionSwitches;
 		vector<Connection> connections;
-		RailByteMaskData::BitsLocation milestoneIsNewBit;
-		unsigned int milestoneIsNewByteMask;
-		RailByteMaskData::BitsLocation canVisitBit;
-		unsigned int canVisitByteMask;
+		RailByteMaskData::ByteMask milestoneIsNewBit;
+		RailByteMaskData::ByteMask canVisitBit;
 		int renderLeftTileX;
 		int renderTopTileY;
 		int renderRightTileX;
@@ -172,9 +176,7 @@ namespace LevelTypes {
 	public:
 		//find sets of 2 or more switches that have rails in common
 		static void findMiniPuzzles(
-			vector<Plane*>& levelPlanes,
-			RailByteMaskData::BitsLocation alwaysOffBit,
-			RailByteMaskData::BitsLocation alwaysOnBit);
+			vector<Plane*>& levelPlanes, RailByteMaskData::ByteMask alwaysOffBit, RailByteMaskData::ByteMask alwaysOnBit);
 		//copy and add plane-plane and rail connections from all planes that are reachable through plane-plane connections from
 		//	this plane
 		void extendConnections();
@@ -187,7 +189,7 @@ namespace LevelTypes {
 		//set bits in the draft state where applicable:
 		//- set bits where milestones are new
 		//- set bits where switches can be kicked
-		static void markStatusBitsInDraftState(vector<Plane*>& levelPlanes, RailByteMaskData::BitsLocation alwaysOnBit);
+		static void markStatusBitsInDraftState(vector<Plane*>& levelPlanes, RailByteMaskData::ByteMask alwaysOnBit);
 		//follow all possible paths to other planes, adding states at those planes to the current hint search queues
 		void pursueSolutionToPlanes(HintState::PotentialLevelState* currentState, int basePotentialLevelStateSteps);
 		//kick each switch in this plane, and then pursue solutions from those states
@@ -262,7 +264,6 @@ public:
 	static constexpr unsigned int baseRailTileOffsetByteMask = (1 << railTileOffsetByteMaskBitCount) - 1;
 	static constexpr unsigned int baseRailMovementDirectionByteMask =
 		((1 << railMovementDirectionByteMaskBitCount) - 1) << railTileOffsetByteMaskBitCount;
-	static constexpr unsigned int baseRailByteMask = (1 << railByteMaskBitCount) - 1;
 
 	static LevelTypes::RailByteMaskData::BitsLocation absentBitsLocation;
 private:
@@ -306,8 +307,8 @@ private:
 	int startTile;
 	vector<LevelTypes::Plane*> planes;
 	vector<LevelTypes::RailByteMaskData> allRailByteMaskData;
-	LevelTypes::RailByteMaskData::BitsLocation alwaysOffBit;
-	LevelTypes::RailByteMaskData::BitsLocation alwaysOnBit;
+	LevelTypes::RailByteMaskData::ByteMask alwaysOffBit;
+	LevelTypes::RailByteMaskData::ByteMask alwaysOnBit;
 	int railByteMaskBitsTracked;
 	LevelTypes::Plane* victoryPlane;
 	char minimumRailColor;
@@ -337,7 +338,7 @@ public:
 	//returns the index into the internal byte mask vector for use in getRailByteMaskData()
 	int trackNextRail(short railId, Rail* rail);
 	//register the given number of bits in the rail byte mask, and return the bits data
-	LevelTypes::RailByteMaskData::BitsLocation trackRailByteMaskBits(int nBits);
+	LevelTypes::RailByteMaskData::ByteMask trackRailByteMaskBits(int nBits);
 	//finish setup of this level:
 	//- add a dedicated victory plane
 	//- store multi-purpose bit locations
