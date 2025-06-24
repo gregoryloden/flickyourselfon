@@ -687,9 +687,6 @@ void LevelTypes::Plane::pursueSolutionToPlanes(HintState::PotentialLevelState* c
 
 				//otherwise, track it
 				Level::getNextPotentialLevelStatesForSteps(nextPotentialLevelState->steps)->push_back(nextPotentialLevelState);
-				#ifdef LOG_SEARCH_STEPS_STATS
-					Level::statesAtStepsFromPlane[indexInOwningLevel]++;
-				#endif
 			}
 		}
 		Level::checkPlaneCounts[steps] = 0;
@@ -783,9 +780,6 @@ void LevelTypes::Plane::pursueSolutionAfterSwitches(HintState::PotentialLevelSta
 
 		//track it, and then afterwards, travel to all planes possible
 		Level::getNextPotentialLevelStatesForSteps(stepsAfterSwitchKick)->push_back(nextPotentialLevelState);
-		#ifdef LOG_SEARCH_STEPS_STATS
-			Level::statesAtStepsFromPlane[indexInOwningLevel]++;
-		#endif
 		pursueSolutionToPlanes(nextPotentialLevelState, stepsAfterSwitchKick);
 	}
 }
@@ -1197,8 +1191,11 @@ Hint* Level::performHintSearch(HintState::PotentialLevelState* baseLevelState, P
 				Logger::debugLogger.logString(
 					to_string(currentPotentialLevelStateSteps) + " steps, "
 						+ to_string(currentNextPotentialLevelStates->size()) + " states:");
-				for (HintState::PotentialLevelState* potentialLevelState : *currentNextPotentialLevelStates)
+				for (HintState::PotentialLevelState* potentialLevelState : *currentNextPotentialLevelStates) {
 					statesAtStepsByPlane[potentialLevelState->plane->getIndexInOwningLevel()]++;
+					if (potentialLevelState->priorState != nullptr)
+						statesAtStepsFromPlane[potentialLevelState->priorState->plane->getIndexInOwningLevel()]++;
+				}
 				for (int planeI = 0; planeI < (int)planes.size(); planeI++) {
 					int statesAtSteps = statesAtStepsByPlane[planeI];
 					int statesFromPlane = statesAtStepsFromPlane[planeI];
