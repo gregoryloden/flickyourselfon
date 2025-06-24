@@ -992,7 +992,7 @@ int Level::trackNextRail(short railId, Rail* rail) {
 	return (int)allRailByteMaskData.size() - 1;
 }
 RailByteMaskData::ByteMask Level::trackRailByteMaskBits(int nBits) {
-	LevelTypes::RailByteMaskData::BitsLocation bits;
+	RailByteMaskData::BitsLocation bits;
 	bits.data.byteIndex = (char)(railByteMaskBitsTracked / 32);
 	bits.data.bitShift = (char)(railByteMaskBitsTracked % 32);
 	//make sure there are enough bits to fit the new mask
@@ -1154,7 +1154,7 @@ void Level::resetPlaneSearchHelpers() {
 	currentNextPotentialLevelStatesBySteps = &nextPotentialLevelStatesByStepsByMilestone[0];
 	currentNextPotentialLevelStates = getNextPotentialLevelStatesForSteps(currentPotentialLevelStateSteps);
 }
-HintState::PotentialLevelState* Level::loadBasePotentialLevelState(LevelTypes::Plane* currentPlane, GetRailState getRailState) {
+HintState::PotentialLevelState* Level::loadBasePotentialLevelState(Plane* currentPlane, GetRailState getRailState) {
 	//setup the draft state to use for the base potential level state
 	HintState::PotentialLevelState::currentRailByteMaskCount = getRailByteMaskCount();
 	for (int i = 0; i < HintState::PotentialLevelState::currentRailByteMaskCount; i++)
