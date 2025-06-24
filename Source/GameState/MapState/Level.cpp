@@ -729,11 +729,27 @@ void LevelTypes::Plane::pursueSolutionAfterSwitches(HintState::PotentialLevelSta
 				(*railByteMask & railByteMaskData->inverseRailByteMask)
 					| ((unsigned int)resultRailState << railBitsLocation.bitShift);
 		}
-		//also if all rails are now raised on a single-use switch, flip the canKickBit
-		if (allRailsAreRaised && connectionSwitch.isSingleUse)
-			HintState::PotentialLevelState::draftState.railByteMasks[
-					connectionSwitch.canKickBit.location.data.byteIndex] &=
-				~connectionSwitch.canKickBit.byteMask;
+		//also if all rails are now raised, see if we need to flip the canKickBit
+		if (allRailsAreRaised && connectionSwitch.canKickBit.location.id != Level::cachedAlwaysOnBitId) {
+			for (int i = (int)connectionSwitch.miniPuzzleOtherRails.size(); true; ) {
+				//we've looked at all rails and they're all raised, we can flip the canKickBit now
+				if (i == 0) {
+					HintState::PotentialLevelState::draftState.railByteMasks[
+							connectionSwitch.canKickBit.location.data.byteIndex] &=
+						~connectionSwitch.canKickBit.byteMask;
+					break;
+				}
+				i--;
+				RailByteMaskData::BitsLocation::Data railBitsLocation =
+					connectionSwitch.miniPuzzleOtherRails[i]->railBits.data;
+				//this rail is lowered, we can't flip canKickBit
+				if (((char)(HintState::PotentialLevelState::draftState.railByteMasks[railBitsLocation.byteIndex]
+								>> railBitsLocation.bitShift)
+							& (char)Level::baseRailTileOffsetByteMask)
+						!= 0)
+					break;
+			}
+		}
 		HintState::PotentialLevelState::draftState.setHash();
 		unsigned int bucket =
 			HintState::PotentialLevelState::draftState.railByteMasksHash % Level::PotentialLevelStatesByBucket::bucketSize;
