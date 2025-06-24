@@ -22,10 +22,12 @@ namespace LevelTypes {
 	public:
 		//Should only be allocated within an object, on the stack, or as a static object
 		union BitsLocation {
+			//Should only be allocated within an object, on the stack, or as a static object
 			struct Data {
 				char byteIndex;
 				char bitShift;
 			};
+
 			Data data;
 			unsigned short id;
 
