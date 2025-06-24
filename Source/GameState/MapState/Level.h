@@ -191,7 +191,7 @@ namespace LevelTypes {
 		//set bits in the draft state where applicable:
 		//- set bits where milestones are new
 		//- set bits where switches can be kicked
-		static void markStatusBitsInDraftState(vector<Plane*>& levelPlanes, RailByteMaskData::ByteMask alwaysOnBit);
+		static void markStatusBitsInDraftState(vector<Plane*>& levelPlanes);
 		//follow all possible paths to other planes, adding states at those planes to the current hint search queues
 		void pursueSolutionToPlanes(HintState::PotentialLevelState* currentState, int basePotentialLevelStateSteps);
 		//kick each switch in this plane, and then pursue solutions from those states
@@ -273,6 +273,7 @@ private:
 public:
 	static vector<PotentialLevelStatesByBucket> potentialLevelStatesByBucketByPlane;
 	static vector<HintState::PotentialLevelState*> replacedPotentialLevelStates;
+	static short cachedAlwaysOnBitId;
 	static LevelTypes::Plane*** allCheckPlanes;
 	static int* checkPlaneCounts;
 	static CheckedPlaneData* checkedPlaneDatas;
