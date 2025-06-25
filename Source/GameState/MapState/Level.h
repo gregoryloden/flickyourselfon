@@ -185,6 +185,8 @@ namespace LevelTypes {
 	private:
 		//find milestones that enable access to this plane, and record their planes in outDestinationPlanes
 		void findMilestonesToThisPlane(vector<Plane*>& levelPlanes, vector<Plane*>& outDestinationPlanes);
+		//find all connections that are required to get to this plane from the start plane
+		vector<Connection*> findRequiredConnectionsToThisPlane(vector<Plane*>& levelPlanes);
 		//search for paths to every remaining plane in levelPlanes, without going through any of the given excluded connections
 		//assumes there is at least one plane in inOutPathPlanes
 		//starts from the end of the path described by inOutPathPlanes, with inOutPathConnections detailing the connections

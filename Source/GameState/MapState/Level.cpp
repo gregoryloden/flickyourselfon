@@ -245,6 +245,57 @@ void LevelTypes::Plane::findMilestones(vector<Plane*>& levelPlanes, RailByteMask
 	victoryPlane->milestoneIsNewBit = alwaysOnBit;
 }
 void LevelTypes::Plane::findMilestonesToThisPlane(vector<Plane*>& levelPlanes, vector<Plane*>& outDestinationPlanes) {
+	vector<Connection*> requiredConnections = findRequiredConnectionsToThisPlane(levelPlanes);
+	//go through the list of required connections and find their switches
+	for (int i = 0; i < (int)requiredConnections.size(); i++) {
+		//skip plane-plane connections
+		Connection* railConnection = requiredConnections[i];
+		if (railConnection->railByteIndex == Level::absentRailByteIndex)
+			continue;
+		//if we get here, this connection is the only way to get to the next plane, and it is a rail connection
+		//look for a switch that only controls this rail
+		RailByteMaskData* matchingRailByteMaskData;
+		Plane* plane;
+		ConnectionSwitch* matchingConnectionSwitch =
+			railConnection->findMatchingSwitch(levelPlanes, &matchingRailByteMaskData, &plane);
+		//if we already found this switch as a milestone, we don't need to mark or track it again
+		if (matchingConnectionSwitch == nullptr || matchingConnectionSwitch->isMilestone)
+			continue;
+		//we found a matching switch for this rail
+		//if it's single-use, it's a milestone
+		if (matchingConnectionSwitch->isSingleUse) {
+			#ifdef LOG_FOUND_PLANE_CONCLUSIONS
+				stringstream newMilestoneMessage;
+				newMilestoneMessage << "level " << plane->owningLevel->getLevelN() << " milestone:";
+				MapState::logSwitchDescriptor(matchingConnectionSwitch->hint.data.switch0, &newMilestoneMessage);
+				Logger::debugLogger.logString(newMilestoneMessage.str());
+			#endif
+			matchingConnectionSwitch->isMilestone = true;
+			//if we haven't done so already, mark the plane as a milestone destination by having it track a bit for whether it's
+			//	been visited or not
+			if (plane->milestoneIsNewBit.location.data.byteIndex == Level::absentRailByteIndex)
+				plane->trackAsMilestoneDestination();
+		}
+		//if this switch is the only switch to control the rail (whether it's single-use or not), and the rail starts out
+		//	lowered, track the switch's plane as a destination plane, if it isn't already tracked
+		Rail* rail = matchingRailByteMaskData->rail;
+		if (rail->getGroups().size() == 1
+			&& rail->getInitialTileOffset() != 0
+			&& !VectorUtils::includes(outDestinationPlanes, plane))
+		{
+			#ifdef LOG_FOUND_PLANE_CONCLUSIONS
+				stringstream destinationPlaneMessage;
+				destinationPlaneMessage << "level " << plane->owningLevel->getLevelN()
+					<< " destination plane " << plane->indexInOwningLevel << " with switches:";
+				for (ConnectionSwitch& connectionSwitch : plane->connectionSwitches)
+					MapState::logSwitchDescriptor(connectionSwitch.hint.data.switch0, &destinationPlaneMessage);
+				Logger::debugLogger.logString(destinationPlaneMessage.str());
+			#endif
+			outDestinationPlanes.push_back(plane);
+		}
+	}
+}
+vector<LevelTypes::Plane::Connection*> LevelTypes::Plane::findRequiredConnectionsToThisPlane(vector<Plane*>& levelPlanes) {
 	//find any path to this plane
 	//assuming this plane can be found in levelPlanes, we know there must be a path to get here from the starting plane, because
 	//	that's how we found this plane in the first place
@@ -333,60 +384,15 @@ void LevelTypes::Plane::findMilestonesToThisPlane(vector<Plane*>& levelPlanes, v
 			requiredConnections[i] = true;
 	}
 
-	//now we have a list of which connections are required
-	//go through and find their switches
-	for (int i = 0; i < (int)pathConnections.size(); i++) {
-		//skip non-required connections
+	//delete any non-required connections
+	for (int i = (int)pathConnections.size() - 1; i >= 0; i--) {
 		if (!requiredConnections[i])
-			continue;
-		//skip plane-plane connections
-		Connection* railConnection = pathConnections[i];
-		if (railConnection->railByteIndex == Level::absentRailByteIndex)
-			continue;
-		//if we get here, this connection is the only way to get to the next plane, and it is a rail connection
-		//look for a switch that only controls this rail
-		RailByteMaskData* matchingRailByteMaskData;
-		Plane* plane;
-		ConnectionSwitch* matchingConnectionSwitch =
-			railConnection->findMatchingSwitch(levelPlanes, &matchingRailByteMaskData, &plane);
-		//if we already found this switch as a milestone, we don't need to mark or track it again
-		if (matchingConnectionSwitch == nullptr || matchingConnectionSwitch->isMilestone)
-			continue;
-		//we found a matching switch for this rail
-		//if it's single-use, it's a milestone
-		if (matchingConnectionSwitch->isSingleUse) {
-			#ifdef LOG_FOUND_PLANE_CONCLUSIONS
-				stringstream newMilestoneMessage;
-				newMilestoneMessage << "level " << plane->owningLevel->getLevelN() << " milestone:";
-				MapState::logSwitchDescriptor(matchingConnectionSwitch->hint.data.switch0, &newMilestoneMessage);
-				Logger::debugLogger.logString(newMilestoneMessage.str());
-			#endif
-			matchingConnectionSwitch->isMilestone = true;
-			//if we haven't done so already, mark the plane as a milestone destination by having it track a bit for whether it's
-			//	been visited or not
-			if (plane->milestoneIsNewBit.location.data.byteIndex == Level::absentRailByteIndex)
-				plane->trackAsMilestoneDestination();
-		}
-		//if this switch is the only switch to control the rail (whether it's single-use or not), and the rail starts out
-		//	lowered, track the switch's plane as a destination plane, if it isn't already tracked
-		Rail* rail = matchingRailByteMaskData->rail;
-		if (rail->getGroups().size() == 1
-			&& rail->getInitialTileOffset() != 0
-			&& !VectorUtils::includes(outDestinationPlanes, plane))
-		{
-			#ifdef LOG_FOUND_PLANE_CONCLUSIONS
-				stringstream destinationPlaneMessage;
-				destinationPlaneMessage << "level " << plane->owningLevel->getLevelN()
-					<< " destination plane " << plane->indexInOwningLevel << " with switches:";
-				for (ConnectionSwitch& connectionSwitch : plane->connectionSwitches)
-					MapState::logSwitchDescriptor(connectionSwitch.hint.data.switch0, &destinationPlaneMessage);
-				Logger::debugLogger.logString(destinationPlaneMessage.str());
-			#endif
-			outDestinationPlanes.push_back(plane);
-		}
+			pathConnections.erase(pathConnections.begin() + i);
 	}
+
 	delete[] seenPlanes;
 	delete[] requiredConnections;
+	return pathConnections;
 }
 void LevelTypes::Plane::pathWalk(
 	vector<Plane*>& levelPlanes,
