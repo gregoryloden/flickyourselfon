@@ -153,8 +153,10 @@ Hint* HintState::PotentialLevelState::getHint() {
 			stepsMessage << "[unknown]";
 	}
 	void HintState::PotentialLevelState::logRailByteMasks(stringstream& stepsMessage) {
+		stepsMessage << hex << uppercase;
 		for (int i = 0; i < currentRailByteMaskCount; i++)
-			stepsMessage << hex << uppercase << "  " << railByteMasks[i] << dec;
+			stepsMessage << "  " << railByteMasks[i];
+		stepsMessage << dec;
 	}
 #endif
 
