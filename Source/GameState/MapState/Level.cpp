@@ -399,7 +399,7 @@ void LevelTypes::Plane::pathWalk(
 {
 	int initialPathPlanesCount = (int)inOutPathPlanes.size();
 	Plane* nextPlane = inOutPathPlanes.back();
-	bool* seenPlanes = new bool[levelPlanes.size()] {};
+	vector<bool> seenPlanes (levelPlanes.size(), false);
 	for (Plane* plane : inOutPathPlanes)
 		seenPlanes[plane->indexInOwningLevel] = true;
 	//DFS to search for planes
@@ -438,7 +438,6 @@ void LevelTypes::Plane::pathWalk(
 			nextPlane = inOutPathPlanes.back();
 		}
 	}
-	delete[] seenPlanes;
 }
 void LevelTypes::Plane::trackAsMilestoneDestination() {
 	milestoneIsNewBit = owningLevel->trackRailByteMaskBits(1);
