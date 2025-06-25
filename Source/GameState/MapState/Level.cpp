@@ -82,7 +82,7 @@ void LevelTypes::Plane::ConnectionSwitch::setMiniPuzzle(
 	canKickBit = miniPuzzleBit;
 	for (RailByteMaskData* railByteMaskData : miniPuzzleRails) {
 		if (!VectorUtils::includes(affectedRailByteMaskData, railByteMaskData))
-			conclusionsData.miniPuzzle.otherRails.push_back(railByteMaskData);
+			conclusionsData.miniPuzzle.otherRailBits.push_back(railByteMaskData->railBits);
 	}
 }
 
@@ -609,12 +609,14 @@ void LevelTypes::Plane::removeEmptyPlaneConnections() {
 	}
 #endif
 void LevelTypes::Plane::markStatusBitsInDraftState(vector<Plane*>& levelPlanes) {
-	auto railIsLowered = [](RailByteMaskData* railByteMaskData) {
-		RailByteMaskData::BitsLocation::Data railBitsLocation = railByteMaskData->railBits.data;
-		return ((HintState::PotentialLevelState::draftState.railByteMasks[railBitsLocation.byteIndex]
-					>> railBitsLocation.bitShift)
+	auto railBitsIsLowered = [](RailByteMaskData::BitsLocation railBitsLocation) {
+		return ((HintState::PotentialLevelState::draftState.railByteMasks[railBitsLocation.data.byteIndex]
+					>> railBitsLocation.data.bitShift)
 				& Level::baseRailTileOffsetByteMask)
 			!= 0;
+	};
+	auto railIsLowered = [railBitsIsLowered](RailByteMaskData* railByteMaskData) {
+		return railBitsIsLowered(railByteMaskData->railBits);
 	};
 
 	//mark switches as can-kick if any of their connections are lowered
@@ -625,7 +627,7 @@ void LevelTypes::Plane::markStatusBitsInDraftState(vector<Plane*>& levelPlanes) 
 				continue;
 			if (VectorUtils::anyMatch(connectionSwitch.affectedRailByteMaskData, railIsLowered)
 					|| (connectionSwitch.conclusionsType == ConnectionSwitch::ConclusionsType::MiniPuzzle
-						&& VectorUtils::anyMatch(connectionSwitch.conclusionsData.miniPuzzle.otherRails, railIsLowered)))
+						&& VectorUtils::anyMatch(connectionSwitch.conclusionsData.miniPuzzle.otherRailBits, railBitsIsLowered)))
 				HintState::PotentialLevelState::draftState.railByteMasks[connectionSwitch.canKickBit.location.data.byteIndex] |=
 					connectionSwitch.canKickBit.byteMask;
 		}
@@ -757,7 +759,7 @@ void LevelTypes::Plane::pursueSolutionAfterSwitches(HintState::PotentialLevelSta
 		if (allRailsAreRaised && connectionSwitch.canKickBit.location.id != Level::cachedAlwaysOnBitId) {
 			switch (connectionSwitch.conclusionsType) {
 				case ConnectionSwitch::ConclusionsType::MiniPuzzle:
-					for (int i = (int)connectionSwitch.conclusionsData.miniPuzzle.otherRails.size(); true; ) {
+					for (int i = (int)connectionSwitch.conclusionsData.miniPuzzle.otherRailBits.size(); true; ) {
 						//we've looked at all rails and they're all raised, we can flip the canKickBit now
 						if (i == 0) {
 							HintState::PotentialLevelState::draftState.railByteMasks[
@@ -767,7 +769,7 @@ void LevelTypes::Plane::pursueSolutionAfterSwitches(HintState::PotentialLevelSta
 						}
 						i--;
 						RailByteMaskData::BitsLocation::Data railBitsLocation =
-							connectionSwitch.conclusionsData.miniPuzzle.otherRails[i]->railBits.data;
+							connectionSwitch.conclusionsData.miniPuzzle.otherRailBits[i].data;
 						//this rail is lowered, we can't flip canKickBit
 						if (((char)(HintState::PotentialLevelState::draftState.railByteMasks[railBitsLocation.byteIndex]
 										>> railBitsLocation.bitShift)

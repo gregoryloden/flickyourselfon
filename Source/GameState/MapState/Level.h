@@ -80,7 +80,7 @@ namespace LevelTypes {
 			union ConclusionsData {
 				//Should only be allocated within an object, on the stack, or as a static object
 				struct MiniPuzzle {
-					vector<RailByteMaskData*> otherRails;
+					vector<RailByteMaskData::BitsLocation> otherRailBits;
 				};
 
 				//make sure the default constructor doesn't construct any of the other members
