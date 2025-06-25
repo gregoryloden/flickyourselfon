@@ -317,7 +317,7 @@ vector<LevelTypes::Plane::Connection*> LevelTypes::Plane::findRequiredRailConnec
 		reroutePathConnections.push_back(pathConnections[i]);
 		Connection* nextOriginalPathConnection = reroutePathConnections.back();
 		auto excludeNextOriginalPathConnection = [nextOriginalPathConnection](Connection* connection) {
-			return connection != nextOriginalPathConnection;
+			return connection == nextOriginalPathConnection;
 		};
 		auto checkIfRerouteReturnsToOriginalPath = [&pathPlanes, &reroutePathPlanes, &seenPlanes, &connectionIsRequired, i]() {
 			Plane* plane = reroutePathPlanes.back();
