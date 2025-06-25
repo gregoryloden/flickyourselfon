@@ -308,10 +308,8 @@ vector<LevelTypes::Plane::Connection*> LevelTypes::Plane::findRequiredConnection
 	pathWalk(levelPlanes, excludeZeroConnections, pathPlanes, pathConnections, acceptPathToThisPlane);
 
 	//prep some data about our path
-	bool* requiredConnections = new bool[pathConnections.size()];
-	for (int i = 0; i < (int)pathConnections.size(); i++)
-		requiredConnections[i] = true;
-	bool* seenPlanes = new bool[levelPlanes.size()] {};
+	vector<bool> requiredConnections (pathConnections.size(), true);
+	vector<bool> seenPlanes (levelPlanes.size(), false);
 	for (Plane* plane : pathPlanes)
 		seenPlanes[plane->indexInOwningLevel] = true;
 
@@ -323,7 +321,7 @@ vector<LevelTypes::Plane::Connection*> LevelTypes::Plane::findRequiredConnection
 		reroutePathPlanes.push_back(pathPlanes[i]);
 		reroutePathConnections.push_back(pathConnections[i]);
 		vector<Connection*> excludeNextOriginalPathConnection ({ reroutePathConnections.back() });
-		auto checkIfRerouteReturnsToOriginalPath = [&pathPlanes, &reroutePathPlanes, seenPlanes, requiredConnections, i]() {
+		auto checkIfRerouteReturnsToOriginalPath = [&pathPlanes, &reroutePathPlanes, &seenPlanes, &requiredConnections, i]() {
 			Plane* plane = reroutePathPlanes.back();
 			if (!seenPlanes[plane->indexInOwningLevel])
 				return PathWalkCheckResult::KeepSearching;
@@ -390,8 +388,6 @@ vector<LevelTypes::Plane::Connection*> LevelTypes::Plane::findRequiredConnection
 			pathConnections.erase(pathConnections.begin() + i);
 	}
 
-	delete[] seenPlanes;
-	delete[] requiredConnections;
 	return pathConnections;
 }
 void LevelTypes::Plane::pathWalk(
