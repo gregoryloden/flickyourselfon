@@ -85,7 +85,7 @@ Rail::Rail(
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
 baseHeight(pBaseHeight)
 , color(pColor)
-, segments(new vector<Segment>())
+, segments(1, Segment(x, y, 0))
 , groups()
 , initialTileOffset(pInitialTileOffset)
 //give a default tile offset extending to the lowest height, we'll correct it as we add segments
@@ -98,13 +98,10 @@ baseHeight(pBaseHeight)
 , renderBottomTileY(MapState::getMapHeight())
 , renderHintBottomTileY(MapState::getMapHeight())
 , editorIsDeleted(false) {
-	segments->push_back(Segment(x, y, 0));
 	if (pColor == MapState::sineColor)
 		maxTileOffset = 4;
 }
-Rail::~Rail() {
-	delete segments;
-}
+Rail::~Rail() {}
 int Rail::endSegmentSpriteHorizontalIndex(int xExtents, int yExtents) {
 	return yExtents != 0
 		? Segment::spriteHorizontalIndexEndVerticalFirst + (1 - yExtents) / 2
@@ -146,13 +143,6 @@ void Rail::setSegmentColor(char railColor, float saturation, float alpha) {
 		blueColor * saturation + desaturatedAdd,
 		alpha);
 }
-void Rail::reverseSegments() {
-	vector<Segment>* newSegments = new vector<Segment>();
-	for (int i = (int)segments->size() - 1; i >= 0; i--)
-		newSegments->push_back((*segments)[i]);
-	delete segments;
-	segments = newSegments;
-}
 void Rail::addGroup(char group) {
 	if (group == 0)
 		return;
@@ -164,9 +154,9 @@ void Rail::addGroup(char group) {
 }
 void Rail::addSegment(int x, int y) {
 	//if we aren't adding at the end, reverse the list before continuing
-	Segment* end = &segments->back();
+	Segment* end = &segments.back();
 	if (abs(y - end->y) + abs(x - end->x) != 1)
-		reverseSegments();
+		reverse(segments.begin(), segments.end());
 
 	//find the tile where the shadow should go
 	for (char segmentMaxTileOffset = 0; true; segmentMaxTileOffset++) {
@@ -193,18 +183,18 @@ void Rail::addSegment(int x, int y) {
 			else if (tileHeight > railGroundHeight)
 				segmentMaxTileOffset = Segment::absentTileOffset;
 		}
-		segments->push_back(Segment(x, y, segmentMaxTileOffset));
+		segments.push_back(Segment(x, y, segmentMaxTileOffset));
 		break;
 	}
 
 	//our newest segment is an end segment, figure out which way it should face
-	Segment* lastEnd = &(*segments)[segments->size() - 2];
-	end = &segments->back();
+	Segment* lastEnd = &segments[segments.size() - 2];
+	end = &segments.back();
 	end->spriteHorizontalIndex = endSegmentSpriteHorizontalIndex(lastEnd->x - end->x, lastEnd->y - end->y);
 
 	//our last end segment is now a middle rail, find its sprite and account for its max height offset
-	if (segments->size() >= 3) {
-		Segment* secondLastEnd = &(*segments)[segments->size() - 3];
+	if (segments.size() >= 3) {
+		Segment* secondLastEnd = &segments[segments.size() - 3];
 		lastEnd->spriteHorizontalIndex =
 			middleSegmentSpriteHorizontalIndex(secondLastEnd->x, secondLastEnd->y, lastEnd->x, lastEnd->y, end->x, end->y);
 		if (lastEnd->maxTileOffset != Segment::absentTileOffset) {
@@ -222,7 +212,7 @@ void Rail::assignRenderBox() {
 	renderRightTileX = 0;
 	renderHintBottomTileY = 0;
 	char renderMaxTileOffset = maxTileOffset;
-	for (Segment& segment : *segments) {
+	for (Segment& segment : segments) {
 		//extend the render box
 		renderLeftTileX = MathUtils::min(segment.x, renderLeftTileX);
 		renderTopTileY = MathUtils::min(segment.y, renderTopTileY);
@@ -311,9 +301,9 @@ void Rail::renderShadow(int screenLeftWorldX, int screenTopWorldY) {
 	if (Editor::isActive && editorIsDeleted)
 		return;
 
-	int lastSegmentIndex = (int)segments->size() - 1;
+	int lastSegmentIndex = (int)segments.size() - 1;
 	for (int i = 1; i < lastSegmentIndex; i++) {
-		Segment& segment = (*segments)[i];
+		Segment& segment = segments[i];
 		//don't render a shadow if this segment hides behind a platform or can't be lowered
 		if (segment.maxTileOffset > 0)
 			(SpriteRegistry::rails->*SpriteSheet::renderSpriteAtScreenPosition)(
@@ -326,8 +316,8 @@ void Rail::renderShadow(int screenLeftWorldX, int screenTopWorldY) {
 void Rail::renderGroups(int screenLeftWorldX, int screenTopWorldY) {
 	if (Editor::isActive && editorIsDeleted)
 		return;
-	for (int i = 0; i < (int)segments->size(); i++) {
-		Segment& segment = (*segments)[i];
+	for (int i = 0; i < (int)segments.size(); i++) {
+		Segment& segment = segments[i];
 		GLint drawLeftX = (GLint)(segment.x * MapState::tileSize - screenLeftWorldX);
 		GLint drawTopY = (GLint)(segment.y * MapState::tileSize - screenTopWorldY);
 		MapState::renderGroupRect(groups[i % groups.size()], drawLeftX + 2, drawTopY + 2, drawLeftX + 4, drawTopY + 4);
@@ -335,7 +325,7 @@ void Rail::renderGroups(int screenLeftWorldX, int screenTopWorldY) {
 }
 void Rail::renderHint(int screenLeftWorldX, int screenTopWorldY, float alpha) {
 	SpriteSheet::setRectangleColor(1.0f, 1.0f, 1.0f, alpha);
-	for (Segment& segment : *segments) {
+	for (Segment& segment : segments) {
 		GLint leftX = (GLint)(segment.x * MapState::tileSize - screenLeftWorldX);
 		GLint topY = (GLint)(segment.y * MapState::tileSize - screenTopWorldY);
 		SpriteSheet::renderPreColoredRectangle(
@@ -362,12 +352,12 @@ bool Rail::editorRemoveSegment(int x, int y, char pColor, char group) {
 		return false;
 	}
 	//can only remove a segment from the start or end of the rail
-	Segment& start = segments->front();
-	Segment& end = segments->back();
+	Segment& start = segments.front();
+	Segment& end = segments.back();
 	if (y == start.y && x == start.x)
-		segments->erase(segments->begin());
+		segments.erase(segments.begin());
 	else if (y == end.y && x == end.x)
-		segments->pop_back();
+		segments.pop_back();
 	//if we clicked a middle segment, we can add or remove a group
 	else {
 		//if the group isn't 0, try to remove it, and if it's not present, add it
@@ -380,13 +370,13 @@ bool Rail::editorRemoveSegment(int x, int y, char pColor, char group) {
 	//reset the max tile offset, find the smallest offset among the non-end segments
 	if (color != MapState::sineColor) {
 		maxTileOffset = baseHeight / 2;
-		for (int i = 1; i < (int)segments->size() - 1; i++) {
-			Segment& segment = (*segments)[i];
+		for (int i = 1; i < (int)segments.size() - 1; i++) {
+			Segment& segment = segments[i];
 			if (segment.maxTileOffset != Segment::absentTileOffset)
 				maxTileOffset = MathUtils::min(segment.maxTileOffset, maxTileOffset);
 		}
 	}
-	if (segments->size() == 0)
+	if (segments.empty())
 		editorIsDeleted = true;
 	else
 		assignRenderBox();
@@ -401,9 +391,9 @@ bool Rail::editorAddSegment(int x, int y, char pColor, char group, char tileHeig
 		return false;
 	//make sure the new rail touches exactly one end segment
 	int checkMinIndex = 0;
-	int checkMaxIndex = segments->size();
-	Segment& start = segments->front();
-	Segment& end = segments->back();
+	int checkMaxIndex = segments.size();
+	Segment& start = segments.front();
+	Segment& end = segments.back();
 	if (abs(x - start.x) + abs(y - start.y) == 1)
 		checkMinIndex += 2;
 	else if (abs(x - end.x) + abs(y - end.y) == 1)
@@ -412,7 +402,7 @@ bool Rail::editorAddSegment(int x, int y, char pColor, char group, char tileHeig
 		return false;
 	//make sure the new rail doesn't go near any other segments other than the near end of the rail
 	for (int checkIndex = checkMinIndex; checkIndex < checkMaxIndex; checkIndex++) {
-		Segment& checkSegment = (*segments)[checkIndex];
+		Segment& checkSegment = segments[checkIndex];
 		if (abs(x - checkSegment.x) <= 1 && abs(y - checkSegment.y) <= 1)
 			return false;
 	}
@@ -422,38 +412,38 @@ bool Rail::editorAddSegment(int x, int y, char pColor, char group, char tileHeig
 	return true;
 }
 void Rail::editorAdjustMovementMagnitude(int x, int y, char magnitudeAdd) {
-	Segment& start = segments->front();
-	Segment& end = segments->back();
+	Segment& start = segments.front();
+	Segment& end = segments.back();
 	if ((x == start.x && y == start.y) || (x == end.x && y == end.y))
 		movementMagnitude = MathUtils::max(1, MathUtils::min(maxTileOffset, movementMagnitude + magnitudeAdd));
 	if (color == MapState::sineColor)
 		movementMagnitude = MathUtils::min(3, movementMagnitude);
 }
 void Rail::editorToggleMovementDirection(int x, int y) {
-	Segment& start = segments->front();
-	Segment& end = segments->back();
+	Segment& start = segments.front();
+	Segment& end = segments.back();
 	if (((x == start.x && y == start.y) || (x == end.x && y == end.y)) && color != MapState::sawColor)
 		initialMovementDirection = -initialMovementDirection;
 }
 void Rail::editorAdjustInitialTileOffset(int x, int y, char tileOffset) {
-	Segment& start = segments->front();
-	Segment& end = segments->back();
+	Segment& start = segments.front();
+	Segment& end = segments.back();
 	if ((x == start.x && y == start.y) || (x == end.x && y == end.y))
 		initialTileOffset = MathUtils::max(0, MathUtils::min(maxTileOffset, initialTileOffset + tileOffset));
 }
 char Rail::editorGetFloorSaveData(int x, int y) {
-	Segment& start = segments->front();
+	Segment& start = segments.front();
 	if (x == start.x && y == start.y)
 		return (color << MapState::floorRailSwitchColorDataShift)
 			| (initialTileOffset << MapState::floorRailInitialTileOffsetDataShift)
 			| MapState::floorRailHeadValue;
-	Segment& second = (*segments)[1];
+	Segment& second = segments[1];
 	if (x == second.x && y == second.y) {
 		char unshiftedData = ((initialMovementDirection + 1) / 2) | movementMagnitude << 1;
 		return unshiftedData << MapState::floorRailByte2DataShift | MapState::floorIsRailSwitchBitmask;
 	}
-	for (int i = 2; i < (int)segments->size() && i - 2 < (int)groups.size(); i++) {
-		Segment& segment = (*segments)[i];
+	for (int i = 2; i < (int)segments.size() && i - 2 < (int)groups.size(); i++) {
+		Segment& segment = segments[i];
 		if (segment.x == x && segment.y == y)
 			return groups[i - 2] << MapState::floorRailSwitchGroupDataShift | MapState::floorIsRailSwitchBitmask;
 	}

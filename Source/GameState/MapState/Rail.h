@@ -37,7 +37,7 @@ public:
 private:
 	char baseHeight;
 	char color;
-	vector<Segment>* segments;
+	vector<Segment> segments;
 	vector<char> groups;
 	char initialTileOffset;
 	char maxTileOffset;
@@ -69,8 +69,8 @@ public:
 	char getMaxTileOffset() { return maxTileOffset; }
 	char getInitialMovementDirection() { return initialMovementDirection; }
 	char getMovementMagnitude() { return movementMagnitude; }
-	int getSegmentCount() { return (int)(segments->size()); }
-	Segment* getSegment(int i) { return &(*segments)[i]; }
+	int getSegmentCount() { return (int)segments.size(); }
+	Segment* getSegment(int i) { return &segments[i]; }
 	//get the sprite index based on which direction the center of this end segment extends towards the rest of the rail
 	static int endSegmentSpriteHorizontalIndex(int xExtents, int yExtents);
 	//get the sprite index based on which other segments this segment extends towards
@@ -80,8 +80,6 @@ public:
 	//set the color mask for segments of the given rail color based on the given saturation (1 for raised rails at full
 	//	saturation, 0 for lowered rails at 0 saturation), with the given alpha
 	static void setSegmentColor(char railColor, float saturation, float alpha);
-	//reverse the order of the segments
-	void reverseSegments();
 	//add this group to the rail if it does not already contain it
 	void addGroup(char group);
 	//add a segment on this tile to the rail
