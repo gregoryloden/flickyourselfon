@@ -245,14 +245,9 @@ void LevelTypes::Plane::findMilestones(vector<Plane*>& levelPlanes, RailByteMask
 	victoryPlane->milestoneIsNewBit = alwaysOnBit;
 }
 void LevelTypes::Plane::findMilestonesToThisPlane(vector<Plane*>& levelPlanes, vector<Plane*>& outDestinationPlanes) {
-	vector<Connection*> requiredConnections = findRequiredConnectionsToThisPlane(levelPlanes);
-	//go through the list of required connections and find their switches
-	for (int i = 0; i < (int)requiredConnections.size(); i++) {
-		//skip plane-plane connections
-		Connection* railConnection = requiredConnections[i];
-		if (railConnection->railByteIndex == Level::absentRailByteIndex)
-			continue;
-		//if we get here, this connection is the only way to get to the next plane, and it is a rail connection
+	vector<Connection*> requiredRailConnections = findRequiredRailConnectionsToThisPlane(levelPlanes);
+	//go through the list of required rail connections and find their switches
+	for (Connection* railConnection : requiredRailConnections) {
 		//look for a switch that only controls this rail
 		RailByteMaskData* matchingRailByteMaskData;
 		Plane* plane;
@@ -295,7 +290,7 @@ void LevelTypes::Plane::findMilestonesToThisPlane(vector<Plane*>& levelPlanes, v
 		}
 	}
 }
-vector<LevelTypes::Plane::Connection*> LevelTypes::Plane::findRequiredConnectionsToThisPlane(vector<Plane*>& levelPlanes) {
+vector<LevelTypes::Plane::Connection*> LevelTypes::Plane::findRequiredRailConnectionsToThisPlane(vector<Plane*>& levelPlanes) {
 	//find any path to this plane
 	//assuming this plane can be found in levelPlanes, we know there must be a path to get here from the starting plane, because
 	//	that's how we found this plane in the first place
@@ -382,9 +377,9 @@ vector<LevelTypes::Plane::Connection*> LevelTypes::Plane::findRequiredConnection
 			connectionIsRequired[i] = true;
 	}
 
-	//delete any non-required connections
+	//remove all non-required connections and plane-plane connections
 	for (int i = (int)pathConnections.size() - 1; i >= 0; i--) {
-		if (!connectionIsRequired[i])
+		if (!connectionIsRequired[i] || pathConnections[i]->railByteIndex == Level::absentRailByteIndex)
 			pathConnections.erase(pathConnections.begin() + i);
 	}
 
