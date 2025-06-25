@@ -1098,11 +1098,10 @@ void Level::deleteHelpers() {
 	#endif
 }
 void Level::preAllocatePotentialLevelStates() {
-	auto getRailState =
-		[](short railId, Rail* rail, char* outMovementDirection, char* outTileOffset) {
-			*outMovementDirection = rail->getInitialMovementDirection();
-			*outTileOffset = rail->getInitialTileOffset();
-		};
+	auto getRailState = [](short railId, Rail* rail, char* outMovementDirection, char* outTileOffset) {
+		*outMovementDirection = rail->getInitialMovementDirection();
+		*outTileOffset = rail->getInitialTileOffset();
+	};
 	enableHintSearchTimeout = false;
 	generateHint(planes[0], getRailState, minimumRailColor);
 	enableHintSearchTimeout = true;
