@@ -739,7 +739,7 @@ vector<Editor::Button*> Editor::buttons;
 Editor::EvenPaintBoxRadiusButton* Editor::evenPaintBoxXRadiusButton = nullptr;
 Editor::EvenPaintBoxRadiusButton* Editor::evenPaintBoxYRadiusButton = nullptr;
 Editor::NoiseButton* Editor::noiseButton = nullptr;
-Editor::NoiseTileButton** Editor::noiseTileButtons = nullptr;
+vector<Editor::NoiseTileButton*> Editor::noiseTileButtons;
 Editor::RaiseLowerTileButton* Editor::lowerTileButton = nullptr;
 Editor::Button* Editor::selectedButton = nullptr;
 Editor::PaintBoxRadiusButton* Editor::selectedPaintBoxXRadiusButton = nullptr;
@@ -785,11 +785,12 @@ void Editor::loadButtons() {
 	buttons.push_back(newRaiseLowerTileButton(Zone::Right, 76, 58, true));
 	buttons.push_back(lowerTileButton = newRaiseLowerTileButton(Zone::Right, 92, 58, false));
 	buttons.push_back(noiseButton = newNoiseButton(Zone::Right, 108, 58));
-	noiseTileButtons = new NoiseTileButton*[noiseTileButtonMaxCount];
-	for (char i = 0; i < (char)noiseTileButtonMaxCount; i++)
-		buttons.push_back(
-			noiseTileButtons[i] = newNoiseTileButton(
-				Zone::Right, 81 + NoiseTileButton::buttonWidth * (i % 8), 72 + NoiseTileButton::buttonHeight * (i / 8)));
+	for (char i = 0; i < (char)noiseTileButtonMaxCount; i++) {
+		NoiseTileButton* button = newNoiseTileButton(
+			Zone::Right, 81 + NoiseTileButton::buttonWidth * (i % 8), 72 + NoiseTileButton::buttonHeight * (i / 8));
+		noiseTileButtons.push_back(button);
+		buttons.push_back(button);
+	}
 	for (char i = 0; i < (char)PaintBoxRadiusButton::maxRadius; i++) {
 		PaintBoxRadiusButton* button =
 			newPaintBoxRadiusButton(Zone::Right, 5 + PaintBoxRadiusButton::buttonSize * i, 81, i, true);
@@ -836,8 +837,6 @@ void Editor::unloadButtons() {
 	for (Button* button : buttons)
 		delete button;
 	buttons.clear();
-	delete[] noiseTileButtons;
-	noiseTileButtons = nullptr;
 	delete randomEngine;
 	randomEngine = nullptr;
 	delete noiseTilesDistribution;

@@ -448,7 +448,7 @@ private:
 	static EvenPaintBoxRadiusButton* evenPaintBoxXRadiusButton;
 	static EvenPaintBoxRadiusButton* evenPaintBoxYRadiusButton;
 	static NoiseButton* noiseButton;
-	static NoiseTileButton** noiseTileButtons;
+	static vector<NoiseTileButton*> noiseTileButtons;
 	static RaiseLowerTileButton* lowerTileButton;
 	static Button* selectedButton;
 	static PaintBoxRadiusButton* selectedPaintBoxXRadiusButton;
