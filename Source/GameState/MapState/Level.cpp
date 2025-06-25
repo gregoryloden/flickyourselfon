@@ -442,7 +442,7 @@ void LevelTypes::Plane::trackAsMilestoneDestination() {
 void LevelTypes::Plane::findMiniPuzzles(
 	vector<Plane*>& levelPlanes, RailByteMaskData::ByteMask alwaysOffBit, RailByteMaskData::ByteMask alwaysOnBit)
 {
-	Level* level = levelPlanes[0]->getOwningLevel();
+	Level* level = levelPlanes[0]->owningLevel;
 
 	//first things first, set canVisitBit for planes and canKickBit for switches
 	//single-use switches also get their own bits
