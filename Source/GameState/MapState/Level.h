@@ -187,7 +187,7 @@ namespace LevelTypes {
 		void findMilestonesToThisPlane(vector<Plane*>& levelPlanes, vector<Plane*>& outDestinationPlanes);
 		//find all rail connections that must be crossed in order to get to this plane from the start plane
 		vector<Connection*> findRequiredRailConnectionsToThisPlane(vector<Plane*>& levelPlanes);
-		//search for paths to every remaining plane in levelPlanes, without going through any of the given excluded connections
+		//search for paths to every remaining plane in levelPlanes, without going through any excluded connections
 		//assumes there is at least one plane in inOutPathPlanes
 		//starts from the end of the path described by inOutPathPlanes, with inOutPathConnections detailing the connections
 		//	going from the plane at the same index to the plane at the next index
@@ -197,7 +197,7 @@ namespace LevelTypes {
 		//	will contain their original contents if checkPath() never returned AcceptPath
 		void pathWalk(
 			vector<Plane*>& levelPlanes,
-			vector<Connection*>& excludedConnections,
+			function<bool(Connection* connection)> excludeConnection,
 			vector<Plane*>& inOutPathPlanes,
 			vector<Connection*>& inOutPathConnections,
 			function<PathWalkCheckResult()> checkPath);

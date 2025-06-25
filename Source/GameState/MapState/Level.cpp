@@ -296,7 +296,7 @@ vector<LevelTypes::Plane::Connection*> LevelTypes::Plane::findRequiredRailConnec
 	//	that's how we found this plane in the first place
 	vector<Plane*> pathPlanes ({ levelPlanes[0] });
 	vector<Connection*> pathConnections;
-	vector<Connection*> excludeZeroConnections;
+	auto excludeZeroConnections = [](Connection* connection) { return false; };
 	auto acceptPathToThisPlane = [&pathPlanes, this]() {
 		return pathPlanes.back() == this ? PathWalkCheckResult::AcceptPath : PathWalkCheckResult::KeepSearching;
 	};
@@ -315,7 +315,10 @@ vector<LevelTypes::Plane::Connection*> LevelTypes::Plane::findRequiredRailConnec
 	for (int i = 0; i < (int)pathConnections.size(); i++) {
 		reroutePathPlanes.push_back(pathPlanes[i]);
 		reroutePathConnections.push_back(pathConnections[i]);
-		vector<Connection*> excludeNextOriginalPathConnection ({ reroutePathConnections.back() });
+		Connection* nextOriginalPathConnection = reroutePathConnections.back();
+		auto excludeNextOriginalPathConnection = [nextOriginalPathConnection](Connection* connection) {
+			return connection != nextOriginalPathConnection;
+		};
 		auto checkIfRerouteReturnsToOriginalPath = [&pathPlanes, &reroutePathPlanes, &seenPlanes, &connectionIsRequired, i]() {
 			Plane* plane = reroutePathPlanes.back();
 			if (!seenPlanes[plane->indexInOwningLevel])
@@ -356,12 +359,12 @@ vector<LevelTypes::Plane::Connection*> LevelTypes::Plane::findRequiredRailConnec
 			continue;
 		//we found a single-use switch that is not required
 		//mark all of its rail connections as excluded, and see if we can find a path to this plane
-		vector<Connection*> excludeSwitchConnections;
+		vector<Connection*> excludedSwitchConnections;
 		for (Plane* plane : levelPlanes) {
 			for (Connection& connection : plane->connections) {
 				for (RailByteMaskData* railByteMaskData : matchingConnectionSwitch->affectedRailByteMaskData) {
 					if (connection.matchesRail(railByteMaskData)) {
-						excludeSwitchConnections.push_back(&connection);
+						excludedSwitchConnections.push_back(&connection);
 						break;
 					}
 				}
@@ -369,6 +372,9 @@ vector<LevelTypes::Plane::Connection*> LevelTypes::Plane::findRequiredRailConnec
 		}
 		reroutePathPlanes = { levelPlanes[0] };
 		reroutePathConnections.clear();
+		auto excludeSwitchConnections = [&excludedSwitchConnections](Connection* connection) {
+			return VectorUtils::includes(excludedSwitchConnections, connection);
+		};
 		pathWalk(
 			levelPlanes, excludeSwitchConnections, reroutePathPlanes, reroutePathConnections, acceptReroutePathToThisPlane);
 		//if there is not a path to this plane after excluding the switch's connections, then it is a milestone switch
@@ -387,7 +393,7 @@ vector<LevelTypes::Plane::Connection*> LevelTypes::Plane::findRequiredRailConnec
 }
 void LevelTypes::Plane::pathWalk(
 	vector<Plane*>& levelPlanes,
-	vector<Connection*>& excludedConnections,
+	function<bool(Connection* connection)> excludeConnection,
 	vector<Plane*>& inOutPathPlanes,
 	vector<Connection*>& inOutPathConnections,
 	function<PathWalkCheckResult()> checkPath)
@@ -409,7 +415,7 @@ void LevelTypes::Plane::pathWalk(
 			Plane* toPlane = connection.toPlane;
 			if (seenPlanes[toPlane->indexInOwningLevel]
 					|| connection.requiresSwitchesOnPlane(this)
-					|| VectorUtils::includes(excludedConnections, &connection))
+					|| excludeConnection(&connection))
 				continue;
 			//we found a valid connection, track it
 			nextPlane = toPlane;
