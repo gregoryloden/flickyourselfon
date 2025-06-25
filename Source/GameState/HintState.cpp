@@ -154,7 +154,7 @@ Hint* HintState::PotentialLevelState::getHint() {
 	}
 	void HintState::PotentialLevelState::logRailByteMasks(stringstream& stepsMessage) {
 		for (int i = 0; i < currentRailByteMaskCount; i++)
-			stepsMessage << std::hex << std::uppercase << "  " << railByteMasks[i] << std::dec;
+			stepsMessage << hex << uppercase << "  " << railByteMasks[i] << dec;
 	}
 #endif
 
