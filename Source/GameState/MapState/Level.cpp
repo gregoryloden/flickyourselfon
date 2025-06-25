@@ -74,6 +74,10 @@ LevelTypes::Plane::ConnectionSwitch::~ConnectionSwitch() {
 		case ConclusionsType::MiniPuzzle: conclusionsData.miniPuzzle.~MiniPuzzle(); break;
 	}
 }
+void LevelTypes::Plane::ConnectionSwitch::writeTileOffsetByteMasks(vector<unsigned int>& railByteMasks) {
+	for (RailByteMaskData* railByteMaskData : affectedRailByteMaskData)
+		railByteMasks[railByteMaskData->railBits.data.byteIndex] |= railByteMaskData->getRailTileOffsetByteMask();
+}
 void LevelTypes::Plane::ConnectionSwitch::setMiniPuzzle(
 	RailByteMaskData::ByteMask miniPuzzleBit, vector<RailByteMaskData*>& miniPuzzleRails)
 {
@@ -359,21 +363,13 @@ vector<LevelTypes::Plane::Connection*> LevelTypes::Plane::findRequiredRailConnec
 			continue;
 		//we found a single-use switch that is not required
 		//mark all of its rail connections as excluded, and see if we can find a path to this plane
-		vector<Connection*> excludedSwitchConnections;
-		for (Plane* plane : levelPlanes) {
-			for (Connection& connection : plane->connections) {
-				for (RailByteMaskData* railByteMaskData : matchingConnectionSwitch->affectedRailByteMaskData) {
-					if (connection.matchesRail(railByteMaskData)) {
-						excludedSwitchConnections.push_back(&connection);
-						break;
-					}
-				}
-			}
-		}
+		vector<unsigned int> excludedRailByteMasks ((size_t)owningLevel->getRailByteMaskCount(), 0);
+		matchingConnectionSwitch->writeTileOffsetByteMasks(excludedRailByteMasks);
 		reroutePathPlanes = { levelPlanes[0] };
 		reroutePathConnections.clear();
-		auto excludeSwitchConnections = [&excludedSwitchConnections](Connection* connection) {
-			return VectorUtils::includes(excludedSwitchConnections, connection);
+		auto excludeSwitchConnections = [&excludedRailByteMasks](Connection* connection) {
+			return connection->railByteIndex != Level::absentRailByteIndex
+				&& (excludedRailByteMasks[connection->railByteIndex] & connection->railTileOffsetByteMask) != 0;
 		};
 		pathWalk(
 			levelPlanes, excludeSwitchConnections, reroutePathPlanes, reroutePathConnections, acceptReroutePathToThisPlane);

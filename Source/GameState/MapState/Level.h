@@ -103,6 +103,8 @@ namespace LevelTypes {
 			ConnectionSwitch(const ConnectionSwitch& other);
 			virtual ~ConnectionSwitch();
 
+			//go through every affected rail and write its tile offset byte mask to the given byte masks
+			void writeTileOffsetByteMasks(vector<unsigned int>& railByteMasks);
 			//set this ConnectionSwitch to be part of a mini puzzle
 			void setMiniPuzzle(RailByteMaskData::ByteMask miniPuzzleBit, vector<RailByteMaskData*>& miniPuzzleRails);
 		};
