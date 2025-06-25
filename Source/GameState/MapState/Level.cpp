@@ -48,13 +48,43 @@ LevelTypes::Plane::Tile::~Tile() {}
 LevelTypes::Plane::ConnectionSwitch::ConnectionSwitch(Switch* switch0)
 : affectedRailByteMaskData()
 , hint(Hint::Type::Switch)
+, canKickBit(Level::absentBits)
 , isSingleUse(true)
 , isMilestone(false)
-, miniPuzzleOtherRails()
-, canKickBit(Level::absentBits) {
+, conclusionsType(ConclusionsType::None)
+, conclusionsData() {
 	hint.data.switch0 = switch0;
 }
-LevelTypes::Plane::ConnectionSwitch::~ConnectionSwitch() {}
+LevelTypes::Plane::ConnectionSwitch::ConnectionSwitch(const ConnectionSwitch& other)
+: affectedRailByteMaskData(other.affectedRailByteMaskData)
+, hint(other.hint)
+, canKickBit(other.canKickBit)
+, isSingleUse(other.isSingleUse)
+, isMilestone(other.isMilestone)
+, conclusionsType(other.conclusionsType)
+, conclusionsData() {
+	switch (conclusionsType) {
+		case ConclusionsType::MiniPuzzle:
+			new(&conclusionsData.miniPuzzle) ConclusionsData::MiniPuzzle(other.conclusionsData.miniPuzzle);
+			break;
+	}
+}
+LevelTypes::Plane::ConnectionSwitch::~ConnectionSwitch() {
+	switch (conclusionsType) {
+		case ConclusionsType::MiniPuzzle: conclusionsData.miniPuzzle.~MiniPuzzle(); break;
+	}
+}
+void LevelTypes::Plane::ConnectionSwitch::setMiniPuzzle(
+	RailByteMaskData::ByteMask miniPuzzleBit, vector<RailByteMaskData*>& miniPuzzleRails)
+{
+	new(&conclusionsData.miniPuzzle) ConclusionsData::MiniPuzzle();
+	conclusionsType = ConclusionsType::MiniPuzzle;
+	canKickBit = miniPuzzleBit;
+	for (RailByteMaskData* railByteMaskData : miniPuzzleRails) {
+		if (!VectorUtils::includes(affectedRailByteMaskData, railByteMaskData))
+			conclusionsData.miniPuzzle.otherRails.push_back(railByteMaskData);
+	}
+}
 
 //////////////////////////////// LevelTypes::Plane::Connection ////////////////////////////////
 LevelTypes::Plane::Connection::Connection(
@@ -505,12 +535,8 @@ void LevelTypes::Plane::findMiniPuzzles(
 		RailByteMaskData::ByteMask miniPuzzleBit = level->trackRailByteMaskBits(1);
 		for (int miniPuzzleSwitchI = 0; miniPuzzleSwitchI < (int)miniPuzzleSwitches.size(); miniPuzzleSwitchI++) {
 			ConnectionSwitch* miniPuzzleSwitch = miniPuzzleSwitches[miniPuzzleSwitchI];
+			miniPuzzleSwitch->setMiniPuzzle(miniPuzzleBit, miniPuzzleRails);
 			allMiniPuzzleSwitches.push_back(miniPuzzleSwitch);
-			miniPuzzleSwitch->canKickBit = miniPuzzleBit;
-			for (RailByteMaskData* railByteMaskData : miniPuzzleRails) {
-				if (!VectorUtils::includes(miniPuzzleSwitch->affectedRailByteMaskData, railByteMaskData))
-					miniPuzzleSwitch->miniPuzzleOtherRails.push_back(railByteMaskData);
-			}
 			//track canVisitBit for this plane if every switch in the plane is in this mini puzzle
 			//if this is true for a plane with more than one switch, it's fine to write it multiple times
 			Plane* owningPlane = miniPuzzleOwningPlanes[miniPuzzleSwitchI];
@@ -598,7 +624,8 @@ void LevelTypes::Plane::markStatusBitsInDraftState(vector<Plane*>& levelPlanes) 
 			if (connectionSwitch.canKickBit.location.id == Level::cachedAlwaysOnBitId)
 				continue;
 			if (VectorUtils::anyMatch(connectionSwitch.affectedRailByteMaskData, railIsLowered)
-					|| VectorUtils::anyMatch(connectionSwitch.miniPuzzleOtherRails, railIsLowered))
+					|| (connectionSwitch.conclusionsType == ConnectionSwitch::ConclusionsType::MiniPuzzle
+						&& VectorUtils::anyMatch(connectionSwitch.conclusionsData.miniPuzzle.otherRails, railIsLowered)))
 				HintState::PotentialLevelState::draftState.railByteMasks[connectionSwitch.canKickBit.location.data.byteIndex] |=
 					connectionSwitch.canKickBit.byteMask;
 		}
@@ -728,22 +755,33 @@ void LevelTypes::Plane::pursueSolutionAfterSwitches(HintState::PotentialLevelSta
 		}
 		//also if all rails are now raised, see if we need to flip the canKickBit
 		if (allRailsAreRaised && connectionSwitch.canKickBit.location.id != Level::cachedAlwaysOnBitId) {
-			for (int i = (int)connectionSwitch.miniPuzzleOtherRails.size(); true; ) {
-				//we've looked at all rails and they're all raised, we can flip the canKickBit now
-				if (i == 0) {
+			switch (connectionSwitch.conclusionsType) {
+				case ConnectionSwitch::ConclusionsType::MiniPuzzle:
+					for (int i = (int)connectionSwitch.conclusionsData.miniPuzzle.otherRails.size(); true; ) {
+						//we've looked at all rails and they're all raised, we can flip the canKickBit now
+						if (i == 0) {
+							HintState::PotentialLevelState::draftState.railByteMasks[
+									connectionSwitch.canKickBit.location.data.byteIndex] &=
+								~connectionSwitch.canKickBit.byteMask;
+							break;
+						}
+						i--;
+						RailByteMaskData::BitsLocation::Data railBitsLocation =
+							connectionSwitch.conclusionsData.miniPuzzle.otherRails[i]->railBits.data;
+						//this rail is lowered, we can't flip canKickBit
+						if (((char)(HintState::PotentialLevelState::draftState.railByteMasks[railBitsLocation.byteIndex]
+										>> railBitsLocation.bitShift)
+									& (char)Level::baseRailTileOffsetByteMask)
+								!= 0)
+							break;
+					}
+					break;
+				case ConnectionSwitch::ConclusionsType::None:
+				default:
+					//this is a single-use switch, we can definitely flip canKickBit
 					HintState::PotentialLevelState::draftState.railByteMasks[
 							connectionSwitch.canKickBit.location.data.byteIndex] &=
 						~connectionSwitch.canKickBit.byteMask;
-					break;
-				}
-				i--;
-				RailByteMaskData::BitsLocation::Data railBitsLocation =
-					connectionSwitch.miniPuzzleOtherRails[i]->railBits.data;
-				//this rail is lowered, we can't flip canKickBit
-				if (((char)(HintState::PotentialLevelState::draftState.railByteMasks[railBitsLocation.byteIndex]
-								>> railBitsLocation.bitShift)
-							& (char)Level::baseRailTileOffsetByteMask)
-						!= 0)
 					break;
 			}
 		}

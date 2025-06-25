@@ -72,15 +72,39 @@ namespace LevelTypes {
 		//Should only be allocated within an object, on the stack, or as a static object
 		class ConnectionSwitch {
 		public:
+			enum class ConclusionsType: unsigned char {
+				None,
+				MiniPuzzle,
+			};
+			//Should only be allocated within an object, on the stack, or as a static object
+			union ConclusionsData {
+				//Should only be allocated within an object, on the stack, or as a static object
+				struct MiniPuzzle {
+					vector<RailByteMaskData*> otherRails;
+				};
+
+				//make sure the default constructor doesn't construct any of the other members
+				bool none;
+				MiniPuzzle miniPuzzle;
+
+				ConclusionsData(): none() {}
+				~ConclusionsData() {}
+			};
+
 			vector<RailByteMaskData*> affectedRailByteMaskData;
 			Hint hint;
+			RailByteMaskData::ByteMask canKickBit;
 			bool isSingleUse;
 			bool isMilestone;
-			vector<RailByteMaskData*> miniPuzzleOtherRails;
-			RailByteMaskData::ByteMask canKickBit;
+			ConclusionsType conclusionsType;
+			ConclusionsData conclusionsData;
 
 			ConnectionSwitch(Switch* switch0);
+			ConnectionSwitch(const ConnectionSwitch& other);
 			virtual ~ConnectionSwitch();
+
+			//set this ConnectionSwitch to be part of a mini puzzle
+			void setMiniPuzzle(RailByteMaskData::ByteMask miniPuzzleBit, vector<RailByteMaskData*>& miniPuzzleRails);
 		};
 		//Should only be allocated within an object, on the stack, or as a static object
 		class Connection {
