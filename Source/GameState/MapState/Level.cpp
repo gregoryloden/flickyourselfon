@@ -308,7 +308,7 @@ vector<LevelTypes::Plane::Connection*> LevelTypes::Plane::findRequiredConnection
 	pathWalk(levelPlanes, excludeZeroConnections, pathPlanes, pathConnections, acceptPathToThisPlane);
 
 	//prep some data about our path
-	vector<bool> requiredConnections (pathConnections.size(), true);
+	vector<bool> connectionIsRequired (pathConnections.size(), true);
 	vector<bool> seenPlanes (levelPlanes.size(), false);
 	for (Plane* plane : pathPlanes)
 		seenPlanes[plane->indexInOwningLevel] = true;
@@ -321,7 +321,7 @@ vector<LevelTypes::Plane::Connection*> LevelTypes::Plane::findRequiredConnection
 		reroutePathPlanes.push_back(pathPlanes[i]);
 		reroutePathConnections.push_back(pathConnections[i]);
 		vector<Connection*> excludeNextOriginalPathConnection ({ reroutePathConnections.back() });
-		auto checkIfRerouteReturnsToOriginalPath = [&pathPlanes, &reroutePathPlanes, &seenPlanes, &requiredConnections, i]() {
+		auto checkIfRerouteReturnsToOriginalPath = [&pathPlanes, &reroutePathPlanes, &seenPlanes, &connectionIsRequired, i]() {
 			Plane* plane = reroutePathPlanes.back();
 			if (!seenPlanes[plane->indexInOwningLevel])
 				return PathWalkCheckResult::KeepSearching;
@@ -329,7 +329,7 @@ vector<LevelTypes::Plane::Connection*> LevelTypes::Plane::findRequiredConnection
 			//mark every connection between the reroute start and end planes as non-required
 			//then, go back one connection
 			for (int j = i; pathPlanes[j] != plane; j++)
-				requiredConnections[j] = false;
+				connectionIsRequired[j] = false;
 			return PathWalkCheckResult::RejectPlane;
 		};
 		pathWalk(
@@ -349,7 +349,7 @@ vector<LevelTypes::Plane::Connection*> LevelTypes::Plane::findRequiredConnection
 	};
 	for (int i = 0; i < (int)pathConnections.size(); i++) {
 		//skip required connections
-		if (requiredConnections[i])
+		if (connectionIsRequired[i])
 			continue;
 		//skip plane-plane connections
 		Connection* railConnection = pathConnections[i];
@@ -379,12 +379,12 @@ vector<LevelTypes::Plane::Connection*> LevelTypes::Plane::findRequiredConnection
 		//if there is not a path to this plane after excluding the switch's connections, then it is a milestone switch
 		//mark this rail as required, and we'll handle marking the switch as a milestone in the below loop
 		if ((int)reroutePathPlanes.size() == 1)
-			requiredConnections[i] = true;
+			connectionIsRequired[i] = true;
 	}
 
 	//delete any non-required connections
 	for (int i = (int)pathConnections.size() - 1; i >= 0; i--) {
-		if (!requiredConnections[i])
+		if (!connectionIsRequired[i])
 			pathConnections.erase(pathConnections.begin() + i);
 	}
 
