@@ -590,11 +590,10 @@ void LevelTypes::Plane::extendConnections() {
 	}
 }
 void LevelTypes::Plane::removeEmptyPlaneConnections() {
-	for (auto iter = connections.end(); iter != connections.begin(); ) {
-		Connection& connection = *(--iter);
-		if (connection.railByteIndex == Level::absentRailByteIndex && connection.toPlane->connectionSwitches.empty())
-			iter = connections.erase(iter);
-	}
+	auto isEmptyPlaneConnection = [](Connection& connection) {
+		return connection.railByteIndex == Level::absentRailByteIndex && connection.toPlane->connectionSwitches.empty();
+	};
+	VectorUtils::filterErase(connections, isEmptyPlaneConnection);
 }
 #ifdef DEBUG
 	//validate that the reset switch resets all the switches in this plane
