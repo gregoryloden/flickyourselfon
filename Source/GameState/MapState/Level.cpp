@@ -452,7 +452,7 @@ void LevelTypes::Plane::findMiniPuzzles(
 	for (Plane* plane : levelPlanes) {
 		//by default, we can always visit a plane with switches (or the victory plane), and never visit a plane without switches
 		plane->canVisitBit =
-			(plane->connectionSwitches.size() > 0 || plane == level->getVictoryPlane()) ? alwaysOnBit : alwaysOffBit;
+			(!plane->connectionSwitches.empty() || plane == level->getVictoryPlane()) ? alwaysOnBit : alwaysOffBit;
 		bool useMilestoneIsNewBitAsCanKickBit = true;
 		for (ConnectionSwitch& connectionSwitch : plane->connectionSwitches) {
 			if (connectionSwitch.isSingleUse) {
