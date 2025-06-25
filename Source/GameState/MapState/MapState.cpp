@@ -376,7 +376,7 @@ void MapState::buildLevels() {
 
 	//add reset switches to planes
 	#ifdef DEBUG
-		bool* levelHasResetSwitch = new bool[levels.size()] {};
+		vector<bool> levelHasResetSwitch (levels.size(), false);
 	#endif
 	for (ResetSwitch* resetSwitch : resetSwitches) {
 		//with the editor, it's possible to have reset switches which aren't on any plane accessible from the start, so skip
@@ -403,7 +403,6 @@ void MapState::buildLevels() {
 			if (!levelHasResetSwitch[level->getLevelN() - 1])
 				Logger::debugLogger.logString("ERROR: level " + to_string(level->getLevelN()) + ": missing reset switch");
 		}
-		delete[] levelHasResetSwitch;
 	#endif
 
 
