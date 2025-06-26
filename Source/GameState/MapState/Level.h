@@ -55,11 +55,6 @@ namespace LevelTypes {
 	};
 	class Plane onlyInDebug(: public ObjCounter) {
 	private:
-		enum class PathWalkCheckResult: unsigned char {
-			KeepSearching,
-			AcceptPath,
-			RejectPlane,
-		};
 		//Should only be allocated within an object, on the stack, or as a static object
 		class Tile {
 		public:
@@ -189,21 +184,23 @@ namespace LevelTypes {
 		void findMilestonesToThisPlane(vector<Plane*>& levelPlanes, vector<Plane*>& outDestinationPlanes);
 		//find all rail connections that must be crossed in order to get to this plane from the start plane
 		vector<Connection*> findRequiredRailConnectionsToThisPlane(vector<Plane*>& levelPlanes);
-		//search for paths to every remaining plane in levelPlanes, without going through any excluded connections or
-		//	connections that require access to switches on this plane
-		//assumes there is at least one plane in inOutPathPlanes, which is where the path will start
-		//starts from the end of the path described by inOutPathPlanes, with inOutPathConnections detailing the connections
-		//	going from the plane at the same index to the plane at the next index
-		//calls checkPath() at every step when a new plane has been reached, and stops if it returns AcceptPath
-		//discards the most recently found plane from the path and continues searching if checkPath() returns RejectPlane
-		//inOutPathPlanes and inOutPathConnections will contain the path as it existed when checkPath() returned AcceptPath, or
-		//	will contain their original contents if checkPath() never returned AcceptPath
-		void pathWalk(
+		//search for paths to every remaining plane in levelPlanes until we reach this plane, without going through any excluded
+		//	connections or connections that require access to switches on this plane
+		//assumes there is at least one plane in inOutPathPlanes, and starts the walk from the end of the path described by
+		//	inOutPathPlanes, with inOutPathConnections detailing the connections going from the plane at the same index to the
+		//	plane at the next index
+		//calls checkPath() at every step after reaching a new plane, and if checkPath() returns:
+		//- false: discards the most recently found plane from the path and continues searching
+		//- true: continues searching with the plane in the path, or returns if the path ends at this plane
+		//inOutPathPlanes and inOutPathConnections will contain:
+		//- the path as it existed when checkPath() returned true after reaching this plane, or
+		//- their original contents if checkPath() never returned true after reaching this plane
+		void pathWalkToThisPlane(
 			vector<Plane*>& levelPlanes,
 			function<bool(Connection* connection)> excludeConnection,
 			vector<Plane*>& inOutPathPlanes,
 			vector<Connection*>& inOutPathConnections,
-			function<PathWalkCheckResult()> checkPath);
+			function<bool()> checkPath);
 		//track this plane as a milestone destination plane
 		void trackAsMilestoneDestination();
 	public:

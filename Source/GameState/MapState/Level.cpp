@@ -301,10 +301,8 @@ vector<LevelTypes::Plane::Connection*> LevelTypes::Plane::findRequiredRailConnec
 	vector<Plane*> pathPlanes ({ levelPlanes[0] });
 	vector<Connection*> pathConnections;
 	auto excludeZeroConnections = [](Connection* connection) { return false; };
-	auto acceptPathToThisPlane = [&pathPlanes, this]() {
-		return pathPlanes.back() == this ? PathWalkCheckResult::AcceptPath : PathWalkCheckResult::KeepSearching;
-	};
-	pathWalk(levelPlanes, excludeZeroConnections, pathPlanes, pathConnections, acceptPathToThisPlane);
+	auto alwaysAcceptPath = []() { return true; };
+	pathWalkToThisPlane(levelPlanes, excludeZeroConnections, pathPlanes, pathConnections, alwaysAcceptPath);
 
 	//prep some data about our path
 	vector<bool> connectionIsRequired (pathConnections.size(), true);
@@ -326,15 +324,15 @@ vector<LevelTypes::Plane::Connection*> LevelTypes::Plane::findRequiredRailConnec
 		auto checkIfRerouteReturnsToOriginalPath = [&pathPlanes, &reroutePathPlanes, &seenPlanes, &connectionIsRequired, i]() {
 			Plane* plane = reroutePathPlanes.back();
 			if (!seenPlanes[plane->indexInOwningLevel])
-				return PathWalkCheckResult::KeepSearching;
+				return true;
 			//we found a plane on the original path through an alternate route
 			//mark every connection between the reroute start and end planes as non-required
 			//then, go back one connection
 			for (int j = i; pathPlanes[j] != plane; j++)
 				connectionIsRequired[j] = false;
-			return PathWalkCheckResult::RejectPlane;
+			return false;
 		};
-		pathWalk(
+		pathWalkToThisPlane(
 			levelPlanes,
 			excludeNextOriginalPathConnection,
 			reroutePathPlanes,
@@ -346,9 +344,6 @@ vector<LevelTypes::Plane::Connection*> LevelTypes::Plane::findRequiredRailConnec
 	//	to this plane still goes through a rail with that switch
 	//find every single-use switch on not-required rails, and one switch at a time, exclude all connections for that switch, and
 	//	see if we can still find a path to this plane; if not, then re-mark that rail as required
-	auto acceptReroutePathToThisPlane = [&reroutePathPlanes, this]() {
-		return reroutePathPlanes.back() == this ? PathWalkCheckResult::AcceptPath : PathWalkCheckResult::KeepSearching;
-	};
 	for (int i = 0; i < (int)pathConnections.size(); i++) {
 		//skip required connections
 		if (connectionIsRequired[i])
@@ -371,8 +366,7 @@ vector<LevelTypes::Plane::Connection*> LevelTypes::Plane::findRequiredRailConnec
 			return connection->railByteIndex != Level::absentRailByteIndex
 				&& (excludedRailByteMasks[connection->railByteIndex] & connection->railTileOffsetByteMask) != 0;
 		};
-		pathWalk(
-			levelPlanes, excludeSwitchConnections, reroutePathPlanes, reroutePathConnections, acceptReroutePathToThisPlane);
+		pathWalkToThisPlane(levelPlanes, excludeSwitchConnections, reroutePathPlanes, reroutePathConnections, alwaysAcceptPath);
 		//if there is not a path to this plane after excluding the switch's connections, then it is a milestone switch
 		//mark this rail as required, and we'll handle marking the switch as a milestone in the below loop
 		if ((int)reroutePathPlanes.size() == 1)
@@ -387,12 +381,12 @@ vector<LevelTypes::Plane::Connection*> LevelTypes::Plane::findRequiredRailConnec
 
 	return pathConnections;
 }
-void LevelTypes::Plane::pathWalk(
+void LevelTypes::Plane::pathWalkToThisPlane(
 	vector<Plane*>& levelPlanes,
 	function<bool(Connection* connection)> excludeConnection,
 	vector<Plane*>& inOutPathPlanes,
 	vector<Connection*>& inOutPathConnections,
-	function<PathWalkCheckResult()> checkPath)
+	function<bool()> checkPath)
 {
 	int initialPathPlanesCount = (int)inOutPathPlanes.size();
 	Plane* nextPlane = inOutPathPlanes.back();
@@ -402,7 +396,6 @@ void LevelTypes::Plane::pathWalk(
 	//DFS to search for planes
 	while (true) {
 		Plane* lastPlane = nextPlane;
-		PathWalkCheckResult pathWalkCheckResult = PathWalkCheckResult::RejectPlane;
 		for (Connection& connection : nextPlane->connections) {
 			//skip a connection if:
 			//- it goes to a plane that we've already seen; we only care about the planes in the path, not the connections
@@ -418,15 +411,16 @@ void LevelTypes::Plane::pathWalk(
 			inOutPathConnections.push_back(&connection);
 			inOutPathPlanes.push_back(nextPlane);
 			seenPlanes[toPlane->indexInOwningLevel] = true;
-			pathWalkCheckResult = checkPath();
 			break;
 		}
-		//we found a connection and checkPath() accepted it, we're done
-		if (pathWalkCheckResult == PathWalkCheckResult::AcceptPath)
-			break;
+		//we found a connection and checkPath() accepted it
+		if (nextPlane != lastPlane && checkPath()) {
+			//if it goes to this plane, we're done
+			if (nextPlane == this)
+				return;
 		//either we didn't find a valid connection from the last plane, or we did but checkPath() rejected it; go back to the
 		//	previous plane
-		else if (pathWalkCheckResult == PathWalkCheckResult::RejectPlane) {
+		} else {
 			//if there are have no more planes we can visit after returning to the starting plane, we're done
 			if ((int)inOutPathPlanes.size() == initialPathPlanesCount)
 				break;
