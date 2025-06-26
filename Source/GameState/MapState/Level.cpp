@@ -249,9 +249,12 @@ void LevelTypes::Plane::findMilestones(vector<Plane*>& levelPlanes, RailByteMask
 	victoryPlane->milestoneIsNewBit = alwaysOnBit;
 }
 void LevelTypes::Plane::findMilestonesToThisPlane(vector<Plane*>& levelPlanes, vector<Plane*>& outDestinationPlanes) {
-	vector<Connection*> requiredRailConnections = findRequiredRailConnectionsToThisPlane(levelPlanes);
-	//go through the list of required rail connections and find their switches
-	for (Connection* railConnection : requiredRailConnections) {
+	vector<Connection*> requiredConnections = findRequiredConnectionsToThisPlane(levelPlanes);
+	//go through the list of required connections, find rail connections, and find their switches
+	for (Connection* railConnection : requiredConnections) {
+		//skip plane-plane connections
+		if (railConnection->railByteIndex == Level::absentRailByteIndex)
+			continue;
 		//look for a switch that only controls this rail
 		RailByteMaskData* matchingRailByteMaskData;
 		Plane* plane;
@@ -294,7 +297,7 @@ void LevelTypes::Plane::findMilestonesToThisPlane(vector<Plane*>& levelPlanes, v
 		}
 	}
 }
-vector<LevelTypes::Plane::Connection*> LevelTypes::Plane::findRequiredRailConnectionsToThisPlane(vector<Plane*>& levelPlanes) {
+vector<LevelTypes::Plane::Connection*> LevelTypes::Plane::findRequiredConnectionsToThisPlane(vector<Plane*>& levelPlanes) {
 	//find any path to this plane
 	//assuming this plane can be found in levelPlanes, we know there must be a path to get here from the starting plane, because
 	//	that's how we found this plane in the first place
@@ -375,7 +378,7 @@ vector<LevelTypes::Plane::Connection*> LevelTypes::Plane::findRequiredRailConnec
 
 	//remove all non-required connections and plane-plane connections
 	for (int i = (int)pathConnections.size() - 1; i >= 0; i--) {
-		if (!connectionIsRequired[i] || pathConnections[i]->railByteIndex == Level::absentRailByteIndex)
+		if (!connectionIsRequired[i])
 			pathConnections.erase(pathConnections.begin() + i);
 	}
 
