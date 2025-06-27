@@ -790,9 +790,9 @@ void LevelTypes::Plane::removeEmptyPlaneConnections() {
 #endif
 void LevelTypes::Plane::markStatusBitsInDraftState(vector<Plane*>& levelPlanes) {
 	auto railBitsIsLowered = [](RailByteMaskData::BitsLocation railBitsLocation) {
-		return ((HintState::PotentialLevelState::draftState.railByteMasks[railBitsLocation.data.byteIndex]
+		return ((char)(HintState::PotentialLevelState::draftState.railByteMasks[railBitsLocation.data.byteIndex]
 					>> railBitsLocation.data.bitShift)
-				& Level::baseRailTileOffsetByteMask)
+				& (char)Level::baseRailTileOffsetByteMask)
 			!= 0;
 	};
 	auto railIsLowered = [railBitsIsLowered](RailByteMaskData* railByteMaskData) {
