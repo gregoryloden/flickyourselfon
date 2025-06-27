@@ -70,6 +70,7 @@ namespace LevelTypes {
 			enum class ConclusionsType: unsigned char {
 				None,
 				MiniPuzzle,
+				IsolatedArea,
 			};
 			//Should only be allocated within an object, on the stack, or as a static object
 			union ConclusionsData {
@@ -77,10 +78,18 @@ namespace LevelTypes {
 				struct MiniPuzzle {
 					vector<RailByteMaskData::BitsLocation> otherRailBits;
 				};
+				//Should only be allocated within an object, on the stack, or as a static object
+				struct IsolatedArea {
+					vector<RailByteMaskData::BitsLocation> otherGoalSwitchCanKickBits;
+					RailByteMaskData::ByteMask miniPuzzleBit;
+
+					IsolatedArea(RailByteMaskData::ByteMask pMiniPuzzleBit);
+				};
 
 				//make sure the default constructor doesn't construct any of the other members
 				bool none;
 				MiniPuzzle miniPuzzle;
+				IsolatedArea isolatedArea;
 
 				ConclusionsData(): none() {}
 				~ConclusionsData() {}
@@ -102,6 +111,8 @@ namespace LevelTypes {
 			void writeTileOffsetByteMasks(vector<unsigned int>& railByteMasks);
 			//set this ConnectionSwitch to be part of a mini puzzle
 			void setMiniPuzzle(RailByteMaskData::ByteMask miniPuzzleBit, vector<RailByteMaskData*>& miniPuzzleRails);
+			//set this ConnectionSwitch to be part of an isolated area
+			void setIsolatedArea(vector<ConnectionSwitch*>& isolatedAreaSwitches, RailByteMaskData::ByteMask miniPuzzleBit);
 		};
 		//Should only be allocated within an object, on the stack, or as a static object
 		class Connection {
@@ -207,6 +218,14 @@ namespace LevelTypes {
 		//find sets of 2 or more switches that have rails in common
 		static void findMiniPuzzles(
 			vector<Plane*>& levelPlanes, RailByteMaskData::ByteMask alwaysOffBit, RailByteMaskData::ByteMask alwaysOnBit);
+	private:
+		//see if this mini puzzle is part of an isolated area with single-use switches, and if so, track it in those switches
+		static void tryAddIsolatedArea(
+			vector<Plane*>& levelPlanes,
+			vector<ConnectionSwitch*>& miniPuzzleSwitches,
+			RailByteMaskData::ByteMask miniPuzzleBit,
+			RailByteMaskData::ByteMask alwaysOnBit);
+	public:
 		//copy and add plane-plane and rail connections from all planes that are reachable through plane-plane connections from
 		//	this plane
 		void extendConnections();
