@@ -728,6 +728,16 @@ void LevelTypes::Plane::tryAddIsolatedArea(
 	}
 
 	//we now have a complete isolated area
+	#ifdef LOG_FOUND_PLANE_CONCLUSIONS
+		stringstream isolatedAreaMessage;
+		isolatedAreaMessage << "level " << level->getLevelN() << " isolated area with planes";
+		for (Plane* plane : isolatedAreaPlanes)
+			isolatedAreaMessage << " " << plane->indexInOwningLevel;
+		isolatedAreaMessage << " and switches";
+		for (ConnectionSwitch* isolatedAreaSwitch : isolatedAreaSwitches)
+			MapState::logSwitchDescriptor(isolatedAreaSwitch->hint.data.switch0, &isolatedAreaMessage);
+		Logger::debugLogger.logString(isolatedAreaMessage.str());
+	#endif
 	//assign it to all the switches in the area
 	for (ConnectionSwitch* isolatedAreaSwitch : isolatedAreaSwitches)
 		isolatedAreaSwitch->setIsolatedArea(isolatedAreaSwitches, miniPuzzleBit);
