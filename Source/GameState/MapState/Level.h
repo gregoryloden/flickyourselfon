@@ -407,7 +407,7 @@ public:
 	void preAllocatePotentialLevelStates();
 	#ifdef DEBUG
 		//validate that the reset switch resets all the switches of this level, and no more
-		void validateResetSwitch(ResetSwitch* resetSwitch);
+		void validateResetSwitch();
 	#endif
 	//generate a hint based on the initial state in this level
 	Hint* generateHint(LevelTypes::Plane* currentPlane, GetRailState getRailState, char lastActivatedSwitchColor);

@@ -375,9 +375,6 @@ void MapState::buildLevels() {
 	}
 
 	//add reset switches to planes
-	#ifdef DEBUG
-		vector<bool> levelHasResetSwitch (levels.size(), false);
-	#endif
 	for (ResetSwitch* resetSwitch : resetSwitches) {
 		//with the editor, it's possible to have reset switches which aren't on any plane accessible from the start, so skip
 		//	those
@@ -387,22 +384,13 @@ void MapState::buildLevels() {
 			Logger::debugLogger.logString(
 				"ERROR: no plane found for reset switch @ "
 					+ to_string(resetSwitch->getCenterX()) + "," + to_string(resetSwitch->getBottomY()));
-		else {
-			Level* level = planes[planeId - 1]->getOwningLevel();
-			level->assignResetSwitch(resetSwitch);
-			#ifdef DEBUG
-				//validate reset switches in levels
-				level->validateResetSwitch(resetSwitch);
-				levelHasResetSwitch[level->getLevelN() - 1] = true;
-			#endif
-		}
+		else
+			planes[planeId - 1]->getOwningLevel()->assignResetSwitch(resetSwitch);
 	}
 	#ifdef DEBUG
-		//validate all levels have reset switches
-		for (Level* level : levels) {
-			if (!levelHasResetSwitch[level->getLevelN() - 1])
-				Logger::debugLogger.logString("ERROR: level " + to_string(level->getLevelN()) + ": missing reset switch");
-		}
+		//validate all reset switches in levels
+		for (Level* level : levels)
+			level->validateResetSwitch();
 	#endif
 
 

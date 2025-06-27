@@ -1330,7 +1330,13 @@ void Level::preAllocatePotentialLevelStates() {
 	#endif
 }
 #ifdef DEBUG
-	void Level::validateResetSwitch(ResetSwitch* resetSwitch) {
+	void Level::validateResetSwitch() {
+		ResetSwitch* resetSwitch = undoResetHint.data.resetSwitch;
+		if (resetSwitch == nullptr) {
+			Logger::debugLogger.logString("ERROR: level " + to_string(levelN) + ": missing reset switch");
+			return;
+		}
+
 		//validate that every switch in this level can be found on the reset switch
 		for (Plane* plane : planes)
 			plane->validateResetSwitch(resetSwitch);
