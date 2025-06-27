@@ -14,9 +14,9 @@
 
 //////////////////////////////// Hint ////////////////////////////////
 Hint Hint::none (Hint::Type::None);
+Hint Hint::genericSearchCanceledEarly (Hint::Type::SearchCanceledEarly);
 Hint Hint::genericUndoReset (Hint::Type::UndoReset);
 Hint Hint::calculatingHint (Hint::Type::CalculatingHint);
-Hint Hint::genericSearchCanceledEarly (Hint::Type::SearchCanceledEarly);
 Hint Hint::checkingSolution (Hint::Type::CheckingSolution);
 Hint::Hint(Type pType)
 : type(pType)
@@ -145,10 +145,10 @@ Hint* HintState::PotentialLevelState::getHint() {
 			stepsMessage << "none";
 		else if (hint->type == Hint::Type::UndoReset)
 			stepsMessage << "undo/reset";
-		else if (hint->type == Hint::Type::CalculatingHint)
-			stepsMessage << "calculatingHint";
 		else if (hint->type == Hint::Type::SearchCanceledEarly)
 			stepsMessage << "searchCanceledEarly";
+		else if (hint->type == Hint::Type::CalculatingHint)
+			stepsMessage << "calculatingHint";
 		else
 			stepsMessage << "[unknown]";
 	}
@@ -192,8 +192,8 @@ HintState* HintState::produce(objCounterParametersComma() Hint* pHint, int anima
 			pHint->data.switch0->getHintRenderBounds(
 				&h->renderLeftWorldX, &h->renderTopWorldY, &h->renderRightWorldX, &h->renderBottomWorldY);
 			break;
-		case Hint::Type::UndoReset:
 		case Hint::Type::SearchCanceledEarly:
+		case Hint::Type::UndoReset:
 			if (pHint->data.resetSwitch != nullptr)
 				pHint->data.resetSwitch->getHintRenderBounds(
 					&h->renderLeftWorldX, &h->renderTopWorldY, &h->renderRightWorldX, &h->renderBottomWorldY);
@@ -244,7 +244,7 @@ void HintState::renderAboveRails(int screenLeftWorldX, int screenTopWorldY, int 
 				offscreenArrowAlpha = 0.0f;
 				return;
 			}
-			//fall through, render as an UndoReset hint
+			//fall through, render the reset switch as an UndoReset hint
 		case Hint::Type::UndoReset: {
 			if (hint->data.resetSwitch == nullptr)
 				return;
@@ -259,10 +259,20 @@ void HintState::renderAboveRails(int screenLeftWorldX, int screenTopWorldY, int 
 	}
 }
 void HintState::renderText(int screenLeftWorldX, int screenTopWorldY, int ticksTime) {
-	renderTextAsHintType(screenLeftWorldX, screenTopWorldY, ticksTime, hint->type);
-}
-void HintState::renderTextAsHintType(int screenLeftWorldX, int screenTopWorldY, int ticksTime, Hint::Type hintType) {
-	switch (hintType) {
+	switch (hint->type) {
+		case Hint::Type::SearchCanceledEarly: {
+			//render normally if the "solution blocked" warning is set to "strict" or "off"
+			if (Config::solutionBlockedWarning.state != Config::solutionBlockedWarningLooseValue) {
+				float alpha = getFadeOutAlpha(ticksTime, false);
+				if (alpha == 0.0f)
+					return;
+				Text::setRenderColor(1.0f, 1.0f, 1.0f, alpha);
+				MapState::renderControlsTutorial("(unable to calculate hint)", {});
+				Text::setRenderColor(1.0f, 1.0f, 1.0f, 1.0f);
+				return;
+			}
+			//fall through, render as an undo/reset hint if the "solution blocked" warning is set to "loose"
+		}
 		case Hint::Type::UndoReset: {
 			if (Config::solutionBlockedWarning.state == Config::solutionBlockedWarningOffValue
 					&& (hint->data.resetSwitch == nullptr || ticksTime >= animationEndTicksTime))
@@ -276,21 +286,6 @@ void HintState::renderTextAsHintType(int screenLeftWorldX, int screenTopWorldY, 
 		case Hint::Type::CalculatingHint:
 			MapState::renderControlsTutorial("(calculating hint...)", {});
 			return;
-		case Hint::Type::SearchCanceledEarly: {
-			//render as an undo/reset hint if the "solution blocked" warning is set to "loose"
-			if (Config::solutionBlockedWarning.state == Config::solutionBlockedWarningLooseValue) {
-				renderTextAsHintType(screenLeftWorldX, screenTopWorldY, ticksTime, Hint::Type::UndoReset);
-				return;
-			}
-			//render normally otherwise
-			float alpha = getFadeOutAlpha(ticksTime, false);
-			if (alpha == 0.0f)
-				return;
-			Text::setRenderColor(1.0f, 1.0f, 1.0f, alpha);
-			MapState::renderControlsTutorial("(unable to calculate hint)", {});
-			Text::setRenderColor(1.0f, 1.0f, 1.0f, 1.0f);
-			return;
-		}
 		case Hint::Type::CheckingSolution:
 			if (Config::solutionBlockedWarning.state == Config::solutionBlockedWarningOffValue)
 				return;
