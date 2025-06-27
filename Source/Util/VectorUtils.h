@@ -20,4 +20,8 @@ public:
 	template <class Type, class Check> static void filterErase(vector<Type>& v, Check check) {
 		v.erase(remove_if(v.begin(), v.end(), check), v.end());
 	}
+	//replace every value with the given value
+	template <class Type> static void fill(vector<Type>& v, Type t) {
+		v.assign(v.size(), t);
+	}
 };

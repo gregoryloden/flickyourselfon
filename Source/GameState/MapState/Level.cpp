@@ -347,6 +347,7 @@ vector<LevelTypes::Plane::Connection*> LevelTypes::Plane::findRequiredConnection
 	//	to this plane still goes through a rail with that switch
 	//find every single-use switch on not-required rails, and one switch at a time, exclude all connections for that switch, and
 	//	see if we can still find a path to this plane; if not, then re-mark that rail as required
+	vector<unsigned int> switchRailByteMasks ((size_t)owningLevel->getRailByteMaskCount(), 0);
 	for (int i = 0; i < (int)pathConnections.size(); i++) {
 		//skip required connections
 		if (connectionIsRequired[i])
@@ -361,13 +362,13 @@ vector<LevelTypes::Plane::Connection*> LevelTypes::Plane::findRequiredConnection
 			continue;
 		//we found a single-use switch that is not required
 		//mark all of its rail connections as excluded, and see if we can find a path to this plane
-		vector<unsigned int> excludedRailByteMasks ((size_t)owningLevel->getRailByteMaskCount(), 0);
-		matchingConnectionSwitch->writeTileOffsetByteMasks(excludedRailByteMasks);
+		VectorUtils::fill(switchRailByteMasks, 0U);
+		matchingConnectionSwitch->writeTileOffsetByteMasks(switchRailByteMasks);
 		reroutePathPlanes = { levelPlanes[0] };
 		reroutePathConnections.clear();
-		auto excludeSwitchConnections = [&excludedRailByteMasks](Connection* connection) {
+		auto excludeSwitchConnections = [&switchRailByteMasks](Connection* connection) {
 			return connection->railByteIndex != Level::absentRailByteIndex
-				&& (excludedRailByteMasks[connection->railByteIndex] & connection->railTileOffsetByteMask) != 0;
+				&& (switchRailByteMasks[connection->railByteIndex] & connection->railTileOffsetByteMask) != 0;
 		};
 		pathWalkToThisPlane(levelPlanes, excludeSwitchConnections, reroutePathPlanes, reroutePathConnections, alwaysAcceptPath);
 		//if there is not a path to this plane after excluding the switch's connections, then it is a milestone switch
