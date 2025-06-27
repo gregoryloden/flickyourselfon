@@ -482,14 +482,17 @@ void LevelTypes::Plane::findMiniPuzzles(
 	//now find mini puzzles
 	//go through the rails from found switches, look at their groups, and collect new switches and their rails
 	vector<ConnectionSwitch*> allMiniPuzzleSwitches;
+	vector<ConnectionSwitch*> miniPuzzleSwitches;
+	vector<Plane*> miniPuzzleOwningPlanes;
+	vector<RailByteMaskData*> miniPuzzleRails;
 	for (int connectionSwitchI = 0; connectionSwitchI < (int)allConnectionSwitches.size(); connectionSwitchI++) {
 		ConnectionSwitch* connectionSwitch = allConnectionSwitches[connectionSwitchI];
 		//single-use rails will never be part of a mini puzzle, and skip any switches that are already part of a mini puzzle
 		if (connectionSwitch->isSingleUse || VectorUtils::includes(allMiniPuzzleSwitches, connectionSwitch))
 			continue;
-		vector<ConnectionSwitch*> miniPuzzleSwitches ({ connectionSwitch });
-		vector<Plane*> miniPuzzleOwningPlanes ({ allOwningPlanes[connectionSwitchI] });
-		vector<RailByteMaskData*> miniPuzzleRails (connectionSwitch->affectedRailByteMaskData);
+		miniPuzzleSwitches = { connectionSwitch };
+		miniPuzzleOwningPlanes = { allOwningPlanes[connectionSwitchI] };
+		miniPuzzleRails = connectionSwitch->affectedRailByteMaskData;
 		for (int miniPuzzleRailsI = 0; miniPuzzleRailsI < (int)miniPuzzleRails.size(); miniPuzzleRailsI++) {
 			RailByteMaskData* railByteMaskData = miniPuzzleRails[miniPuzzleRailsI];
 			//we know no other switch has this rail if there's only 1 group on it
