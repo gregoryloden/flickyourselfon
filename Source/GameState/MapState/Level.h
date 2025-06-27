@@ -200,13 +200,16 @@ namespace LevelTypes {
 		//assumes there is at least one plane in inOutPathPlanes, and starts the walk from the end of the path described by
 		//	inOutPathPlanes, with inOutPathConnections detailing the connections going from the plane at the same index to the
 		//	plane at the next index
+		//assumes this plane is not already in inOutPathPlanes
 		//calls checkPath() at every step after reaching a new plane, and if checkPath() returns:
 		//- false: discards the most recently found plane from the path and continues searching
 		//- true: continues searching with the plane in the path, or returns if the path ends at this plane
-		//inOutPathPlanes and inOutPathConnections will contain:
-		//- the path as it existed when checkPath() returned true after reaching this plane, or
-		//- their original contents if checkPath() never returned true after reaching this plane
-		void pathWalkToThisPlane(
+		//returns:
+		//- true if checkPath() returned true after we reached this plane
+		//	- inOutPathPlanes and inOutPathConnections will contain the path as it existed when that happened
+		//- false if we never reached this plane or checkPath() never returned true after doing so
+		//	- inOutPathPlanes and inOutPathConnections will contain their original contents
+		bool pathWalkToThisPlane(
 			vector<Plane*>& levelPlanes,
 			function<bool(Connection* connection)> excludeConnection,
 			vector<Plane*>& inOutPathPlanes,

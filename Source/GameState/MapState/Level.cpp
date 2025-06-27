@@ -392,10 +392,10 @@ vector<LevelTypes::Plane::Connection*> LevelTypes::Plane::findRequiredConnection
 			return connection->railByteIndex != Level::absentRailByteIndex
 				&& (switchRailByteMasks[connection->railByteIndex] & connection->railTileOffsetByteMask) != 0;
 		};
-		pathWalkToThisPlane(levelPlanes, excludeSwitchConnections, reroutePathPlanes, reroutePathConnections, alwaysAcceptPath);
 		//if there is not a path to this plane after excluding the switch's connections, then it is a milestone switch
 		//mark this rail as required, and we'll handle marking the switch as a milestone in the below loop
-		if ((int)reroutePathPlanes.size() == 1)
+		if (!pathWalkToThisPlane(
+				levelPlanes, excludeSwitchConnections, reroutePathPlanes, reroutePathConnections, alwaysAcceptPath))
 			connectionIsRequired[i] = true;
 	}
 
@@ -407,7 +407,7 @@ vector<LevelTypes::Plane::Connection*> LevelTypes::Plane::findRequiredConnection
 
 	return pathConnections;
 }
-void LevelTypes::Plane::pathWalkToThisPlane(
+bool LevelTypes::Plane::pathWalkToThisPlane(
 	vector<Plane*>& levelPlanes,
 	function<bool(Connection* connection)> excludeConnection,
 	vector<Plane*>& inOutPathPlanes,
@@ -443,13 +443,13 @@ void LevelTypes::Plane::pathWalkToThisPlane(
 		if (nextPlane != lastPlane && checkPath()) {
 			//if it goes to this plane, we're done
 			if (nextPlane == this)
-				return;
+				return true;
 		//either we didn't find a valid connection from the last plane, or we did but checkPath() rejected it; go back to the
 		//	previous plane
 		} else {
 			//if there are have no more planes we can visit after returning to the starting plane, we're done
 			if ((int)inOutPathPlanes.size() == initialPathPlanesCount)
-				break;
+				return false;
 			inOutPathPlanes.pop_back();
 			inOutPathConnections.pop_back();
 			nextPlane = inOutPathPlanes.back();
@@ -686,9 +686,8 @@ void LevelTypes::Plane::tryAddIsolatedArea(
 	for (Plane* plane : isolatedAreaPlanes) {
 		pathPlanes = { plane };
 		pathConnections.clear();
-		entryPlane->pathWalkToThisPlane(
-			levelPlanes, excludeMiniPuzzleConnections, pathPlanes, pathConnections, alwaysAcceptPath);
-		if ((int)pathPlanes.size() == 1)
+		if (!entryPlane->pathWalkToThisPlane(
+				levelPlanes, excludeMiniPuzzleConnections, pathPlanes, pathConnections, alwaysAcceptPath))
 			return;
 	}
 
