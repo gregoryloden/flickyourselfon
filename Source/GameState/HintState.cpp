@@ -244,6 +244,7 @@ void HintState::renderAboveRails(int screenLeftWorldX, int screenTopWorldY, int 
 				offscreenArrowAlpha = 0.0f;
 				return;
 			}
+			//fall through
 		case Hint::Type::UndoReset: {
 			if (hint->data.resetSwitch == nullptr)
 				return;
