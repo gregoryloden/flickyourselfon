@@ -185,6 +185,10 @@ namespace LevelTypes {
 		void addReverseRailConnection(Plane* toPlane, Rail* rail);
 		//add the data of a rail connection to the switch for the given index
 		void addRailConnectionToSwitch(RailByteMaskData* railByteMaskData, int connectionSwitchesIndex);
+		#ifdef DEBUG
+			//validate that the reset switch resets every switch in this plane
+			void validateResetSwitch(ResetSwitch* resetSwitch);
+		#endif
 		//start from the first plane, go through all connections and planes, find planes and rails that are required to get to
 		//	the end, see which of them have single-use switches, and mark those switch connections as milestones
 		//then recursively repeat the process, instead ending at the planes of those milestone switches
@@ -234,10 +238,6 @@ namespace LevelTypes {
 		void extendConnections();
 		//remove plane-plane connections to planes that don't have any switches
 		void removeEmptyPlaneConnections();
-		#ifdef DEBUG
-			//validate that the reset switch resets all the switches in this plane
-			void validateResetSwitch(ResetSwitch* resetSwitch);
-		#endif
 		//set bits in the draft state where applicable:
 		//- set bits where milestones are new
 		//- set bits where switches can be kicked

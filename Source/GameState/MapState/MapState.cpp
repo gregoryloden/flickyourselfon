@@ -374,26 +374,6 @@ void MapState::buildLevels() {
 			planeConnectionSwitches.push_back(PlaneConnectionSwitch(switch0, plane, plane->addConnectionSwitch(switch0)));
 	}
 
-	//add reset switches to planes
-	for (ResetSwitch* resetSwitch : resetSwitches) {
-		//with the editor, it's possible to have reset switches which aren't on any plane accessible from the start, so skip
-		//	those
-		//should never happen with an umodified floor file once the game is released
-		short planeId = getPlaneId(resetSwitch->getCenterX(), resetSwitch->getBottomY());
-		if (planeId == 0)
-			Logger::debugLogger.logString(
-				"ERROR: no plane found for reset switch @ "
-					+ to_string(resetSwitch->getCenterX()) + "," + to_string(resetSwitch->getBottomY()));
-		else
-			planes[planeId - 1]->getOwningLevel()->assignResetSwitch(resetSwitch);
-	}
-	#ifdef DEBUG
-		//validate all reset switches in levels
-		for (Level* level : levels)
-			level->validateResetSwitch();
-	#endif
-
-
 	//organize switch/plane combinations so that we can refer to them when adding rail connections
 	vector<PlaneConnectionSwitch*> planeConnectionSwitchesByGroupByColor[colorCount];
 	for (PlaneConnectionSwitch& planeConnectionSwitch : planeConnectionSwitches) {
@@ -444,6 +424,20 @@ void MapState::buildLevels() {
 			} else
 				fromPlane->addReverseRailConnection(toPlane, planeConnection.rail);
 		}
+	}
+
+	//add reset switches to planes
+	for (ResetSwitch* resetSwitch : resetSwitches) {
+		//with the editor, it's possible to have reset switches which aren't on any plane accessible from the start, so skip
+		//	those
+		//should never happen with an umodified floor file once the game is released
+		short planeId = getPlaneId(resetSwitch->getCenterX(), resetSwitch->getBottomY());
+		if (planeId == 0)
+			Logger::debugLogger.logString(
+				"ERROR: no plane found for reset switch @ "
+					+ to_string(resetSwitch->getCenterX()) + "," + to_string(resetSwitch->getBottomY()));
+		else
+			planes[planeId - 1]->getOwningLevel()->assignResetSwitch(resetSwitch);
 	}
 
 	//finish level setup

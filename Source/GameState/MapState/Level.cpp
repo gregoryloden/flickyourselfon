@@ -256,6 +256,19 @@ void LevelTypes::Plane::addRailConnectionToSwitch(RailByteMaskData* railByteMask
 	if (rail->getGroups().size() > 1 || tileOffset != 0)
 		connectionSwitch.isSingleUse = false;
 }
+#ifdef DEBUG
+	void LevelTypes::Plane::validateResetSwitch(ResetSwitch* resetSwitch) {
+		for (ConnectionSwitch& connectionSwitch : connectionSwitches) {
+			Switch* switch0 = connectionSwitch.hint.data.switch0;
+			if (!resetSwitch->hasGroupForColor(switch0->getGroup(), switch0->getColor())) {
+				stringstream message;
+				message << "ERROR: level " << to_string(owningLevel->getLevelN()) << ": reset switch missing";
+				MapState::logSwitchDescriptor(switch0, &message);
+				Logger::debugLogger.logString(message.str());
+			}
+		}
+	}
+#endif
 void LevelTypes::Plane::findMilestones(vector<Plane*>& levelPlanes, RailByteMaskData::ByteMask alwaysOnBit) {
 	//can't find milestones to the victory plane without a victory plane
 	Plane* victoryPlane = levelPlanes[0]->owningLevel->getVictoryPlane();
@@ -773,20 +786,6 @@ void LevelTypes::Plane::removeEmptyPlaneConnections() {
 	};
 	VectorUtils::filterErase(connections, isEmptyPlaneConnection);
 }
-#ifdef DEBUG
-	//validate that the reset switch resets all the switches in this plane
-	void LevelTypes::Plane::validateResetSwitch(ResetSwitch* resetSwitch) {
-		for (ConnectionSwitch& connectionSwitch : connectionSwitches) {
-			Switch* switch0 = connectionSwitch.hint.data.switch0;
-			if (!resetSwitch->hasGroupForColor(switch0->getGroup(), switch0->getColor())) {
-				stringstream message;
-				message << "ERROR: level " << to_string(owningLevel->getLevelN()) << ": reset switch missing";
-				MapState::logSwitchDescriptor(switch0, &message);
-				Logger::debugLogger.logString(message.str());
-			}
-		}
-	}
-#endif
 void LevelTypes::Plane::markStatusBitsInDraftState(vector<Plane*>& levelPlanes) {
 	auto railBitsIsLowered = [](RailByteMaskData::BitsLocation railBitsLocation) {
 		return ((char)(HintState::PotentialLevelState::draftState.railByteMasks[railBitsLocation.data.byteIndex]
@@ -1252,6 +1251,10 @@ RailByteMaskData::ByteMask Level::trackRailByteMaskBits(int nBits) {
 	return RailByteMaskData::ByteMask(RailByteMaskData::BitsLocation(byteIndex, bitShift), nBits);
 }
 void Level::finalizeBuilding() {
+	#ifdef DEBUG
+		validateResetSwitch();
+	#endif
+
 	alwaysOffBit = trackRailByteMaskBits(1);
 	alwaysOnBit = trackRailByteMaskBits(1);
 	#ifdef RENDER_PLANE_IDS
@@ -1337,11 +1340,11 @@ void Level::preAllocatePotentialLevelStates() {
 			return;
 		}
 
-		//validate that every switch in this level can be found on the reset switch
+		//validate that the reset switch resets every switch found in this level
 		for (Plane* plane : planes)
 			plane->validateResetSwitch(resetSwitch);
 
-		//validate that every rail affected by the reset switch belongs in this level
+		//validate that the reset switch doesn't reset any switch not found in this level
 		for (short resetSwitchRailId : *resetSwitch->getAffectedRailIds()) {
 			auto matchesResetSwitchRailId = [resetSwitchRailId](RailByteMaskData& railByteMaskData) {
 				return railByteMaskData.railId == resetSwitchRailId;
