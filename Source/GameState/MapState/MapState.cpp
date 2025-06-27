@@ -221,6 +221,11 @@ void MapState::buildMap() {
 				rail->addGroup((char)(pixels[railIndex] >> floorRailGroupShiftedShift) & floorRailSwitchGroupPostShiftBitmask);
 			}
 			rail->assignRenderBox();
+			#ifdef DEBUG
+				//should never happen with an umodified floor file once the game is released
+				if (rail->getInitialTileOffset() != 0 && rail->getGroups().empty())
+					Logger::debugLogger.logString("ERROR: rail " + to_string(newRailId) + " has no groups but starts lowered");
+			#endif
 		}
 	}
 
