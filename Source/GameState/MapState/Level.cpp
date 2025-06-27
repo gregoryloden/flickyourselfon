@@ -672,7 +672,7 @@ void LevelTypes::Plane::tryAddIsolatedArea(
 			isolatedAreaPlanes.push_back(levelPlanes[i]);
 	}
 
-	//make sure that we can get out of the isolated area without the mini puzzle rails
+	//also make sure that we can get out of each plane in the isolated area without going through the mini puzzle rails
 	Plane* entryPlane = nullptr;
 	for (Plane* plane : levelPlanes) {
 		for (Connection& connection : plane->connections) {
