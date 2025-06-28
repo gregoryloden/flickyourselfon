@@ -231,8 +231,6 @@ namespace LevelTypes {
 		static function<bool(Connection* connection)> excludeSingleConnection(Connection* excludedConnection);
 		//indicates that a path-walk should exclude connections that match the given rail byte masks
 		static function<bool(Connection* connection)> excludeRailByteMasks(vector<unsigned int>& railByteMasks);
-		//track this plane as a milestone destination plane
-		void trackAsMilestoneDestination();
 	public:
 		//find sets of 2 or more switches that have rails in common
 		static void findMiniPuzzles(

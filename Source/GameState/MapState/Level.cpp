@@ -311,7 +311,7 @@ void LevelTypes::Plane::findMilestonesToThisPlane(vector<Plane*>& levelPlanes, v
 			//if we haven't done so already, mark the plane as a milestone destination by having it track a bit for whether it's
 			//	been visited or not
 			if (plane->milestoneIsNewBit.location.data.byteIndex == Level::absentRailByteIndex)
-				plane->trackAsMilestoneDestination();
+				plane->milestoneIsNewBit = owningLevel->trackRailByteMaskBits(1);
 		}
 		//if this switch is the only switch to control the rail (whether it's single-use or not), and the rail starts out
 		//	lowered, track the switch's plane as a destination plane, if it isn't already tracked
@@ -475,9 +475,6 @@ function<bool(LevelTypes::Plane::Connection* connection)> LevelTypes::Plane::exc
 		return connection->railByteIndex != Level::absentRailByteIndex
 			&& (railByteMasks[connection->railByteIndex] & connection->railTileOffsetByteMask) != 0;
 	};
-}
-void LevelTypes::Plane::trackAsMilestoneDestination() {
-	milestoneIsNewBit = owningLevel->trackRailByteMaskBits(1);
 }
 void LevelTypes::Plane::findMiniPuzzles(
 	vector<Plane*>& levelPlanes, RailByteMaskData::ByteMask alwaysOffBit, RailByteMaskData::ByteMask alwaysOnBit)
