@@ -660,15 +660,18 @@ void LevelTypes::Plane::tryAddIsolatedArea(
 		}
 	}
 
-	//also make sure that we can get out of each plane in the isolated area without going through the mini puzzle rails
+	//also make sure that we can get out of each plane in the isolated area without going through any rails
 	vector<Plane*> pathPlanes;
 	vector<Connection*> pathConnections;
+	auto excludeRailConnections = [](Connection* connection) {
+		return connection->railByteIndex != Level::absentRailByteIndex;
+	};
 	auto alwaysAcceptPath = []() { return true; };
 	for (Plane* plane : isolatedAreaPlanes) {
 		pathPlanes = { plane };
 		pathConnections.clear();
 		if (!levelPlanes[0]->pathWalkToThisPlane(
-				levelPlanes, excludeMiniPuzzleConnections, pathPlanes, pathConnections, alwaysAcceptPath))
+				levelPlanes, excludeRailConnections, pathPlanes, pathConnections, alwaysAcceptPath))
 			return;
 	}
 
