@@ -270,19 +270,19 @@ void LevelTypes::Plane::addRailConnectionToSwitch(RailByteMaskData* railByteMask
 	}
 #endif
 void LevelTypes::Plane::optimizePlanes(
-	vector<Plane*>& levelPlanes, RailByteMaskData::ByteMask alwaysOffBit, RailByteMaskData::ByteMask alwaysOnBit)
+	Level* level, vector<Plane*>& levelPlanes, RailByteMaskData::ByteMask alwaysOffBit, RailByteMaskData::ByteMask alwaysOnBit)
 {
-	findMilestones(levelPlanes, alwaysOnBit);
+	findMilestones(level, levelPlanes, alwaysOnBit);
 	assignDefaultBits(levelPlanes, alwaysOffBit, alwaysOnBit);
-	findMiniPuzzles(levelPlanes, alwaysOnBit);
+	findMiniPuzzles(level, levelPlanes, alwaysOnBit);
 	for (Plane* plane : levelPlanes)
 		plane->extendConnections();
 	for (Plane* plane : levelPlanes)
 		plane->removeEmptyPlaneConnections();
 }
-void LevelTypes::Plane::findMilestones(vector<Plane*>& levelPlanes, RailByteMaskData::ByteMask alwaysOnBit) {
+void LevelTypes::Plane::findMilestones(Level* level, vector<Plane*>& levelPlanes, RailByteMaskData::ByteMask alwaysOnBit) {
 	//can't find milestones to the victory plane without a victory plane
-	Plane* victoryPlane = levelPlanes[0]->owningLevel->getVictoryPlane();
+	Plane* victoryPlane = level->getVictoryPlane();
 	if (victoryPlane == nullptr)
 		return;
 
@@ -314,7 +314,7 @@ void LevelTypes::Plane::findMilestonesToThisPlane(vector<Plane*>& levelPlanes, v
 		if (matchingConnectionSwitch->isSingleUse) {
 			#ifdef LOG_FOUND_PLANE_CONCLUSIONS
 				stringstream newMilestoneMessage;
-				newMilestoneMessage << "level " << plane->owningLevel->getLevelN() << " milestone:";
+				newMilestoneMessage << "level " << owningLevel->getLevelN() << " milestone:";
 				MapState::logSwitchDescriptor(matchingConnectionSwitch->hint.data.switch0, &newMilestoneMessage);
 				Logger::debugLogger.logString(newMilestoneMessage.str());
 			#endif
@@ -333,7 +333,7 @@ void LevelTypes::Plane::findMilestonesToThisPlane(vector<Plane*>& levelPlanes, v
 		{
 			#ifdef LOG_FOUND_PLANE_CONCLUSIONS
 				stringstream destinationPlaneMessage;
-				destinationPlaneMessage << "level " << plane->owningLevel->getLevelN()
+				destinationPlaneMessage << "level " << owningLevel->getLevelN()
 					<< " destination plane " << plane->indexInOwningLevel << " with switches:";
 				for (ConnectionSwitch& connectionSwitch : plane->connectionSwitches)
 					MapState::logSwitchDescriptor(connectionSwitch.hint.data.switch0, &destinationPlaneMessage);
@@ -518,9 +518,7 @@ void LevelTypes::Plane::assignDefaultBits(
 	if (victoryPlane != nullptr)
 		victoryPlane->canVisitBit = alwaysOnBit;
 }
-void LevelTypes::Plane::findMiniPuzzles(vector<Plane*>& levelPlanes, RailByteMaskData::ByteMask alwaysOnBit) {
-	Level* level = levelPlanes[0]->owningLevel;
-
+void LevelTypes::Plane::findMiniPuzzles(Level* level, vector<Plane*>& levelPlanes, RailByteMaskData::ByteMask alwaysOnBit) {
 	//find all the switches and their planes
 	//also mark every plane as always-can-visit and mark every switch as always-can-kick
 	vector<ConnectionSwitch*> allConnectionSwitches;
@@ -596,7 +594,7 @@ void LevelTypes::Plane::findMiniPuzzles(vector<Plane*>& levelPlanes, RailByteMas
 				owningPlane->canVisitBit = miniPuzzleBit;
 		}
 
-		tryAddIsolatedArea(levelPlanes, miniPuzzleSwitches, miniPuzzleBit, alwaysOnBit);
+		tryAddIsolatedArea(level, levelPlanes, miniPuzzleSwitches, miniPuzzleBit, alwaysOnBit);
 	}
 }
 //TODO: try to find isolated areas without relying on mini puzzles
@@ -614,13 +612,12 @@ void LevelTypes::Plane::findMiniPuzzles(vector<Plane*>& levelPlanes, RailByteMas
 //- if every rail/switch group is either fully reachable or fully not reachable, then this creates a proper "in" set and "out"
 //	set, and thus a mini puzzle and an isolated area
 void LevelTypes::Plane::tryAddIsolatedArea(
+	Level* level,
 	vector<Plane*>& levelPlanes,
 	vector<ConnectionSwitch*>& miniPuzzleSwitches,
 	RailByteMaskData::ByteMask miniPuzzleBit,
 	RailByteMaskData::ByteMask alwaysOnBit)
 {
-	Level* level = levelPlanes[0]->owningLevel;
-
 	//start by finding all planes that can't be reached without going through part of this mini puzzle
 	vector<unsigned int> miniPuzzleRailByteMasks ((size_t)level->getRailByteMaskCount(), 0);
 	for (ConnectionSwitch* miniPuzzleSwitch : miniPuzzleSwitches)
@@ -1298,7 +1295,7 @@ void Level::finalizeBuilding() {
 				planes[i]->setIndexInOwningLevel(i);
 		}
 	#endif
-	Plane::optimizePlanes(planes, alwaysOffBit, alwaysOnBit);
+	Plane::optimizePlanes(this, planes, alwaysOffBit, alwaysOnBit);
 }
 void Level::setupHintSearchHelpers(vector<Level*>& allLevels) {
 	for (Level* level : allLevels) {

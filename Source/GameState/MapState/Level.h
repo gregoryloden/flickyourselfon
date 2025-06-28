@@ -198,13 +198,16 @@ namespace LevelTypes {
 		//analyze the planes and store any conclusions we find on them, and optimize their connections for faster traversal
 		//	through the level in hint searches
 		static void optimizePlanes(
-			vector<Plane*>& levelPlanes, RailByteMaskData::ByteMask alwaysOffBit, RailByteMaskData::ByteMask alwaysOnBit);
+			Level* level,
+			vector<Plane*>& levelPlanes,
+			RailByteMaskData::ByteMask alwaysOffBit,
+			RailByteMaskData::ByteMask alwaysOnBit);
 	private:
 		//start from the first plane, go through all connections and planes, find planes and rails that are required to get to
 		//	the end, see which of them have single-use switches, and mark those switch connections as milestones
 		//then recursively repeat the process, instead ending at the planes of those milestone switches
 		//must be called before extending connections or removing connections to non-victory planes without switches
-		static void findMilestones(vector<Plane*>& levelPlanes, RailByteMaskData::ByteMask alwaysOnBit);
+		static void findMilestones(Level* level, vector<Plane*>& levelPlanes, RailByteMaskData::ByteMask alwaysOnBit);
 		//find milestones that enable access to this plane, and record their planes in outDestinationPlanes
 		void findMilestonesToThisPlane(vector<Plane*>& levelPlanes, vector<Plane*>& outDestinationPlanes);
 		//find all connections that must be crossed in order to get to this plane from the start plane
@@ -242,9 +245,10 @@ namespace LevelTypes {
 		//find sets of 2 or more switches that have rails in common
 		//must be called after setting default bits and before extending connections or removing connections to non-victory
 		//	planes without switches
-		static void findMiniPuzzles(vector<Plane*>& levelPlanes, RailByteMaskData::ByteMask alwaysOnBit);
+		static void findMiniPuzzles(Level* level, vector<Plane*>& levelPlanes, RailByteMaskData::ByteMask alwaysOnBit);
 		//see if this mini puzzle is part of an isolated area with single-use switches, and if so, track it in those switches
 		static void tryAddIsolatedArea(
+			Level* level,
 			vector<Plane*>& levelPlanes,
 			vector<ConnectionSwitch*>& miniPuzzleSwitches,
 			RailByteMaskData::ByteMask miniPuzzleBit,
