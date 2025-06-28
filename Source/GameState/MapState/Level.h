@@ -377,6 +377,7 @@ private:
 	int startTile;
 	vector<LevelTypes::Plane*> planes;
 	vector<LevelTypes::RailByteMaskData> allRailByteMaskData;
+	LevelTypes::RailByteMaskData::ByteMask alwaysRaisedRailByteMask;
 	LevelTypes::RailByteMaskData::ByteMask alwaysOffBit;
 	LevelTypes::RailByteMaskData::ByteMask alwaysOnBit;
 	int railByteMaskBitsTracked;

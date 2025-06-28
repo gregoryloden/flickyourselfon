@@ -1205,6 +1205,7 @@ levelN(pLevelN)
 , startTile(pStartTile)
 , planes()
 , allRailByteMaskData()
+, alwaysRaisedRailByteMask(absentBits)
 , alwaysOffBit(absentBits)
 , alwaysOnBit(absentBits)
 , railByteMaskBitsTracked(0)
@@ -1239,7 +1240,22 @@ void Level::assignResetSwitch(ResetSwitch* resetSwitch) {
 }
 int Level::trackNextRail(short railId, Rail* rail) {
 	minimumRailColor = MathUtils::max(rail->getColor(), minimumRailColor);
-	allRailByteMaskData.push_back(RailByteMaskData(rail, railId, trackRailByteMaskBits(railByteMaskBitCount)));
+	RailByteMaskData::ByteMask railByteMask (absentBits);
+	//standard rails with groups
+	if (!rail->getGroups().empty())
+		railByteMask = trackRailByteMaskBits(railByteMaskBitCount);
+	//rails with no groups can share the same always-off bits
+	else if (rail->getInitialTileOffset() == 0) {
+		if (alwaysRaisedRailByteMask.location.id == absentBits.location.id)
+			alwaysRaisedRailByteMask = trackRailByteMaskBits(railByteMaskBitCount);
+		railByteMask = alwaysRaisedRailByteMask;
+	//these rails have no groups, but they start lowered
+	//should never happen with an umodified floor file once the game is released
+	} else {
+		railByteMask = trackRailByteMaskBits(railByteMaskBitCount);
+		Logger::debugLogger.logString("ERROR: rail " + to_string(railId) + " has no groups but starts lowered");
+	}
+	allRailByteMaskData.push_back(RailByteMaskData(rail, railId, railByteMask));
 	return (int)allRailByteMaskData.size() - 1;
 }
 RailByteMaskData::ByteMask Level::trackRailByteMaskBits(int nBits) {
@@ -1259,7 +1275,9 @@ void Level::finalizeBuilding() {
 		validateResetSwitch();
 	#endif
 
-	alwaysOffBit = trackRailByteMaskBits(1);
+	alwaysOffBit = alwaysRaisedRailByteMask.location.id != absentBits.location.id
+		? RailByteMaskData::ByteMask(alwaysRaisedRailByteMask.location, 1)
+		: trackRailByteMaskBits(1);
 	alwaysOnBit = trackRailByteMaskBits(1);
 	#ifdef RENDER_PLANE_IDS
 		if (planes.size() >= 4) {
