@@ -269,6 +269,17 @@ void LevelTypes::Plane::addRailConnectionToSwitch(RailByteMaskData* railByteMask
 		}
 	}
 #endif
+void LevelTypes::Plane::optimizePlanes(
+	vector<Plane*>& levelPlanes, RailByteMaskData::ByteMask alwaysOffBit, RailByteMaskData::ByteMask alwaysOnBit)
+{
+	findMilestones(levelPlanes, alwaysOnBit);
+	assignDefaultBits(levelPlanes, alwaysOffBit, alwaysOnBit);
+	findMiniPuzzles(levelPlanes, alwaysOnBit);
+	for (Plane* plane : levelPlanes)
+		plane->extendConnections();
+	for (Plane* plane : levelPlanes)
+		plane->removeEmptyPlaneConnections();
+}
 void LevelTypes::Plane::findMilestones(vector<Plane*>& levelPlanes, RailByteMaskData::ByteMask alwaysOnBit) {
 	//can't find milestones to the victory plane without a victory plane
 	Plane* victoryPlane = levelPlanes[0]->owningLevel->getVictoryPlane();
@@ -1286,13 +1297,7 @@ void Level::finalizeBuilding() {
 				planes[i]->setIndexInOwningLevel(i);
 		}
 	#endif
-	Plane::findMilestones(planes, alwaysOnBit);
-	Plane::assignDefaultBits(planes, alwaysOffBit, alwaysOnBit);
-	Plane::findMiniPuzzles(planes, alwaysOnBit);
-	for (Plane* plane : planes)
-		plane->extendConnections();
-	for (Plane* plane : planes)
-		plane->removeEmptyPlaneConnections();
+	Plane::optimizePlanes(planes, alwaysOffBit, alwaysOnBit);
 }
 void Level::setupHintSearchHelpers(vector<Level*>& allLevels) {
 	for (Level* level : allLevels) {

@@ -195,12 +195,16 @@ namespace LevelTypes {
 			//validate that the reset switch resets every switch in this plane
 			void validateResetSwitch(ResetSwitch* resetSwitch);
 		#endif
+		//analyze the planes and store any conclusions we find on them, and optimize their connections for faster traversal
+		//	through the level in hint searches
+		static void optimizePlanes(
+			vector<Plane*>& levelPlanes, RailByteMaskData::ByteMask alwaysOffBit, RailByteMaskData::ByteMask alwaysOnBit);
+	private:
 		//start from the first plane, go through all connections and planes, find planes and rails that are required to get to
 		//	the end, see which of them have single-use switches, and mark those switch connections as milestones
 		//then recursively repeat the process, instead ending at the planes of those milestone switches
 		//must be called before extending connections or removing connections to non-victory planes without switches
 		static void findMilestones(vector<Plane*>& levelPlanes, RailByteMaskData::ByteMask alwaysOnBit);
-	private:
 		//find milestones that enable access to this plane, and record their planes in outDestinationPlanes
 		void findMilestonesToThisPlane(vector<Plane*>& levelPlanes, vector<Plane*>& outDestinationPlanes);
 		//find all connections that must be crossed in order to get to this plane from the start plane
@@ -231,7 +235,6 @@ namespace LevelTypes {
 		static function<bool(Connection* connection)> excludeSingleConnection(Connection* excludedConnection);
 		//indicates that a path-walk should exclude connections that match the given rail byte masks
 		static function<bool(Connection* connection)> excludeRailByteMasks(vector<unsigned int>& railByteMasks);
-	public:
 		//set always-on, always-off, or dedicated bits where applicable on planes and switches
 		//must be called after finding milestones
 		static void assignDefaultBits(
@@ -240,7 +243,6 @@ namespace LevelTypes {
 		//must be called after setting default bits and before extending connections or removing connections to non-victory
 		//	planes without switches
 		static void findMiniPuzzles(vector<Plane*>& levelPlanes, RailByteMaskData::ByteMask alwaysOnBit);
-	private:
 		//see if this mini puzzle is part of an isolated area with single-use switches, and if so, track it in those switches
 		static void tryAddIsolatedArea(
 			vector<Plane*>& levelPlanes,
@@ -254,12 +256,12 @@ namespace LevelTypes {
 			function<bool(Connection* connection)> excludeConnection,
 			vector<Plane*>* outReachablePlanes,
 			vector<Plane*>* outUnreachablePlanes);
-	public:
 		//copy and add plane-plane and rail connections from all planes that are reachable through plane-plane connections from
 		//	this plane
 		void extendConnections();
 		//remove plane-plane connections to planes that don't have any switches
 		void removeEmptyPlaneConnections();
+	public:
 		//set bits in the draft state where applicable:
 		//- set bits where milestones are new
 		//- set bits where switches can be kicked
