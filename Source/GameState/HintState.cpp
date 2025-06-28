@@ -61,7 +61,7 @@ pooledReferenceCounterDefineRelease(HintState::PotentialLevelState)
 void HintState::PotentialLevelState::setHash() {
 	unsigned int val = 0;
 	for (int i = currentRailByteMaskCount - 1; i >= 0; i--)
-		val = val ^ railByteMasks[i];
+		val ^= railByteMasks[i];
 	railByteMasksHash = val;
 }
 HintState::PotentialLevelState* HintState::PotentialLevelState::addNewState(
