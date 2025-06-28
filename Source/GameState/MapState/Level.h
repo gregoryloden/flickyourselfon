@@ -240,8 +240,7 @@ namespace LevelTypes {
 		static function<bool(Connection* connection)> excludeRailByteMasks(vector<unsigned int>& railByteMasks);
 		//set always-on, always-off, or dedicated bits where applicable on planes and switches
 		//must be called after finding milestones
-		static void assignDefaultBits(
-			vector<Plane*>& levelPlanes, RailByteMaskData::ByteMask alwaysOffBit, RailByteMaskData::ByteMask alwaysOnBit);
+		void assignDefaultBits(RailByteMaskData::ByteMask alwaysOffBit, RailByteMaskData::ByteMask alwaysOnBit);
 		//find sets of 2 or more switches that have rails in common
 		//must be called after setting default bits and before extending connections or removing connections to non-victory
 		//	planes without switches

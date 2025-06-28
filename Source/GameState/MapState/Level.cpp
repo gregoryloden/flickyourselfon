@@ -278,7 +278,10 @@ void LevelTypes::Plane::optimizePlanes(
 		return;
 
 	findMilestones(victoryPlane, levelPlanes, alwaysOnBit);
-	assignDefaultBits(levelPlanes, alwaysOffBit, alwaysOnBit);
+	for (Plane* plane : levelPlanes)
+		plane->assignDefaultBits(alwaysOffBit, alwaysOnBit);
+	//we can always visit the victory plane
+	victoryPlane->canVisitBit = alwaysOnBit;
 	findMiniPuzzles(level, levelPlanes, alwaysOnBit);
 	for (Plane* plane : levelPlanes)
 		plane->extendConnections();
@@ -487,36 +490,27 @@ function<bool(LevelTypes::Plane::Connection* connection)> LevelTypes::Plane::exc
 			&& (railByteMasks[connection->railByteIndex] & connection->railTileOffsetByteMask) != 0;
 	};
 }
-void LevelTypes::Plane::assignDefaultBits(
-	vector<Plane*>& levelPlanes, RailByteMaskData::ByteMask alwaysOffBit, RailByteMaskData::ByteMask alwaysOnBit)
-{
-	for (Plane* plane : levelPlanes) {
-		//by default, we can always visit a plane with switches, and never visit a plane without switches
-		plane->canVisitBit = !plane->connectionSwitches.empty() ? alwaysOnBit : alwaysOffBit;
-		bool useMilestoneIsNewBitAsCanKickBit = true;
-		for (ConnectionSwitch& connectionSwitch : plane->connectionSwitches) {
-			if (connectionSwitch.isSingleUse) {
-				//for one of the plane's milestones, reuse the plane's milestoneIsNewBit so that we clear it when we clear
-				//	canKickBit
-				if (connectionSwitch.isMilestone && useMilestoneIsNewBitAsCanKickBit) {
-					connectionSwitch.canKickBit = plane->milestoneIsNewBit;
-					useMilestoneIsNewBitAsCanKickBit = false;
-				//for other milestones and non-milestones, we need a new bit
-				} else
-					connectionSwitch.canKickBit = plane->owningLevel->trackRailByteMaskBits(1);
-				//if this is the only switch in the plane, this bit can also serve as the canVisitBit
-				if (plane->connectionSwitches.size() == 1)
-					plane->canVisitBit = connectionSwitch.canKickBit;
-			//by default, we can always kick non-single-use switches
+void LevelTypes::Plane::assignDefaultBits(RailByteMaskData::ByteMask alwaysOffBit, RailByteMaskData::ByteMask alwaysOnBit) {
+	//by default, we can always visit a plane with switches, and never visit a plane without switches
+	canVisitBit = !connectionSwitches.empty() ? alwaysOnBit : alwaysOffBit;
+	bool useMilestoneIsNewBitAsCanKickBit = true;
+	for (ConnectionSwitch& connectionSwitch : connectionSwitches) {
+		if (connectionSwitch.isSingleUse) {
+			//for one of the plane's milestones, reuse the plane's milestoneIsNewBit so that we clear it when we clear
+			//	canKickBit
+			if (connectionSwitch.isMilestone && useMilestoneIsNewBitAsCanKickBit) {
+				connectionSwitch.canKickBit = milestoneIsNewBit;
+				useMilestoneIsNewBitAsCanKickBit = false;
+			//for other milestones and non-milestones, we need a new bit
 			} else
-				connectionSwitch.canKickBit = alwaysOnBit;
-		}
+				connectionSwitch.canKickBit = owningLevel->trackRailByteMaskBits(1);
+			//if this is the only switch in the plane, this bit can also serve as the canVisitBit
+			if (connectionSwitches.size() == 1)
+				canVisitBit = connectionSwitch.canKickBit;
+		//by default, we can always kick non-single-use switches
+		} else
+			connectionSwitch.canKickBit = alwaysOnBit;
 	}
-
-	//we can always visit the victory plane
-	Plane* victoryPlane = levelPlanes[0]->owningLevel->getVictoryPlane();
-	if (victoryPlane != nullptr)
-		victoryPlane->canVisitBit = alwaysOnBit;
 }
 void LevelTypes::Plane::findMiniPuzzles(Level* level, vector<Plane*>& levelPlanes, RailByteMaskData::ByteMask alwaysOnBit) {
 	//find all the switches and their planes
