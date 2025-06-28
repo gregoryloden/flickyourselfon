@@ -338,8 +338,6 @@ vector<LevelTypes::Plane::Connection*> LevelTypes::Plane::findRequiredConnection
 	//	that's how we found this plane in the first place
 	vector<Plane*> pathPlanes ({ levelPlanes[0] });
 	vector<Connection*> pathConnections;
-	auto excludeZeroConnections = [](Connection* connection) { return false; };
-	auto alwaysAcceptPath = []() { return true; };
 	pathWalkToThisPlane(levelPlanes, excludeZeroConnections, pathPlanes, pathConnections, alwaysAcceptPath);
 
 	//prep some data about our path
@@ -355,10 +353,6 @@ vector<LevelTypes::Plane::Connection*> LevelTypes::Plane::findRequiredConnection
 	for (int i = 0; i < (int)pathConnections.size(); i++) {
 		reroutePathPlanes.push_back(pathPlanes[i]);
 		reroutePathConnections.push_back(pathConnections[i]);
-		Connection* nextOriginalPathConnection = reroutePathConnections.back();
-		auto excludeNextOriginalPathConnection = [nextOriginalPathConnection](Connection* connection) {
-			return connection == nextOriginalPathConnection;
-		};
 		auto checkIfRerouteReturnsToOriginalPath = [&pathPlanes, &reroutePathPlanes, &seenPlanes, &connectionIsRequired, i]() {
 			Plane* plane = reroutePathPlanes.back();
 			if (!seenPlanes[plane->indexInOwningLevel])
@@ -372,7 +366,7 @@ vector<LevelTypes::Plane::Connection*> LevelTypes::Plane::findRequiredConnection
 		};
 		pathWalkToThisPlane(
 			levelPlanes,
-			excludeNextOriginalPathConnection,
+			excludeSingleConnection(reroutePathConnections.back()),
 			reroutePathPlanes,
 			reroutePathConnections,
 			checkIfRerouteReturnsToOriginalPath);
@@ -383,6 +377,7 @@ vector<LevelTypes::Plane::Connection*> LevelTypes::Plane::findRequiredConnection
 	//find every single-use switch on not-required rails, and one switch at a time, exclude all connections for that switch, and
 	//	see if we can still find a path to this plane; if not, then re-mark that rail as required
 	vector<unsigned int> switchRailByteMasks ((size_t)owningLevel->getRailByteMaskCount(), 0);
+	function<bool(Connection* connection)> excludeSwitchConnections = excludeRailByteMasks(switchRailByteMasks);
 	for (int i = 0; i < (int)pathConnections.size(); i++) {
 		//skip required connections
 		if (connectionIsRequired[i])
@@ -401,10 +396,6 @@ vector<LevelTypes::Plane::Connection*> LevelTypes::Plane::findRequiredConnection
 		matchingConnectionSwitch->writeTileOffsetByteMasks(switchRailByteMasks);
 		reroutePathPlanes = { levelPlanes[0] };
 		reroutePathConnections.clear();
-		auto excludeSwitchConnections = [&switchRailByteMasks](Connection* connection) {
-			return connection->railByteIndex != Level::absentRailByteIndex
-				&& (switchRailByteMasks[connection->railByteIndex] & connection->railTileOffsetByteMask) != 0;
-		};
 		//if there is not a path to this plane after excluding the switch's connections, then it is a milestone switch
 		//mark this rail as required, and we'll handle marking the switch as a milestone in the below loop
 		if (!pathWalkToThisPlane(
@@ -468,6 +459,22 @@ bool LevelTypes::Plane::pathWalkToThisPlane(
 			nextPlane = inOutPathPlanes.back();
 		}
 	}
+}
+bool LevelTypes::Plane::excludeRailConnections(Connection* connection) {
+	return connection->railByteIndex != Level::absentRailByteIndex;
+}
+function<bool(LevelTypes::Plane::Connection* connection)> LevelTypes::Plane::excludeSingleConnection(
+	Connection* excludedConnection)
+{
+	return [excludedConnection](Connection* connection) { return connection == excludedConnection; };
+}
+function<bool(LevelTypes::Plane::Connection* connection)> LevelTypes::Plane::excludeRailByteMasks(
+	vector<unsigned int>& railByteMasks)
+{
+	return [&railByteMasks](Connection* connection) {
+		return connection->railByteIndex != Level::absentRailByteIndex
+			&& (railByteMasks[connection->railByteIndex] & connection->railTileOffsetByteMask) != 0;
+	};
 }
 void LevelTypes::Plane::trackAsMilestoneDestination() {
 	milestoneIsNewBit = owningLevel->trackRailByteMaskBits(1);
@@ -607,12 +614,8 @@ void LevelTypes::Plane::tryAddIsolatedArea(
 	vector<unsigned int> miniPuzzleRailByteMasks ((size_t)level->getRailByteMaskCount(), 0);
 	for (ConnectionSwitch* miniPuzzleSwitch : miniPuzzleSwitches)
 		miniPuzzleSwitch->writeTileOffsetByteMasks(miniPuzzleRailByteMasks);
-	auto excludeMiniPuzzleConnections = [&miniPuzzleRailByteMasks](Connection* connection) {
-		return connection->railByteIndex != Level::absentRailByteIndex
-			&& (miniPuzzleRailByteMasks[connection->railByteIndex] & connection->railTileOffsetByteMask) != 0;
-	};
 	vector<Plane*> isolatedAreaPlanes;
-	findReachablePlanes(levelPlanes, excludeMiniPuzzleConnections, nullptr, &isolatedAreaPlanes);
+	findReachablePlanes(levelPlanes, excludeRailByteMasks(miniPuzzleRailByteMasks), nullptr, &isolatedAreaPlanes);
 	//nothing to do if the mini puzzle isn't required for any planes
 	if (isolatedAreaPlanes.empty())
 		return;
@@ -636,10 +639,9 @@ void LevelTypes::Plane::tryAddIsolatedArea(
 	//at this point, we found the last connection that is required by every plane that also requires a mini puzzle rail
 	//start the search over, excluding this connection this time
 	Connection* entryConnection = requiredConnections.back();
-	auto excludeEntryConnection = [entryConnection](Connection* connection) { return connection == entryConnection; };
 	isolatedAreaPlanes.clear();
 	vector<Plane*> outsideAreaPlanes;
-	findReachablePlanes(levelPlanes, excludeEntryConnection, &outsideAreaPlanes, &isolatedAreaPlanes);
+	findReachablePlanes(levelPlanes, excludeSingleConnection(entryConnection), &outsideAreaPlanes, &isolatedAreaPlanes);
 
 	//if any rail in the mini puzzle is reachable, the area is not isolated
 	for (Plane* plane : outsideAreaPlanes) {
@@ -663,10 +665,6 @@ void LevelTypes::Plane::tryAddIsolatedArea(
 	//also make sure that we can get out of each plane in the isolated area without going through any rails
 	vector<Plane*> pathPlanes;
 	vector<Connection*> pathConnections;
-	auto excludeRailConnections = [](Connection* connection) {
-		return connection->railByteIndex != Level::absentRailByteIndex;
-	};
-	auto alwaysAcceptPath = []() { return true; };
 	for (Plane* plane : isolatedAreaPlanes) {
 		pathPlanes = { plane };
 		pathConnections.clear();

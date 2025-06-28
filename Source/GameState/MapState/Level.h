@@ -168,6 +168,12 @@ namespace LevelTypes {
 				return a->tiles[0].y < b->tiles[0].y || (a->tiles[0].y == b->tiles[0].y && a->tiles[0].x < b->tiles[0].x);
 			}
 		#endif
+	private:
+		//indicates that a path-walk should not exclude any connections
+		static bool excludeZeroConnections(Connection* connection) { return false; }
+		//indicates that a path-walk should accept all paths
+		static bool alwaysAcceptPath() { return true; }
+	public:
 		//add a tile
 		void addTile(int x, int y);
 		//add a switch
@@ -219,6 +225,12 @@ namespace LevelTypes {
 			vector<Plane*>& inOutPathPlanes,
 			vector<Connection*>& inOutPathConnections,
 			function<bool()> checkPath);
+		//indicates that a path-walk should exclude rail connections
+		static bool excludeRailConnections(Connection* connection);
+		//indicates that a path-walk should exclude the given connection
+		static function<bool(Connection* connection)> excludeSingleConnection(Connection* excludedConnection);
+		//indicates that a path-walk should exclude connections that match the given rail byte masks
+		static function<bool(Connection* connection)> excludeRailByteMasks(vector<unsigned int>& railByteMasks);
 		//track this plane as a milestone destination plane
 		void trackAsMilestoneDestination();
 	public:
