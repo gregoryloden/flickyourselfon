@@ -282,7 +282,7 @@ void LevelTypes::Plane::optimizePlanes(
 		plane->assignDefaultBits(alwaysOffBit, alwaysOnBit);
 	//we can always visit the victory plane
 	victoryPlane->canVisitBit = alwaysOnBit;
-	findMiniPuzzles(level, levelPlanes, alwaysOnBit);
+	findMiniPuzzles(level, levelPlanes, alwaysOnBit.location.id);
 	for (Plane* plane : levelPlanes)
 		plane->extendConnections();
 	for (Plane* plane : levelPlanes)
@@ -512,7 +512,7 @@ void LevelTypes::Plane::assignDefaultBits(RailByteMaskData::ByteMask alwaysOffBi
 			connectionSwitch.canKickBit = alwaysOnBit;
 	}
 }
-void LevelTypes::Plane::findMiniPuzzles(Level* level, vector<Plane*>& levelPlanes, RailByteMaskData::ByteMask alwaysOnBit) {
+void LevelTypes::Plane::findMiniPuzzles(Level* level, vector<Plane*>& levelPlanes, short alwaysOnBitId) {
 	//find all the switches and their planes
 	//also mark every plane as always-can-visit and mark every switch as always-can-kick
 	vector<ConnectionSwitch*> allConnectionSwitches;
@@ -588,7 +588,7 @@ void LevelTypes::Plane::findMiniPuzzles(Level* level, vector<Plane*>& levelPlane
 				owningPlane->canVisitBit = miniPuzzleBit;
 		}
 
-		tryAddIsolatedArea(level, levelPlanes, miniPuzzleSwitches, miniPuzzleBit, alwaysOnBit);
+		tryAddIsolatedArea(level, levelPlanes, miniPuzzleSwitches, miniPuzzleBit, alwaysOnBitId);
 	}
 }
 //TODO: try to find isolated areas without relying on mini puzzles
@@ -610,7 +610,7 @@ void LevelTypes::Plane::tryAddIsolatedArea(
 	vector<Plane*>& levelPlanes,
 	vector<ConnectionSwitch*>& miniPuzzleSwitches,
 	RailByteMaskData::ByteMask miniPuzzleBit,
-	RailByteMaskData::ByteMask alwaysOnBit)
+	short alwaysOnBitId)
 {
 	//start by finding all planes that can't be reached without going through part of this mini puzzle
 	vector<unsigned int> miniPuzzleRailByteMasks ((size_t)level->getRailByteMaskCount(), 0);
@@ -715,7 +715,7 @@ void LevelTypes::Plane::tryAddIsolatedArea(
 	//and set all always-can-visit planes in the area to be can't-visit after completing the isolated area
 	//some of these may already be set to this bit
 	for (Plane* plane : isolatedAreaPlanes) {
-		if (plane->canVisitBit.location.id == alwaysOnBit.location.id)
+		if (plane->canVisitBit.location.id == alwaysOnBitId)
 			plane->canVisitBit = miniPuzzleBit;
 	}
 }

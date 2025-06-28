@@ -244,14 +244,14 @@ namespace LevelTypes {
 		//find sets of 2 or more switches that have rails in common
 		//must be called after setting default bits and before extending connections or removing connections to non-victory
 		//	planes without switches
-		static void findMiniPuzzles(Level* level, vector<Plane*>& levelPlanes, RailByteMaskData::ByteMask alwaysOnBit);
+		static void findMiniPuzzles(Level* level, vector<Plane*>& levelPlanes, short alwaysOnBitId);
 		//see if this mini puzzle is part of an isolated area with single-use switches, and if so, track it in those switches
 		static void tryAddIsolatedArea(
 			Level* level,
 			vector<Plane*>& levelPlanes,
 			vector<ConnectionSwitch*>& miniPuzzleSwitches,
 			RailByteMaskData::ByteMask miniPuzzleBit,
-			RailByteMaskData::ByteMask alwaysOnBit);
+			short alwaysOnBitId);
 		//find all planes that are reachable or unreachable when certain connections are excluded, and write them to
 		//	outReachablePlanes or outUnreachablePlanes respectively, if provided
 		static void findReachablePlanes(
