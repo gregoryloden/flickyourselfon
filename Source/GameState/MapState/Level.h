@@ -232,6 +232,13 @@ namespace LevelTypes {
 			vector<ConnectionSwitch*>& miniPuzzleSwitches,
 			RailByteMaskData::ByteMask miniPuzzleBit,
 			RailByteMaskData::ByteMask alwaysOnBit);
+		//find all planes that are reachable or unreachable when certain connections are excluded, and write them to
+		//	outReachablePlanes or outUnreachablePlanes respectively, if provided
+		static void findReachablePlanes(
+			vector<Plane*>& levelPlanes,
+			function<bool(Connection* connection)> excludeConnection,
+			vector<Plane*>* outReachablePlanes,
+			vector<Plane*>* outUnreachablePlanes);
 	public:
 		//copy and add plane-plane and rail connections from all planes that are reachable through plane-plane connections from
 		//	this plane

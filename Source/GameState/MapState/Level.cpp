@@ -602,13 +602,8 @@ void LevelTypes::Plane::tryAddIsolatedArea(
 	RailByteMaskData::ByteMask alwaysOnBit)
 {
 	Level* level = levelPlanes[0]->owningLevel;
-	Plane* victoryPlane = level->getVictoryPlane();
 
 	//start by finding all planes that can't be reached without going through part of this mini puzzle
-	vector<Plane*> pathPlanes ({ levelPlanes[0] });
-	vector<Connection*> pathConnections;
-	vector<bool> reachablePlanes (levelPlanes.size(), false);
-	reachablePlanes[0] = true;
 	vector<unsigned int> miniPuzzleRailByteMasks ((size_t)level->getRailByteMaskCount(), 0);
 	for (ConnectionSwitch* miniPuzzleSwitch : miniPuzzleSwitches)
 		miniPuzzleSwitch->writeTileOffsetByteMasks(miniPuzzleRailByteMasks);
@@ -616,24 +611,13 @@ void LevelTypes::Plane::tryAddIsolatedArea(
 		return connection->railByteIndex != Level::absentRailByteIndex
 			&& (miniPuzzleRailByteMasks[connection->railByteIndex] & connection->railTileOffsetByteMask) != 0;
 	};
-	auto trackPlaneAndKeepSearching = [&reachablePlanes, &pathPlanes, victoryPlane]() {
-		reachablePlanes[pathPlanes.back()->indexInOwningLevel] = true;
-		return pathPlanes.back() != victoryPlane;
-	};
-	victoryPlane->pathWalkToThisPlane(
-		levelPlanes, excludeMiniPuzzleConnections, pathPlanes, pathConnections, trackPlaneAndKeepSearching);
-
-	//collect the planes that make up the (inner part of the) isolated area
 	vector<Plane*> isolatedAreaPlanes;
-	for (int i = 0; i < (int)reachablePlanes.size(); i++) {
-		if (!reachablePlanes[i])
-			isolatedAreaPlanes.push_back(levelPlanes[i]);
-	}
+	findReachablePlanes(levelPlanes, excludeMiniPuzzleConnections, nullptr, &isolatedAreaPlanes);
 	//nothing to do if the mini puzzle isn't required for any planes
 	if (isolatedAreaPlanes.empty())
 		return;
 	//don't allow isolating the victory plane
-	if (!reachablePlanes[victoryPlane->indexInOwningLevel])
+	if (VectorUtils::includes(isolatedAreaPlanes, level->getVictoryPlane()))
 		return;
 
 	//go through all the isolated planes, and find the connections that are mutually required by all of them
@@ -650,39 +634,30 @@ void LevelTypes::Plane::tryAddIsolatedArea(
 		return;
 
 	//at this point, we found the last connection that is required by every plane that also requires a mini puzzle rail
-	//start the search over, excluding this connection this time, and track both all unreachable rails and planes
+	//start the search over, excluding this connection this time
 	Connection* entryConnection = requiredConnections.back();
-	VectorUtils::fill(reachablePlanes, false);
-	reachablePlanes[0] = true;
-	vector<unsigned int> reachableRailByteMasks ((size_t)level->getRailByteMaskCount(), 0);
 	auto excludeEntryConnection = [entryConnection](Connection* connection) { return connection == entryConnection; };
-	auto trackPlaneAndRailsAndKeepSearching = [&reachablePlanes, &pathPlanes, &reachableRailByteMasks, victoryPlane]() {
-		reachablePlanes[pathPlanes.back()->indexInOwningLevel] = true;
-		for (Connection& connection : pathPlanes.back()->connections) {
-			if (connection.railByteIndex != Level::absentRailByteIndex)
-				reachableRailByteMasks[connection.railByteIndex] |= connection.railTileOffsetByteMask;
-		}
-		return pathPlanes.back() != victoryPlane;
-	};
-	victoryPlane->pathWalkToThisPlane(
-		levelPlanes, excludeEntryConnection, pathPlanes, pathConnections, trackPlaneAndRailsAndKeepSearching);
+	isolatedAreaPlanes.clear();
+	vector<Plane*> outsideAreaPlanes;
+	findReachablePlanes(levelPlanes, excludeEntryConnection, &outsideAreaPlanes, &isolatedAreaPlanes);
 
-	//if any rail in the mini puzzle is reachable, or if any other rail is not reachable, the area is not isolated
-	for (Plane* plane : levelPlanes) {
+	//if any rail in the mini puzzle is reachable, the area is not isolated
+	for (Plane* plane : outsideAreaPlanes) {
 		for (Connection& connection : plane->connections) {
-			if (connection.railByteIndex == Level::absentRailByteIndex)
-				continue;
-			else if (((miniPuzzleRailByteMasks[connection.railByteIndex] & connection.railTileOffsetByteMask) != 0)
-					== ((reachableRailByteMasks[connection.railByteIndex] & connection.railTileOffsetByteMask) != 0))
+			if (connection.railByteIndex != Level::absentRailByteIndex
+					&& (miniPuzzleRailByteMasks[connection.railByteIndex] & connection.railTileOffsetByteMask) != 0)
 				return;
 		}
 	}
-
-	//rebuild the list of isolated area planes
-	isolatedAreaPlanes.clear();
-	for (int i = 0; i < (int)reachablePlanes.size(); i++) {
-		if (!reachablePlanes[i])
-			isolatedAreaPlanes.push_back(levelPlanes[i]);
+	//if any rail that is not in the mini puzzle (except the entry connection) is unreachable, the area is not isolated
+	for (Plane* plane : isolatedAreaPlanes) {
+		for (Connection& connection : plane->connections) {
+			if (connection.railByteIndex != Level::absentRailByteIndex
+					&& (miniPuzzleRailByteMasks[connection.railByteIndex] & connection.railTileOffsetByteMask) == 0
+					&& (connection.railByteIndex != entryConnection->railByteIndex
+						|| connection.railTileOffsetByteMask != entryConnection->railTileOffsetByteMask))
+				return;
+		}
 	}
 
 	//also make sure that we can get out of each plane in the isolated area without going through the mini puzzle rails
@@ -695,6 +670,8 @@ void LevelTypes::Plane::tryAddIsolatedArea(
 			}
 		}
 	}
+	vector<Plane*> pathPlanes;
+	vector<Connection*> pathConnections;
 	auto alwaysAcceptPath = []() { return true; };
 	for (Plane* plane : isolatedAreaPlanes) {
 		pathPlanes = { plane };
@@ -746,6 +723,31 @@ void LevelTypes::Plane::tryAddIsolatedArea(
 	for (Plane* plane : isolatedAreaPlanes) {
 		if (plane->canVisitBit.location.id == alwaysOnBit.location.id)
 			plane->canVisitBit = miniPuzzleBit;
+	}
+}
+void LevelTypes::Plane::findReachablePlanes(
+	vector<Plane*>& levelPlanes,
+	function<bool(Connection* connection)> excludeConnection,
+	vector<Plane*>* outReachablePlanes,
+	vector<Plane*>* outUnreachablePlanes)
+{
+	//find all planes that can or can't be reached with the given excluded connections
+	vector<Plane*> pathPlanes ({ levelPlanes[0] });
+	vector<Connection*> pathConnections;
+	vector<bool> reachablePlanes (levelPlanes.size(), false);
+	reachablePlanes[0] = true;
+	Plane* victoryPlane = levelPlanes[0]->owningLevel->getVictoryPlane();
+	auto trackPlaneAndKeepSearching = [&reachablePlanes, &pathPlanes, victoryPlane]() {
+		reachablePlanes[pathPlanes.back()->indexInOwningLevel] = true;
+		return pathPlanes.back() != victoryPlane;
+	};
+	victoryPlane->pathWalkToThisPlane(levelPlanes, excludeConnection, pathPlanes, pathConnections, trackPlaneAndKeepSearching);
+
+	//collect the planes that are reachable and unreachable
+	for (int i = 0; i < (int)reachablePlanes.size(); i++) {
+		vector<Plane*>* outPlanes = reachablePlanes[i] ? outReachablePlanes : outUnreachablePlanes;
+		if (outPlanes != nullptr)
+			outPlanes->push_back(levelPlanes[i]);
 	}
 }
 void LevelTypes::Plane::extendConnections() {
