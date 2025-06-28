@@ -300,7 +300,9 @@ void LevelTypes::Plane::optimizePlanes(Level* level, vector<Plane*>& levelPlanes
 	for (Plane* plane : levelPlanes)
 		plane->removeEmptyPlaneConnections();
 }
-void LevelTypes::Plane::findMilestones(Plane* victoryPlane, vector<Plane*>& levelPlanes, RailByteMaskData::ByteMask alwaysOnBit) {
+void LevelTypes::Plane::findMilestones(
+	Plane* victoryPlane, vector<Plane*>& levelPlanes, RailByteMaskData::ByteMask alwaysOnBit)
+{
 	//the victory plane is always a milestone destination
 	victoryPlane->milestoneIsNewBit = alwaysOnBit;
 
