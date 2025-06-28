@@ -224,7 +224,7 @@ namespace LevelTypes {
 		//- false if we never reached this plane or checkPath() never returned true after doing so
 		//	- inOutPathPlanes and inOutPathConnections will contain their original contents
 		bool pathWalkToThisPlane(
-			vector<Plane*>& levelPlanes,
+			size_t planeCount,
 			function<bool(Connection* connection)> excludeConnection,
 			vector<Plane*>& inOutPathPlanes,
 			vector<Connection*>& inOutPathConnections,
