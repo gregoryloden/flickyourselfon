@@ -232,9 +232,14 @@ namespace LevelTypes {
 		//indicates that a path-walk should exclude connections that match the given rail byte masks
 		static function<bool(Connection* connection)> excludeRailByteMasks(vector<unsigned int>& railByteMasks);
 	public:
-		//find sets of 2 or more switches that have rails in common
-		static void findMiniPuzzles(
+		//set always-on, always-off, or dedicated bits where applicable on planes and switches
+		//must be called after finding milestones
+		static void assignDefaultBits(
 			vector<Plane*>& levelPlanes, RailByteMaskData::ByteMask alwaysOffBit, RailByteMaskData::ByteMask alwaysOnBit);
+		//find sets of 2 or more switches that have rails in common
+		//must be called after setting default bits and before extending connections or removing connections to non-victory
+		//	planes without switches
+		static void findMiniPuzzles(vector<Plane*>& levelPlanes, RailByteMaskData::ByteMask alwaysOnBit);
 	private:
 		//see if this mini puzzle is part of an isolated area with single-use switches, and if so, track it in those switches
 		static void tryAddIsolatedArea(
