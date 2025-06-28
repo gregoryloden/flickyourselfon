@@ -195,13 +195,13 @@ namespace LevelTypes {
 			//validate that the reset switch resets every switch in this plane
 			void validateResetSwitch(ResetSwitch* resetSwitch);
 		#endif
+		//finish setup of the level planes
+		static void finalizeBuilding(
+			vector<Plane*>& levelPlanes, RailByteMaskData::ByteMask alwaysOffBit, RailByteMaskData::ByteMask alwaysOnBit);
 		//analyze the planes and store any conclusions we find on them, and optimize their connections for faster traversal
 		//	through the level in hint searches
-		static void optimizePlanes(
-			Level* level,
-			vector<Plane*>& levelPlanes,
-			RailByteMaskData::ByteMask alwaysOffBit,
-			RailByteMaskData::ByteMask alwaysOnBit);
+		//must be called after finalizing building
+		static void optimizePlanes(Level* level, vector<Plane*>& levelPlanes, RailByteMaskData::ByteMask alwaysOnBit);
 	private:
 		//start from the first plane, go through all connections and planes, find planes and rails that are required to get to
 		//	the end, see which of them have single-use switches, and mark those switch connections as milestones
@@ -238,9 +238,9 @@ namespace LevelTypes {
 		static function<bool(Connection* connection)> excludeSingleConnection(Connection* excludedConnection);
 		//indicates that a path-walk should exclude connections that match the given rail byte masks
 		static function<bool(Connection* connection)> excludeRailByteMasks(vector<unsigned int>& railByteMasks);
-		//set always-on, always-off, or dedicated bits where applicable on planes and switches
+		//set dedicated bits where applicable on planes and switches
 		//must be called after finding milestones
-		void assignDefaultBits(RailByteMaskData::ByteMask alwaysOffBit, RailByteMaskData::ByteMask alwaysOnBit);
+		void assignDedicatedBits();
 		//find sets of 2 or more switches that have rails in common
 		//must be called after setting default bits and before extending connections or removing connections to non-victory
 		//	planes without switches
@@ -418,13 +418,7 @@ public:
 	int trackNextRail(short railId, Rail* rail);
 	//register the given number of bits in the rail byte mask, and return the bits data
 	LevelTypes::RailByteMaskData::ByteMask trackRailByteMaskBits(int nBits);
-	//finish setup of this level:
-	//- add a dedicated victory plane
-	//- store multi-purpose bit locations
-	//- find planes with milestone switches
-	//- find mini puzzles
-	//- add extended connections to the planes of this level
-	//- remove plane-plane connections to planes without switches
+	//finish setup of this level
 	void finalizeBuilding();
 	//setup helper objects used by all levels in hint searching
 	static void setupHintSearchHelpers(vector<Level*>& allLevels);

@@ -269,9 +269,23 @@ void LevelTypes::Plane::addRailConnectionToSwitch(RailByteMaskData* railByteMask
 		}
 	}
 #endif
-void LevelTypes::Plane::optimizePlanes(
-	Level* level, vector<Plane*>& levelPlanes, RailByteMaskData::ByteMask alwaysOffBit, RailByteMaskData::ByteMask alwaysOnBit)
+void LevelTypes::Plane::finalizeBuilding(
+	vector<Plane*>& levelPlanes, RailByteMaskData::ByteMask alwaysOffBit, RailByteMaskData::ByteMask alwaysOnBit)
 {
+	for (Plane* plane : levelPlanes) {
+		//by default, we can always visit a plane with switches, and never visit a plane without switches
+		plane->canVisitBit = !plane->connectionSwitches.empty() ? alwaysOnBit : alwaysOffBit;
+		for (ConnectionSwitch& connectionSwitch : plane->connectionSwitches)
+			//by default, we can always kick a switch
+			connectionSwitch.canKickBit = alwaysOnBit;
+	}
+
+	Plane* victoryPlane = levelPlanes[0]->owningLevel->getVictoryPlane();
+	if (victoryPlane != nullptr)
+		//we can always visit the victory plane
+		victoryPlane->canVisitBit = alwaysOnBit;
+}
+void LevelTypes::Plane::optimizePlanes(Level* level, vector<Plane*>& levelPlanes, RailByteMaskData::ByteMask alwaysOnBit) {
 	//if this level has no victory plane, don't bother optimizing anything since we'll never perform a hint search
 	Plane* victoryPlane = level->getVictoryPlane();
 	if (victoryPlane == nullptr)
@@ -279,9 +293,7 @@ void LevelTypes::Plane::optimizePlanes(
 
 	findMilestones(victoryPlane, levelPlanes, alwaysOnBit);
 	for (Plane* plane : levelPlanes)
-		plane->assignDefaultBits(alwaysOffBit, alwaysOnBit);
-	//we can always visit the victory plane
-	victoryPlane->canVisitBit = alwaysOnBit;
+		plane->assignDedicatedBits();
 	findMiniPuzzles(level, levelPlanes, alwaysOnBit.location.id);
 	for (Plane* plane : levelPlanes)
 		plane->extendConnections();
@@ -490,26 +502,23 @@ function<bool(LevelTypes::Plane::Connection* connection)> LevelTypes::Plane::exc
 			&& (railByteMasks[connection->railByteIndex] & connection->railTileOffsetByteMask) != 0;
 	};
 }
-void LevelTypes::Plane::assignDefaultBits(RailByteMaskData::ByteMask alwaysOffBit, RailByteMaskData::ByteMask alwaysOnBit) {
-	//by default, we can always visit a plane with switches, and never visit a plane without switches
-	canVisitBit = !connectionSwitches.empty() ? alwaysOnBit : alwaysOffBit;
+void LevelTypes::Plane::assignDedicatedBits() {
 	bool useMilestoneIsNewBitAsCanKickBit = true;
 	for (ConnectionSwitch& connectionSwitch : connectionSwitches) {
-		if (connectionSwitch.isSingleUse) {
-			//for one of the plane's milestones, reuse the plane's milestoneIsNewBit so that we clear it when we clear
-			//	canKickBit
-			if (connectionSwitch.isMilestone && useMilestoneIsNewBitAsCanKickBit) {
-				connectionSwitch.canKickBit = milestoneIsNewBit;
-				useMilestoneIsNewBitAsCanKickBit = false;
-			//for other milestones and non-milestones, we need a new bit
-			} else
-				connectionSwitch.canKickBit = owningLevel->trackRailByteMaskBits(1);
-			//if this is the only switch in the plane, this bit can also serve as the canVisitBit
-			if (connectionSwitches.size() == 1)
-				canVisitBit = connectionSwitch.canKickBit;
-		//by default, we can always kick non-single-use switches
+		//single-use switches clear canKickBit when all their rails are raised
+		//if it isn't single-use, leave it as always-on
+		if (!connectionSwitch.isSingleUse)
+			continue;
+		//for one of the plane's milestones, reuse the plane's milestoneIsNewBit so that we clear it when we clear canKickBit
+		if (connectionSwitch.isMilestone && useMilestoneIsNewBitAsCanKickBit) {
+			connectionSwitch.canKickBit = milestoneIsNewBit;
+			useMilestoneIsNewBitAsCanKickBit = false;
+		//for other milestones and non-milestones, we need a new bit
 		} else
-			connectionSwitch.canKickBit = alwaysOnBit;
+			connectionSwitch.canKickBit = owningLevel->trackRailByteMaskBits(1);
+		//if this is the only switch in the plane, this bit can also serve as the canVisitBit
+		if (connectionSwitches.size() == 1)
+			canVisitBit = connectionSwitch.canKickBit;
 	}
 }
 void LevelTypes::Plane::findMiniPuzzles(Level* level, vector<Plane*>& levelPlanes, short alwaysOnBitId) {
@@ -1289,7 +1298,8 @@ void Level::finalizeBuilding() {
 				planes[i]->setIndexInOwningLevel(i);
 		}
 	#endif
-	Plane::optimizePlanes(this, planes, alwaysOffBit, alwaysOnBit);
+	Plane::finalizeBuilding(planes, alwaysOffBit, alwaysOnBit);
+	Plane::optimizePlanes(this, planes, alwaysOnBit);
 }
 void Level::setupHintSearchHelpers(vector<Level*>& allLevels) {
 	for (Level* level : allLevels) {
