@@ -207,7 +207,7 @@ namespace LevelTypes {
 		//	the end, see which of them have single-use switches, and mark those switch connections as milestones
 		//then recursively repeat the process, instead ending at the planes of those milestone switches
 		//must be called before extending connections or removing connections to non-victory planes without switches
-		static void findMilestones(Level* level, vector<Plane*>& levelPlanes, RailByteMaskData::ByteMask alwaysOnBit);
+		static void findMilestones(Plane* victoryPlane, vector<Plane*>& levelPlanes, RailByteMaskData::ByteMask alwaysOnBit);
 		//find milestones that enable access to this plane, and record their planes in outDestinationPlanes
 		void findMilestonesToThisPlane(vector<Plane*>& levelPlanes, vector<Plane*>& outDestinationPlanes);
 		//find all connections that must be crossed in order to get to this plane from the start plane

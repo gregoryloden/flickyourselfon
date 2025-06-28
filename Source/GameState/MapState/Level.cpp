@@ -272,7 +272,12 @@ void LevelTypes::Plane::addRailConnectionToSwitch(RailByteMaskData* railByteMask
 void LevelTypes::Plane::optimizePlanes(
 	Level* level, vector<Plane*>& levelPlanes, RailByteMaskData::ByteMask alwaysOffBit, RailByteMaskData::ByteMask alwaysOnBit)
 {
-	findMilestones(level, levelPlanes, alwaysOnBit);
+	//if this level has no victory plane, don't bother optimizing anything since we'll never perform a hint search
+	Plane* victoryPlane = level->getVictoryPlane();
+	if (victoryPlane == nullptr)
+		return;
+
+	findMilestones(victoryPlane, levelPlanes, alwaysOnBit);
 	assignDefaultBits(levelPlanes, alwaysOffBit, alwaysOnBit);
 	findMiniPuzzles(level, levelPlanes, alwaysOnBit);
 	for (Plane* plane : levelPlanes)
@@ -280,19 +285,14 @@ void LevelTypes::Plane::optimizePlanes(
 	for (Plane* plane : levelPlanes)
 		plane->removeEmptyPlaneConnections();
 }
-void LevelTypes::Plane::findMilestones(Level* level, vector<Plane*>& levelPlanes, RailByteMaskData::ByteMask alwaysOnBit) {
-	//can't find milestones to the victory plane without a victory plane
-	Plane* victoryPlane = level->getVictoryPlane();
-	if (victoryPlane == nullptr)
-		return;
+void LevelTypes::Plane::findMilestones(Plane* victoryPlane, vector<Plane*>& levelPlanes, RailByteMaskData::ByteMask alwaysOnBit) {
+	//the victory plane is always a milestone destination
+	victoryPlane->milestoneIsNewBit = alwaysOnBit;
 
 	//recursively find milestones to destination planes, and track the planes for those milestones as destination planes
 	vector<Plane*> destinationPlanes ({ victoryPlane });
 	for (int i = 0; i < (int)destinationPlanes.size(); i++)
 		destinationPlanes[i]->findMilestonesToThisPlane(levelPlanes, destinationPlanes);
-
-	//and make sure to mark the victory plane as a milestone destination
-	victoryPlane->milestoneIsNewBit = alwaysOnBit;
 }
 void LevelTypes::Plane::findMilestonesToThisPlane(vector<Plane*>& levelPlanes, vector<Plane*>& outDestinationPlanes) {
 	vector<Connection*> requiredConnections = findRequiredConnectionsToThisPlane(levelPlanes);
