@@ -160,7 +160,7 @@ bool LevelTypes::Plane::Connection::matchesRail(RailByteMaskData* railByteMaskDa
 //////////////////////////////// LevelTypes::Plane::DetailedConnection ////////////////////////////////
 bool LevelTypes::Plane::DetailedConnection::requiresSwitchesOnPlane(DetailedPlane* plane) {
 	//plane connections and rail connections without groups can't require switches, and rails that start raised don't apply
-	if (railByteMaskData == nullptr || railByteMaskData->rail->getInitialTileOffset() == 0)
+	if (switchRailByteMaskData == nullptr || switchRailByteMaskData->rail->getInitialTileOffset() == 0)
 		return false;
 	//if this rails is affected by any switch outside of the plane, then it doesn't require switches on the plane
 	for (DetailedConnectionSwitch* affectingSwitch : affectingSwitches) {
@@ -342,7 +342,7 @@ LevelTypes::Plane::DetailedLevel LevelTypes::Plane::buildDetailedLevel(Level* le
 				if (!detailedConnection.connection->matchesRail(detailedRail.railByteMaskData))
 					continue;
 				//we found the rail for this connection, add all the switches to this connection
-				detailedConnection.railByteMaskData = detailedRail.railByteMaskData;
+				detailedConnection.switchRailByteMaskData = detailedRail.railByteMaskData;
 				for (DetailedConnectionSwitch* detailedConnectionSwitch : detailedRail.affectingSwitches)
 					detailedConnection.affectingSwitches.push_back(detailedConnectionSwitch);
 				break;
