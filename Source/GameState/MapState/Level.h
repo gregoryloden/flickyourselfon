@@ -165,6 +165,27 @@ namespace LevelTypes {
 			Plane* plane;
 			vector<DetailedConnectionSwitch> connectionSwitches;
 			vector<DetailedConnection> connections;
+
+			//search for paths to every remaining plane in levelPlanes until we reach this plane, without going through any excluded
+			//	connections or connections that require access to switches on this plane
+			//assumes there is at least one plane in inOutPathPlanes, and starts the walk from the end of the path described by
+			//	inOutPathPlanes, with inOutPathConnections detailing the connections going from the plane at the same index to the
+			//	plane at the next index
+			//assumes this plane is not already in inOutPathPlanes
+			//calls checkPath() at every step after reaching a new plane, and if checkPath() returns:
+			//- false: discards the most recently found plane from the path and continues searching
+			//- true: continues searching with the plane in the path, or returns if the path ends at this plane
+			//returns:
+			//- true if checkPath() returned true after we reached this plane
+			//	- inOutPathPlanes and inOutPathConnections will contain the path as it existed when that happened
+			//- false if we never reached this plane or checkPath() never returned true after doing so
+			//	- inOutPathPlanes and inOutPathConnections will contain their original contents
+			bool pathWalkToThisPlane(
+				size_t planeCount,
+				function<bool(DetailedConnection* connection)> excludeConnection,
+				vector<DetailedPlane*>& inOutPathPlanes,
+				vector<DetailedConnection*>& inOutPathConnections,
+				function<bool()> checkPath);
 		};
 		//Should only be allocated within an object, on the stack, or as a static object
 		struct DetailedRail {
@@ -205,7 +226,7 @@ namespace LevelTypes {
 		#endif
 	private:
 		//indicates that a path-walk should not exclude any connections
-		static bool excludeZeroConnections(Connection* connection) { return false; }
+		static bool excludeZeroConnections(DetailedConnection* connection) { return false; }
 		//indicates that a path-walk should accept all paths
 		static bool alwaysAcceptPath() { return true; }
 	public:
@@ -253,34 +274,14 @@ namespace LevelTypes {
 		void findMilestonesToThisPlane(
 			vector<Plane*>& levelPlanes, DetailedLevel& detailedLevel, vector<Plane*>& outDestinationPlanes);
 		//find all connections that must be crossed in order to get to this plane from the start plane
-		vector<Connection*> findRequiredConnectionsToThisPlane(vector<Plane*>& levelPlanes, DetailedLevel& detailedLevel);
-		//search for paths to every remaining plane in levelPlanes until we reach this plane, without going through any excluded
-		//	connections or connections that require access to switches on this plane
-		//assumes there is at least one plane in inOutPathPlanes, and starts the walk from the end of the path described by
-		//	inOutPathPlanes, with inOutPathConnections detailing the connections going from the plane at the same index to the
-		//	plane at the next index
-		//assumes this plane is not already in inOutPathPlanes
-		//calls checkPath() at every step after reaching a new plane, and if checkPath() returns:
-		//- false: discards the most recently found plane from the path and continues searching
-		//- true: continues searching with the plane in the path, or returns if the path ends at this plane
-		//returns:
-		//- true if checkPath() returned true after we reached this plane
-		//	- inOutPathPlanes and inOutPathConnections will contain the path as it existed when that happened
-		//- false if we never reached this plane or checkPath() never returned true after doing so
-		//	- inOutPathPlanes and inOutPathConnections will contain their original contents
-		bool pathWalkToThisPlane(
-			size_t planeCount,
-			DetailedLevel& detailedLevel,
-			function<bool(Connection* connection)> excludeConnection,
-			vector<Plane*>& inOutPathPlanes,
-			vector<Connection*>& inOutPathConnections,
-			function<bool()> checkPath);
+		vector<DetailedConnection*> findRequiredConnectionsToThisPlane(
+			vector<Plane*>& levelPlanes, DetailedLevel& detailedLevel);
 		//indicates that a path-walk should exclude rail connections
-		static bool excludeRailConnections(Connection* connection);
+		static bool excludeRailConnections(DetailedConnection* connection);
 		//indicates that a path-walk should exclude the given connection
-		static function<bool(Connection* connection)> excludeSingleConnection(Connection* excludedConnection);
+		static function<bool(DetailedConnection* connection)> excludeSingleConnection(DetailedConnection* excludedConnection);
 		//indicates that a path-walk should exclude connections that match the given rail byte masks
-		static function<bool(Connection* connection)> excludeRailByteMasks(vector<unsigned int>& railByteMasks);
+		static function<bool(DetailedConnection* connection)> excludeRailByteMasks(vector<unsigned int>& railByteMasks);
 		//set dedicated bits where applicable on planes and switches
 		//must be called after finding milestones
 		void assignDedicatedBits();
@@ -302,7 +303,7 @@ namespace LevelTypes {
 		static void findReachablePlanes(
 			vector<Plane*>& levelPlanes,
 			DetailedLevel& detailedLevel,
-			function<bool(Connection* connection)> excludeConnection,
+			function<bool(DetailedConnection* connection)> excludeConnection,
 			vector<Plane*>* outReachablePlanes,
 			vector<Plane*>* outUnreachablePlanes);
 		//copy and add plane-plane and rail connections from all planes that are reachable through plane-plane connections from
