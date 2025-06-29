@@ -692,7 +692,7 @@ void LevelTypes::Plane::tryAddIsolatedArea(
 	}
 
 	//we now have the plane and rail contents of an isolated area
-	//the last step is to ensure that all switches inside are either single use, or part of the mini puzzle
+	//the last step is to ensure that all switches inside are either single-use, or part of the mini puzzle
 	vector<ConnectionSwitch*> isolatedAreaSwitches;
 	for (Plane* plane : isolatedAreaPlanes) {
 		for (ConnectionSwitch& connectionSwitch : plane->connectionSwitches) {
