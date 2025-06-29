@@ -55,6 +55,9 @@ namespace LevelTypes {
 	};
 	class Plane onlyInDebug(: public ObjCounter) {
 	private:
+		struct DetailedPlane;
+		struct DetailedRail;
+
 		//Should only be allocated within an object, on the stack, or as a static object
 		class Tile {
 		public:
@@ -138,9 +141,41 @@ namespace LevelTypes {
 				vector<Plane*>& levelPlanes, RailByteMaskData** outRailByteMaskData, Plane** outPlane);
 			//returns whether this connection is a rail connection that matches the given RailByteMaskData
 			bool matchesRail(RailByteMaskData* railByteMaskData);
+		};
+		//Should only be allocated within an object, on the stack, or as a static object
+		struct DetailedConnectionSwitch {
+			ConnectionSwitch* connectionSwitch;
+			DetailedPlane* owningPlane;
+			vector<DetailedRail*> affectedRails;
+		};
+		//Should only be allocated within an object, on the stack, or as a static object
+		struct DetailedConnection {
+			Connection* connection;
+			DetailedPlane* owningPlane;
+			DetailedPlane* toPlane;
+			RailByteMaskData* railByteMaskData;
+			vector<DetailedConnectionSwitch*> affectingSwitches;
+
 			//returns true if this is a rail connection that starts lowered, and can only be raised by switches on the given
 			//	plane
-			bool requiresSwitchesOnPlane(Plane* plane);
+			bool requiresSwitchesOnPlane(DetailedPlane* plane);
+		};
+		//Should only be allocated within an object, on the stack, or as a static object
+		struct DetailedPlane {
+			Plane* plane;
+			vector<DetailedConnectionSwitch> connectionSwitches;
+			vector<DetailedConnection> connections;
+		};
+		//Should only be allocated within an object, on the stack, or as a static object
+		struct DetailedRail {
+			RailByteMaskData* railByteMaskData;
+			vector<DetailedConnectionSwitch*> affectingSwitches;
+		};
+		//Should only be allocated within an object, on the stack, or as a static object
+		struct DetailedLevel {
+			Level* level;
+			vector<DetailedPlane> planes;
+			vector<vector<DetailedRail>> rails;
 		};
 
 		Level* owningLevel;
@@ -203,15 +238,22 @@ namespace LevelTypes {
 		//must be called after finalizing building
 		static void optimizePlanes(Level* level, vector<Plane*>& levelPlanes, RailByteMaskData::ByteMask alwaysOnBit);
 	private:
+		//add extra data to the planes
+		static DetailedLevel buildDetailedLevel(Level* level, vector<Plane*>& levelPlanes);
 		//start from the first plane, go through all connections and planes, find planes and rails that are required to get to
 		//	the end, see which of them have single-use switches, and mark those switch connections as milestones
 		//then recursively repeat the process, instead ending at the planes of those milestone switches
 		//must be called before extending connections or removing connections to non-victory planes without switches
-		static void findMilestones(Plane* victoryPlane, vector<Plane*>& levelPlanes, RailByteMaskData::ByteMask alwaysOnBit);
+		static void findMilestones(
+			Plane* victoryPlane,
+			vector<Plane*>& levelPlanes,
+			DetailedLevel& detailedLevel,
+			RailByteMaskData::ByteMask alwaysOnBit);
 		//find milestones that enable access to this plane, and record their planes in outDestinationPlanes
-		void findMilestonesToThisPlane(vector<Plane*>& levelPlanes, vector<Plane*>& outDestinationPlanes);
+		void findMilestonesToThisPlane(
+			vector<Plane*>& levelPlanes, DetailedLevel& detailedLevel, vector<Plane*>& outDestinationPlanes);
 		//find all connections that must be crossed in order to get to this plane from the start plane
-		vector<Connection*> findRequiredConnectionsToThisPlane(vector<Plane*>& levelPlanes);
+		vector<Connection*> findRequiredConnectionsToThisPlane(vector<Plane*>& levelPlanes, DetailedLevel& detailedLevel);
 		//search for paths to every remaining plane in levelPlanes until we reach this plane, without going through any excluded
 		//	connections or connections that require access to switches on this plane
 		//assumes there is at least one plane in inOutPathPlanes, and starts the walk from the end of the path described by
@@ -228,6 +270,7 @@ namespace LevelTypes {
 		//	- inOutPathPlanes and inOutPathConnections will contain their original contents
 		bool pathWalkToThisPlane(
 			size_t planeCount,
+			DetailedLevel& detailedLevel,
 			function<bool(Connection* connection)> excludeConnection,
 			vector<Plane*>& inOutPathPlanes,
 			vector<Connection*>& inOutPathConnections,
@@ -244,11 +287,13 @@ namespace LevelTypes {
 		//find sets of 2 or more switches that have rails in common
 		//must be called after setting default bits and before extending connections or removing connections to non-victory
 		//	planes without switches
-		static void findMiniPuzzles(Level* level, vector<Plane*>& levelPlanes, short alwaysOnBitId);
+		static void findMiniPuzzles(
+			Level* level, vector<Plane*>& levelPlanes, DetailedLevel& detailedLevel, short alwaysOnBitId);
 		//see if this mini puzzle is part of an isolated area with single-use switches, and if so, track it in those switches
 		static void tryAddIsolatedArea(
 			Level* level,
 			vector<Plane*>& levelPlanes,
+			DetailedLevel& detailedLevel,
 			vector<ConnectionSwitch*>& miniPuzzleSwitches,
 			RailByteMaskData::ByteMask miniPuzzleBit,
 			short alwaysOnBitId);
@@ -256,6 +301,7 @@ namespace LevelTypes {
 		//	outReachablePlanes or outUnreachablePlanes respectively, if provided
 		static void findReachablePlanes(
 			vector<Plane*>& levelPlanes,
+			DetailedLevel& detailedLevel,
 			function<bool(Connection* connection)> excludeConnection,
 			vector<Plane*>* outReachablePlanes,
 			vector<Plane*>* outUnreachablePlanes);

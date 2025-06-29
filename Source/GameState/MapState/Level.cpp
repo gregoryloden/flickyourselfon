@@ -156,30 +156,20 @@ bool LevelTypes::Plane::Connection::matchesRail(RailByteMaskData* railByteMaskDa
 	return railByteMaskData->railBits.data.byteIndex == railByteIndex
 		&& railByteMaskData->getRailTileOffsetByteMask() == railTileOffsetByteMask;
 }
-bool LevelTypes::Plane::Connection::requiresSwitchesOnPlane(Plane* plane) {
-	//plane connections can't require switches
-	if (railByteIndex == Level::absentRailByteIndex)
+
+//////////////////////////////// LevelTypes::Plane::DetailedConnection ////////////////////////////////
+bool LevelTypes::Plane::DetailedConnection::requiresSwitchesOnPlane(DetailedPlane* plane) {
+	//plane connections and rail connections without groups can't require switches, and rails that start raised don't apply
+	if (railByteMaskData == nullptr || railByteMaskData->rail->getInitialTileOffset() == 0)
 		return false;
-	RailByteMaskData* matchingRailByteMaskData = nullptr;
-	int matchingSwitches = 0;
-	//check all the switches in this plane and see how many of them affect this rail
-	//save the RailByteMaskData if we find any matching switch
-	for (ConnectionSwitch& connectionSwitch : plane->connectionSwitches) {
-		for (RailByteMaskData* railByteMaskData : connectionSwitch.affectedRailByteMaskData) {
-			if (matchesRail(railByteMaskData)) {
-				matchingRailByteMaskData = railByteMaskData;
-				matchingSwitches++;
-				break;
-			}
-		}
+	//if this rails is affected by any switch outside of the plane, then it doesn't require switches on the plane
+	for (DetailedConnectionSwitch* affectingSwitch : affectingSwitches) {
+		if (affectingSwitch->owningPlane != plane)
+			return false;
 	}
-	//none of the switches matched this rail, so this connection can't require any of them
-	if (matchingSwitches == 0)
-		return false;
-	//if the rail starts out lowered, and is only affected by switches in this plane, then using this connection requires
-	//	reaching this plane first
-	Rail* rail = matchingRailByteMaskData->rail;
-	return rail->getInitialTileOffset() != 0 && rail->getGroups().size() == matchingSwitches;
+	//if the rail starts out lowered, and is only affected by switches in the plane, then using this connection requires
+	//	reaching the plane first
+	return true;
 }
 
 //////////////////////////////// LevelTypes::Plane ////////////////////////////////
@@ -291,13 +281,15 @@ void LevelTypes::Plane::optimizePlanes(Level* level, vector<Plane*>& levelPlanes
 	if (victoryPlane == nullptr)
 		return;
 
+	DetailedLevel detailedLevel = buildDetailedLevel(level, levelPlanes);
+
 	//find milestones and dedicated bits
-	findMilestones(victoryPlane, levelPlanes, alwaysOnBit);
+	findMilestones(victoryPlane, levelPlanes, detailedLevel, alwaysOnBit);
 	for (Plane* plane : levelPlanes)
 		plane->assignDedicatedBits();
 
 	//find optimizations
-	findMiniPuzzles(level, levelPlanes, alwaysOnBit.location.id);
+	findMiniPuzzles(level, levelPlanes, detailedLevel, alwaysOnBit.location.id);
 
 	//apply extended connections
 	for (Plane* plane : levelPlanes)
@@ -305,8 +297,63 @@ void LevelTypes::Plane::optimizePlanes(Level* level, vector<Plane*>& levelPlanes
 	for (Plane* plane : levelPlanes)
 		plane->removeEmptyPlaneConnections();
 }
+LevelTypes::Plane::DetailedLevel LevelTypes::Plane::buildDetailedLevel(Level* level, vector<Plane*>& levelPlanes) {
+	DetailedLevel detailedLevel {
+		level, vector<DetailedPlane>(levelPlanes.size()), vector<vector<DetailedRail>>((size_t)level->getRailByteMaskCount()) };
+
+	//first, copy the basic structure
+	for (int i = 0; i < (int)levelPlanes.size(); i++) {
+		Plane* plane = levelPlanes[i];
+		DetailedPlane& detailedPlane = detailedLevel.planes[i];
+		detailedPlane.plane = plane;
+		for (Connection& connection : plane->connections)
+			detailedPlane.connections.push_back(
+				{ &connection, &detailedPlane, &detailedLevel.planes[connection.toPlane->indexInOwningLevel] });
+		for (ConnectionSwitch& connectionSwitch : plane->connectionSwitches)
+			detailedPlane.connectionSwitches.push_back({ &connectionSwitch, &detailedPlane });
+	}
+
+	//find all the switches for each rail
+	auto getDetailedRail = [&detailedLevel](RailByteMaskData* railByteMaskData) {
+		vector<DetailedRail>& byteMaskRails = detailedLevel.rails[railByteMaskData->railBits.data.byteIndex];
+		for (DetailedRail& detailedRail : byteMaskRails) {
+			if (detailedRail.railByteMaskData == railByteMaskData)
+				return &detailedRail;
+		}
+		byteMaskRails.push_back({ railByteMaskData });
+		return &byteMaskRails.back();
+	};
+	for (DetailedPlane& detailedPlane : detailedLevel.planes) {
+		for (DetailedConnectionSwitch& detailedConnectionSwitch : detailedPlane.connectionSwitches) {
+			for (RailByteMaskData* railByteMaskData : detailedConnectionSwitch.connectionSwitch->affectedRailByteMaskData) {
+				DetailedRail* detailedRail = getDetailedRail(railByteMaskData);
+				detailedRail->affectingSwitches.push_back(&detailedConnectionSwitch);
+				detailedConnectionSwitch.affectedRails.push_back(detailedRail);
+			}
+		}
+	}
+
+	//then, find all the switches for all connections
+	for (DetailedPlane& detailedPlane : detailedLevel.planes) {
+		for (DetailedConnection& detailedConnection : detailedPlane.connections) {
+			if (detailedConnection.connection->railByteIndex == Level::absentRailByteIndex)
+				continue;
+			for (DetailedRail& detailedRail : detailedLevel.rails[detailedConnection.connection->railByteIndex]) {
+				if (!detailedConnection.connection->matchesRail(detailedRail.railByteMaskData))
+					continue;
+				//we found the rail for this connection, add all the switches to this connection
+				detailedConnection.railByteMaskData = detailedRail.railByteMaskData;
+				for (DetailedConnectionSwitch* detailedConnectionSwitch : detailedRail.affectingSwitches)
+					detailedConnection.affectingSwitches.push_back(detailedConnectionSwitch);
+				break;
+			}
+		}
+	}
+
+	return detailedLevel;
+}
 void LevelTypes::Plane::findMilestones(
-	Plane* victoryPlane, vector<Plane*>& levelPlanes, RailByteMaskData::ByteMask alwaysOnBit)
+	Plane* victoryPlane, vector<Plane*>& levelPlanes, DetailedLevel& detailedLevel, RailByteMaskData::ByteMask alwaysOnBit)
 {
 	//the victory plane is always a milestone destination
 	victoryPlane->milestoneIsNewBit = alwaysOnBit;
@@ -314,10 +361,12 @@ void LevelTypes::Plane::findMilestones(
 	//recursively find milestones to destination planes, and track the planes for those milestones as destination planes
 	vector<Plane*> destinationPlanes ({ victoryPlane });
 	for (int i = 0; i < (int)destinationPlanes.size(); i++)
-		destinationPlanes[i]->findMilestonesToThisPlane(levelPlanes, destinationPlanes);
+		destinationPlanes[i]->findMilestonesToThisPlane(levelPlanes, detailedLevel, destinationPlanes);
 }
-void LevelTypes::Plane::findMilestonesToThisPlane(vector<Plane*>& levelPlanes, vector<Plane*>& outDestinationPlanes) {
-	vector<Connection*> requiredConnections = findRequiredConnectionsToThisPlane(levelPlanes);
+void LevelTypes::Plane::findMilestonesToThisPlane(
+	vector<Plane*>& levelPlanes, DetailedLevel& detailedLevel, vector<Plane*>& outDestinationPlanes)
+{
+	vector<Connection*> requiredConnections = findRequiredConnectionsToThisPlane(levelPlanes, detailedLevel);
 	//go through the list of required connections, find rail connections, and find their switches
 	for (Connection* railConnection : requiredConnections) {
 		//skip plane-plane connections
@@ -365,13 +414,16 @@ void LevelTypes::Plane::findMilestonesToThisPlane(vector<Plane*>& levelPlanes, v
 		}
 	}
 }
-vector<LevelTypes::Plane::Connection*> LevelTypes::Plane::findRequiredConnectionsToThisPlane(vector<Plane*>& levelPlanes) {
+vector<LevelTypes::Plane::Connection*> LevelTypes::Plane::findRequiredConnectionsToThisPlane(
+	vector<Plane*>& levelPlanes, DetailedLevel& detailedLevel)
+{
 	//find any path to this plane
 	//assuming this plane can be found in levelPlanes, we know there must be a path to get here from the starting plane, because
 	//	that's how we found this plane in the first place
 	vector<Plane*> pathPlanes ({ levelPlanes[0] });
 	vector<Connection*> pathConnections;
-	pathWalkToThisPlane(levelPlanes.size(), excludeZeroConnections, pathPlanes, pathConnections, alwaysAcceptPath);
+	pathWalkToThisPlane(
+		levelPlanes.size(), detailedLevel, excludeZeroConnections, pathPlanes, pathConnections, alwaysAcceptPath);
 
 	//prep some data about our path
 	vector<bool> connectionIsRequired (pathConnections.size(), true);
@@ -399,6 +451,7 @@ vector<LevelTypes::Plane::Connection*> LevelTypes::Plane::findRequiredConnection
 		};
 		pathWalkToThisPlane(
 			levelPlanes.size(),
+			detailedLevel,
 			excludeSingleConnection(reroutePathConnections.back()),
 			reroutePathPlanes,
 			reroutePathConnections,
@@ -432,7 +485,12 @@ vector<LevelTypes::Plane::Connection*> LevelTypes::Plane::findRequiredConnection
 		//if there is not a path to this plane after excluding the switch's connections, then it is a milestone switch
 		//mark this rail as required, and we'll handle marking the switch as a milestone in the below loop
 		if (!pathWalkToThisPlane(
-				levelPlanes.size(), excludeSwitchConnections, reroutePathPlanes, reroutePathConnections, alwaysAcceptPath))
+				levelPlanes.size(),
+				detailedLevel,
+				excludeSwitchConnections,
+				reroutePathPlanes,
+				reroutePathConnections,
+				alwaysAcceptPath))
 			connectionIsRequired[i] = true;
 	}
 
@@ -446,40 +504,41 @@ vector<LevelTypes::Plane::Connection*> LevelTypes::Plane::findRequiredConnection
 }
 bool LevelTypes::Plane::pathWalkToThisPlane(
 	size_t planeCount,
+	DetailedLevel& detailedLevel,
 	function<bool(Connection* connection)> excludeConnection,
 	vector<Plane*>& inOutPathPlanes,
 	vector<Connection*>& inOutPathConnections,
 	function<bool()> checkPath)
 {
 	int initialPathPlanesCount = (int)inOutPathPlanes.size();
-	Plane* nextPlane = inOutPathPlanes.back();
+	DetailedPlane* nextPlane = &detailedLevel.planes[inOutPathPlanes.back()->indexInOwningLevel];
 	vector<bool> seenPlanes (planeCount, false);
 	for (Plane* plane : inOutPathPlanes)
 		seenPlanes[plane->indexInOwningLevel] = true;
 	//DFS to search for planes
 	while (true) {
-		Plane* lastPlane = nextPlane;
-		for (Connection& connection : nextPlane->connections) {
+		DetailedPlane* lastPlane = nextPlane;
+		for (DetailedConnection& connection : nextPlane->connections) {
 			//skip a connection if:
 			//- it goes to a plane that we've already seen; we only care about the planes in the path, not the connections
 			//- we can't cross it without having already reached this destination plane
 			//- it's been excluded
-			Plane* toPlane = connection.toPlane;
-			if (seenPlanes[toPlane->indexInOwningLevel]
-					|| connection.requiresSwitchesOnPlane(this)
-					|| excludeConnection(&connection))
+			DetailedPlane* toPlane = connection.toPlane;
+			if (seenPlanes[toPlane->plane->indexInOwningLevel]
+					|| connection.requiresSwitchesOnPlane(&detailedLevel.planes[indexInOwningLevel])
+					|| excludeConnection(connection.connection))
 				continue;
 			//we found a valid connection, track it
 			nextPlane = toPlane;
-			inOutPathConnections.push_back(&connection);
-			inOutPathPlanes.push_back(nextPlane);
-			seenPlanes[toPlane->indexInOwningLevel] = true;
+			inOutPathConnections.push_back(connection.connection);
+			inOutPathPlanes.push_back(nextPlane->plane);
+			seenPlanes[toPlane->plane->indexInOwningLevel] = true;
 			break;
 		}
 		//we found a connection and checkPath() accepted it
 		if (nextPlane != lastPlane && checkPath()) {
 			//if it goes to this plane, we're done
-			if (nextPlane == this)
+			if (nextPlane->plane == this)
 				return true;
 		//either we didn't find a valid connection from the last plane, or we did but checkPath() rejected it; go back to the
 		//	previous plane
@@ -489,7 +548,7 @@ bool LevelTypes::Plane::pathWalkToThisPlane(
 				return false;
 			inOutPathPlanes.pop_back();
 			inOutPathConnections.pop_back();
-			nextPlane = inOutPathPlanes.back();
+			nextPlane = &detailedLevel.planes[inOutPathPlanes.back()->indexInOwningLevel];
 		}
 	}
 }
@@ -528,7 +587,9 @@ void LevelTypes::Plane::assignDedicatedBits() {
 			canVisitBit = connectionSwitch.canKickBit;
 	}
 }
-void LevelTypes::Plane::findMiniPuzzles(Level* level, vector<Plane*>& levelPlanes, short alwaysOnBitId) {
+void LevelTypes::Plane::findMiniPuzzles(
+	Level* level, vector<Plane*>& levelPlanes, DetailedLevel& detailedLevel, short alwaysOnBitId)
+{
 	//find all the switches and their planes
 	//also mark every plane as always-can-visit and mark every switch as always-can-kick
 	vector<ConnectionSwitch*> allConnectionSwitches;
@@ -604,7 +665,7 @@ void LevelTypes::Plane::findMiniPuzzles(Level* level, vector<Plane*>& levelPlane
 				owningPlane->canVisitBit = miniPuzzleBit;
 		}
 
-		tryAddIsolatedArea(level, levelPlanes, miniPuzzleSwitches, miniPuzzleBit, alwaysOnBitId);
+		tryAddIsolatedArea(level, levelPlanes, detailedLevel, miniPuzzleSwitches, miniPuzzleBit, alwaysOnBitId);
 	}
 }
 //TODO: try to find isolated areas without relying on mini puzzles
@@ -624,6 +685,7 @@ void LevelTypes::Plane::findMiniPuzzles(Level* level, vector<Plane*>& levelPlane
 void LevelTypes::Plane::tryAddIsolatedArea(
 	Level* level,
 	vector<Plane*>& levelPlanes,
+	DetailedLevel& detailedLevel,
 	vector<ConnectionSwitch*>& miniPuzzleSwitches,
 	RailByteMaskData::ByteMask miniPuzzleBit,
 	short alwaysOnBitId)
@@ -633,7 +695,8 @@ void LevelTypes::Plane::tryAddIsolatedArea(
 	for (ConnectionSwitch* miniPuzzleSwitch : miniPuzzleSwitches)
 		miniPuzzleSwitch->writeTileOffsetByteMasks(miniPuzzleRailByteMasks);
 	vector<Plane*> isolatedAreaPlanes;
-	findReachablePlanes(levelPlanes, excludeRailByteMasks(miniPuzzleRailByteMasks), nullptr, &isolatedAreaPlanes);
+	findReachablePlanes(
+		levelPlanes, detailedLevel, excludeRailByteMasks(miniPuzzleRailByteMasks), nullptr, &isolatedAreaPlanes);
 	//nothing to do if the mini puzzle isn't required for any planes
 	if (isolatedAreaPlanes.empty())
 		return;
@@ -642,9 +705,11 @@ void LevelTypes::Plane::tryAddIsolatedArea(
 		return;
 
 	//go through all the isolated planes, and find the connections that are mutually required by all of them
-	vector<Connection*> requiredConnections = isolatedAreaPlanes[0]->findRequiredConnectionsToThisPlane(levelPlanes);
+	vector<Connection*> requiredConnections =
+		isolatedAreaPlanes[0]->findRequiredConnectionsToThisPlane(levelPlanes, detailedLevel);
 	for (int i = 1; i < (int)isolatedAreaPlanes.size(); i++) {
-		vector<Connection*> otherRequiredConnections = isolatedAreaPlanes[i]->findRequiredConnectionsToThisPlane(levelPlanes);
+		vector<Connection*> otherRequiredConnections =
+			isolatedAreaPlanes[i]->findRequiredConnectionsToThisPlane(levelPlanes, detailedLevel);
 		auto notRequiredForOtherSwitch = [&otherRequiredConnections](Connection* connection) {
 			return !VectorUtils::includes(otherRequiredConnections, connection);
 		};
@@ -659,7 +724,8 @@ void LevelTypes::Plane::tryAddIsolatedArea(
 	Connection* entryConnection = requiredConnections.back();
 	isolatedAreaPlanes.clear();
 	vector<Plane*> outsideAreaPlanes;
-	findReachablePlanes(levelPlanes, excludeSingleConnection(entryConnection), &outsideAreaPlanes, &isolatedAreaPlanes);
+	findReachablePlanes(
+		levelPlanes, detailedLevel, excludeSingleConnection(entryConnection), &outsideAreaPlanes, &isolatedAreaPlanes);
 
 	//if any rail in the mini puzzle is reachable, the area is not isolated
 	for (Plane* plane : outsideAreaPlanes) {
@@ -687,7 +753,7 @@ void LevelTypes::Plane::tryAddIsolatedArea(
 		pathPlanes = { plane };
 		pathConnections.clear();
 		if (!levelPlanes[0]->pathWalkToThisPlane(
-				levelPlanes.size(), excludeRailConnections, pathPlanes, pathConnections, alwaysAcceptPath))
+				levelPlanes.size(), detailedLevel, excludeRailConnections, pathPlanes, pathConnections, alwaysAcceptPath))
 			return;
 	}
 
@@ -737,6 +803,7 @@ void LevelTypes::Plane::tryAddIsolatedArea(
 }
 void LevelTypes::Plane::findReachablePlanes(
 	vector<Plane*>& levelPlanes,
+	DetailedLevel& detailedLevel,
 	function<bool(Connection* connection)> excludeConnection,
 	vector<Plane*>* outReachablePlanes,
 	vector<Plane*>* outUnreachablePlanes)
@@ -752,7 +819,7 @@ void LevelTypes::Plane::findReachablePlanes(
 		return pathPlanes.back() != victoryPlane;
 	};
 	victoryPlane->pathWalkToThisPlane(
-		levelPlanes.size(), excludeConnection, pathPlanes, pathConnections, trackPlaneAndKeepSearching);
+		levelPlanes.size(), detailedLevel, excludeConnection, pathPlanes, pathConnections, trackPlaneAndKeepSearching);
 
 	//collect the planes that are reachable and unreachable
 	for (int i = 0; i < (int)reachablePlanes.size(); i++) {
