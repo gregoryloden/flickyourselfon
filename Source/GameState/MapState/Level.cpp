@@ -291,10 +291,15 @@ void LevelTypes::Plane::optimizePlanes(Level* level, vector<Plane*>& levelPlanes
 	if (victoryPlane == nullptr)
 		return;
 
+	//find milestones and dedicated bits
 	findMilestones(victoryPlane, levelPlanes, alwaysOnBit);
 	for (Plane* plane : levelPlanes)
 		plane->assignDedicatedBits();
+
+	//find optimizations
 	findMiniPuzzles(level, levelPlanes, alwaysOnBit.location.id);
+
+	//apply extended connections
 	for (Plane* plane : levelPlanes)
 		plane->extendConnections();
 	for (Plane* plane : levelPlanes)
