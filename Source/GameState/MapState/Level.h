@@ -49,9 +49,6 @@ namespace LevelTypes {
 
 		RailByteMaskData(Rail* pRail, short pRailId, ByteMask pRailBits);
 		virtual ~RailByteMaskData();
-
-		//get the rail tile offset byte mask corresponding to the bit shift
-		int getRailTileOffsetByteMask();
 	};
 	class Plane onlyInDebug(: public ObjCounter) {
 	private:
@@ -121,20 +118,18 @@ namespace LevelTypes {
 		class Connection {
 		public:
 			Plane* toPlane;
-			char railByteIndex;
+			RailByteMaskData::BitsLocation railBits;
 			unsigned int railTileOffsetByteMask;
 			int steps;
 			Hint hint;
 
-			Connection(Plane* pToPlane, char pRailByteIndex, unsigned int pRailTileOffsetByteMask, int pSteps, Hint& pHint);
+			Connection(Plane* pToPlane, RailByteMaskData::BitsLocation pRailBits, int pSteps, Hint& pHint);
 			virtual ~Connection();
 
 			//returns the first switch in the given list of planes that controls this rail, or nullptr if one was not found
 			//writes the matching RailByteMaskData for the rail if a matching switch was found, as well as the switch's Plane
 			ConnectionSwitch* findMatchingSwitch(
 				vector<Plane*>& levelPlanes, RailByteMaskData** outRailByteMaskData, Plane** outPlane);
-			//returns whether this connection is a rail connection that matches the given RailByteMaskData
-			bool matchesRail(RailByteMaskData* railByteMaskData);
 		};
 		//Should only be allocated within an object, on the stack, or as a static object
 		struct DetailedConnectionSwitch {

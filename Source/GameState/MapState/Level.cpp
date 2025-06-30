@@ -33,9 +33,6 @@ LevelTypes::RailByteMaskData::RailByteMaskData(Rail* pRail, short pRailId, ByteM
 , inverseRailByteMask(~pRailBits.byteMask) {
 }
 LevelTypes::RailByteMaskData::~RailByteMaskData() {}
-int LevelTypes::RailByteMaskData::getRailTileOffsetByteMask() {
-	return Level::baseRailTileOffsetByteMask << railBits.data.bitShift;
-}
 
 //////////////////////////////// LevelTypes::Plane::Tile ////////////////////////////////
 LevelTypes::Plane::Tile::Tile(int pX, int pY)
@@ -87,7 +84,8 @@ LevelTypes::Plane::ConnectionSwitch::~ConnectionSwitch() {
 }
 void LevelTypes::Plane::ConnectionSwitch::writeTileOffsetByteMasks(vector<unsigned int>& railByteMasks) {
 	for (RailByteMaskData* railByteMaskData : affectedRailByteMaskData)
-		railByteMasks[railByteMaskData->railBits.data.byteIndex] |= railByteMaskData->getRailTileOffsetByteMask();
+		railByteMasks[railByteMaskData->railBits.data.byteIndex] |=
+			Level::baseRailTileOffsetByteMask << railByteMaskData->railBits.data.bitShift;
 }
 void LevelTypes::Plane::ConnectionSwitch::setMiniPuzzle(
 	RailByteMaskData::ByteMask miniPuzzleBit, vector<RailByteMaskData*>& miniPuzzleRails)
@@ -112,11 +110,10 @@ void LevelTypes::Plane::ConnectionSwitch::setIsolatedArea(
 }
 
 //////////////////////////////// LevelTypes::Plane::Connection ////////////////////////////////
-LevelTypes::Plane::Connection::Connection(
-	Plane* pToPlane, char pRailByteIndex, unsigned int pRailTileOffsetByteMask, int pSteps, Hint& pHint)
+LevelTypes::Plane::Connection::Connection(Plane* pToPlane, RailByteMaskData::BitsLocation pRailBits, int pSteps, Hint& pHint)
 : toPlane(pToPlane)
-, railByteIndex(pRailByteIndex)
-, railTileOffsetByteMask(pRailTileOffsetByteMask)
+, railBits(pRailBits)
+, railTileOffsetByteMask(Level::baseRailTileOffsetByteMask << pRailBits.data.bitShift)
 , steps(pSteps)
 , hint(pHint) {
 }
@@ -129,7 +126,7 @@ LevelTypes::Plane::ConnectionSwitch* LevelTypes::Plane::Connection::findMatching
 	for (Plane* plane : levelPlanes) {
 		for (ConnectionSwitch& connectionSwitch : plane->connectionSwitches) {
 			for (RailByteMaskData* railByteMaskData : connectionSwitch.affectedRailByteMaskData) {
-				if (matchesRail(railByteMaskData)) {
+				if (railByteMaskData->railBits.id == railBits.id) {
 					if (outRailByteMaskData != nullptr)
 						*outRailByteMaskData = railByteMaskData;
 					if (outPlane != nullptr)
@@ -140,10 +137,6 @@ LevelTypes::Plane::ConnectionSwitch* LevelTypes::Plane::Connection::findMatching
 		}
 	}
 	return nullptr;
-}
-bool LevelTypes::Plane::Connection::matchesRail(RailByteMaskData* railByteMaskData) {
-	return railByteMaskData->railBits.data.byteIndex == railByteIndex
-		&& railByteMaskData->getRailTileOffsetByteMask() == railTileOffsetByteMask;
 }
 
 //////////////////////////////// LevelTypes::Plane::DetailedConnection ////////////////////////////////
@@ -244,20 +237,18 @@ int LevelTypes::Plane::addConnectionSwitch(Switch* switch0) {
 void LevelTypes::Plane::addPlaneConnection(Plane* toPlane) {
 	//add a plane-plane connection to a plane if we don't already have one
 	if (!isConnectedByPlanes(toPlane))
-		connections.push_back(Connection(toPlane, Level::absentRailByteIndex, 0, 1, Hint(toPlane)));
+		connections.push_back(Connection(toPlane, Level::absentBits.location, 1, Hint(toPlane)));
 }
 bool LevelTypes::Plane::isConnectedByPlanes(Plane* toPlane) {
 	for (Connection& connection : connections) {
-		if (connection.toPlane == toPlane && connection.railByteIndex == Level::absentRailByteIndex)
+		if (connection.toPlane == toPlane && connection.railBits.data.byteIndex == Level::absentRailByteIndex)
 			return true;
 	}
 	return false;
 }
 void LevelTypes::Plane::addRailConnection(Plane* toPlane, RailByteMaskData* railByteMaskData, Rail* rail) {
 	//add the connection to the other plane
-	connections.push_back(
-		Connection(
-			toPlane, railByteMaskData->railBits.data.byteIndex, railByteMaskData->getRailTileOffsetByteMask(), 1, Hint(rail)));
+	connections.push_back(Connection(toPlane, railByteMaskData->railBits, 1, Hint(rail)));
 	//add the reverse connection to this plane if the other plane is in this level
 	if (toPlane->owningLevel == owningLevel) {
 		toPlane->connections.push_back(connections.back());
@@ -369,10 +360,10 @@ LevelTypes::Plane::DetailedLevel LevelTypes::Plane::buildDetailedLevel(Level* le
 	//then, find all the switches for all connections
 	for (DetailedPlane& detailedPlane : detailedLevel.planes) {
 		for (DetailedConnection& detailedConnection : detailedPlane.connections) {
-			if (detailedConnection.connection->railByteIndex == Level::absentRailByteIndex)
+			if (detailedConnection.connection->railBits.data.byteIndex == Level::absentRailByteIndex)
 				continue;
-			for (DetailedRail& detailedRail : detailedLevel.rails[detailedConnection.connection->railByteIndex]) {
-				if (!detailedConnection.connection->matchesRail(detailedRail.railByteMaskData))
+			for (DetailedRail& detailedRail : detailedLevel.rails[detailedConnection.connection->railBits.data.byteIndex]) {
+				if (detailedRail.railByteMaskData->railBits.id != detailedConnection.connection->railBits.id)
 					continue;
 				//we found the rail for this connection, add all the switches to this connection
 				detailedConnection.switchRailByteMaskData = detailedRail.railByteMaskData;
@@ -403,7 +394,7 @@ void LevelTypes::Plane::findMilestonesToThisPlane(
 	//go through the list of required connections, find rail connections, and find their switches
 	for (DetailedConnection* railConnection : requiredConnections) {
 		//skip plane-plane connections and always-raised rails
-		if (railConnection->connection->railByteIndex == Level::absentRailByteIndex)
+		if (railConnection->switchRailByteMaskData == nullptr)
 			continue;
 		//look for a switch that only controls this rail
 		RailByteMaskData* matchingRailByteMaskData;
@@ -500,9 +491,9 @@ vector<LevelTypes::Plane::DetailedConnection*> LevelTypes::Plane::findRequiredCo
 		//skip required connections
 		if (connectionIsRequired[i])
 			continue;
-		//skip plane-plane connections
+		//skip plane-plane connections and always-raised rails
 		DetailedConnection* railConnection = pathConnections[i];
-		if (railConnection->connection->railByteIndex == Level::absentRailByteIndex)
+		if (railConnection->switchRailByteMaskData == nullptr)
 			continue;
 		//skip rails with switches that aren't single-use
 		ConnectionSwitch* matchingConnectionSwitch =
@@ -543,8 +534,8 @@ function<bool(LevelTypes::Plane::DetailedConnection* connection)> LevelTypes::Pl
 {
 	return [&railByteMasks](DetailedConnection* detailedConnection) {
 		Connection* connection = detailedConnection->connection;
-		return connection->railByteIndex != Level::absentRailByteIndex
-			&& (railByteMasks[connection->railByteIndex] & connection->railTileOffsetByteMask) != 0;
+		return connection->railBits.data.byteIndex != Level::absentRailByteIndex
+			&& (railByteMasks[connection->railBits.data.byteIndex] & connection->railTileOffsetByteMask) != 0;
 	};
 }
 void LevelTypes::Plane::assignDedicatedBits() {
@@ -709,18 +700,18 @@ void LevelTypes::Plane::tryAddIsolatedArea(
 	//if any rail in the mini puzzle is reachable, the area is not isolated
 	for (Plane* plane : outsideAreaPlanes) {
 		for (Connection& connection : plane->connections) {
-			if (connection.railByteIndex != Level::absentRailByteIndex
-					&& (miniPuzzleRailByteMasks[connection.railByteIndex] & connection.railTileOffsetByteMask) != 0)
+			if (connection.railBits.data.byteIndex != Level::absentRailByteIndex
+					&& (miniPuzzleRailByteMasks[connection.railBits.data.byteIndex] & connection.railTileOffsetByteMask) != 0)
 				return;
 		}
 	}
-	//if any rail that is not in the mini puzzle (except the entry connection) is unreachable, the area is not isolated
+	//if any rail that is not in the mini puzzle (and isn't the excluded entry connection) is unreachable, the area is not
+	//	isolated
 	for (Plane* plane : isolatedAreaPlanes) {
 		for (Connection& connection : plane->connections) {
-			if (connection.railByteIndex != Level::absentRailByteIndex
-					&& (miniPuzzleRailByteMasks[connection.railByteIndex] & connection.railTileOffsetByteMask) == 0
-					&& (connection.railByteIndex != entryConnection->connection->railByteIndex
-						|| connection.railTileOffsetByteMask != entryConnection->connection->railTileOffsetByteMask))
+			if (connection.railBits.data.byteIndex != Level::absentRailByteIndex
+					&& (miniPuzzleRailByteMasks[connection.railBits.data.byteIndex] & connection.railTileOffsetByteMask) == 0
+					&& connection.railBits.id != entryConnection->connection->railBits.id)
 				return;
 		}
 	}
@@ -813,7 +804,7 @@ void LevelTypes::Plane::extendConnections() {
 	for (int connectionI = 0; connectionI < (int)connections.size(); connectionI++) {
 		Connection& connection = connections[connectionI];
 		//don't try to extend connections through rail connections
-		if (connection.railByteIndex != Level::absentRailByteIndex)
+		if (connection.railBits.data.byteIndex != Level::absentRailByteIndex)
 			continue;
 		//reuse the source hint for any extended hints, this may itself be an extended hint
 		//copy the connection hint instead of using a reference because the vector reallocates when it resizes
@@ -842,7 +833,8 @@ void LevelTypes::Plane::extendConnections() {
 }
 void LevelTypes::Plane::removeEmptyPlaneConnections(RailByteMaskData::ByteMask alwaysOffBit) {
 	auto isEmptyPlaneConnection = [alwaysOffBit](Connection& connection) {
-		return connection.railByteIndex == Level::absentRailByteIndex
+		//remove plane-plane and always-raised-rail connections to planes without switches
+		return connection.railBits.data.byteIndex == Level::absentRailByteIndex
 			&& connection.toPlane->canVisitBit.location.id == alwaysOffBit.location.id;
 	};
 	VectorUtils::filterErase(connections, isEmptyPlaneConnection);
@@ -910,8 +902,8 @@ void LevelTypes::Plane::pursueSolutionToPlanes(HintState::PotentialLevelState* c
 			Plane* checkPlane = checkPlanes[i];
 			for (Connection& connection : checkPlane->connections) {
 				//skip it if we can't pass
-				if (connection.railByteIndex >= 0
-						&& (railByteMasks[connection.railByteIndex] & connection.railTileOffsetByteMask) != 0)
+				if (connection.railBits.data.byteIndex >= 0
+						&& (railByteMasks[connection.railBits.data.byteIndex] & connection.railTileOffsetByteMask) != 0)
 					continue;
 
 				Plane* connectionToPlane = connection.toPlane;
@@ -1182,12 +1174,12 @@ void LevelTypes::Plane::countSwitchesAndConnections(
 	}
 	for (Connection& connection : connections) {
 		if (connection.steps == 1) {
-			if (connection.railByteIndex == Level::absentRailByteIndex)
+			if (connection.railBits.data.byteIndex == Level::absentRailByteIndex)
 				(*outDirectPlaneConnections)++;
 			else
 				(*outDirectRailConnections)++;
 		} else {
-			if (connection.railByteIndex == Level::absentRailByteIndex)
+			if (connection.railBits.data.byteIndex == Level::absentRailByteIndex)
 				(*outExtendedPlaneConnections)++;
 			else
 				(*outExtendedRailConnections)++;
