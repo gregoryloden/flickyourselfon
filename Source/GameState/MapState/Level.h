@@ -54,7 +54,6 @@ namespace LevelTypes {
 	private:
 		struct DetailedPlane;
 		struct DetailedRail;
-		struct DetailedLevel;
 
 		//Should only be allocated within an object, on the stack, or as a static object
 		class Tile {
@@ -155,29 +154,6 @@ namespace LevelTypes {
 			Plane* plane;
 			vector<DetailedConnectionSwitch> connectionSwitches;
 			vector<DetailedConnection> connections;
-
-			//search for paths to every remaining plane until we reach this plane, without going through any excluded
-			//	connections or connections that require access to switches on this plane
-			//assumes there is at least one plane in inOutPathPlanes, and starts the walk from the end of the path described by
-			//	inOutPathPlanes, with inOutPathConnections detailing the connections going from the plane at the same index to
-			//	the plane at the next index
-			//assumes this plane is not already in inOutPathPlanes
-			//calls checkPath() at every step after reaching a new plane, and if checkPath() returns:
-			//- false: discards the most recently found plane from the path and continues searching
-			//- true: continues searching with the plane in the path, or returns if the path ends at this plane
-			//returns:
-			//- true if checkPath() returned true after we reached this plane
-			//	- inOutPathPlanes and inOutPathConnections will contain the path as it existed when that happened
-			//- false if we never reached this plane or checkPath() never returned true after doing so
-			//	- inOutPathPlanes and inOutPathConnections will contain their original contents
-			bool pathWalkToThisPlane(
-				size_t planeCount,
-				function<bool(DetailedConnection* connection)> excludeConnection,
-				vector<DetailedPlane*>& inOutPathPlanes,
-				vector<DetailedConnection*>& inOutPathConnections,
-				function<bool()> checkPath);
-			//find all connections that must be crossed in order to get to this plane from the start plane
-			vector<DetailedConnection*> findRequiredConnectionsToThisPlane(DetailedLevel& detailedLevel);
 		};
 		//Should only be allocated within an object, on the stack, or as a static object
 		struct DetailedRail {
@@ -198,6 +174,28 @@ namespace LevelTypes {
 			//then recursively repeat the process, instead ending at the planes of those milestone switches
 			//must be called before extending connections or removing connections to non-victory planes without switches
 			void findMilestones(RailByteMaskData::ByteMask alwaysOnBit);
+			//find all connections that must be crossed in order to get to the given plane from the start plane
+			vector<DetailedConnection*> findRequiredConnectionsToPlane(DetailedPlane* destination);
+			//search for paths to every remaining plane until we reach the given plane, without going through any excluded
+			//	connections or connections that require access to switches on the given plane
+			//assumes there is at least one plane in inOutPathPlanes, and starts the walk from the end of the path described by
+			//	inOutPathPlanes, with inOutPathConnections detailing the connections going from the plane at the same index to
+			//	the plane at the next index
+			//assumes the given plane is not already in inOutPathPlanes
+			//calls checkPath() at every step after reaching a new plane, and if checkPath() returns:
+			//- false: discards the most recently found plane from the path and continues searching
+			//- true: continues searching with the plane in the path, or returns if the path ends at the given plane
+			//returns:
+			//- true if checkPath() returned true after we reached the given plane
+			//	- inOutPathPlanes and inOutPathConnections will contain the path as it existed when that happened
+			//- false if we never reached the given plane or checkPath() never returned true after doing so
+			//	- inOutPathPlanes and inOutPathConnections will contain their original contents
+			bool pathWalkToPlane(
+				DetailedPlane* destination,
+				function<bool(DetailedConnection* connection)> excludeConnection,
+				vector<DetailedPlane*>& inOutPathPlanes,
+				vector<DetailedConnection*>& inOutPathConnections,
+				function<bool()> checkPath);
 			//see if the given mini puzzle is part of an isolated area with single-use switches, and if so, track it in those
 			//	switches
 			void tryAddIsolatedArea(
