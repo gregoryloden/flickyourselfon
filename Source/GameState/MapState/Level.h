@@ -269,9 +269,9 @@ namespace LevelTypes {
 		static function<bool(DetailedConnection* connection)> excludeSingleConnection(DetailedConnection* excludedConnection);
 		//indicates that a path-walk should exclude connections that match the given rail byte masks
 		static function<bool(DetailedConnection* connection)> excludeRailByteMasks(vector<unsigned int>& railByteMasks);
-		//set dedicated bits where applicable on planes and switches
+		//set can-visit and can-kick bits where applicable on planes and switches respectively
 		//must be called after finding milestones
-		void assignDedicatedBits();
+		void assignCanUseBits(RailByteMaskData::ByteMask alwaysOffBit, RailByteMaskData::ByteMask alwaysOnBit);
 		//find sets of 2 or more switches that have rails in common
 		//must be called after setting default bits and before extending connections or removing connections to non-victory
 		//	planes without switches
@@ -297,6 +297,7 @@ namespace LevelTypes {
 		//	this plane
 		void extendConnections();
 		//remove plane-plane connections to planes that don't have any switches
+		//must be called after assigning can-visit bits
 		void removeEmptyPlaneConnections(RailByteMaskData::ByteMask alwaysOffBit);
 	public:
 		//set bits in the draft state where applicable:
