@@ -184,6 +184,7 @@ LevelTypes::Plane::DetailedLevel::DetailedLevel(Level* pLevel, vector<Plane*>& l
 : level(pLevel)
 , planes(levelPlanes.size())
 , rails((size_t)level->getRailByteMaskCount())
+, allConnectionSwitches()
 , victoryPlane(nullptr) {
 	//copy the basic structure
 	for (int i = 0; i < (int)levelPlanes.size(); i++) {
@@ -198,7 +199,7 @@ LevelTypes::Plane::DetailedLevel::DetailedLevel(Level* pLevel, vector<Plane*>& l
 	}
 	victoryPlane = &planes[level->getVictoryPlane()->indexInOwningLevel];
 
-	//collect all rails, and remember which rail goes with which switch
+	//collect all rails and all connection switches, and remember which rail goes with which switch
 	auto getDetailedRail = [this](RailByteMaskData* railByteMaskData) {
 		vector<DetailedRail>& byteMaskRails = rails[railByteMaskData->railBits.data.byteIndex];
 		for (DetailedRail& detailedRail : byteMaskRails) {
@@ -212,6 +213,7 @@ LevelTypes::Plane::DetailedLevel::DetailedLevel(Level* pLevel, vector<Plane*>& l
 		for (DetailedConnectionSwitch& detailedConnectionSwitch : detailedPlane.connectionSwitches) {
 			for (RailByteMaskData* railByteMaskData : detailedConnectionSwitch.connectionSwitch->affectedRailByteMaskData)
 				getDetailedRail(railByteMaskData)->affectingSwitches.push_back(&detailedConnectionSwitch);
+			allConnectionSwitches.push_back(&detailedConnectionSwitch);
 		}
 	}
 
@@ -383,19 +385,12 @@ bool LevelTypes::Plane::DetailedLevel::pathWalkToPlane(
 	}
 }
 void LevelTypes::Plane::DetailedLevel::findMiniPuzzles(short alwaysOnBitId) {
-	//first, collect all the switches
-	vector<DetailedConnectionSwitch*> allDetailedConnectionSwitches;
-	for (DetailedPlane& detailedPlane : planes) {
-		for (DetailedConnectionSwitch& detailedConnectionSwitch : detailedPlane.connectionSwitches)
-			allDetailedConnectionSwitches.push_back(&detailedConnectionSwitch);
-	}
-
 	//now find mini puzzles
 	//go through the rails from found switches, look at their groups, and collect new switches and their rails
 	vector<DetailedConnectionSwitch*> allMiniPuzzleSwitches;
 	vector<DetailedConnectionSwitch*> miniPuzzleSwitches;
 	vector<DetailedRail*> miniPuzzleRails;
-	for (DetailedConnectionSwitch* detailedConnectionSwitch : allDetailedConnectionSwitches) {
+	for (DetailedConnectionSwitch* detailedConnectionSwitch : allConnectionSwitches) {
 		//single-use rails will never be part of a mini puzzle, and skip any switches that are already part of a mini puzzle
 		if (detailedConnectionSwitch->connectionSwitch->isSingleUse
 				|| VectorUtils::includes(allMiniPuzzleSwitches, detailedConnectionSwitch))

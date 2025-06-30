@@ -167,6 +167,7 @@ namespace LevelTypes {
 			Level* level;
 			vector<DetailedPlane> planes;
 			vector<vector<DetailedRail>> rails;
+			vector<DetailedConnectionSwitch*> allConnectionSwitches;
 			DetailedPlane* victoryPlane;
 
 			DetailedLevel(Level* pLevel, vector<Plane*>& levelPlanes);
