@@ -148,6 +148,11 @@ namespace LevelTypes {
 			//returns true if this is a rail connection that starts lowered, and can only be raised by switches on the given
 			//	plane
 			bool requiresSwitchesOnPlane(DetailedPlane* plane);
+			//call this only on required connections
+			//if this is a rail connection with a single-use switch, mark the switch as a milestone
+			//if this is a rail connection controlled by only one switch (single-use or not), add its plane to the list of
+			//	destination planes
+			void tryAddMilestoneSwitch(vector<Plane*>& levelPlanes, vector<DetailedPlane*>& outDestinationPlanes);
 		};
 		//Should only be allocated within an object, on the stack, or as a static object
 		struct DetailedPlane {
@@ -187,6 +192,12 @@ namespace LevelTypes {
 			vector<DetailedPlane> planes;
 			vector<vector<DetailedRail>> rails;
 			DetailedPlane* victoryPlane;
+
+			//start from the first plane, go through all connections and planes, find planes and rails that are required to get
+			//	to the end, see which of them have single-use switches, and mark those switch connections as milestones
+			//then recursively repeat the process, instead ending at the planes of those milestone switches
+			//must be called before extending connections or removing connections to non-victory planes without switches
+			void findMilestones(vector<Plane*>& levelPlanes, RailByteMaskData::ByteMask alwaysOnBit);
 		};
 
 		Level* owningLevel;
@@ -253,15 +264,6 @@ namespace LevelTypes {
 	private:
 		//add extra data to the planes
 		static DetailedLevel buildDetailedLevel(Level* level, vector<Plane*>& levelPlanes);
-		//start from the first plane, go through all connections and planes, find planes and rails that are required to get to
-		//	the end, see which of them have single-use switches, and mark those switch connections as milestones
-		//then recursively repeat the process, instead ending at the planes of those milestone switches
-		//must be called before extending connections or removing connections to non-victory planes without switches
-		static void findMilestones(
-			vector<Plane*>& levelPlanes, DetailedLevel& detailedLevel, RailByteMaskData::ByteMask alwaysOnBit);
-		//find milestones that enable access to this plane, and record their planes in outDestinationPlanes
-		void findMilestonesToThisPlane(
-			vector<Plane*>& levelPlanes, DetailedLevel& detailedLevel, vector<DetailedPlane*>& outDestinationPlanes);
 		//find all connections that must be crossed in order to get to this plane from the start plane
 		vector<DetailedConnection*> findRequiredConnectionsToThisPlane(
 			vector<Plane*>& levelPlanes, DetailedLevel& detailedLevel);

@@ -153,6 +153,51 @@ bool LevelTypes::Plane::DetailedConnection::requiresSwitchesOnPlane(DetailedPlan
 	//	reaching the plane first
 	return true;
 }
+void LevelTypes::Plane::DetailedConnection::tryAddMilestoneSwitch(
+	vector<Plane*>& levelPlanes, vector<DetailedPlane*>& outDestinationPlanes)
+{
+	//skip plane-plane connections, always-raised rails, and rails controlled by more than one switch
+	if (affectingSwitches.size() != 1)
+		return;
+
+	//all connections at this point are rails with one switch
+	//if we already found this switch as a milestone, we don't need to mark or track it again
+	DetailedConnectionSwitch* matchingDetailedConnectionSwitch = affectingSwitches[0];
+	ConnectionSwitch* matchingConnectionSwitch = matchingDetailedConnectionSwitch->connectionSwitch;
+	if (matchingConnectionSwitch->isMilestone)
+		return;
+	//if it's single-use, it's a milestone
+	DetailedPlane* matchingDetailedPlane = matchingDetailedConnectionSwitch->owningPlane;
+	Plane* matchingPlane = matchingDetailedPlane->plane;
+	if (matchingConnectionSwitch->isSingleUse) {
+		#ifdef LOG_FOUND_PLANE_CONCLUSIONS
+			stringstream newMilestoneMessage;
+			newMilestoneMessage << "level " << matchingPlane->owningLevel->getLevelN() << " milestone:";
+			MapState::logSwitchDescriptor(matchingConnectionSwitch->hint.data.switch0, &newMilestoneMessage);
+			Logger::debugLogger.logString(newMilestoneMessage.str());
+		#endif
+		matchingConnectionSwitch->isMilestone = true;
+		//if we haven't done so already, mark the switch's plane as a milestone destination by having it track a bit for
+		//	whether it's been visited or not
+		if (matchingPlane->milestoneIsNewBit.location.data.byteIndex == Level::absentRailByteIndex)
+			matchingPlane->milestoneIsNewBit = matchingPlane->owningLevel->trackRailByteMaskBits(1);
+	}
+	//if this switch is the only switch to control the rail (whether it's single-use or not), and the rail starts out
+	//	lowered, track the switch's plane as a destination plane, if it isn't already tracked
+	if (switchRailByteMaskData->rail->getInitialTileOffset() != 0
+		&& !VectorUtils::includes(outDestinationPlanes, matchingDetailedPlane))
+	{
+		#ifdef LOG_FOUND_PLANE_CONCLUSIONS
+			stringstream destinationPlaneMessage;
+			destinationPlaneMessage << "level " << matchingPlane->owningLevel->getLevelN()
+				<< " destination plane " << matchingPlane->indexInOwningLevel << " with switches:";
+			for (ConnectionSwitch& connectionSwitch : matchingPlane->connectionSwitches)
+				MapState::logSwitchDescriptor(connectionSwitch.hint.data.switch0, &destinationPlaneMessage);
+			Logger::debugLogger.logString(destinationPlaneMessage.str());
+		#endif
+		outDestinationPlanes.push_back(matchingDetailedPlane);
+	}
+}
 
 //////////////////////////////// LevelTypes::Plane::DetailedPlane ////////////////////////////////
 bool LevelTypes::Plane::DetailedPlane::pathWalkToThisPlane(
@@ -202,6 +247,21 @@ bool LevelTypes::Plane::DetailedPlane::pathWalkToThisPlane(
 			inOutPathConnections.pop_back();
 			nextPlane = inOutPathPlanes.back();
 		}
+	}
+}
+
+//////////////////////////////// LevelTypes::Plane::DetailedLevel ////////////////////////////////
+void LevelTypes::Plane::DetailedLevel::findMilestones(vector<Plane*>& levelPlanes, RailByteMaskData::ByteMask alwaysOnBit) {
+	//the victory plane is always a milestone destination
+	victoryPlane->plane->milestoneIsNewBit = alwaysOnBit;
+
+	//recursively find milestones to destination planes, and track the planes for those milestones as destination planes
+	vector<DetailedPlane*> destinationPlanes ({ victoryPlane });
+	for (int i = 0; i < (int)destinationPlanes.size(); i++) {
+		//try to add a milestone switch for each required connection
+		for (DetailedConnection* requiredConnection
+				: destinationPlanes[i]->plane->findRequiredConnectionsToThisPlane(levelPlanes, *this))
+			requiredConnection->tryAddMilestoneSwitch(levelPlanes, destinationPlanes);
 	}
 }
 
@@ -307,7 +367,7 @@ void LevelTypes::Plane::optimizePlanes(
 	DetailedLevel detailedLevel = buildDetailedLevel(level, levelPlanes);
 
 	//find milestones and dedicated bits
-	findMilestones(levelPlanes, detailedLevel, alwaysOnBit);
+	detailedLevel.findMilestones(levelPlanes, alwaysOnBit);
 	for (Plane* plane : levelPlanes)
 		plane->assignDedicatedBits();
 
@@ -375,67 +435,6 @@ LevelTypes::Plane::DetailedLevel LevelTypes::Plane::buildDetailedLevel(Level* le
 	}
 
 	return detailedLevel;
-}
-void LevelTypes::Plane::findMilestones(
-	vector<Plane*>& levelPlanes, DetailedLevel& detailedLevel, RailByteMaskData::ByteMask alwaysOnBit)
-{
-	//the victory plane is always a milestone destination
-	detailedLevel.victoryPlane->plane->milestoneIsNewBit = alwaysOnBit;
-
-	//recursively find milestones to destination planes, and track the planes for those milestones as destination planes
-	vector<DetailedPlane*> destinationPlanes ({ detailedLevel.victoryPlane });
-	for (int i = 0; i < (int)destinationPlanes.size(); i++)
-		destinationPlanes[i]->plane->findMilestonesToThisPlane(levelPlanes, detailedLevel, destinationPlanes);
-}
-void LevelTypes::Plane::findMilestonesToThisPlane(
-	vector<Plane*>& levelPlanes, DetailedLevel& detailedLevel, vector<DetailedPlane*>& outDestinationPlanes)
-{
-	vector<DetailedConnection*> requiredConnections = findRequiredConnectionsToThisPlane(levelPlanes, detailedLevel);
-	//go through the list of required connections, find rail connections, and find their switches
-	for (DetailedConnection* railConnection : requiredConnections) {
-		//skip plane-plane connections and always-raised rails
-		if (railConnection->switchRailByteMaskData == nullptr)
-			continue;
-
-		//all connections at this point are rails with switches
-		//if we already found this switch as a milestone, we don't need to mark or track it again
-		DetailedConnectionSwitch* matchingDetailedConnectionSwitch = railConnection->affectingSwitches[0];
-		ConnectionSwitch* matchingConnectionSwitch = matchingDetailedConnectionSwitch->connectionSwitch;
-		if (matchingConnectionSwitch->isMilestone)
-			continue;
-		//if it's single-use, it's a milestone
-		DetailedPlane* matchingPlane = matchingDetailedConnectionSwitch->owningPlane;
-		if (matchingConnectionSwitch->isSingleUse) {
-			#ifdef LOG_FOUND_PLANE_CONCLUSIONS
-				stringstream newMilestoneMessage;
-				newMilestoneMessage << "level " << owningLevel->getLevelN() << " milestone:";
-				MapState::logSwitchDescriptor(matchingConnectionSwitch->hint.data.switch0, &newMilestoneMessage);
-				Logger::debugLogger.logString(newMilestoneMessage.str());
-			#endif
-			matchingConnectionSwitch->isMilestone = true;
-			//if we haven't done so already, mark the switch's plane as a milestone destination by having it track a bit for
-			//	whether it's been visited or not
-			if (matchingPlane->plane->milestoneIsNewBit.location.data.byteIndex == Level::absentRailByteIndex)
-				matchingPlane->plane->milestoneIsNewBit = owningLevel->trackRailByteMaskBits(1);
-		}
-		//if this switch is the only switch to control the rail (whether it's single-use or not), and the rail starts out
-		//	lowered, track the switch's plane as a destination plane, if it isn't already tracked
-		Rail* rail = railConnection->switchRailByteMaskData->rail;
-		if (rail->getGroups().size() == 1
-			&& rail->getInitialTileOffset() != 0
-			&& !VectorUtils::includes(outDestinationPlanes, matchingPlane))
-		{
-			#ifdef LOG_FOUND_PLANE_CONCLUSIONS
-				stringstream destinationPlaneMessage;
-				destinationPlaneMessage << "level " << owningLevel->getLevelN()
-					<< " destination plane " << matchingPlane->plane->indexInOwningLevel << " with switches:";
-				for (ConnectionSwitch& connectionSwitch : matchingPlane->plane->connectionSwitches)
-					MapState::logSwitchDescriptor(connectionSwitch.hint.data.switch0, &destinationPlaneMessage);
-				Logger::debugLogger.logString(destinationPlaneMessage.str());
-			#endif
-			outDestinationPlanes.push_back(matchingPlane);
-		}
-	}
 }
 vector<LevelTypes::Plane::DetailedConnection*> LevelTypes::Plane::findRequiredConnectionsToThisPlane(
 	vector<Plane*>& levelPlanes, DetailedLevel& detailedLevel)
