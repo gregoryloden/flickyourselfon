@@ -208,6 +208,12 @@ LevelTypes::Plane::DetailedLevel::DetailedLevel(Level* pLevel, vector<Plane*>& l
 	};
 	for (DetailedPlane& detailedPlane : planes) {
 		for (DetailedConnectionSwitch& detailedConnectionSwitch : detailedPlane.connectionSwitches) {
+			for (RailByteMaskData* railByteMaskData : detailedConnectionSwitch.connectionSwitch->affectedRailByteMaskData)
+				getDetailedRail(railByteMaskData);
+		}
+	}
+	for (DetailedPlane& detailedPlane : planes) {
+		for (DetailedConnectionSwitch& detailedConnectionSwitch : detailedPlane.connectionSwitches) {
 			for (RailByteMaskData* railByteMaskData : detailedConnectionSwitch.connectionSwitch->affectedRailByteMaskData) {
 				DetailedRail* detailedRail = getDetailedRail(railByteMaskData);
 				detailedRail->affectingSwitches.push_back(&detailedConnectionSwitch);
