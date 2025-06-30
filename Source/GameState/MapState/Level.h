@@ -186,6 +186,7 @@ namespace LevelTypes {
 			Level* level;
 			vector<DetailedPlane> planes;
 			vector<vector<DetailedRail>> rails;
+			DetailedPlane* victoryPlane;
 		};
 
 		Level* owningLevel;
@@ -257,10 +258,7 @@ namespace LevelTypes {
 		//then recursively repeat the process, instead ending at the planes of those milestone switches
 		//must be called before extending connections or removing connections to non-victory planes without switches
 		static void findMilestones(
-			Plane* victoryPlane,
-			vector<Plane*>& levelPlanes,
-			DetailedLevel& detailedLevel,
-			RailByteMaskData::ByteMask alwaysOnBit);
+			vector<Plane*>& levelPlanes, DetailedLevel& detailedLevel, RailByteMaskData::ByteMask alwaysOnBit);
 		//find milestones that enable access to this plane, and record their planes in outDestinationPlanes
 		void findMilestonesToThisPlane(
 			vector<Plane*>& levelPlanes, DetailedLevel& detailedLevel, vector<Plane*>& outDestinationPlanes);

@@ -301,14 +301,13 @@ void LevelTypes::Plane::optimizePlanes(
 	Level* level, vector<Plane*>& levelPlanes, RailByteMaskData::ByteMask alwaysOffBit, RailByteMaskData::ByteMask alwaysOnBit)
 {
 	//if this level has no victory plane, don't bother optimizing anything since we'll never perform a hint search
-	Plane* victoryPlane = level->getVictoryPlane();
-	if (victoryPlane == nullptr)
+	if (level->getVictoryPlane() == nullptr)
 		return;
 
 	DetailedLevel detailedLevel = buildDetailedLevel(level, levelPlanes);
 
 	//find milestones and dedicated bits
-	findMilestones(victoryPlane, levelPlanes, detailedLevel, alwaysOnBit);
+	findMilestones(levelPlanes, detailedLevel, alwaysOnBit);
 	for (Plane* plane : levelPlanes)
 		plane->assignDedicatedBits();
 
@@ -336,6 +335,7 @@ LevelTypes::Plane::DetailedLevel LevelTypes::Plane::buildDetailedLevel(Level* le
 		for (ConnectionSwitch& connectionSwitch : plane->connectionSwitches)
 			detailedPlane.connectionSwitches.push_back({ &connectionSwitch, &detailedPlane });
 	}
+	detailedLevel.victoryPlane = &detailedLevel.planes[level->getVictoryPlane()->indexInOwningLevel];
 
 	//find all the switches for each rail
 	auto getDetailedRail = [&detailedLevel](RailByteMaskData* railByteMaskData) {
@@ -377,13 +377,13 @@ LevelTypes::Plane::DetailedLevel LevelTypes::Plane::buildDetailedLevel(Level* le
 	return detailedLevel;
 }
 void LevelTypes::Plane::findMilestones(
-	Plane* victoryPlane, vector<Plane*>& levelPlanes, DetailedLevel& detailedLevel, RailByteMaskData::ByteMask alwaysOnBit)
+	vector<Plane*>& levelPlanes, DetailedLevel& detailedLevel, RailByteMaskData::ByteMask alwaysOnBit)
 {
 	//the victory plane is always a milestone destination
-	victoryPlane->milestoneIsNewBit = alwaysOnBit;
+	detailedLevel.victoryPlane->plane->milestoneIsNewBit = alwaysOnBit;
 
 	//recursively find milestones to destination planes, and track the planes for those milestones as destination planes
-	vector<Plane*> destinationPlanes ({ victoryPlane });
+	vector<Plane*> destinationPlanes ({ detailedLevel.victoryPlane->plane });
 	for (int i = 0; i < (int)destinationPlanes.size(); i++)
 		destinationPlanes[i]->findMilestonesToThisPlane(levelPlanes, detailedLevel, destinationPlanes);
 }
