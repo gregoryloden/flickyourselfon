@@ -249,7 +249,11 @@ namespace LevelTypes {
 		//analyze the planes and store any conclusions we find on them, and optimize their connections for faster traversal
 		//	through the level in hint searches
 		//must be called after finalizing building
-		static void optimizePlanes(Level* level, vector<Plane*>& levelPlanes, RailByteMaskData::ByteMask alwaysOnBit);
+		static void optimizePlanes(
+			Level* level,
+			vector<Plane*>& levelPlanes,
+			RailByteMaskData::ByteMask alwaysOffBit,
+			RailByteMaskData::ByteMask alwaysOnBit);
 	private:
 		//add extra data to the planes
 		static DetailedLevel buildDetailedLevel(Level* level, vector<Plane*>& levelPlanes);
@@ -302,7 +306,7 @@ namespace LevelTypes {
 		//	this plane
 		void extendConnections();
 		//remove plane-plane connections to planes that don't have any switches
-		void removeEmptyPlaneConnections();
+		void removeEmptyPlaneConnections(RailByteMaskData::ByteMask alwaysOffBit);
 	public:
 		//set bits in the draft state where applicable:
 		//- set bits where milestones are new
@@ -424,7 +428,6 @@ private:
 	int startTile;
 	vector<LevelTypes::Plane*> planes;
 	vector<LevelTypes::RailByteMaskData> allRailByteMaskData;
-	LevelTypes::RailByteMaskData::ByteMask alwaysRaisedRailByteMask;
 	LevelTypes::RailByteMaskData::ByteMask alwaysOffBit;
 	LevelTypes::RailByteMaskData::ByteMask alwaysOnBit;
 	int railByteMaskBitsTracked;

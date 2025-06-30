@@ -306,7 +306,9 @@ void LevelTypes::Plane::finalizeBuilding(
 		//we can always visit the victory plane
 		victoryPlane->canVisitBit = alwaysOnBit;
 }
-void LevelTypes::Plane::optimizePlanes(Level* level, vector<Plane*>& levelPlanes, RailByteMaskData::ByteMask alwaysOnBit) {
+void LevelTypes::Plane::optimizePlanes(
+	Level* level, vector<Plane*>& levelPlanes, RailByteMaskData::ByteMask alwaysOffBit, RailByteMaskData::ByteMask alwaysOnBit)
+{
 	//if this level has no victory plane, don't bother optimizing anything since we'll never perform a hint search
 	Plane* victoryPlane = level->getVictoryPlane();
 	if (victoryPlane == nullptr)
@@ -326,7 +328,7 @@ void LevelTypes::Plane::optimizePlanes(Level* level, vector<Plane*>& levelPlanes
 	for (Plane* plane : levelPlanes)
 		plane->extendConnections();
 	for (Plane* plane : levelPlanes)
-		plane->removeEmptyPlaneConnections();
+		plane->removeEmptyPlaneConnections(alwaysOffBit);
 }
 LevelTypes::Plane::DetailedLevel LevelTypes::Plane::buildDetailedLevel(Level* level, vector<Plane*>& levelPlanes) {
 	DetailedLevel detailedLevel {
@@ -400,7 +402,7 @@ void LevelTypes::Plane::findMilestonesToThisPlane(
 	vector<DetailedConnection*> requiredConnections = findRequiredConnectionsToThisPlane(levelPlanes, detailedLevel);
 	//go through the list of required connections, find rail connections, and find their switches
 	for (DetailedConnection* railConnection : requiredConnections) {
-		//skip plane-plane connections
+		//skip plane-plane connections and always-raised rails
 		if (railConnection->connection->railByteIndex == Level::absentRailByteIndex)
 			continue;
 		//look for a switch that only controls this rail
@@ -529,7 +531,7 @@ vector<LevelTypes::Plane::DetailedConnection*> LevelTypes::Plane::findRequiredCo
 	return pathConnections;
 }
 bool LevelTypes::Plane::excludeRailConnections(DetailedConnection* connection) {
-	return connection->connection->railByteIndex != Level::absentRailByteIndex;
+	return connection->switchRailByteMaskData != nullptr;
 }
 function<bool(LevelTypes::Plane::DetailedConnection* connection)> LevelTypes::Plane::excludeSingleConnection(
 	DetailedConnection* excludedConnection)
@@ -838,9 +840,10 @@ void LevelTypes::Plane::extendConnections() {
 		}
 	}
 }
-void LevelTypes::Plane::removeEmptyPlaneConnections() {
-	auto isEmptyPlaneConnection = [](Connection& connection) {
-		return connection.railByteIndex == Level::absentRailByteIndex && connection.toPlane->connectionSwitches.empty();
+void LevelTypes::Plane::removeEmptyPlaneConnections(RailByteMaskData::ByteMask alwaysOffBit) {
+	auto isEmptyPlaneConnection = [alwaysOffBit](Connection& connection) {
+		return connection.railByteIndex == Level::absentRailByteIndex
+			&& connection.toPlane->canVisitBit.location.id == alwaysOffBit.location.id;
 	};
 	VectorUtils::filterErase(connections, isEmptyPlaneConnection);
 }
@@ -1259,7 +1262,6 @@ levelN(pLevelN)
 , startTile(pStartTile)
 , planes()
 , allRailByteMaskData()
-, alwaysRaisedRailByteMask(absentBits)
 , alwaysOffBit(absentBits)
 , alwaysOnBit(absentBits)
 , railByteMaskBitsTracked(0)
@@ -1291,22 +1293,9 @@ void Level::assignResetSwitch(ResetSwitch* resetSwitch) {
 }
 int Level::trackNextRail(short railId, Rail* rail) {
 	minimumRailColor = MathUtils::max(rail->getColor(), minimumRailColor);
-	RailByteMaskData::ByteMask railByteMask (absentBits);
-	//standard rails with groups
-	if (!rail->getGroups().empty())
-		railByteMask = trackRailByteMaskBits(railByteMaskBitCount);
-	//rails with no groups can share the same always-off bits
-	else if (rail->getInitialTileOffset() == 0) {
-		if (alwaysRaisedRailByteMask.location.id == absentBits.location.id)
-			alwaysRaisedRailByteMask = trackRailByteMaskBits(railByteMaskBitCount);
-		railByteMask = alwaysRaisedRailByteMask;
-	//these rails have no groups, but they start lowered
-	//should never happen with an umodified floor file once the game is released
-	} else {
-		railByteMask = trackRailByteMaskBits(railByteMaskBitCount);
-		Logger::debugLogger.logString("ERROR: rail " + to_string(railId) + " has no groups but starts lowered");
-	}
-	allRailByteMaskData.push_back(RailByteMaskData(rail, railId, railByteMask));
+	allRailByteMaskData.push_back(
+		//only rails with groups need a byte mask
+		RailByteMaskData(rail, railId, rail->getGroups().empty() ? absentBits : trackRailByteMaskBits(railByteMaskBitCount)));
 	return (int)allRailByteMaskData.size() - 1;
 }
 RailByteMaskData::ByteMask Level::trackRailByteMaskBits(int nBits) {
@@ -1326,9 +1315,7 @@ void Level::finalizeBuilding() {
 		validateResetSwitch();
 	#endif
 
-	alwaysOffBit = alwaysRaisedRailByteMask.location.id != absentBits.location.id
-		? RailByteMaskData::ByteMask(alwaysRaisedRailByteMask.location, 1)
-		: trackRailByteMaskBits(1);
+	alwaysOffBit = trackRailByteMaskBits(1);
 	alwaysOnBit = trackRailByteMaskBits(1);
 	#ifdef RENDER_PLANE_IDS
 		if (planes.size() >= 4) {
@@ -1338,7 +1325,7 @@ void Level::finalizeBuilding() {
 		}
 	#endif
 	Plane::finalizeBuilding(planes, alwaysOffBit, alwaysOnBit);
-	Plane::optimizePlanes(this, planes, alwaysOnBit);
+	Plane::optimizePlanes(this, planes, alwaysOffBit, alwaysOnBit);
 }
 void Level::setupHintSearchHelpers(vector<Level*>& allLevels) {
 	for (Level* level : allLevels) {
