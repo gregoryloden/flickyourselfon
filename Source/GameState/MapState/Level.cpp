@@ -964,9 +964,9 @@ void LevelTypes::Plane::pursueSolutionToPlanes(HintState::PotentialLevelState* c
 }
 void LevelTypes::Plane::pursueSolutionAfterSwitches(HintState::PotentialLevelState* currentState) {
 	int stepsAfterSwitchKick = currentState->steps + 1;
+	unsigned int* railByteMasks = currentState->railByteMasks;
 	for (ConnectionSwitch& connectionSwitch : connectionSwitches) {
 		//first, check if we can even kick this switch
-		unsigned int* railByteMasks = currentState->railByteMasks;
 		if ((railByteMasks[connectionSwitch.canKickBit.location.data.byteIndex] & connectionSwitch.canKickBit.byteMask) == 0)
 			continue;
 
