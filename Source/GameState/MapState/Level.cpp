@@ -265,8 +265,7 @@ bool LevelTypes::Plane::isConnectedByPlanes(Plane* toPlane) {
 	return false;
 }
 void LevelTypes::Plane::addRailConnection(Plane* toPlane, RailByteMaskData* railByteMaskData, Rail* rail) {
-	if (toPlane->owningLevel != owningLevel)
-		toPlane = owningLevel->getVictoryPlane();
+	//add the connection to the other plane
 	connections.push_back(
 		Connection(
 			toPlane,
@@ -275,16 +274,13 @@ void LevelTypes::Plane::addRailConnection(Plane* toPlane, RailByteMaskData* rail
 			1,
 			rail,
 			nullptr));
-}
-void LevelTypes::Plane::addReverseRailConnection(Plane* toPlane, Rail* rail) {
-	//add a rail connection to a plane that is already connected to this plane by the given rail
-	for (Connection& connection : toPlane->connections) {
-		if (connection.toPlane != this || connection.hint.type != Hint::Type::Rail || connection.hint.data.rail != rail)
-			continue;
-		connections.push_back(
-			Connection(toPlane, connection.railByteIndex, connection.railTileOffsetByteMask, 1, rail, nullptr));
-		break;
-	}
+	//add the reverse connection to this plane if the other plane is in this level
+	if (toPlane->owningLevel == owningLevel) {
+		toPlane->connections.push_back(connections.back());
+		toPlane->connections.back().toPlane = this;
+	//the other plane is in a different level, use the victory plane and don't add a reverse connection
+	} else
+		connections.back().toPlane = owningLevel->getVictoryPlane();
 }
 void LevelTypes::Plane::addRailConnectionToSwitch(RailByteMaskData* railByteMaskData, int connectionSwitchesIndex) {
 	ConnectionSwitch& connectionSwitch = connectionSwitches[connectionSwitchesIndex];

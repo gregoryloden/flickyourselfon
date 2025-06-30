@@ -396,7 +396,7 @@ void MapState::buildLevels() {
 			if (planeConnection.rail == nullptr)
 				fromPlane->addPlaneConnection(toPlane);
 			//we have a new rail - add a connection to it and add the data to all applicable switches
-			else if (planeConnection.levelRailByteMaskDataIndex >= 0) {
+			else {
 				LevelTypes::RailByteMaskData* railByteMaskData =
 					fromPlane->getOwningLevel()->getRailByteMaskData(planeConnection.levelRailByteMaskDataIndex);
 				fromPlane->addRailConnection(toPlane, railByteMaskData, planeConnection.rail);
@@ -418,11 +418,7 @@ void MapState::buildLevels() {
 					planeConnectionSwitch->plane->addRailConnectionToSwitch(
 						railByteMaskData, planeConnectionSwitch->planeConnectionSwitchIndex);
 				}
-			//add a connection going back to a plane that is already connected to this plane
-			//because these PlaneConnections are only added when connecting to an already-existing plane, which has already
-			//	added all its connections, we can assume that there is a corresponding reverse rail connection to copy from
-			} else
-				fromPlane->addReverseRailConnection(toPlane, planeConnection.rail);
+			}
 		}
 	}
 
@@ -544,17 +540,16 @@ void MapState::addRailPlaneConnection(
 	int adjacentRailSegmentIndex,
 	deque<int>& tileChecks)
 {
-	if (planeIds[toTile] == 0) {
-		planeConnections.push_back(PlaneConnection(toTile, rail, activeLevel->trackNextRail(railId, rail)));
-		Rail::Segment* toAdjacentSegment = rail->getSegment(adjacentRailSegmentIndex);
-		int toAdjacentTile = toTile * 2 - toAdjacentSegment->y * mapWidth - toAdjacentSegment->x;
-		if (tiles[toAdjacentTile] == tilePuzzleEnd)
-			tileChecks.push_back(toAdjacentTile);
-		else
-			tileChecks.push_back(toTile);
-	//only add reverse rail connections to planes in the same level
-	} else if (planes[planeIds[toTile] - 1]->getOwningLevel() == activeLevel)
-		planeConnections.push_back(PlaneConnection(toTile, rail, -1));
+	//if the rail goes to an old plane, we've already tracked the connection
+	if (planeIds[toTile] != 0)
+		return;
+	planeConnections.push_back(PlaneConnection(toTile, rail, activeLevel->trackNextRail(railId, rail)));
+	Rail::Segment* toAdjacentSegment = rail->getSegment(adjacentRailSegmentIndex);
+	int toAdjacentTile = toTile * 2 - toAdjacentSegment->y * mapWidth - toAdjacentSegment->x;
+	if (tiles[toAdjacentTile] == tilePuzzleEnd)
+		tileChecks.push_back(toAdjacentTile);
+	else
+		tileChecks.push_back(toTile);
 }
 void MapState::deleteMap() {
 	delete[] tiles;

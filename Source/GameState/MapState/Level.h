@@ -243,8 +243,6 @@ namespace LevelTypes {
 	public:
 		//add a direct rail connection to another plane
 		void addRailConnection(Plane* toPlane, RailByteMaskData* railByteMaskData, Rail* rail);
-		//add a direct rail connection to another plane that is already connected to this plane
-		void addReverseRailConnection(Plane* toPlane, Rail* rail);
 		//add the data of a rail connection to the switch for the given index
 		void addRailConnectionToSwitch(RailByteMaskData* railByteMaskData, int connectionSwitchesIndex);
 		#ifdef DEBUG
