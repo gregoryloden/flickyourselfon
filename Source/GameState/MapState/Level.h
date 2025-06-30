@@ -148,7 +148,7 @@ namespace LevelTypes {
 			//if this is a rail connection with a single-use switch, mark the switch as a milestone
 			//if this is a rail connection controlled by only one switch (single-use or not), add its plane to the list of
 			//	destination planes
-			void tryAddMilestoneSwitch(vector<Plane*>& levelPlanes, vector<DetailedPlane*>& outDestinationPlanes);
+			void tryAddMilestoneSwitch(vector<DetailedPlane*>& outDestinationPlanes);
 		};
 		//Should only be allocated within an object, on the stack, or as a static object
 		struct DetailedPlane {
@@ -177,8 +177,7 @@ namespace LevelTypes {
 				vector<DetailedConnection*>& inOutPathConnections,
 				function<bool()> checkPath);
 			//find all connections that must be crossed in order to get to this plane from the start plane
-			vector<DetailedConnection*> findRequiredConnectionsToThisPlane(
-				vector<Plane*>& levelPlanes, DetailedLevel& detailedLevel);
+			vector<DetailedConnection*> findRequiredConnectionsToThisPlane(DetailedLevel& detailedLevel);
 		};
 		//Should only be allocated within an object, on the stack, or as a static object
 		struct DetailedRail {
@@ -198,7 +197,7 @@ namespace LevelTypes {
 			//	to the end, see which of them have single-use switches, and mark those switch connections as milestones
 			//then recursively repeat the process, instead ending at the planes of those milestone switches
 			//must be called before extending connections or removing connections to non-victory planes without switches
-			void findMilestones(vector<Plane*>& levelPlanes, RailByteMaskData::ByteMask alwaysOnBit);
+			void findMilestones(RailByteMaskData::ByteMask alwaysOnBit);
 		};
 
 		Level* owningLevel;

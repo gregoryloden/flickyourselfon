@@ -135,9 +135,7 @@ bool LevelTypes::Plane::DetailedConnection::requiresSwitchesOnPlane(DetailedPlan
 	//	reaching the plane first
 	return true;
 }
-void LevelTypes::Plane::DetailedConnection::tryAddMilestoneSwitch(
-	vector<Plane*>& levelPlanes, vector<DetailedPlane*>& outDestinationPlanes)
-{
+void LevelTypes::Plane::DetailedConnection::tryAddMilestoneSwitch(vector<DetailedPlane*>& outDestinationPlanes) {
 	//skip plane-plane connections, always-raised rails, and rails controlled by more than one switch
 	if (affectingSwitches.size() != 1)
 		return;
@@ -231,7 +229,7 @@ bool LevelTypes::Plane::DetailedPlane::pathWalkToThisPlane(
 	}
 }
 vector<LevelTypes::Plane::DetailedConnection*> LevelTypes::Plane::DetailedPlane::findRequiredConnectionsToThisPlane(
-	vector<Plane*>& levelPlanes, DetailedLevel& detailedLevel)
+	DetailedLevel& detailedLevel)
 {
 	DetailedPlane* startPlane = &detailedLevel.planes[0];
 	size_t planeCount = detailedLevel.planes.size();
@@ -370,7 +368,7 @@ LevelTypes::Plane::DetailedLevel::DetailedLevel(Level* pLevel, vector<Plane*>& l
 		}
 	}
 }
-void LevelTypes::Plane::DetailedLevel::findMilestones(vector<Plane*>& levelPlanes, RailByteMaskData::ByteMask alwaysOnBit) {
+void LevelTypes::Plane::DetailedLevel::findMilestones(RailByteMaskData::ByteMask alwaysOnBit) {
 	//the victory plane is always a milestone destination
 	victoryPlane->plane->milestoneIsNewBit = alwaysOnBit;
 
@@ -379,8 +377,8 @@ void LevelTypes::Plane::DetailedLevel::findMilestones(vector<Plane*>& levelPlane
 	for (int i = 0; i < (int)destinationPlanes.size(); i++) {
 		//try to add a milestone switch for each required connection
 		for (DetailedConnection* requiredConnection
-				: destinationPlanes[i]->findRequiredConnectionsToThisPlane(levelPlanes, *this))
-			requiredConnection->tryAddMilestoneSwitch(levelPlanes, destinationPlanes);
+				: destinationPlanes[i]->findRequiredConnectionsToThisPlane(*this))
+			requiredConnection->tryAddMilestoneSwitch(destinationPlanes);
 	}
 }
 
@@ -471,7 +469,7 @@ void LevelTypes::Plane::finalizeBuilding(
 	DetailedLevel detailedLevel (level, levelPlanes);
 
 	//find milestones and dedicated bits
-	detailedLevel.findMilestones(levelPlanes, alwaysOnBit);
+	detailedLevel.findMilestones(alwaysOnBit);
 	for (Plane* plane : levelPlanes)
 		plane->assignCanUseBits(alwaysOffBit, alwaysOnBit);
 	//we can always visit the victory plane
@@ -644,12 +642,10 @@ void LevelTypes::Plane::tryAddIsolatedArea(
 
 	//go through all the isolated planes, and find the connections that are mutually required by all of them
 	vector<DetailedConnection*> requiredConnections =
-		detailedLevel.planes[isolatedAreaPlanes[0]->indexInOwningLevel].findRequiredConnectionsToThisPlane(
-			levelPlanes, detailedLevel);
+		detailedLevel.planes[isolatedAreaPlanes[0]->indexInOwningLevel].findRequiredConnectionsToThisPlane(detailedLevel);
 	for (int i = 1; i < (int)isolatedAreaPlanes.size(); i++) {
 		vector<DetailedConnection*> otherRequiredConnections =
-			detailedLevel.planes[isolatedAreaPlanes[i]->indexInOwningLevel].findRequiredConnectionsToThisPlane(
-				levelPlanes, detailedLevel);
+			detailedLevel.planes[isolatedAreaPlanes[i]->indexInOwningLevel].findRequiredConnectionsToThisPlane(detailedLevel);
 		auto notRequiredForOtherSwitch = [&otherRequiredConnections](DetailedConnection* connection) {
 			return !VectorUtils::includes(otherRequiredConnections, connection);
 		};
