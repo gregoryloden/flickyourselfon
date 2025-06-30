@@ -182,8 +182,7 @@ void LevelTypes::Plane::DetailedConnection::tryAddMilestoneSwitch(
 		if (matchingPlane->milestoneIsNewBit.location.data.byteIndex == Level::absentRailByteIndex)
 			matchingPlane->milestoneIsNewBit = matchingPlane->owningLevel->trackRailByteMaskBits(1);
 	}
-	//if this switch is the only switch to control the rail (whether it's single-use or not), and the rail starts out
-	//	lowered, track the switch's plane as a destination plane, if it isn't already tracked
+	//if the rail starts out lowered, track the switch's plane as a destination plane, if it isn't already tracked
 	if (switchRailByteMaskData->rail->getInitialTileOffset() != 0
 		&& !VectorUtils::includes(outDestinationPlanes, matchingDetailedPlane))
 	{
