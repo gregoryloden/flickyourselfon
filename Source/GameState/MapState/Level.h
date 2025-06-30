@@ -198,6 +198,13 @@ namespace LevelTypes {
 			//then recursively repeat the process, instead ending at the planes of those milestone switches
 			//must be called before extending connections or removing connections to non-victory planes without switches
 			void findMilestones(RailByteMaskData::ByteMask alwaysOnBit);
+			//find all planes that are reachable or unreachable when certain connections are excluded, and write them to
+			//	outReachablePlanes or outUnreachablePlanes respectively, if provided
+			void findReachablePlanes(
+				vector<Plane*>& levelPlanes,
+				function<bool(DetailedConnection* connection)> excludeConnection,
+				vector<Plane*>* outReachablePlanes,
+				vector<Plane*>* outUnreachablePlanes);
 		};
 
 		Level* owningLevel;
@@ -280,14 +287,6 @@ namespace LevelTypes {
 			vector<ConnectionSwitch*>& miniPuzzleSwitches,
 			RailByteMaskData::ByteMask miniPuzzleBit,
 			short alwaysOnBitId);
-		//find all planes that are reachable or unreachable when certain connections are excluded, and write them to
-		//	outReachablePlanes or outUnreachablePlanes respectively, if provided
-		static void findReachablePlanes(
-			vector<Plane*>& levelPlanes,
-			DetailedLevel& detailedLevel,
-			function<bool(DetailedConnection* connection)> excludeConnection,
-			vector<Plane*>* outReachablePlanes,
-			vector<Plane*>* outUnreachablePlanes);
 		//copy and add plane-plane and rail connections from all planes that are reachable through plane-plane connections from
 		//	this plane
 		void extendConnections();

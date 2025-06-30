@@ -381,6 +381,31 @@ void LevelTypes::Plane::DetailedLevel::findMilestones(RailByteMaskData::ByteMask
 			requiredConnection->tryAddMilestoneSwitch(destinationPlanes);
 	}
 }
+void LevelTypes::Plane::DetailedLevel::findReachablePlanes(
+	vector<Plane*>& levelPlanes,
+	function<bool(DetailedConnection* connection)> excludeConnection,
+	vector<Plane*>* outReachablePlanes,
+	vector<Plane*>* outUnreachablePlanes)
+{
+	//find all planes that can or can't be reached with the given excluded connections
+	vector<DetailedPlane*> pathPlanes ({ &planes[0] });
+	vector<DetailedConnection*> pathConnections;
+	vector<bool> reachablePlanes (planes.size(), false);
+	reachablePlanes[0] = true;
+	auto trackPlaneAndKeepSearching = [&reachablePlanes, &pathPlanes, this]() {
+		reachablePlanes[pathPlanes.back()->plane->indexInOwningLevel] = true;
+		return pathPlanes.back() != victoryPlane;
+	};
+	victoryPlane->pathWalkToThisPlane(
+		planes.size(), excludeConnection, pathPlanes, pathConnections, trackPlaneAndKeepSearching);
+
+	//collect the planes that are reachable and unreachable
+	for (int i = 0; i < (int)reachablePlanes.size(); i++) {
+		vector<Plane*>* outPlanes = reachablePlanes[i] ? outReachablePlanes : outUnreachablePlanes;
+		if (outPlanes != nullptr)
+			outPlanes->push_back(levelPlanes[i]);
+	}
+}
 
 //////////////////////////////// LevelTypes::Plane ////////////////////////////////
 LevelTypes::Plane::Plane(objCounterParametersComma() Level* pOwningLevel, int pIndexInOwningLevel)
@@ -631,8 +656,7 @@ void LevelTypes::Plane::tryAddIsolatedArea(
 	for (ConnectionSwitch* miniPuzzleSwitch : miniPuzzleSwitches)
 		miniPuzzleSwitch->writeTileOffsetByteMasks(miniPuzzleRailByteMasks);
 	vector<Plane*> isolatedAreaPlanes;
-	findReachablePlanes(
-		levelPlanes, detailedLevel, excludeRailByteMasks(miniPuzzleRailByteMasks), nullptr, &isolatedAreaPlanes);
+	detailedLevel.findReachablePlanes(levelPlanes, excludeRailByteMasks(miniPuzzleRailByteMasks), nullptr, &isolatedAreaPlanes);
 	//nothing to do if the mini puzzle isn't required for any planes
 	if (isolatedAreaPlanes.empty())
 		return;
@@ -660,8 +684,8 @@ void LevelTypes::Plane::tryAddIsolatedArea(
 	DetailedConnection* entryConnection = requiredConnections.back();
 	isolatedAreaPlanes.clear();
 	vector<Plane*> outsideAreaPlanes;
-	findReachablePlanes(
-		levelPlanes, detailedLevel, excludeSingleConnection(entryConnection), &outsideAreaPlanes, &isolatedAreaPlanes);
+	detailedLevel.findReachablePlanes(
+		levelPlanes, excludeSingleConnection(entryConnection), &outsideAreaPlanes, &isolatedAreaPlanes);
 
 	//if any rail in the mini puzzle is reachable, the area is not isolated
 	for (Plane* plane : outsideAreaPlanes) {
@@ -735,33 +759,6 @@ void LevelTypes::Plane::tryAddIsolatedArea(
 	for (Plane* plane : isolatedAreaPlanes) {
 		if (plane->canVisitBit.location.id == alwaysOnBitId)
 			plane->canVisitBit = miniPuzzleBit;
-	}
-}
-void LevelTypes::Plane::findReachablePlanes(
-	vector<Plane*>& levelPlanes,
-	DetailedLevel& detailedLevel,
-	function<bool(DetailedConnection* connection)> excludeConnection,
-	vector<Plane*>* outReachablePlanes,
-	vector<Plane*>* outUnreachablePlanes)
-{
-	//find all planes that can or can't be reached with the given excluded connections
-	vector<DetailedPlane*> pathPlanes ({ &detailedLevel.planes[0] });
-	vector<DetailedConnection*> pathConnections;
-	vector<bool> reachablePlanes (levelPlanes.size(), false);
-	reachablePlanes[0] = true;
-	Plane* victoryPlane = levelPlanes[0]->owningLevel->getVictoryPlane();
-	auto trackPlaneAndKeepSearching = [&reachablePlanes, &pathPlanes, victoryPlane]() {
-		reachablePlanes[pathPlanes.back()->plane->indexInOwningLevel] = true;
-		return pathPlanes.back()->plane != victoryPlane;
-	};
-	detailedLevel.planes[victoryPlane->indexInOwningLevel].pathWalkToThisPlane(
-		levelPlanes.size(), excludeConnection, pathPlanes, pathConnections, trackPlaneAndKeepSearching);
-
-	//collect the planes that are reachable and unreachable
-	for (int i = 0; i < (int)reachablePlanes.size(); i++) {
-		vector<Plane*>* outPlanes = reachablePlanes[i] ? outReachablePlanes : outUnreachablePlanes;
-		if (outPlanes != nullptr)
-			outPlanes->push_back(levelPlanes[i]);
 	}
 }
 void LevelTypes::Plane::extendConnections() {
