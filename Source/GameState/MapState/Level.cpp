@@ -55,13 +55,12 @@ LevelTypes::Plane::ConnectionSwitch::ConclusionsData::IsolatedArea::IsolatedArea
 //////////////////////////////// LevelTypes::Plane::ConnectionSwitch ////////////////////////////////
 LevelTypes::Plane::ConnectionSwitch::ConnectionSwitch(Switch* switch0)
 : affectedRailByteMaskData()
-, hint(Hint::Type::Switch)
+, hint(switch0)
 , canKickBit(Level::absentBits)
 , isSingleUse(true)
 , isMilestone(false)
 , conclusionsType(ConclusionsType::None)
 , conclusionsData() {
-	hint.data.switch0 = switch0;
 }
 LevelTypes::Plane::ConnectionSwitch::ConnectionSwitch(const ConnectionSwitch& other)
 : affectedRailByteMaskData(other.affectedRailByteMaskData)
@@ -114,22 +113,12 @@ void LevelTypes::Plane::ConnectionSwitch::setIsolatedArea(
 
 //////////////////////////////// LevelTypes::Plane::Connection ////////////////////////////////
 LevelTypes::Plane::Connection::Connection(
-	Plane* pToPlane, char pRailByteIndex, unsigned int pRailTileOffsetByteMask, int pSteps, Rail* rail, Plane* hintPlane)
+	Plane* pToPlane, char pRailByteIndex, unsigned int pRailTileOffsetByteMask, int pSteps, Hint& pHint)
 : toPlane(pToPlane)
 , railByteIndex(pRailByteIndex)
 , railTileOffsetByteMask(pRailTileOffsetByteMask)
 , steps(pSteps)
-, hint(Hint::Type::None) {
-	if (hintPlane != nullptr) {
-		hint.type = Hint::Type::Plane;
-		hint.data.plane = hintPlane;
-	} else if (rail != nullptr) {
-		hint.type = Hint::Type::Rail;
-		hint.data.rail = rail;
-	} else {
-		hint.type = Hint::Type::Plane;
-		hint.data.plane = pToPlane;
-	}
+, hint(pHint) {
 }
 LevelTypes::Plane::Connection::~Connection() {
 	//don't delete toPlane, it's owned by a Level
@@ -255,7 +244,7 @@ int LevelTypes::Plane::addConnectionSwitch(Switch* switch0) {
 void LevelTypes::Plane::addPlaneConnection(Plane* toPlane) {
 	//add a plane-plane connection to a plane if we don't already have one
 	if (!isConnectedByPlanes(toPlane))
-		connections.push_back(Connection(toPlane, Level::absentRailByteIndex, 0, 1, nullptr, nullptr));
+		connections.push_back(Connection(toPlane, Level::absentRailByteIndex, 0, 1, Hint(toPlane)));
 }
 bool LevelTypes::Plane::isConnectedByPlanes(Plane* toPlane) {
 	for (Connection& connection : connections) {
@@ -268,12 +257,7 @@ void LevelTypes::Plane::addRailConnection(Plane* toPlane, RailByteMaskData* rail
 	//add the connection to the other plane
 	connections.push_back(
 		Connection(
-			toPlane,
-			railByteMaskData->railBits.data.byteIndex,
-			railByteMaskData->getRailTileOffsetByteMask(),
-			1,
-			rail,
-			nullptr));
+			toPlane, railByteMaskData->railBits.data.byteIndex, railByteMaskData->getRailTileOffsetByteMask(), 1, Hint(rail)));
 	//add the reverse connection to this plane if the other plane is in this level
 	if (toPlane->owningLevel == owningLevel) {
 		toPlane->connections.push_back(connections.back());
@@ -849,7 +833,7 @@ void LevelTypes::Plane::extendConnections() {
 				continue;
 			//plane-plane connection
 			if (otherConnection.railByteIndex == Level::absentRailByteIndex)
-				connections.push_back(Connection(toPlane, Level::absentRailByteIndex, 0, steps, nullptr, hintPlane));
+				connections.push_back(Connection(toPlane, Level::absentRailByteIndex, 0, steps, Hint(hintPlane)));
 			//rail connection
 			else
 				connections.push_back(
@@ -858,8 +842,7 @@ void LevelTypes::Plane::extendConnections() {
 						otherConnection.railByteIndex,
 						otherConnection.railTileOffsetByteMask,
 						steps,
-						nullptr,
-						hintPlane));
+						Hint(hintPlane)));
 		}
 	}
 }
@@ -1308,8 +1291,7 @@ void Level::addVictoryPlane() {
 	victoryPlane = addNewPlane();
 }
 void Level::assignRadioTowerSwitch(Switch* radioTowerSwitch) {
-	radioTowerHint.type = Hint::Type::Switch;
-	radioTowerHint.data.switch0 = radioTowerSwitch;
+	radioTowerHint = Hint(radioTowerSwitch);
 }
 void Level::assignResetSwitch(ResetSwitch* resetSwitch) {
 	undoResetHint.type = Hint::Type::UndoReset;

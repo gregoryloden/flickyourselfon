@@ -33,6 +33,11 @@ public:
 		Rail* rail;
 		Switch* switch0;
 		ResetSwitch* resetSwitch;
+
+		Data(): none() {}
+		Data(LevelTypes::Plane* pPlane): plane(pPlane) {}
+		Data(Rail* pRail): rail(pRail) {}
+		Data(Switch* pSwitch0): switch0(pSwitch0) {}
 	};
 
 	static Hint none;
@@ -45,6 +50,9 @@ public:
 	Data data;
 
 	Hint(Type pType);
+	Hint(LevelTypes::Plane* plane);
+	Hint(Rail* rail);
+	Hint(Switch* switch0);
 	virtual ~Hint();
 
 	bool isAdvancement() { return type == Type::Plane || type == Type::Rail || type == Type::Switch; }

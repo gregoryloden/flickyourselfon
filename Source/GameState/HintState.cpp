@@ -22,6 +22,18 @@ Hint::Hint(Type pType)
 : type(pType)
 , data() {
 }
+Hint::Hint(LevelTypes::Plane* plane)
+: type(Hint::Type::Plane)
+, data(plane) {
+}
+Hint::Hint(Rail* rail)
+: type(Hint::Type::Rail)
+, data(rail) {
+}
+Hint::Hint(Switch* switch0)
+: type(Hint::Type::Switch)
+, data(switch0) {
+}
 Hint::~Hint() {
 	//don't delete anything in data, it's owned by something else
 }

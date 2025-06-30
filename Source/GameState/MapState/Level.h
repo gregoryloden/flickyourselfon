@@ -126,13 +126,7 @@ namespace LevelTypes {
 			int steps;
 			Hint hint;
 
-			Connection(
-				Plane* pToPlane,
-				char pRailByteIndex,
-				unsigned int pRailTileOffsetByteMask,
-				int pSteps,
-				Rail* rail,
-				Plane* hintPlane);
+			Connection(Plane* pToPlane, char pRailByteIndex, unsigned int pRailTileOffsetByteMask, int pSteps, Hint& pHint);
 			virtual ~Connection();
 
 			//returns the first switch in the given list of planes that controls this rail, or nullptr if one was not found
