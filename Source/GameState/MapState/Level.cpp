@@ -123,13 +123,13 @@ LevelTypes::Plane::Connection::~Connection() {
 }
 
 //////////////////////////////// LevelTypes::Plane::DetailedConnection ////////////////////////////////
-bool LevelTypes::Plane::DetailedConnection::requiresSwitchesOnPlane(DetailedPlane* plane) {
+bool LevelTypes::Plane::DetailedConnection::requiresSwitchesOnPlane(DetailedPlane* destination) {
 	//plane connections and rail connections without groups can't require switches, and rails that start raised don't apply
 	if (switchRailByteMaskData == nullptr || switchRailByteMaskData->rail->getInitialTileOffset() == 0)
 		return false;
 	//if this rails is affected by any switch outside of the plane, then it doesn't require switches on the plane
 	for (DetailedConnectionSwitch* affectingSwitch : affectingSwitches) {
-		if (affectingSwitch->owningPlane != plane)
+		if (affectingSwitch->owningPlane != destination)
 			return false;
 	}
 	//if the rail starts out lowered, and is only affected by switches in the plane, then using this connection requires
