@@ -384,6 +384,23 @@ bool LevelTypes::Plane::DetailedLevel::pathWalkToPlane(
 		}
 	}
 }
+bool LevelTypes::Plane::DetailedLevel::excludeRailConnections(DetailedConnection* connection) {
+	return connection->switchRailByteMaskData != nullptr;
+}
+function<bool(LevelTypes::Plane::DetailedConnection* connection)> LevelTypes::Plane::DetailedLevel::excludeSingleConnection(
+	DetailedConnection* excludedConnection)
+{
+	return [excludedConnection](DetailedConnection* detailedConnection) { return detailedConnection == excludedConnection; };
+}
+function<bool(LevelTypes::Plane::DetailedConnection* connection)> LevelTypes::Plane::DetailedLevel::excludeRailByteMasks(
+	vector<unsigned int>& railByteMasks)
+{
+	return [&railByteMasks](DetailedConnection* detailedConnection) {
+		Connection* connection = detailedConnection->connection;
+		return connection->railBits.data.byteIndex != Level::absentRailByteIndex
+			&& (railByteMasks[connection->railBits.data.byteIndex] & connection->railTileOffsetByteMask) != 0;
+	};
+}
 void LevelTypes::Plane::DetailedLevel::findMiniPuzzles(short alwaysOnBitId) {
 	//now find mini puzzles
 	//go through the rails from found switches, look at their groups, and collect new switches and their rails
@@ -693,23 +710,6 @@ void LevelTypes::Plane::finalizeBuilding(
 		plane->extendConnections();
 	for (Plane* plane : levelPlanes)
 		plane->removeEmptyPlaneConnections(alwaysOffBit);
-}
-bool LevelTypes::Plane::excludeRailConnections(DetailedConnection* connection) {
-	return connection->switchRailByteMaskData != nullptr;
-}
-function<bool(LevelTypes::Plane::DetailedConnection* connection)> LevelTypes::Plane::excludeSingleConnection(
-	DetailedConnection* excludedConnection)
-{
-	return [excludedConnection](DetailedConnection* detailedConnection) { return detailedConnection == excludedConnection; };
-}
-function<bool(LevelTypes::Plane::DetailedConnection* connection)> LevelTypes::Plane::excludeRailByteMasks(
-	vector<unsigned int>& railByteMasks)
-{
-	return [&railByteMasks](DetailedConnection* detailedConnection) {
-		Connection* connection = detailedConnection->connection;
-		return connection->railBits.data.byteIndex != Level::absentRailByteIndex
-			&& (railByteMasks[connection->railBits.data.byteIndex] & connection->railTileOffsetByteMask) != 0;
-	};
 }
 void LevelTypes::Plane::assignCanUseBits(RailByteMaskData::ByteMask alwaysOffBit, RailByteMaskData::ByteMask alwaysOnBit) {
 	//by default, we can always visit a plane with switches, and never visit a plane without switches

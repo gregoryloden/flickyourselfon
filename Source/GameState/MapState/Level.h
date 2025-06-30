@@ -172,6 +172,10 @@ namespace LevelTypes {
 
 			DetailedLevel(Level* pLevel, vector<Plane*>& levelPlanes);
 
+			//indicates that a path-walk should not exclude any connections
+			static bool excludeZeroConnections(DetailedConnection* connection) { return false; }
+			//indicates that a path-walk should accept all paths
+			static bool alwaysAcceptPath() { return true; }
 			//start from the first plane, go through all connections and planes, find planes and rails that are required to get
 			//	to the end, see which of them have single-use switches, and mark those switch connections as milestones
 			//then recursively repeat the process, instead ending at the planes of those milestone switches
@@ -199,6 +203,13 @@ namespace LevelTypes {
 				vector<DetailedPlane*>& inOutPathPlanes,
 				vector<DetailedConnection*>& inOutPathConnections,
 				function<bool()> checkPath);
+			//indicates that a path-walk should exclude rail connections
+			static bool excludeRailConnections(DetailedConnection* connection);
+			//indicates that a path-walk should exclude the given connection
+			static function<bool(DetailedConnection* connection)> excludeSingleConnection(
+				DetailedConnection* excludedConnection);
+			//indicates that a path-walk should exclude connections that match the given rail byte masks
+			static function<bool(DetailedConnection* connection)> excludeRailByteMasks(vector<unsigned int>& railByteMasks);
 			//find sets of 2 or more switches that have rails in common
 			//must be called after setting default bits and before extending connections or removing connections to non-victory
 			//	planes without switches
@@ -242,12 +253,6 @@ namespace LevelTypes {
 				return a->tiles[0].y < b->tiles[0].y || (a->tiles[0].y == b->tiles[0].y && a->tiles[0].x < b->tiles[0].x);
 			}
 		#endif
-	private:
-		//indicates that a path-walk should not exclude any connections
-		static bool excludeZeroConnections(DetailedConnection* connection) { return false; }
-		//indicates that a path-walk should accept all paths
-		static bool alwaysAcceptPath() { return true; }
-	public:
 		//add a tile
 		void addTile(int x, int y);
 		//add a switch
@@ -275,12 +280,6 @@ namespace LevelTypes {
 			RailByteMaskData::ByteMask alwaysOffBit,
 			RailByteMaskData::ByteMask alwaysOnBit);
 	private:
-		//indicates that a path-walk should exclude rail connections
-		static bool excludeRailConnections(DetailedConnection* connection);
-		//indicates that a path-walk should exclude the given connection
-		static function<bool(DetailedConnection* connection)> excludeSingleConnection(DetailedConnection* excludedConnection);
-		//indicates that a path-walk should exclude connections that match the given rail byte masks
-		static function<bool(DetailedConnection* connection)> excludeRailByteMasks(vector<unsigned int>& railByteMasks);
 		//set can-visit and can-kick bits where applicable on planes and switches respectively
 		//must be called after finding milestones
 		void assignCanUseBits(RailByteMaskData::ByteMask alwaysOffBit, RailByteMaskData::ByteMask alwaysOnBit);
