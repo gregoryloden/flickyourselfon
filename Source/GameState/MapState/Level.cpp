@@ -533,7 +533,8 @@ void LevelTypes::Plane::assignCanUseBits(RailByteMaskData::ByteMask alwaysOffBit
 	for (ConnectionSwitch& connectionSwitch : connectionSwitches) {
 		//single-use switches clear canKickBit when all their rails are raised
 		if (connectionSwitch.isSingleUse) {
-			//for one of the plane's milestones, reuse the plane's milestoneIsNewBit so that we clear it when we clear canKickBit
+			//for one of the plane's milestones, reuse the plane's milestoneIsNewBit so that we clear it when we clear
+			//	canKickBit
 			if (connectionSwitch.isMilestone && useMilestoneIsNewBitAsCanKickBit) {
 				connectionSwitch.canKickBit = milestoneIsNewBit;
 				useMilestoneIsNewBitAsCanKickBit = false;
