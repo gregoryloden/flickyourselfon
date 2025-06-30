@@ -155,8 +155,8 @@ namespace LevelTypes {
 			vector<DetailedConnectionSwitch> connectionSwitches;
 			vector<DetailedConnection> connections;
 
-			//search for paths to every remaining plane in levelPlanes until we reach this plane, without going through any
-			//	excluded connections or connections that require access to switches on this plane
+			//search for paths to every remaining plane until we reach this plane, without going through any excluded
+			//	connections or connections that require access to switches on this plane
 			//assumes there is at least one plane in inOutPathPlanes, and starts the walk from the end of the path described by
 			//	inOutPathPlanes, with inOutPathConnections detailing the connections going from the plane at the same index to
 			//	the plane at the next index
