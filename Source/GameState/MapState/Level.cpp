@@ -396,16 +396,15 @@ void LevelTypes::Plane::findMilestonesToThisPlane(
 		//skip plane-plane connections and always-raised rails
 		if (railConnection->switchRailByteMaskData == nullptr)
 			continue;
-		//look for a switch that only controls this rail
-		RailByteMaskData* matchingRailByteMaskData;
-		Plane* plane;
-		ConnectionSwitch* matchingConnectionSwitch =
-			railConnection->connection->findMatchingSwitch(levelPlanes, &matchingRailByteMaskData, &plane);
+
+		//all connections at this point are rails with switches
 		//if we already found this switch as a milestone, we don't need to mark or track it again
-		if (matchingConnectionSwitch == nullptr || matchingConnectionSwitch->isMilestone)
+		DetailedConnectionSwitch* matchingDetailedConnectionSwitch = railConnection->affectingSwitches[0];
+		ConnectionSwitch* matchingConnectionSwitch = matchingDetailedConnectionSwitch->connectionSwitch;
+		if (matchingConnectionSwitch->isMilestone)
 			continue;
-		//we found a matching switch for this rail
 		//if it's single-use, it's a milestone
+		Plane* matchingPlane = matchingDetailedConnectionSwitch->owningPlane->plane;
 		if (matchingConnectionSwitch->isSingleUse) {
 			#ifdef LOG_FOUND_PLANE_CONCLUSIONS
 				stringstream newMilestoneMessage;
@@ -414,27 +413,27 @@ void LevelTypes::Plane::findMilestonesToThisPlane(
 				Logger::debugLogger.logString(newMilestoneMessage.str());
 			#endif
 			matchingConnectionSwitch->isMilestone = true;
-			//if we haven't done so already, mark the plane as a milestone destination by having it track a bit for whether it's
-			//	been visited or not
-			if (plane->milestoneIsNewBit.location.data.byteIndex == Level::absentRailByteIndex)
-				plane->milestoneIsNewBit = owningLevel->trackRailByteMaskBits(1);
+			//if we haven't done so already, mark the switch's plane as a milestone destination by having it track a bit for
+			//	whether it's been visited or not
+			if (matchingPlane->milestoneIsNewBit.location.data.byteIndex == Level::absentRailByteIndex)
+				matchingPlane->milestoneIsNewBit = owningLevel->trackRailByteMaskBits(1);
 		}
 		//if this switch is the only switch to control the rail (whether it's single-use or not), and the rail starts out
 		//	lowered, track the switch's plane as a destination plane, if it isn't already tracked
-		Rail* rail = matchingRailByteMaskData->rail;
+		Rail* rail = railConnection->switchRailByteMaskData->rail;
 		if (rail->getGroups().size() == 1
 			&& rail->getInitialTileOffset() != 0
-			&& !VectorUtils::includes(outDestinationPlanes, plane))
+			&& !VectorUtils::includes(outDestinationPlanes, matchingPlane))
 		{
 			#ifdef LOG_FOUND_PLANE_CONCLUSIONS
 				stringstream destinationPlaneMessage;
 				destinationPlaneMessage << "level " << owningLevel->getLevelN()
-					<< " destination plane " << plane->indexInOwningLevel << " with switches:";
-				for (ConnectionSwitch& connectionSwitch : plane->connectionSwitches)
+					<< " destination plane " << matchingPlane->indexInOwningLevel << " with switches:";
+				for (ConnectionSwitch& connectionSwitch : matchingPlane->connectionSwitches)
 					MapState::logSwitchDescriptor(connectionSwitch.hint.data.switch0, &destinationPlaneMessage);
 				Logger::debugLogger.logString(destinationPlaneMessage.str());
 			#endif
-			outDestinationPlanes.push_back(plane);
+			outDestinationPlanes.push_back(matchingPlane);
 		}
 	}
 }
