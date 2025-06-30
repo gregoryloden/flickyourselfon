@@ -52,6 +52,7 @@ namespace LevelTypes {
 	};
 	class Plane onlyInDebug(: public ObjCounter) {
 	private:
+		struct DetailedConnectionSwitch;
 		struct DetailedPlane;
 		struct DetailedRail;
 
@@ -110,9 +111,10 @@ namespace LevelTypes {
 			//go through every affected rail and write its tile offset byte mask to the given byte masks
 			void writeTileOffsetByteMasks(vector<unsigned int>& railByteMasks);
 			//set this ConnectionSwitch to be part of a mini puzzle
-			void setMiniPuzzle(RailByteMaskData::ByteMask miniPuzzleBit, vector<RailByteMaskData*>& miniPuzzleRails);
+			void setMiniPuzzle(RailByteMaskData::ByteMask miniPuzzleBit, vector<DetailedRail*>& miniPuzzleRails);
 			//set this ConnectionSwitch to be part of an isolated area
-			void setIsolatedArea(vector<ConnectionSwitch*>& isolatedAreaSwitches, RailByteMaskData::ByteMask miniPuzzleBit);
+			void setIsolatedArea(
+				vector<DetailedConnectionSwitch*>& isolatedAreaSwitches, RailByteMaskData::ByteMask miniPuzzleBit);
 		};
 		//Should only be allocated within an object, on the stack, or as a static object
 		class Connection {
@@ -196,10 +198,16 @@ namespace LevelTypes {
 				vector<DetailedPlane*>& inOutPathPlanes,
 				vector<DetailedConnection*>& inOutPathConnections,
 				function<bool()> checkPath);
+			//find sets of 2 or more switches that have rails in common
+			//must be called after setting default bits and before extending connections or removing connections to non-victory
+			//	planes without switches
+			void findMiniPuzzles(short alwaysOnBitId);
 			//see if the given mini puzzle is part of an isolated area with single-use switches, and if so, track it in those
 			//	switches
 			void tryAddIsolatedArea(
-				vector<ConnectionSwitch*>& miniPuzzleSwitches, RailByteMaskData::ByteMask miniPuzzleBit, short alwaysOnBitId);
+				vector<DetailedConnectionSwitch*>& miniPuzzleSwitches,
+				RailByteMaskData::ByteMask miniPuzzleBit,
+				short alwaysOnBitId);
 			//find all planes that are reachable or unreachable when certain connections are excluded, and write them to
 			//	outReachablePlanes or outUnreachablePlanes respectively, if provided
 			void findReachablePlanes(
@@ -275,11 +283,6 @@ namespace LevelTypes {
 		//set can-visit and can-kick bits where applicable on planes and switches respectively
 		//must be called after finding milestones
 		void assignCanUseBits(RailByteMaskData::ByteMask alwaysOffBit, RailByteMaskData::ByteMask alwaysOnBit);
-		//find sets of 2 or more switches that have rails in common
-		//must be called after setting default bits and before extending connections or removing connections to non-victory
-		//	planes without switches
-		static void findMiniPuzzles(
-			Level* level, vector<Plane*>& levelPlanes, DetailedLevel& detailedLevel, short alwaysOnBitId);
 		//copy and add plane-plane and rail connections from all planes that are reachable through plane-plane connections from
 		//	this plane
 		void extendConnections();
