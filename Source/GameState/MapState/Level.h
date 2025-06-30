@@ -198,13 +198,16 @@ namespace LevelTypes {
 			//then recursively repeat the process, instead ending at the planes of those milestone switches
 			//must be called before extending connections or removing connections to non-victory planes without switches
 			void findMilestones(RailByteMaskData::ByteMask alwaysOnBit);
+			//see if the given mini puzzle is part of an isolated area with single-use switches, and if so, track it in those
+			//	switches
+			void tryAddIsolatedArea(
+				vector<ConnectionSwitch*>& miniPuzzleSwitches, RailByteMaskData::ByteMask miniPuzzleBit, short alwaysOnBitId);
 			//find all planes that are reachable or unreachable when certain connections are excluded, and write them to
 			//	outReachablePlanes or outUnreachablePlanes respectively, if provided
 			void findReachablePlanes(
-				vector<Plane*>& levelPlanes,
 				function<bool(DetailedConnection* connection)> excludeConnection,
-				vector<Plane*>* outReachablePlanes,
-				vector<Plane*>* outUnreachablePlanes);
+				vector<DetailedPlane*>* outReachablePlanes,
+				vector<DetailedPlane*>* outUnreachablePlanes);
 		};
 
 		Level* owningLevel;
@@ -279,14 +282,6 @@ namespace LevelTypes {
 		//	planes without switches
 		static void findMiniPuzzles(
 			Level* level, vector<Plane*>& levelPlanes, DetailedLevel& detailedLevel, short alwaysOnBitId);
-		//see if this mini puzzle is part of an isolated area with single-use switches, and if so, track it in those switches
-		static void tryAddIsolatedArea(
-			Level* level,
-			vector<Plane*>& levelPlanes,
-			DetailedLevel& detailedLevel,
-			vector<ConnectionSwitch*>& miniPuzzleSwitches,
-			RailByteMaskData::ByteMask miniPuzzleBit,
-			short alwaysOnBitId);
 		//copy and add plane-plane and rail connections from all planes that are reachable through plane-plane connections from
 		//	this plane
 		void extendConnections();
