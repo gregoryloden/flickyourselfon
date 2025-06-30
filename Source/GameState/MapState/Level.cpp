@@ -395,8 +395,14 @@ void LevelTypes::Plane::addRailConnectionToSwitch(RailByteMaskData* railByteMask
 	}
 #endif
 void LevelTypes::Plane::finalizeBuilding(
-	vector<Plane*>& levelPlanes, RailByteMaskData::ByteMask alwaysOffBit, RailByteMaskData::ByteMask alwaysOnBit)
+	Level* level, vector<Plane*>& levelPlanes, RailByteMaskData::ByteMask alwaysOffBit, RailByteMaskData::ByteMask alwaysOnBit)
 {
+	//if this level has no victory plane, don't bother adding any hint data since we'll never perform a hint search
+	Plane* victoryPlane = level->getVictoryPlane();
+	if (victoryPlane == nullptr)
+		return;
+
+	//assign default bits
 	for (Plane* plane : levelPlanes) {
 		//by default, we can always visit a plane with switches, and never visit a plane without switches
 		plane->canVisitBit = !plane->connectionSwitches.empty() ? alwaysOnBit : alwaysOffBit;
@@ -404,18 +410,8 @@ void LevelTypes::Plane::finalizeBuilding(
 			//by default, we can always kick a switch
 			connectionSwitch.canKickBit = alwaysOnBit;
 	}
-
-	Plane* victoryPlane = levelPlanes[0]->owningLevel->getVictoryPlane();
-	if (victoryPlane != nullptr)
-		//we can always visit the victory plane
-		victoryPlane->canVisitBit = alwaysOnBit;
-}
-void LevelTypes::Plane::optimizePlanes(
-	Level* level, vector<Plane*>& levelPlanes, RailByteMaskData::ByteMask alwaysOffBit, RailByteMaskData::ByteMask alwaysOnBit)
-{
-	//if this level has no victory plane, don't bother optimizing anything since we'll never perform a hint search
-	if (level->getVictoryPlane() == nullptr)
-		return;
+	//we can always visit the victory plane
+	victoryPlane->canVisitBit = alwaysOnBit;
 
 	DetailedLevel detailedLevel (level, levelPlanes);
 
@@ -1311,8 +1307,7 @@ void Level::finalizeBuilding() {
 				planes[i]->setIndexInOwningLevel(i);
 		}
 	#endif
-	Plane::finalizeBuilding(planes, alwaysOffBit, alwaysOnBit);
-	Plane::optimizePlanes(this, planes, alwaysOffBit, alwaysOnBit);
+	Plane::finalizeBuilding(this, planes, alwaysOffBit, alwaysOnBit);
 }
 void Level::setupHintSearchHelpers(vector<Level*>& allLevels) {
 	for (Level* level : allLevels) {

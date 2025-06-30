@@ -252,13 +252,9 @@ namespace LevelTypes {
 			//validate that the reset switch resets every switch in this plane
 			void validateResetSwitch(ResetSwitch* resetSwitch);
 		#endif
-		//finish setup of the level planes
+		//finish setup of the level planes, analyze them and store any helpful conclusions we find on them, and optimize their
+		//	connections for faster traversal through the level in hint searches
 		static void finalizeBuilding(
-			vector<Plane*>& levelPlanes, RailByteMaskData::ByteMask alwaysOffBit, RailByteMaskData::ByteMask alwaysOnBit);
-		//analyze the planes and store any conclusions we find on them, and optimize their connections for faster traversal
-		//	through the level in hint searches
-		//must be called after finalizing building
-		static void optimizePlanes(
 			Level* level,
 			vector<Plane*>& levelPlanes,
 			RailByteMaskData::ByteMask alwaysOffBit,
