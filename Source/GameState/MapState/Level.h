@@ -54,6 +54,7 @@ namespace LevelTypes {
 	private:
 		struct DetailedPlane;
 		struct DetailedRail;
+		struct DetailedLevel;
 
 		//Should only be allocated within an object, on the stack, or as a static object
 		class Tile {
