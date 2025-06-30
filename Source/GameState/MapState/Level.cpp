@@ -1266,8 +1266,8 @@ levelN(pLevelN)
 , victoryPlane(nullptr)
 , minimumRailColor(0)
 , radioTowerHint(Hint::Type::None)
-, undoResetHint(Hint::Type::None)
-, searchCanceledEarlyHint(Hint::Type::None) {
+, undoResetHint(Hint::Type::UndoReset)
+, searchCanceledEarlyHint(Hint::Type::SearchCanceledEarly) {
 }
 Level::~Level() {
 	for (Plane* plane : planes)
@@ -1286,9 +1286,7 @@ void Level::assignRadioTowerSwitch(Switch* radioTowerSwitch) {
 	radioTowerHint = Hint(radioTowerSwitch);
 }
 void Level::assignResetSwitch(ResetSwitch* resetSwitch) {
-	undoResetHint.type = Hint::Type::UndoReset;
 	undoResetHint.data.resetSwitch = resetSwitch;
-	searchCanceledEarlyHint.type = Hint::Type::SearchCanceledEarly;
 	searchCanceledEarlyHint.data.resetSwitch = resetSwitch;
 }
 int Level::trackNextRail(short railId, Rail* rail) {
