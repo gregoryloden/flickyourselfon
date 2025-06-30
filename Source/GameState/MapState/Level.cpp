@@ -185,7 +185,7 @@ LevelTypes::Plane::DetailedLevel::DetailedLevel(Level* pLevel, vector<Plane*>& l
 , planes(levelPlanes.size())
 , rails((size_t)level->getRailByteMaskCount())
 , victoryPlane(nullptr) {
-	//first, copy the basic structure
+	//copy the basic structure
 	for (int i = 0; i < (int)levelPlanes.size(); i++) {
 		Plane* plane = levelPlanes[i];
 		DetailedPlane& detailedPlane = planes[i];
@@ -198,7 +198,7 @@ LevelTypes::Plane::DetailedLevel::DetailedLevel(Level* pLevel, vector<Plane*>& l
 	}
 	victoryPlane = &planes[level->getVictoryPlane()->indexInOwningLevel];
 
-	//find all the switches for each rail
+	//collect all rails, and remember which rail goes with which switch
 	auto getDetailedRail = [this](RailByteMaskData* railByteMaskData) {
 		vector<DetailedRail>& byteMaskRails = rails[railByteMaskData->railBits.data.byteIndex];
 		for (DetailedRail& detailedRail : byteMaskRails) {
@@ -211,20 +211,19 @@ LevelTypes::Plane::DetailedLevel::DetailedLevel(Level* pLevel, vector<Plane*>& l
 	for (DetailedPlane& detailedPlane : planes) {
 		for (DetailedConnectionSwitch& detailedConnectionSwitch : detailedPlane.connectionSwitches) {
 			for (RailByteMaskData* railByteMaskData : detailedConnectionSwitch.connectionSwitch->affectedRailByteMaskData)
-				getDetailedRail(railByteMaskData);
-		}
-	}
-	for (DetailedPlane& detailedPlane : planes) {
-		for (DetailedConnectionSwitch& detailedConnectionSwitch : detailedPlane.connectionSwitches) {
-			for (RailByteMaskData* railByteMaskData : detailedConnectionSwitch.connectionSwitch->affectedRailByteMaskData) {
-				DetailedRail* detailedRail = getDetailedRail(railByteMaskData);
-				detailedRail->affectingSwitches.push_back(&detailedConnectionSwitch);
-				detailedConnectionSwitch.affectedRails.push_back(detailedRail);
-			}
+				getDetailedRail(railByteMaskData)->affectingSwitches.push_back(&detailedConnectionSwitch);
 		}
 	}
 
-	//then, find all the switches for all connections
+	//connect all rails to switches
+	for (vector<DetailedRail>& byteMaskRails : rails) {
+		for (DetailedRail& detailedRail : byteMaskRails) {
+			for (DetailedConnectionSwitch* detailedConnectionSwitch : detailedRail.affectingSwitches)
+				detailedConnectionSwitch->affectedRails.push_back(&detailedRail);
+		}
+	}
+
+	//connect all switches to connections
 	for (DetailedPlane& detailedPlane : planes) {
 		for (DetailedConnection& detailedConnection : detailedPlane.connections) {
 			if (detailedConnection.connection->railBits.data.byteIndex == Level::absentRailByteIndex)
