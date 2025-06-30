@@ -540,6 +540,10 @@ void MapState::addRailPlaneConnection(
 	int adjacentRailSegmentIndex,
 	deque<int>& tileChecks)
 {
+	//if the rail has no groups and is lowered, then it will never be ridable, and thus doesn't provide a connection
+	//should never happen with an umodified floor file once the game is released
+	if (rail->getGroups().empty() && rail->getInitialTileOffset() != 0)
+		return;
 	//if the rail goes to an old plane, we've already tracked the connection
 	if (planeIds[toTile] != 0)
 		return;
