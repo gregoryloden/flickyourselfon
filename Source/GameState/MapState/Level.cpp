@@ -183,7 +183,8 @@ void LevelTypes::Plane::DetailedConnection::tryAddMilestoneSwitch(vector<Detaile
 LevelTypes::Plane::DetailedLevel::DetailedLevel(Level* pLevel, vector<Plane*>& levelPlanes)
 : level(pLevel)
 , planes(levelPlanes.size())
-, rails((size_t)level->getRailByteMaskCount()) {
+, rails((size_t)level->getRailByteMaskCount())
+, victoryPlane(nullptr) {
 	//first, copy the basic structure
 	for (int i = 0; i < (int)levelPlanes.size(); i++) {
 		Plane* plane = levelPlanes[i];
