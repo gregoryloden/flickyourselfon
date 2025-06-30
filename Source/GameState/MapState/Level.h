@@ -261,7 +261,7 @@ namespace LevelTypes {
 			vector<Plane*>& levelPlanes, DetailedLevel& detailedLevel, RailByteMaskData::ByteMask alwaysOnBit);
 		//find milestones that enable access to this plane, and record their planes in outDestinationPlanes
 		void findMilestonesToThisPlane(
-			vector<Plane*>& levelPlanes, DetailedLevel& detailedLevel, vector<Plane*>& outDestinationPlanes);
+			vector<Plane*>& levelPlanes, DetailedLevel& detailedLevel, vector<DetailedPlane*>& outDestinationPlanes);
 		//find all connections that must be crossed in order to get to this plane from the start plane
 		vector<DetailedConnection*> findRequiredConnectionsToThisPlane(
 			vector<Plane*>& levelPlanes, DetailedLevel& detailedLevel);
