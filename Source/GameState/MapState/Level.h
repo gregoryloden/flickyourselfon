@@ -125,11 +125,6 @@ namespace LevelTypes {
 
 			Connection(Plane* pToPlane, RailByteMaskData::BitsLocation pRailBits, int pSteps, Hint& pHint);
 			virtual ~Connection();
-
-			//returns the first switch in the given list of planes that controls this rail, or nullptr if one was not found
-			//writes the matching RailByteMaskData for the rail if a matching switch was found, as well as the switch's Plane
-			ConnectionSwitch* findMatchingSwitch(
-				vector<Plane*>& levelPlanes, RailByteMaskData** outRailByteMaskData, Plane** outPlane);
 		};
 		//Should only be allocated within an object, on the stack, or as a static object
 		struct DetailedConnectionSwitch {
@@ -180,6 +175,9 @@ namespace LevelTypes {
 				vector<DetailedPlane*>& inOutPathPlanes,
 				vector<DetailedConnection*>& inOutPathConnections,
 				function<bool()> checkPath);
+			//find all connections that must be crossed in order to get to this plane from the start plane
+			vector<DetailedConnection*> findRequiredConnectionsToThisPlane(
+				vector<Plane*>& levelPlanes, DetailedLevel& detailedLevel);
 		};
 		//Should only be allocated within an object, on the stack, or as a static object
 		struct DetailedRail {
@@ -260,9 +258,6 @@ namespace LevelTypes {
 			RailByteMaskData::ByteMask alwaysOffBit,
 			RailByteMaskData::ByteMask alwaysOnBit);
 	private:
-		//find all connections that must be crossed in order to get to this plane from the start plane
-		vector<DetailedConnection*> findRequiredConnectionsToThisPlane(
-			vector<Plane*>& levelPlanes, DetailedLevel& detailedLevel);
 		//indicates that a path-walk should exclude rail connections
 		static bool excludeRailConnections(DetailedConnection* connection);
 		//indicates that a path-walk should exclude the given connection

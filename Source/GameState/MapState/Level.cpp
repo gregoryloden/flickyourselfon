@@ -120,24 +120,6 @@ LevelTypes::Plane::Connection::Connection(Plane* pToPlane, RailByteMaskData::Bit
 LevelTypes::Plane::Connection::~Connection() {
 	//don't delete toPlane, it's owned by a Level
 }
-LevelTypes::Plane::ConnectionSwitch* LevelTypes::Plane::Connection::findMatchingSwitch(
-	vector<Plane*>& levelPlanes, RailByteMaskData** outRailByteMaskData, Plane** outPlane)
-{
-	for (Plane* plane : levelPlanes) {
-		for (ConnectionSwitch& connectionSwitch : plane->connectionSwitches) {
-			for (RailByteMaskData* railByteMaskData : connectionSwitch.affectedRailByteMaskData) {
-				if (railByteMaskData->railBits.id == railBits.id) {
-					if (outRailByteMaskData != nullptr)
-						*outRailByteMaskData = railByteMaskData;
-					if (outPlane != nullptr)
-						*outPlane = plane;
-					return &connectionSwitch;
-				}
-			}
-		}
-	}
-	return nullptr;
-}
 
 //////////////////////////////// LevelTypes::Plane::DetailedConnection ////////////////////////////////
 bool LevelTypes::Plane::DetailedConnection::requiresSwitchesOnPlane(DetailedPlane* plane) {
@@ -248,6 +230,90 @@ bool LevelTypes::Plane::DetailedPlane::pathWalkToThisPlane(
 		}
 	}
 }
+vector<LevelTypes::Plane::DetailedConnection*> LevelTypes::Plane::DetailedPlane::findRequiredConnectionsToThisPlane(
+	vector<Plane*>& levelPlanes, DetailedLevel& detailedLevel)
+{
+	DetailedPlane* startPlane = &detailedLevel.planes[0];
+	size_t planeCount = detailedLevel.planes.size();
+
+	//find any path to this plane
+	//assuming this plane can be found in levelPlanes, we know there must be a path to get here from the starting plane, because
+	//	that's how we found this plane in the first place
+	vector<DetailedPlane*> pathPlanes ({ startPlane });
+	vector<DetailedConnection*> pathConnections;
+	pathWalkToThisPlane(planeCount, excludeZeroConnections, pathPlanes, pathConnections, alwaysAcceptPath);
+
+	//prep some data about our path
+	vector<bool> connectionIsRequired (pathConnections.size(), true);
+	vector<bool> seenPlanes (planeCount, false);
+	for (DetailedPlane* detailedPlane : pathPlanes)
+		seenPlanes[detailedPlane->plane->indexInOwningLevel] = true;
+
+	//go back and search again to find routes from each plane in the path toward later planes in the path, without going through
+	//	any of the connections in the path we already found
+	vector<DetailedPlane*> reroutePathPlanes;
+	vector<DetailedConnection*> reroutePathConnections;
+	for (int i = 0; i < (int)pathConnections.size(); i++) {
+		reroutePathPlanes.push_back(pathPlanes[i]);
+		reroutePathConnections.push_back(pathConnections[i]);
+		auto checkIfRerouteReturnsToOriginalPath = [&pathPlanes, &reroutePathPlanes, &seenPlanes, &connectionIsRequired, i]() {
+			DetailedPlane* detailedPlane = reroutePathPlanes.back();
+			if (!seenPlanes[detailedPlane->plane->indexInOwningLevel])
+				return true;
+			//we found a plane on the original path through an alternate route
+			//mark every connection between the reroute start and end planes as non-required
+			//then, go back one connection
+			for (int j = i; pathPlanes[j] != detailedPlane; j++)
+				connectionIsRequired[j] = false;
+			return false;
+		};
+		pathWalkToThisPlane(
+			planeCount,
+			excludeSingleConnection(reroutePathConnections.back()),
+			reroutePathPlanes,
+			reroutePathConnections,
+			checkIfRerouteReturnsToOriginalPath);
+	}
+
+	//some rails which we marked as not-required have single-use switches which actually are required, because every other path
+	//	to this plane still goes through a rail with that switch
+	//find every single-use switch on not-required rails, and one switch at a time, exclude all connections for that switch, and
+	//	see if we can still find a path to this plane; if not, then re-mark that rail as required
+	vector<unsigned int> switchRailByteMasks ((size_t)plane->owningLevel->getRailByteMaskCount(), 0);
+	function<bool(DetailedConnection* connection)> excludeSwitchConnections = excludeRailByteMasks(switchRailByteMasks);
+	for (int i = 0; i < (int)pathConnections.size(); i++) {
+		//skip required connections
+		if (connectionIsRequired[i])
+			continue;
+		//skip plane-plane connections and always-raised rails
+		DetailedConnection* railConnection = pathConnections[i];
+		if (railConnection->switchRailByteMaskData == nullptr)
+			continue;
+		//skip rails with switches that aren't single-use
+		ConnectionSwitch* matchingConnectionSwitch = railConnection->affectingSwitches[0]->connectionSwitch;
+		if (!matchingConnectionSwitch->isSingleUse)
+			continue;
+		//we found a single-use switch that is not required
+		//mark all of its rail connections as excluded, and see if we can find a path to this plane
+		VectorUtils::fill(switchRailByteMasks, 0U);
+		matchingConnectionSwitch->writeTileOffsetByteMasks(switchRailByteMasks);
+		reroutePathPlanes = { startPlane };
+		reroutePathConnections.clear();
+		//if there is not a path to this plane after excluding the switch's connections, then it is a milestone switch
+		//mark this rail as required, and we'll handle marking the switch as a milestone in the below loop
+		if (!pathWalkToThisPlane(
+				planeCount, excludeSwitchConnections, reroutePathPlanes, reroutePathConnections, alwaysAcceptPath))
+			connectionIsRequired[i] = true;
+	}
+
+	//remove all non-required connections
+	for (int i = (int)pathConnections.size() - 1; i >= 0; i--) {
+		if (!connectionIsRequired[i])
+			pathConnections.erase(pathConnections.begin() + i);
+	}
+
+	return pathConnections;
+}
 
 //////////////////////////////// LevelTypes::Plane::DetailedLevel ////////////////////////////////
 LevelTypes::Plane::DetailedLevel::DetailedLevel(Level* pLevel, vector<Plane*>& levelPlanes)
@@ -313,7 +379,7 @@ void LevelTypes::Plane::DetailedLevel::findMilestones(vector<Plane*>& levelPlane
 	for (int i = 0; i < (int)destinationPlanes.size(); i++) {
 		//try to add a milestone switch for each required connection
 		for (DetailedConnection* requiredConnection
-				: destinationPlanes[i]->plane->findRequiredConnectionsToThisPlane(levelPlanes, *this))
+				: destinationPlanes[i]->findRequiredConnectionsToThisPlane(levelPlanes, *this))
 			requiredConnection->tryAddMilestoneSwitch(levelPlanes, destinationPlanes);
 	}
 }
@@ -419,89 +485,6 @@ void LevelTypes::Plane::finalizeBuilding(
 		plane->extendConnections();
 	for (Plane* plane : levelPlanes)
 		plane->removeEmptyPlaneConnections(alwaysOffBit);
-}
-vector<LevelTypes::Plane::DetailedConnection*> LevelTypes::Plane::findRequiredConnectionsToThisPlane(
-	vector<Plane*>& levelPlanes, DetailedLevel& detailedLevel)
-{
-	//find any path to this plane
-	//assuming this plane can be found in levelPlanes, we know there must be a path to get here from the starting plane, because
-	//	that's how we found this plane in the first place
-	vector<DetailedPlane*> pathPlanes ({ &detailedLevel.planes[0] });
-	vector<DetailedConnection*> pathConnections;
-	detailedLevel.planes[indexInOwningLevel].pathWalkToThisPlane(
-		levelPlanes.size(), excludeZeroConnections, pathPlanes, pathConnections, alwaysAcceptPath);
-
-	//prep some data about our path
-	vector<bool> connectionIsRequired (pathConnections.size(), true);
-	vector<bool> seenPlanes (levelPlanes.size(), false);
-	for (DetailedPlane* detailedPlane : pathPlanes)
-		seenPlanes[detailedPlane->plane->indexInOwningLevel] = true;
-
-	//go back and search again to find routes from each plane in the path toward later planes in the path, without going through
-	//	any of the connections in the path we already found
-	vector<DetailedPlane*> reroutePathPlanes;
-	vector<DetailedConnection*> reroutePathConnections;
-	for (int i = 0; i < (int)pathConnections.size(); i++) {
-		reroutePathPlanes.push_back(pathPlanes[i]);
-		reroutePathConnections.push_back(pathConnections[i]);
-		auto checkIfRerouteReturnsToOriginalPath = [&pathPlanes, &reroutePathPlanes, &seenPlanes, &connectionIsRequired, i]() {
-			DetailedPlane* detailedPlane = reroutePathPlanes.back();
-			if (!seenPlanes[detailedPlane->plane->indexInOwningLevel])
-				return true;
-			//we found a plane on the original path through an alternate route
-			//mark every connection between the reroute start and end planes as non-required
-			//then, go back one connection
-			for (int j = i; pathPlanes[j] != detailedPlane; j++)
-				connectionIsRequired[j] = false;
-			return false;
-		};
-		detailedLevel.planes[indexInOwningLevel].pathWalkToThisPlane(
-			levelPlanes.size(),
-			excludeSingleConnection(reroutePathConnections.back()),
-			reroutePathPlanes,
-			reroutePathConnections,
-			checkIfRerouteReturnsToOriginalPath);
-	}
-
-	//some rails which we marked as not-required have single-use switches which actually are required, because every other path
-	//	to this plane still goes through a rail with that switch
-	//find every single-use switch on not-required rails, and one switch at a time, exclude all connections for that switch, and
-	//	see if we can still find a path to this plane; if not, then re-mark that rail as required
-	vector<unsigned int> switchRailByteMasks ((size_t)owningLevel->getRailByteMaskCount(), 0);
-	function<bool(DetailedConnection* connection)> excludeSwitchConnections = excludeRailByteMasks(switchRailByteMasks);
-	for (int i = 0; i < (int)pathConnections.size(); i++) {
-		//skip required connections
-		if (connectionIsRequired[i])
-			continue;
-		//skip plane-plane connections and always-raised rails
-		DetailedConnection* railConnection = pathConnections[i];
-		if (railConnection->switchRailByteMaskData == nullptr)
-			continue;
-		//skip rails with switches that aren't single-use
-		ConnectionSwitch* matchingConnectionSwitch =
-			railConnection->connection->findMatchingSwitch(levelPlanes, nullptr, nullptr);
-		if (matchingConnectionSwitch == nullptr || !matchingConnectionSwitch->isSingleUse)
-			continue;
-		//we found a single-use switch that is not required
-		//mark all of its rail connections as excluded, and see if we can find a path to this plane
-		VectorUtils::fill(switchRailByteMasks, 0U);
-		matchingConnectionSwitch->writeTileOffsetByteMasks(switchRailByteMasks);
-		reroutePathPlanes = { &detailedLevel.planes[0] };
-		reroutePathConnections.clear();
-		//if there is not a path to this plane after excluding the switch's connections, then it is a milestone switch
-		//mark this rail as required, and we'll handle marking the switch as a milestone in the below loop
-		if (!detailedLevel.planes[indexInOwningLevel].pathWalkToThisPlane(
-				levelPlanes.size(), excludeSwitchConnections, reroutePathPlanes, reroutePathConnections, alwaysAcceptPath))
-			connectionIsRequired[i] = true;
-	}
-
-	//remove all non-required connections and plane-plane connections
-	for (int i = (int)pathConnections.size() - 1; i >= 0; i--) {
-		if (!connectionIsRequired[i])
-			pathConnections.erase(pathConnections.begin() + i);
-	}
-
-	return pathConnections;
 }
 bool LevelTypes::Plane::excludeRailConnections(DetailedConnection* connection) {
 	return connection->switchRailByteMaskData != nullptr;
@@ -661,10 +644,12 @@ void LevelTypes::Plane::tryAddIsolatedArea(
 
 	//go through all the isolated planes, and find the connections that are mutually required by all of them
 	vector<DetailedConnection*> requiredConnections =
-		isolatedAreaPlanes[0]->findRequiredConnectionsToThisPlane(levelPlanes, detailedLevel);
+		detailedLevel.planes[isolatedAreaPlanes[0]->indexInOwningLevel].findRequiredConnectionsToThisPlane(
+			levelPlanes, detailedLevel);
 	for (int i = 1; i < (int)isolatedAreaPlanes.size(); i++) {
 		vector<DetailedConnection*> otherRequiredConnections =
-			isolatedAreaPlanes[i]->findRequiredConnectionsToThisPlane(levelPlanes, detailedLevel);
+			detailedLevel.planes[isolatedAreaPlanes[i]->indexInOwningLevel].findRequiredConnectionsToThisPlane(
+				levelPlanes, detailedLevel);
 		auto notRequiredForOtherSwitch = [&otherRequiredConnections](DetailedConnection* connection) {
 			return !VectorUtils::includes(otherRequiredConnections, connection);
 		};
