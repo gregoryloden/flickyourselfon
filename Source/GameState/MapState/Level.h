@@ -193,6 +193,8 @@ namespace LevelTypes {
 			vector<vector<DetailedRail>> rails;
 			DetailedPlane* victoryPlane;
 
+			DetailedLevel(Level* pLevel, vector<Plane*>& levelPlanes);
+
 			//start from the first plane, go through all connections and planes, find planes and rails that are required to get
 			//	to the end, see which of them have single-use switches, and mark those switch connections as milestones
 			//then recursively repeat the process, instead ending at the planes of those milestone switches
@@ -262,8 +264,6 @@ namespace LevelTypes {
 			RailByteMaskData::ByteMask alwaysOffBit,
 			RailByteMaskData::ByteMask alwaysOnBit);
 	private:
-		//add extra data to the planes
-		static DetailedLevel buildDetailedLevel(Level* level, vector<Plane*>& levelPlanes);
 		//find all connections that must be crossed in order to get to this plane from the start plane
 		vector<DetailedConnection*> findRequiredConnectionsToThisPlane(
 			vector<Plane*>& levelPlanes, DetailedLevel& detailedLevel);
