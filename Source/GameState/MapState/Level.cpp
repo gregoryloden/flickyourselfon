@@ -813,14 +813,13 @@ void LevelTypes::Plane::extendConnections() {
 		//don't try to extend connections through rail connections
 		if (connection.railByteIndex != Level::absentRailByteIndex)
 			continue;
-		LevelTypes::Plane* otherPlane = connection.toPlane;
-		//since all connections at this point are plane-plane connections, we know the hint type is Plane, and points to the
-		//	first plane that approaches the to-plane
-		LevelTypes::Plane* hintPlane = connection.hint.data.plane;
+		//reuse the source hint for any extended hints, this may itself be an extended hint
+		//copy the connection hint instead of using a reference because the vector reallocates when it resizes
+		Hint hint = connection.hint;
 		int steps = connection.steps + 1;
 		//look through all the planes this other plane can reach (directly), and add connections to them if we don't already
 		//	have them
-		for (Connection& otherConnection : otherPlane->connections) {
+		for (Connection& otherConnection : connection.toPlane->connections) {
 			LevelTypes::Plane* toPlane = otherConnection.toPlane;
 			//don't attempt to follow non-direct connections
 			if (otherConnection.steps > 1)
@@ -831,18 +830,11 @@ void LevelTypes::Plane::extendConnections() {
 			//	connections
 			if (toPlane == this || isConnectedByPlanes(toPlane))
 				continue;
-			//plane-plane connection
-			if (otherConnection.railByteIndex == Level::absentRailByteIndex)
-				connections.push_back(Connection(toPlane, Level::absentRailByteIndex, 0, steps, Hint(hintPlane)));
-			//rail connection
-			else
-				connections.push_back(
-					Connection(
-						toPlane,
-						otherConnection.railByteIndex,
-						otherConnection.railTileOffsetByteMask,
-						steps,
-						Hint(hintPlane)));
+			//this is a new connection
+			//copy it, but with the source connection's hint and the new step count
+			connections.push_back(otherConnection);
+			connections.back().steps = steps;
+			connections.back().hint = hint;
 		}
 	}
 }
