@@ -776,31 +776,16 @@ void LevelTypes::Plane::removeEmptyPlaneConnections(short alwaysOffBitId) {
 	VectorUtils::filterErase(connections, isEmptyPlaneConnection);
 }
 void LevelTypes::Plane::markStatusBitsInDraftState(vector<Plane*>& levelPlanes) {
-	auto railBitsIsLowered = [](RailByteMaskData::BitsLocation railBitsLocation) {
-		return ((char)(HintState::PotentialLevelState::draftState.railByteMasks[railBitsLocation.data.byteIndex]
-					>> railBitsLocation.data.bitShift)
-				& (char)Level::baseRailTileOffsetByteMask)
-			!= 0;
-	};
-	auto railIsLowered = [railBitsIsLowered](RailByteMaskData* railByteMaskData) {
-		return railBitsIsLowered(railByteMaskData->railBits);
-	};
-	auto bitIsActive = [](RailByteMaskData::BitsLocation bitLocation) {
-		return ((char)(HintState::PotentialLevelState::draftState.railByteMasks[bitLocation.data.byteIndex]
-					>> bitLocation.data.bitShift)
-				& 1)
-			!= 0;
-	};
-
 	//mark switches as can-kick if any of their connections are lowered
 	//this will also mark planes as can-visit and milestone-is-new where those bits are set to the same value
 	for (Plane* plane : levelPlanes) {
 		for (ConnectionSwitch& connectionSwitch : plane->connectionSwitches) {
 			if (connectionSwitch.canKickBit.location.id == Level::cachedAlwaysOnBitId)
 				continue;
-			if (VectorUtils::anyMatch(connectionSwitch.affectedRailByteMaskData, railIsLowered)
+			if (VectorUtils::anyMatch(connectionSwitch.affectedRailByteMaskData, draftRailIsLowered)
 					|| (connectionSwitch.conclusionsType == ConnectionSwitch::ConclusionsType::MiniPuzzle
-						&& VectorUtils::anyMatch(connectionSwitch.conclusionsData.miniPuzzle.otherRailBits, railBitsIsLowered)))
+						&& VectorUtils::anyMatch(
+							connectionSwitch.conclusionsData.miniPuzzle.otherRailBits, draftRailBitsIsLowered)))
 				HintState::PotentialLevelState::draftState.railByteMasks[connectionSwitch.canKickBit.location.data.byteIndex] |=
 					connectionSwitch.canKickBit.byteMask;
 		}
@@ -812,14 +797,29 @@ void LevelTypes::Plane::markStatusBitsInDraftState(vector<Plane*>& levelPlanes) 
 		for (ConnectionSwitch& connectionSwitch : plane->connectionSwitches) {
 			if (connectionSwitch.conclusionsType != ConnectionSwitch::ConclusionsType::IsolatedArea)
 				continue;
-			if (!bitIsActive(connectionSwitch.canKickBit.location)
+			if (!draftBitIsActive(connectionSwitch.canKickBit.location)
 					&& !VectorUtils::anyMatch(
-						connectionSwitch.conclusionsData.isolatedArea.otherGoalSwitchCanKickBits, bitIsActive))
+						connectionSwitch.conclusionsData.isolatedArea.otherGoalSwitchCanKickBits, draftBitIsActive))
 				HintState::PotentialLevelState::draftState.railByteMasks[
 						connectionSwitch.conclusionsData.isolatedArea.miniPuzzleBit.location.data.byteIndex] &=
 					~connectionSwitch.conclusionsData.isolatedArea.miniPuzzleBit.byteMask;
 		}
 	}
+}
+bool LevelTypes::Plane::draftRailBitsIsLowered(RailByteMaskData::BitsLocation railBitsLocation) {
+	return ((char)(HintState::PotentialLevelState::draftState.railByteMasks[railBitsLocation.data.byteIndex]
+				>> railBitsLocation.data.bitShift)
+			& (char)Level::baseRailTileOffsetByteMask)
+		!= 0;
+}
+bool LevelTypes::Plane::draftRailIsLowered(RailByteMaskData* railByteMaskData) {
+	return draftRailBitsIsLowered(railByteMaskData->railBits);
+}
+bool LevelTypes::Plane::draftBitIsActive(RailByteMaskData::BitsLocation bitLocation) {
+	return ((char)(HintState::PotentialLevelState::draftState.railByteMasks[bitLocation.data.byteIndex]
+				>> bitLocation.data.bitShift)
+			& 1)
+		!= 0;
 }
 void LevelTypes::Plane::pursueSolutionToPlanes(HintState::PotentialLevelState* currentState, int basePotentialLevelStateSteps) {
 	unsigned int bucket = currentState->railByteMasksHash % Level::PotentialLevelStatesByBucket::bucketSize;

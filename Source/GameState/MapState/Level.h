@@ -297,6 +297,12 @@ namespace LevelTypes {
 		//- set bits where milestones are new
 		//- set bits where switches can be kicked
 		static void markStatusBitsInDraftState(vector<Plane*>& levelPlanes);
+		//returns whether the rail at the given bits location is lowered in the draft state
+		static bool draftRailBitsIsLowered(RailByteMaskData::BitsLocation railBitsLocation);
+		//returns whether the given rail is lowered in the draft state
+		static bool draftRailIsLowered(RailByteMaskData* railByteMaskData);
+		//returns whether the bit at the given location is active in the draft state
+		static bool draftBitIsActive(RailByteMaskData::BitsLocation bitLocation);
 		//follow all possible paths to other planes, adding states at those planes to the current hint search queues
 		void pursueSolutionToPlanes(HintState::PotentialLevelState* currentState, int basePotentialLevelStateSteps);
 		//kick each switch in this plane, and then pursue solutions from those states
