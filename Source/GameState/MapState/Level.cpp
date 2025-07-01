@@ -200,15 +200,6 @@ LevelTypes::Plane::DetailedLevel::DetailedLevel(Level* pLevel, vector<Plane*>& l
 	victoryPlane = &planes[level->getVictoryPlane()->indexInOwningLevel];
 
 	//collect all rails and all connection switches, and remember which rail goes with which switch
-	auto getDetailedRail = [this](RailByteMaskData* railByteMaskData) {
-		vector<DetailedRail>& byteMaskRails = rails[railByteMaskData->railBits.data.byteIndex];
-		for (DetailedRail& detailedRail : byteMaskRails) {
-			if (detailedRail.railByteMaskData == railByteMaskData)
-				return &detailedRail;
-		}
-		byteMaskRails.push_back({ railByteMaskData });
-		return &byteMaskRails.back();
-	};
 	for (DetailedPlane& detailedPlane : planes) {
 		for (DetailedConnectionSwitch& detailedConnectionSwitch : detailedPlane.connectionSwitches) {
 			for (RailByteMaskData* railByteMaskData : detailedConnectionSwitch.connectionSwitch->affectedRailByteMaskData)
@@ -241,6 +232,15 @@ LevelTypes::Plane::DetailedLevel::DetailedLevel(Level* pLevel, vector<Plane*>& l
 			}
 		}
 	}
+}
+LevelTypes::Plane::DetailedRail* LevelTypes::Plane::DetailedLevel::getDetailedRail(RailByteMaskData* railByteMaskData) {
+	vector<DetailedRail>& byteMaskRails = rails[railByteMaskData->railBits.data.byteIndex];
+	for (DetailedRail& detailedRail : byteMaskRails) {
+		if (detailedRail.railByteMaskData == railByteMaskData)
+			return &detailedRail;
+	}
+	byteMaskRails.push_back({ railByteMaskData });
+	return &byteMaskRails.back();
 }
 void LevelTypes::Plane::DetailedLevel::findMilestones(RailByteMaskData::ByteMask alwaysOnBit) {
 	//the victory plane is always a milestone destination

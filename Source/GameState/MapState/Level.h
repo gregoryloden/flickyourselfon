@@ -176,6 +176,9 @@ namespace LevelTypes {
 			static bool excludeZeroConnections(DetailedConnection* connection) { return false; }
 			//indicates that a path-walk should accept all paths
 			static bool alwaysAcceptPath() { return true; }
+			//get a DetailedRail for the given RailByteMaskData, creating it if necessary
+			//the returned value should not be stored until every rail in the level has been created
+			DetailedRail* getDetailedRail(RailByteMaskData* railByteMaskData);
 			//start from the first plane, go through all connections and planes, find planes and rails that are required to get
 			//	to the end, see which of them have single-use switches, and mark those switch connections as milestones
 			//then recursively repeat the process, instead ending at the planes of those milestone switches
