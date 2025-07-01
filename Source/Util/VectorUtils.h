@@ -8,6 +8,10 @@ public:
 	template <class Type> static int countOf(vector<Type>& v, Type t) {
 		return count(v.begin(), v.end(), t);
 	}
+	//returns the number of items in the vector that match the given check
+	template <class Type, class Check> static int countMatches(vector<Type>& v, Check check) {
+		return count_if(v.begin(), v.end(), check);
+	}
 	//check if the vector includes the given item
 	template <class Type> static bool includes(vector<Type>& v, Type t) {
 		return find(v.begin(), v.end(), t) != v.end();
