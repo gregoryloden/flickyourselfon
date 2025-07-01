@@ -288,7 +288,7 @@ namespace LevelTypes {
 		void extendConnections();
 		//remove plane-plane connections to planes that don't have any switches
 		//must be called after assigning can-visit bits
-		void removeEmptyPlaneConnections(RailByteMaskData::ByteMask alwaysOffBit);
+		void removeEmptyPlaneConnections(short alwaysOffBitId);
 	public:
 		//set bits in the draft state where applicable:
 		//- set bits where milestones are new

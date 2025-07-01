@@ -709,7 +709,7 @@ void LevelTypes::Plane::finalizeBuilding(
 	for (Plane* plane : levelPlanes)
 		plane->extendConnections();
 	for (Plane* plane : levelPlanes)
-		plane->removeEmptyPlaneConnections(alwaysOffBit);
+		plane->removeEmptyPlaneConnections(alwaysOffBit.location.id);
 }
 void LevelTypes::Plane::assignCanUseBits(RailByteMaskData::ByteMask alwaysOffBit, RailByteMaskData::ByteMask alwaysOnBit) {
 	//by default, we can always visit a plane with switches, and never visit a plane without switches
@@ -767,11 +767,11 @@ void LevelTypes::Plane::extendConnections() {
 		}
 	}
 }
-void LevelTypes::Plane::removeEmptyPlaneConnections(RailByteMaskData::ByteMask alwaysOffBit) {
-	auto isEmptyPlaneConnection = [alwaysOffBit](Connection& connection) {
+void LevelTypes::Plane::removeEmptyPlaneConnections(short alwaysOffBitId) {
+	auto isEmptyPlaneConnection = [alwaysOffBitId](Connection& connection) {
 		//remove plane-plane and always-raised-rail connections to planes without switches
 		return connection.railBits.data.byteIndex == Level::absentRailByteIndex
-			&& connection.toPlane->canVisitBit.location.id == alwaysOffBit.location.id;
+			&& connection.toPlane->canVisitBit.location.id == alwaysOffBitId;
 	};
 	VectorUtils::filterErase(connections, isEmptyPlaneConnection);
 }
