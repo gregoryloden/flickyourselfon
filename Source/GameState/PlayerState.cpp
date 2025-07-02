@@ -1697,6 +1697,7 @@ void PlayerState::setInitialZ() {
 		(int)(y.get()->getValue(0) + boundingBoxCenterYOffset) / MapState::tileSize);
 }
 void PlayerState::reset() {
+	waitForHintThreadToFinish();
 	availableKickAction.clear();
 	z = 0;
 	hasBoot = false;
