@@ -503,6 +503,7 @@ void GameState::renderSaveIcon(int gameTicksTime) {
 void GameState::saveState(int gameTicksTime) {
 	ofstream file;
 	FileUtils::openFileForWrite(&file, savedGameFileName, ios::out | ios::trunc);
+	file << versionFilePrefix << 1 << "\n";
 	if (levelsUnlocked > 0)
 		file << levelsUnlockedFilePrefix << levelsUnlocked << "\n";
 	if (perpetualHints)
@@ -565,7 +566,9 @@ void GameState::loadSaveFile() {
 	FileUtils::openFileForRead(&file, savedGameFileName, FileUtils::FileReadLocation::ApplicationData);
 	string line;
 	while (getline(file, line)) {
-		if (StringUtils::startsWith(line, levelsUnlockedFilePrefix))
+		if (StringUtils::startsWith(line, versionFilePrefix))
+			;
+		else if (StringUtils::startsWith(line, levelsUnlockedFilePrefix))
 			levelsUnlocked = atoi(line.c_str() + StringUtils::strlenConst(levelsUnlockedFilePrefix));
 		else if (StringUtils::startsWith(line, perpetualHintsFileValue))
 			perpetualHints = true;

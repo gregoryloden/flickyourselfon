@@ -57,6 +57,7 @@ private:
 	static constexpr char* titleCreditsLine2 = "Gregory Loden";
 	//save file names and values
 	static constexpr char* savedGameFileName = "kyo.sav";
+	static constexpr char* versionFilePrefix = "Version ";
 	static constexpr char* levelsUnlockedFilePrefix = "levelsUnlocked ";
 	static constexpr char* perpetualHintsFileValue = "perpetualHints";
 
