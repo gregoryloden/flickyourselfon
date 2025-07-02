@@ -1159,6 +1159,7 @@ void GameState::resetGame(int ticksTime) {
 	playerState.get()->reset();
 	dynamicCameraAnchor.clear();
 	dynamicCameraAnchor.set(newDynamicCameraAnchor());
+	tutorialFreezePlayerStartTicksTime = 0;
 
 	beginIntroAnimation(ticksTime);
 }
