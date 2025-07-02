@@ -541,8 +541,9 @@ PauseState::PauseOption* PauseState::buildOptionsMenuOption() {
 					newPauseMenu(
 						"Autosave",
 						{
-							newMultiStateOption(&Config::autosaveEnabled, "autosave enabled") COMMA
+							newMultiStateOption(&Config::autosaveAtIntervalsEnabled, "autosave at intervals") COMMA
 							newValueSelectionOption(&Config::autosaveInterval, "autosave interval") COMMA
+							newMultiStateOption(&Config::autosaveEveryNewLevelEnabled, "autosave every new level") COMMA
 							newNavigationOption("back", nullptr) COMMA
 						})) COMMA
 				newNavigationOption(

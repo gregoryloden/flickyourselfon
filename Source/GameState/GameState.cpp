@@ -171,8 +171,8 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 		} else if (playerLevelN < MapState::getLevelCount())
 			mapState.get()->spawnGoalSparks(playerLevelN, gameTicksTime);
 		levelsUnlocked = playerLevelN;
-		//save the game if it's the last level
-		if (playerLevelN == MapState::getLevelCount())
+		//save the game if it's the last level, or autosaving at new levels is enabled
+		if (playerLevelN == MapState::getLevelCount() || Config::autosaveEveryNewLevelEnabled.isOn())
 			saveState(gameTicksTime);
 	}
 
@@ -254,7 +254,7 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 	}
 
 	//autosave if applicable
-	if (Config::autosaveEnabled.isOn()
+	if (Config::autosaveAtIntervalsEnabled.isOn()
 			&& gameTicksTime >= lastSaveTicksTime + Config::autosaveInterval.selectedValue * Config::ticksPerSecond)
 		saveState(gameTicksTime);
 }

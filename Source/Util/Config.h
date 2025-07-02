@@ -143,7 +143,8 @@ public:
 	static ConfigTypes::MultiStateSetting heightBasedShading;
 	static ConfigTypes::OnOffSetting showActivatedSwitchWaves;
 	static ConfigTypes::OnOffSetting showBlockedFallEdges;
-	static ConfigTypes::OnOffSetting autosaveEnabled;
+	static ConfigTypes::OnOffSetting autosaveAtIntervalsEnabled;
+	static ConfigTypes::OnOffSetting autosaveEveryNewLevelEnabled;
 	static ConfigTypes::MultiStateSetting solutionBlockedWarning;
 	static vector<ConfigTypes::ValueSelectionSetting*> allValueSelectionSettings;
 	static ConfigTypes::ValueSelectionSetting autosaveInterval;
