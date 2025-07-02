@@ -620,11 +620,11 @@ void RailState::renderMovementDirections(int screenLeftWorldX, int screenTopWorl
 	static constexpr GLfloat movementDirectionColor = 0.75f;
 	SpriteSheet::setRectangleColor(movementDirectionColor, movementDirectionColor, movementDirectionColor, 1.0f);
 	char movementMagnitude = rail->getMovementMagnitude();
-	char movementDirection = currentMovementDirection;
-	if (tileOffset == 0)
-		movementDirection = 1;
-	else if (tileOffset == rail->getMaxTileOffset())
-		movementDirection = -1;
+	char movementDirection =
+		rail->getColor() == MapState::sawColor ? -1 :
+		tileOffset == 0 ? 1 :
+		tileOffset == rail->getMaxTileOffset() ? -1 :
+		currentMovementDirection;
 	for (Rail::Segment* segment : endSegments) {
 		GLint centerX = (GLint)(segment->x * MapState::tileSize - screenLeftWorldX + MapState::halfTileSize);
 		GLint baseTopY = (GLint)(segment->y * MapState::tileSize - screenTopWorldY + MapState::halfTileSize);
