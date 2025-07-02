@@ -14,6 +14,7 @@
 #define newNavigationOption(displayText, subMenu) newWithArgs(PauseState::NavigationOption, displayText, subMenu)
 #define newControlsNavigationOption(displayText, subMenu) \
 	newWithArgs(PauseState::ControlsNavigationOption, displayText, subMenu)
+#define newNewGameOption() newWithoutArgs(PauseState::NewGameOption)
 #define newKeyBindingOption(setting, displayPrefix) newWithArgs(PauseState::KeyBindingOption, setting, displayPrefix)
 #define newDefaultKeyBindingsOption() newWithoutArgs(PauseState::DefaultKeyBindingsOption)
 #define newAcceptKeyBindingsOption() newWithoutArgs(PauseState::AcceptKeyBindingsOption)
@@ -212,6 +213,19 @@ PauseState* PauseState::ControlsNavigationOption::handle(PauseState* currentStat
 		keyBindingSetting->editingValue = keyBindingSetting->value;
 	return NavigationOption::handle(currentState);
 }
+
+//////////////////////////////// PauseState::NewGameOption ////////////////////////////////
+PauseState::NewGameOption::NewGameOption(objCounterParameters())
+: NavigationOption(objCounterArgumentsComma() "new game", buildResetGameMenu())
+, warnResetGame(true) {
+}
+PauseState::NewGameOption::~NewGameOption() {}
+PauseState* PauseState::NewGameOption::handle(PauseState* currentState) {
+	return warnResetGame
+		? NavigationOption::handle(currentState)
+		: currentState->produceEndPauseState((int)EndPauseDecision::Reset);
+}
+
 
 //////////////////////////////// PauseState::KeyBindingOption ////////////////////////////////
 float PauseState::KeyBindingOption::cachedKeySelectingTextWidth = 0.0f;
@@ -421,6 +435,7 @@ PauseState::PauseMenu* PauseState::baseMenu = nullptr;
 PauseState::LevelSelectMenu* PauseState::baseLevelSelectMenu = nullptr;
 PauseState::PauseMenu* PauseState::homeMenu = nullptr;
 PauseState::LevelSelectMenu* PauseState::homeLevelSelectMenu = nullptr;
+PauseState::NewGameOption* PauseState::homeNewGameOption = nullptr;
 PauseState::PauseState(objCounterParameters())
 : PooledReferenceCounter(objCounterArguments())
 , parentState(nullptr)
@@ -479,21 +494,7 @@ void PauseState::loadMenus() {
 					})) COMMA
 			buildOptionsMenuOption() COMMA
 			buildLevelSelectMenuOption(&baseLevelSelectMenu) COMMA
-			newNavigationOption(
-				"reset game",
-				newPauseMenu(
-					"Reset Game?",
-					{
-						"Erase all progress and" COMMA
-						"start over from the beginning?" COMMA
-						"Does not overwrite the save file" COMMA
-						"until the next save/autosave" COMMA
-						" " COMMA
-					},
-					{
-						newNavigationOption("cancel", nullptr) COMMA
-						newEndPauseOption("reset game", (int)EndPauseDecision::Reset) COMMA
-					})) COMMA
+			newNavigationOption("reset game", buildResetGameMenu()) COMMA
 			newEndPauseOption("save + exit", (int)EndPauseDecision::Save | (int)EndPauseDecision::Exit) COMMA
 			newEndPauseOption("exit", (int)EndPauseDecision::Exit) COMMA
 		});
@@ -503,7 +504,7 @@ void PauseState::loadMenus() {
 		{
 			newEndPauseOption("continue", (int)EndPauseDecision::Load) COMMA
 			buildLevelSelectMenuOption(&homeLevelSelectMenu) COMMA
-			newEndPauseOption("new game", (int)EndPauseDecision::Reset) COMMA
+			(homeNewGameOption = newNewGameOption()) COMMA
 			buildOptionsMenuOption() COMMA
 			newEndPauseOption("exit", (int)EndPauseDecision::Exit) COMMA
 		});
@@ -604,6 +605,21 @@ PauseState::PauseOption* PauseState::buildLevelSelectMenuOption(LevelSelectMenu*
 	options.push_back(newNavigationOption("back", nullptr));
 	return newNavigationOption("level select", *outLevelSelectMenu = newLevelSelectMenu("Level Select", options));
 }
+PauseState::PauseMenu* PauseState::buildResetGameMenu() {
+	return newPauseMenu(
+		"Reset Game?",
+		{
+			"Erase all progress and" COMMA
+			"start over from the beginning?" COMMA
+			"Does not overwrite the save file" COMMA
+			"until the next save/autosave" COMMA
+			" " COMMA
+		},
+		{
+			newNavigationOption("cancel", nullptr) COMMA
+			newEndPauseOption("reset game", (int)EndPauseDecision::Reset) COMMA
+		});
+}
 void PauseState::unloadMenus() {
 	delete baseMenu;
 	delete homeMenu;
@@ -611,6 +627,7 @@ void PauseState::unloadMenus() {
 void PauseState::disableContinueOptions() {
 	homeMenu->getOption(0)->enabled = false;
 	homeMenu->getOption(1)->enabled = false;
+	homeNewGameOption->disableWarnResetGame();
 }
 bool PauseState::isAtHomeMenu() {
 	for (PauseState* menuState = this; menuState != nullptr; menuState = menuState->parentState.get()) {

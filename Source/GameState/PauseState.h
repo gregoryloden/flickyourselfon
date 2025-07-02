@@ -127,6 +127,18 @@ private:
 		//navigate to the controls submenu after setting up the menu key bindings
 		virtual PauseState* handle(PauseState* currentState);
 	};
+	class NewGameOption: public NavigationOption {
+	private:
+		bool warnResetGame;
+
+	public:
+		NewGameOption(objCounterParameters());
+		virtual ~NewGameOption();
+
+		void disableWarnResetGame() { warnResetGame = false; }
+		//start a new game if there is no save file, or warn that the player is about to reset the game
+		virtual PauseState* handle(PauseState* currentState);
+	};
 	class KeyBindingOption: public PauseOption {
 	private:
 		static constexpr int interKeyActionAndKeyBackgroundSpacing = 4;
@@ -267,6 +279,7 @@ private:
 	static LevelSelectMenu* baseLevelSelectMenu;
 	static PauseMenu* homeMenu;
 	static LevelSelectMenu* homeLevelSelectMenu;
+	static NewGameOption* homeNewGameOption;
 
 	ReferenceCounterHolder<PauseState> parentState;
 	PauseMenu* pauseMenu;
@@ -311,6 +324,8 @@ private:
 	static PauseOption* buildOptionsMenuOption();
 	//build the level select menu and containing option
 	static PauseOption* buildLevelSelectMenuOption(LevelSelectMenu** outLevelSelectMenu);
+	//build the reset-game menu
+	static PauseMenu* buildResetGameMenu();
 public:
 	//delete the base menus
 	static void unloadMenus();
