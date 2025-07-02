@@ -619,18 +619,23 @@ void RailState::renderMovementDirections(int screenLeftWorldX, int screenTopWorl
 	Rail::Segment* endSegments[] { rail->getSegment(0), rail->getSegment(rail->getSegmentCount() - 1) };
 	static constexpr GLfloat movementDirectionColor = 0.75f;
 	SpriteSheet::setRectangleColor(movementDirectionColor, movementDirectionColor, movementDirectionColor, 1.0f);
+	char movementMagnitude = rail->getMovementMagnitude();
+	char movementDirection = currentMovementDirection;
+	if (tileOffset == 0)
+		movementDirection = 1;
+	else if (tileOffset == rail->getMaxTileOffset())
+		movementDirection = -1;
 	for (Rail::Segment* segment : endSegments) {
-		char movementMagnitude = rail->getMovementMagnitude();
 		GLint centerX = (GLint)(segment->x * MapState::tileSize - screenLeftWorldX + MapState::halfTileSize);
 		GLint baseTopY = (GLint)(segment->y * MapState::tileSize - screenTopWorldY + MapState::halfTileSize);
 		//position the arrows so that one arrow has its wide end going through the middle of the group
 		//this happens normally on even magnitudes, and with a bias in the movement direction for odd magnitudes
 		static constexpr int arrowSize = 3;
-		baseTopY -= (movementMagnitude + (1 - nextMovementDirection) / 2) / 2 * arrowSize;
+		baseTopY -= (movementMagnitude + (1 - movementDirection) / 2) / 2 * arrowSize;
 		for (char i = 0; i < movementMagnitude; i++) {
 			GLint topY = baseTopY + i * arrowSize;
 			for (int j = 1; j <= arrowSize; j++) {
-				GLint arrowTopY = topY + (nextMovementDirection < 0 ? j - 1 : arrowSize - j);
+				GLint arrowTopY = topY + (movementDirection < 0 ? j - 1 : arrowSize - j);
 				SpriteSheet::renderPreColoredRectangle(centerX - j, arrowTopY, centerX + j, arrowTopY + 1);
 			}
 		}
