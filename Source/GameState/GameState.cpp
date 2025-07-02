@@ -160,6 +160,7 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 	} else
 		prev->camera->setNextCamera(this, gameTicksTime);
 
+	//unlock a new level
 	int playerLevelN = playerState.get()->getLevelN();
 	if (playerLevelN > levelsUnlocked) {
 		//this is the end of the intro animation
@@ -174,6 +175,8 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 		if (playerLevelN == MapState::getLevelCount())
 			saveState(gameTicksTime);
 	}
+
+	//debug
 	if (perpetualHints)
 		mapState.get()->setHint(playerState.get()->getHint(), gameTicksTime);
 

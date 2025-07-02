@@ -49,7 +49,7 @@ private:
 	static constexpr int outroForeverDuration = 3600 * 1000;
 	//save icon timing
 	static constexpr int saveIconShowDuration = 3000;
-	//title screen and intro explanation text
+	//title screen text
 public:
 	static constexpr char* titleGameName = "Kick Yourself On";
 private:
