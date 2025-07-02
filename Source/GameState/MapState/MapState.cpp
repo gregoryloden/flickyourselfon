@@ -1498,6 +1498,7 @@ void MapState::resetMap() {
 	lastActivatedSwitchColor = -1;
 	finishedConnectionsTutorial = false;
 	finishedMapCameraTutorial = false;
+	unlockedConnectionsTutorial = false;
 	showConnectionsEnabled = false;
 	for (RailState* railState : railStates)
 		railState->reset(false);
