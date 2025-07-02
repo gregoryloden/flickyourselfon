@@ -1644,9 +1644,9 @@ bool PlayerState::renderTutorials() {
 			});
 	else if (!finishedKickTutorial)
 		MapState::renderControlsTutorial("Kick: ", { Config::kickKeyBinding.value });
-	else if (!finishedUndoRedoTutorial && redoState.get() != nullptr)
+	else if (showUndoRedoTutorial() && redoState.get() != nullptr)
 		MapState::renderControlsTutorial("Redo: ", { Config::redoKeyBinding.value });
-	else if (!finishedUndoRedoTutorial && undoState.get() != nullptr && undoRedoTutorialUnlocked)
+	else if (showUndoRedoTutorial() && undoState.get() != nullptr)
 		MapState::renderControlsTutorial("Undo/Redo: ", { Config::undoKeyBinding.value, Config::redoKeyBinding.value });
 	else
 		return false;

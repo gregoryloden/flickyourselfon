@@ -215,6 +215,11 @@ public:
 	char getLastActivatedSwitchColor() { return lastActivatedSwitchColor; }
 	bool getShowConnections() { return showConnectionsEnabled; }
 	bool getShouldPlayRadioTowerAnimation() { return shouldPlayRadioTowerAnimation; }
+private:
+	bool showMapCameraTutorial() { return !finishedMapCameraTutorial && lastActivatedSwitchColor >= 0; }
+	bool showConnectionsTutorial() { return !finishedConnectionsTutorial && unlockedConnectionsTutorial; }
+public:
+	bool shouldFreezePlayerForTutorial() { return showMapCameraTutorial() || showConnectionsTutorial(); }
 	void finishMapCameraTutorial() { finishedMapCameraTutorial = true; }
 	static void editorSetTile(int x, int y, char tile) { tiles[y * mapWidth + x] = tile; }
 	static void editorSetHeight(int x, int y, char height) { heights[y * mapWidth + x] = height; }

@@ -1363,9 +1363,9 @@ void MapState::renderGroupsForSwitchesFromRail(EntityState* camera, short railId
 	glEnable(GL_BLEND);
 }
 bool MapState::renderTutorials() {
-	if (!finishedConnectionsTutorial && unlockedConnectionsTutorial)
+	if (showConnectionsTutorial())
 		renderControlsTutorial("Show connections: ", { Config::showConnectionsKeyBinding.value });
-	else if (!finishedMapCameraTutorial && lastActivatedSwitchColor >= 0)
+	else if (showMapCameraTutorial())
 		renderControlsTutorial("Map camera: ", { Config::mapCameraKeyBinding.value });
 	else
 		return false;

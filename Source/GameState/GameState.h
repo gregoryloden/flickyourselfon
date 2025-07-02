@@ -69,6 +69,7 @@ private:
 	ReferenceCounterHolder<MapState> mapState;
 	ReferenceCounterHolder<DynamicCameraAnchor> dynamicCameraAnchor;
 	EntityState* camera;
+	int tutorialFreezePlayerStartTicksTime;
 	int lastSaveTicksTime;
 	bool savePerformed;
 	ReferenceCounterHolder<PauseState> pauseState;

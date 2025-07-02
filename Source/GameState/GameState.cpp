@@ -40,6 +40,7 @@ levelsUnlocked(0)
 , mapState(nullptr)
 , dynamicCameraAnchor(nullptr)
 , camera(nullptr)
+, tutorialFreezePlayerStartTicksTime(0)
 , lastSaveTicksTime(0)
 , savePerformed(false)
 , pauseState(nullptr)
@@ -128,11 +129,28 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 	mapState.set(newMapState());
 	mapState.get()->updateWithPreviousMapState(prev->mapState.get(), gameTicksTime);
 	playerState.set(newPlayerState(mapState.get()));
-	bool playerHasKeyboardControl = prev->camera == prev->playerState.get();
+	bool freezePlayer =
+		prev->tutorialFreezePlayerStartTicksTime > 0 && gameTicksTime >= prev->tutorialFreezePlayerStartTicksTime;
+	bool playerHasKeyboardControl = prev->camera == prev->playerState.get() && !freezePlayer;
 	playerState.get()->updateWithPreviousPlayerState(prev->playerState.get(), playerHasKeyboardControl, gameTicksTime);
 	dynamicCameraAnchor.set(newDynamicCameraAnchor());
 	dynamicCameraAnchor.get()->updateWithPreviousDynamicCameraAnchor(
 		prev->dynamicCameraAnchor.get(), prev->camera == prev->dynamicCameraAnchor.get(), gameTicksTime);
+
+	//set the player to freeze if we want them to perform a tutorial
+	if (playerState.get()->shouldFreezePlayerForTutorial() || mapState.get()->shouldFreezePlayerForTutorial()) {
+		static constexpr int tutorialFreezePlayerGracePeriod = 5000;
+		tutorialFreezePlayerStartTicksTime =
+			//if the player was already frozen, keep the timer going
+			freezePlayer ? prev->tutorialFreezePlayerStartTicksTime :
+			//if the player was in an animation, clear the timer
+			!playerHasKeyboardControl ? 0 :
+			//if we already started the player-freeze timer, keep it going
+			prev->tutorialFreezePlayerStartTicksTime > 0 ? prev->tutorialFreezePlayerStartTicksTime :
+			//othersise, reset the time
+			gameTicksTime + tutorialFreezePlayerGracePeriod;
+	} else
+		tutorialFreezePlayerStartTicksTime = 0;
 
 	//forget the previous camera if we're starting our radio tower animation
 	if (mapState.get()->getShouldPlayRadioTowerAnimation()) {
@@ -378,8 +396,24 @@ void GameState::render(int ticksTime) {
 
 	camera->renderEndZoom(zoomValue);
 
-	if (levelsUnlocked > 0 && !camera->hasAnimation())
+	//render UI
+	if (levelsUnlocked > 0 && !camera->hasAnimation()) {
+		int tutorialFlashTime = gameTicksTime - tutorialFreezePlayerStartTicksTime;
+		bool flashTutorial = tutorialFreezePlayerStartTicksTime > 0 && tutorialFlashTime >= 0;
+		if (flashTutorial) {
+			static constexpr float tutorialFlashPeriod = 2000.0f;
+			static constexpr float tutorialFlashMinAlpha = 0.5f;
+			static constexpr float tutorialFlashMedianAlpha = (1.0f + tutorialFlashMinAlpha) / 2.0f;
+			static constexpr float tutorialFlashAlphaVariance = (1.0f - tutorialFlashMinAlpha) / 2.0f;
+			float alpha =
+				tutorialFlashMedianAlpha
+					+ cosf(MathUtils::twoPi * (tutorialFlashTime / tutorialFlashPeriod)) * tutorialFlashAlphaVariance;
+			Text::setRenderColor(1.0f, 1.0f, 1.0f, (GLfloat)alpha);
+		}
 		playerState.get()->renderTutorials() || mapState.get()->renderTutorials();
+		if (flashTutorial)
+			Text::setRenderColor(1.0f, 1.0f, 1.0f, 1.0f);
+	}
 	if (camera == dynamicCameraAnchor.get())
 		dynamicCameraAnchor.get()->render(gameTicksTime);
 	if (textDisplayType != TextDisplayType::None)

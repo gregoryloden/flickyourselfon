@@ -95,6 +95,10 @@ public:
 
 	Hint* getHint() { return hint; }
 	void obtainBoot() { hasBoot = true; }
+private:
+	bool showUndoRedoTutorial() { return !finishedUndoRedoTutorial && undoRedoTutorialUnlocked; }
+public:
+	bool shouldFreezePlayerForTutorial() { return showUndoRedoTutorial(); }
 	bool getShouldEndGame() { return shouldEndGame; }
 	//initialize and return a PlayerState
 	static PlayerState* produce(objCounterParametersComma() MapState* mapState);
