@@ -175,6 +175,7 @@ private:
 	vector<ResetSwitchState*> resetSwitchStates;
 	char lastActivatedSwitchColor;
 	bool showConnectionsEnabled;
+	bool unlockedConnectionsTutorial;
 	bool finishedConnectionsTutorial;
 	bool finishedMapCameraTutorial;
 	int switchesAnimationFadeInStartTicksTime;
@@ -212,11 +213,9 @@ public:
 		return resetSwitchStates[getRailSwitchId(x, y) & railSwitchIndexBitmask];
 	}
 	char getLastActivatedSwitchColor() { return lastActivatedSwitchColor; }
-	bool getShowConnections(bool showTutorialConnections) {
-		return showConnectionsEnabled
-			|| (showTutorialConnections && !finishedConnectionsTutorial && lastActivatedSwitchColor >= 0);
-	}
+	bool getShowConnections() { return showConnectionsEnabled; }
 	bool getShouldPlayRadioTowerAnimation() { return shouldPlayRadioTowerAnimation; }
+	void unlockConnectionsTutorial() { unlockedConnectionsTutorial = true; }
 	void finishMapCameraTutorial() { finishedMapCameraTutorial = true; }
 	static void editorSetTile(int x, int y, char tile) { tiles[y * mapWidth + x] = tile; }
 	static void editorSetHeight(int x, int y, char height) { heights[y * mapWidth + x] = height; }
@@ -351,7 +350,7 @@ public:
 	void renderBelowPlayer(EntityState* camera, float playerWorldGroundY, char playerZ, int ticksTime);
 	//render anything (rails, groups) that render above the player
 	//assumes renderBelowPlayer() has already been called to set the rails above the player
-	void renderAbovePlayer(EntityState* camera, bool showConnections, int ticksTime);
+	void renderAbovePlayer(EntityState* camera, int ticksTime);
 	//render the groups for rails that are not in their default position that have a group that this reset switch also has
 	//return whether any groups were drawn
 	bool renderGroupsForRailsToReset(EntityState* camera, short resetSwitchId, int ticksTime);
@@ -361,7 +360,7 @@ public:
 	void renderGroupsForSwitchesFromRail(EntityState* camera, short railId, int ticksTime);
 	//render any applicable tutorials
 	//returns whether a tutorial was rendered
-	bool renderTutorials(bool showConnections);
+	bool renderTutorials();
 	//draw a graphic to represent this rail/switch group
 	static void renderGroupRect(char group, GLint leftX, GLint topY, GLint rightX, GLint bottomY);
 	//render a controls tutorial message

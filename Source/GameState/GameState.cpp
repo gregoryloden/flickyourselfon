@@ -177,7 +177,7 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 					if (playerHasKeyboardControl && !Editor::isActive)
 						playerState.get()->beginKicking(gameTicksTime);
 				} else if (gameEvent.key.keysym.scancode == Config::showConnectionsKeyBinding.value) {
-					if (!Config::showConnectionsMode.isHold() || !mapState.get()->getShowConnections(false) || Editor::isActive)
+					if (!Config::showConnectionsMode.isHold() || !mapState.get()->getShowConnections() || Editor::isActive)
 						mapState.get()->toggleShowConnections();
 				} else if (gameEvent.key.keysym.scancode == Config::mapCameraKeyBinding.value) {
 					mapState.get()->finishMapCameraTutorial();
@@ -359,11 +359,10 @@ void GameState::render(int ticksTime) {
 	Opengl::clearBackground();
 
 	//map and player rendering
-	bool showConnections = mapState.get()->getShowConnections(playerState.get()->showTutorialConnectionsForKickAction());
 	char playerZ = (char)(floorf(playerState.get()->getDynamicZ(gameTicksTime) + 0.5f));
 	mapState.get()->renderBelowPlayer(camera, playerState.get()->getWorldGroundY(gameTicksTime), playerZ, gameTicksTime);
 	playerState.get()->render(camera, gameTicksTime);
-	mapState.get()->renderAbovePlayer(camera, showConnections, gameTicksTime);
+	mapState.get()->renderAbovePlayer(camera, gameTicksTime);
 
 	//kick-action-related rendering
 	short contextualGroupsRailSwitchId;
@@ -380,7 +379,7 @@ void GameState::render(int ticksTime) {
 	camera->renderEndZoom(zoomValue);
 
 	if (levelsUnlocked > 0 && !camera->hasAnimation())
-		playerState.get()->renderTutorials() || mapState.get()->renderTutorials(showConnections);
+		playerState.get()->renderTutorials() || mapState.get()->renderTutorials();
 	if (camera == dynamicCameraAnchor.get())
 		dynamicCameraAnchor.get()->render(gameTicksTime);
 	if (textDisplayType != TextDisplayType::None)
@@ -538,7 +537,7 @@ void GameState::loadInitialState(int ticksTime) {
 		playerState.get()->setHighestZ();
 		startMusic();
 		//enable show connections if necessary
-		if (!mapState.get()->getShowConnections(false)) {
+		if (!mapState.get()->getShowConnections()) {
 			//toggle twice to skip the hide-non-tiles setting
 			mapState.get()->toggleShowConnections();
 			mapState.get()->toggleShowConnections();

@@ -67,6 +67,7 @@ MapState::MapState(objCounterParameters())
 , resetSwitchStates()
 , lastActivatedSwitchColor(-1)
 , showConnectionsEnabled(false)
+, unlockedConnectionsTutorial(false)
 , finishedConnectionsTutorial(false)
 , finishedMapCameraTutorial(false)
 //prevent the switches fade-in animation from playing on load by ensuring tick 0 is after the fade-in is over
@@ -715,6 +716,7 @@ void MapState::getLevelStartPosition(int levelN, int* outMapX, int* outMapY, cha
 void MapState::updateWithPreviousMapState(MapState* prev, int ticksTime) {
 	lastActivatedSwitchColor = prev->lastActivatedSwitchColor;
 	showConnectionsEnabled = prev->showConnectionsEnabled;
+	unlockedConnectionsTutorial = prev->unlockedConnectionsTutorial;
 	finishedConnectionsTutorial = prev->finishedConnectionsTutorial;
 	finishedMapCameraTutorial = prev->finishedMapCameraTutorial;
 	shouldPlayRadioTowerAnimation = false;
@@ -1172,7 +1174,7 @@ void MapState::renderBelowPlayer(EntityState* camera, float playerWorldGroundY, 
 	//draw hints above rails, if applicable
 	hintState.get()->renderAboveRails(screenLeftWorldX, screenTopWorldY, ticksTime);
 }
-void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int ticksTime) {
+void MapState::renderAbovePlayer(EntityState* camera, int ticksTime) {
 	if (Editor::isActive && editorHideNonTiles)
 		return;
 
@@ -1181,7 +1183,7 @@ void MapState::renderAbovePlayer(EntityState* camera, bool showConnections, int 
 	for (RailState* railState : renderRailStates)
 		railState->renderAbovePlayer(screenLeftWorldX, screenTopWorldY);
 
-	if (showConnections) {
+	if (showConnectionsEnabled) {
 		glDisable(GL_BLEND);
 		//show movement directions and groups above the player for all rails
 		for (RailState* railState : renderRailStates) {
@@ -1356,8 +1358,8 @@ void MapState::renderGroupsForSwitchesFromRail(EntityState* camera, short railId
 	rail->renderGroups(screenLeftWorldX, screenTopWorldY);
 	glEnable(GL_BLEND);
 }
-bool MapState::renderTutorials(bool showConnections) {
-	if (showConnections && !finishedConnectionsTutorial)
+bool MapState::renderTutorials() {
+	if (!finishedConnectionsTutorial && unlockedConnectionsTutorial)
 		renderControlsTutorial("Show connections: ", { Config::showConnectionsKeyBinding.value });
 	else if (!finishedMapCameraTutorial && lastActivatedSwitchColor >= 0)
 		renderControlsTutorial("Map camera: ", { Config::mapCameraKeyBinding.value });

@@ -549,6 +549,8 @@ void PlayerState::setKickAction() {
 		|| setResetSwitchKickAction(xPosition, yPosition)
 		|| setFallKickAction(xPosition, yPosition)
 		|| setClimbKickAction(xPosition, yPosition);
+	if (showTutorialConnectionsForKickAction())
+		mapState.get()->unlockConnectionsTutorial();
 }
 bool PlayerState::setRailKickAction(float xPosition, float yPosition) {
 	float railCheckXPosition;
