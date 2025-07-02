@@ -952,9 +952,12 @@ void PlayerState::beginKicking(int ticksTime) {
 				ticksTime);
 			break;
 		case KickActionType::Rail:
+			undoRedoTutorialUnlocked = true;
 			kickRail(kickAction->getRailSwitchId(), xPosition, yPosition, ticksTime);
 			break;
 		case KickActionType::Switch:
+			undoRedoTutorialUnlocked = true;
+			//fall through to kick the switch
 		case KickActionType::Square:
 		case KickActionType::Triangle:
 		case KickActionType::Saw:
@@ -962,6 +965,7 @@ void PlayerState::beginKicking(int ticksTime) {
 			kickSwitch(kickAction->getRailSwitchId(), ticksTime);
 			break;
 		case KickActionType::ResetSwitch:
+			undoRedoTutorialUnlocked = true;
 			kickResetSwitch(kickAction->getRailSwitchId(), ticksTime);
 			break;
 		case KickActionType::EndGame:
@@ -1178,7 +1182,6 @@ void PlayerState::kickRail(short railId, float xPosition, float yPosition, int t
 		nullptr);
 	prepForNewUndoState();
 	stackNewRideRailUndoState(undoState, railId, hint);
-	undoRedoTutorialUnlocked = true;
 	beginEntityAnimation(&ridingRailAnimationComponents, ticksTime);
 	//the player is visually moved up to simulate a half-height raise on the rail, but the world ground y needs to stay the same
 	worldGroundYOffset = MapState::halfTileSize + boundingBoxHeight / 2;
@@ -1397,7 +1400,6 @@ void PlayerState::kickSwitch(short switchId, int ticksTime) {
 	beginEntityAnimation(&kickAnimationComponents, ticksTime);
 	prepForNewUndoState();
 	stackNewKickSwitchUndoState(undoState, switchId, spriteDirection, hint);
-	undoRedoTutorialUnlocked = true;
 }
 void PlayerState::addKickSwitchComponents(
 	short switchId,
@@ -1428,7 +1430,6 @@ void PlayerState::kickResetSwitch(short resetSwitchId, int ticksTime) {
 	prepForNewUndoState();
 	mapState.get()->writeCurrentRailStates(
 		resetSwitchId, stackNewKickResetSwitchUndoState(undoState, resetSwitchId, spriteDirection, hint));
-	undoRedoTutorialUnlocked = true;
 }
 void PlayerState::addKickResetSwitchComponents(
 	short resetSwitchId,
