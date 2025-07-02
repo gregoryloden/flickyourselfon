@@ -1033,6 +1033,10 @@ int MapState::getLevelN(float playerX, float playerY) {
 	short planeId = getPlaneId((int)playerX / tileSize, (int)playerY / tileSize);
 	return planeId == 0 ? 0 : planes[planeId - 1]->getOwningLevel()->getLevelN();
 }
+void MapState::unlockConnectionsTutorial() {
+	if (lastActivatedSwitchColor >= 0)
+		unlockedConnectionsTutorial = true;
+}
 void MapState::renderBelowPlayer(EntityState* camera, float playerWorldGroundY, char playerZ, int ticksTime) {
 	glDisable(GL_BLEND);
 	//render the map
