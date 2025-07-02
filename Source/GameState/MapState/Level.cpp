@@ -1037,16 +1037,14 @@ void LevelTypes::Plane::pursueSolutionToPlanes(HintState::PotentialLevelState* c
 				nextPotentialLevelState->plane = connectionToPlane;
 				nextPotentialLevelState->hint = checkedPlaneData->hint;
 
-				//if it goes to a milestone destination plane that we haven't visited yet from this state, frontload it instead
-				//	of tracking it at its steps
+				//if it goes to a milestone destination plane that we haven't visited yet from this state, try to frontload it
+				//	instead of tracking it at its steps
 				if (connectionToPlane->milestoneIsNewBit.location.data.byteIndex != Level::absentRailByteIndex
-					&& (railByteMasks[connectionToPlane->milestoneIsNewBit.location.data.byteIndex]
-							& connectionToPlane->milestoneIsNewBit.byteMask)
-						!= 0)
-				{
-					Level::frontloadMilestoneDestinationState(nextPotentialLevelState);
+						&& (railByteMasks[connectionToPlane->milestoneIsNewBit.location.data.byteIndex]
+								& connectionToPlane->milestoneIsNewBit.byteMask)
+							!= 0
+						&& Level::frontloadMilestoneDestinationState(nextPotentialLevelState))
 					continue;
-				}
 
 				//otherwise, track it
 				Level::getNextPotentialLevelStatesForSteps(nextPotentialLevelState->steps)->push_back(nextPotentialLevelState);
@@ -1585,9 +1583,12 @@ HintState::PotentialLevelState* Level::loadBasePotentialLevelState(Plane* curren
 }
 Hint* Level::performHintSearch(HintState::PotentialLevelState* baseLevelState, Plane* currentPlane, int startTime) {
 	//find all visitable planes reachable from the current plane to start the search, including the current plane if applicable
-	if (currentPlane->hasSwitches())
-		getNextPotentialLevelStatesForSteps(0)->push_back(baseLevelState);
 	currentPlane->pursueSolutionToPlanes(baseLevelState, 0);
+	if (currentPlane->hasSwitches())
+		//always stick this state at the front, in case it's a milestone state that needed to be frontloaded in front of any
+		//	other frontloaded milestone
+		//if it's not, it only adds 1 extra state check per hint search
+		getNextPotentialLevelStatesForSteps(0)->push_front(baseLevelState);
 
 	//go through all states and see if there's anything we could do to get closer to the victory plane
 	static constexpr int targetLoopTicks = 20;
@@ -1857,10 +1858,28 @@ deque<HintState::PotentialLevelState*>* Level::getNextPotentialLevelStatesForSte
 	}
 	return (*currentNextPotentialLevelStatesBySteps)[nextPotentialLevelStateSteps];
 }
-void Level::frontloadMilestoneDestinationState(HintState::PotentialLevelState* state) {
+bool Level::frontloadMilestoneDestinationState(HintState::PotentialLevelState* state) {
+	//check to see if we already have a better state frontloaded
+	if (!currentNextPotentialLevelStates->empty()) {
+		HintState::PotentialLevelState* lastFront = currentNextPotentialLevelStates->front();
+		//the other state was not frontloaded, we can add this state
+		//lastFront->steps will either be currentPotentialLevelStateSteps, or -1 to say that it was replaced
+		if (lastFront->steps <= currentPotentialLevelStateSteps)
+			;
+		//the other state was frontloaded and it's better than the new state
+		else if (lastFront->steps < state->steps)
+			return false;
+		//the new state is better than the other state, we can add it
+		else if (state->steps < lastFront->steps)
+			;
+		//they take the same number of steps, but for consistency we'll always choose the one with the lower plane index
+		else if (lastFront->plane->getIndexInOwningLevel() <= state->plane->getIndexInOwningLevel())
+			return false;
+	}
 	//we expect the given state will not match the step count of the current queue, but that's fine
 	currentNextPotentialLevelStates->push_front(state);
 	hintSearchCheckStateI++;
+	return true;
 }
 void Level::pushMilestone(int newPotentialLevelStateSteps) {
 	#ifdef LOG_SEARCH_STEPS_STATS

@@ -504,8 +504,10 @@ private:
 public:
 	//get the queue of next potential level states corresponding to the given steps
 	static deque<HintState::PotentialLevelState*>* getNextPotentialLevelStatesForSteps(int nextPotentialLevelStateSteps);
-	//insert the given state to be the next state that we check in our hint search
-	static void frontloadMilestoneDestinationState(HintState::PotentialLevelState* state);
+	//insert the given state to be the next state that we check in our hint search, assuming we haven't already done so with a
+	//	better state
+	//returns whether the state was inserted
+	static bool frontloadMilestoneDestinationState(HintState::PotentialLevelState* state);
 	//save away the current states to check, and start over with a new set at the given number of steps
 	static void pushMilestone(int newPotentialLevelStateSteps);
 private:
