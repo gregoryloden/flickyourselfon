@@ -39,11 +39,14 @@ private:
 
 		string title;
 		Text::Metrics titleMetrics;
+		vector<string> subtitles;
+		vector<Text::Metrics> subtitlesMetrics;
+		float titleAndSubtitlesTotalHeight;
 	protected:
 		vector<PauseOption*> options;
 
 	public:
-		PauseMenu(objCounterParametersComma() string pTitle, vector<PauseOption*> pOptions);
+		PauseMenu(objCounterParametersComma() string pTitle, vector<string> pSubtitles, vector<PauseOption*> pOptions);
 		virtual ~PauseMenu();
 
 		int getOptionsCount() { return (int)options.size(); }

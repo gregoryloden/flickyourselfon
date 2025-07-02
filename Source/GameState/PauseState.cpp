@@ -9,7 +9,7 @@
 #define newPauseState(parentState, pauseMenu, pauseOption, selectingKeyBindingOption, selectedLevelN, endPauseDecision) \
 	produceWithArgs(\
 		PauseState, parentState, pauseMenu, pauseOption, selectingKeyBindingOption, selectedLevelN, endPauseDecision)
-#define newPauseMenu(title, options) newWithArgs(PauseState::PauseMenu, title, options)
+#define newPauseMenu(title, subtitles, options) newWithArgs(PauseState::PauseMenu, title, subtitles, options)
 #define newLevelSelectMenu(title, options) newWithArgs(PauseState::LevelSelectMenu, title, options)
 #define newNavigationOption(displayText, subMenu) newWithArgs(PauseState::NavigationOption, displayText, subMenu)
 #define newControlsNavigationOption(displayText, subMenu) \
@@ -24,11 +24,19 @@
 #define newEndPauseOption(displayText, endPauseDecision) newWithArgs(PauseState::EndPauseOption, displayText, endPauseDecision)
 
 //////////////////////////////// PauseState::PauseMenu ////////////////////////////////
-PauseState::PauseMenu::PauseMenu(objCounterParametersComma() string pTitle, vector<PauseOption*> pOptions)
+PauseState::PauseMenu::PauseMenu(
+	objCounterParametersComma() string pTitle, vector<string> pSubtitles, vector<PauseOption*> pOptions)
 : onlyInDebug(ObjCounter(objCounterArguments()) COMMA)
 title(pTitle)
 , titleMetrics(Text::getMetrics(pTitle.c_str(), titleFontScale))
+, subtitles(pSubtitles)
+, subtitlesMetrics()
+, titleAndSubtitlesTotalHeight(titleMetrics.getTotalHeight() - titleMetrics.topPadding)
 , options(pOptions) {
+	for (string& subtitle : subtitles) {
+		subtitlesMetrics.push_back(Text::getMetrics(subtitle.c_str(), PauseOption::displayTextFontScale));
+		titleAndSubtitlesTotalHeight += subtitlesMetrics.back().getTotalHeight();
+	}
 }
 PauseState::PauseMenu::~PauseMenu() {
 	for (PauseOption* option : options)
@@ -37,7 +45,7 @@ PauseState::PauseMenu::~PauseMenu() {
 void PauseState::PauseMenu::getDisplayMetrics(
 	KeyBindingOption* selectingKeyBindingOption, float* outMenuTop, vector<Text::Metrics>* outOptionsMetrics)
 {
-	float totalHeight = titleMetrics.getTotalHeight() - titleMetrics.topPadding;
+	float totalHeight = titleAndSubtitlesTotalHeight;
 	for (PauseOption* option : options) {
 		Text::Metrics optionMetrics = option == selectingKeyBindingOption
 			? selectingKeyBindingOption->getSelectingDisplayTextMetrics(true)
@@ -60,7 +68,7 @@ int PauseState::PauseMenu::findHighlightedOption(int mouseX, int mouseY, float* 
 	vector<Text::Metrics> optionsMetrics;
 	getDisplayMetrics(nullptr, &menuTop, &optionsMetrics);
 	float optionMiddle = Config::gameScreenWidth * 0.5f;
-	float optionTop = menuTop + titleMetrics.getTotalHeight() - titleMetrics.topPadding;
+	float optionTop = menuTop + titleAndSubtitlesTotalHeight;
 	for (int i = 0; i < (int)optionsMetrics.size(); i++) {
 		Text::Metrics& metrics = optionsMetrics[i];
 		float optionBottom = optionTop + metrics.getTotalHeight();
@@ -97,6 +105,17 @@ void PauseState::PauseMenu::render(int selectedOption, KeyBindingOption* selecti
 
 	Text::render(title.c_str(), screenCenterX - titleMetrics.charactersWidth * 0.5f, optionsBaseline, titleFontScale);
 	Text::Metrics* lastMetrics = &titleMetrics;
+
+	for (int i = 0; i < (int)subtitles.size(); i++) {
+		Text::Metrics& subtitleMetrics = subtitlesMetrics[i];
+		optionsBaseline += subtitleMetrics.getBaselineDistanceBelow(lastMetrics);
+		Text::render(
+			subtitles[i].c_str(),
+			screenCenterX - subtitleMetrics.charactersWidth * 0.5f,
+			optionsBaseline,
+			PauseOption::displayTextFontScale);
+		lastMetrics = &subtitleMetrics;
+	}
 
 	bool wasEnabled = true;
 	int optionsCount = (int)options.size();
@@ -137,7 +156,7 @@ void PauseState::PauseMenu::render(int selectedOption, KeyBindingOption* selecti
 
 //////////////////////////////// PauseState::LevelSelectMenu ////////////////////////////////
 PauseState::LevelSelectMenu::LevelSelectMenu(objCounterParametersComma() string pTitle, vector<PauseOption*> pOptions)
-: PauseMenu(objCounterArgumentsComma() pTitle, pOptions) {
+: PauseMenu(objCounterArgumentsComma() pTitle, {}, pOptions) {
 }
 PauseState::LevelSelectMenu::~LevelSelectMenu() {
 }
@@ -445,6 +464,7 @@ void PauseState::prepareReturnToPool() {
 void PauseState::loadMenus() {
 	baseMenu = newPauseMenu(
 		"Pause",
+		{},
 		{
 			newNavigationOption("resume", nullptr) COMMA
 			newEndPauseOption("save + resume", (int)EndPauseDecision::Save) COMMA
@@ -452,6 +472,7 @@ void PauseState::loadMenus() {
 				"request hint",
 				newPauseMenu(
 					"Request Hint?",
+					{},
 					{
 						newNavigationOption("cancel", nullptr) COMMA
 						newEndPauseOption("request hint", (int)EndPauseDecision::RequestHint) COMMA
@@ -463,6 +484,13 @@ void PauseState::loadMenus() {
 				newPauseMenu(
 					"Reset Game?",
 					{
+						"Erase all progress and" COMMA
+						"start over from the beginning?" COMMA
+						"Does not overwrite the save file" COMMA
+						"until the next save/autosave" COMMA
+						" " COMMA
+					},
+					{
 						newNavigationOption("cancel", nullptr) COMMA
 						newEndPauseOption("reset game", (int)EndPauseDecision::Reset) COMMA
 					})) COMMA
@@ -471,6 +499,7 @@ void PauseState::loadMenus() {
 		});
 	homeMenu = newPauseMenu(
 		GameState::titleGameName,
+		{},
 		{
 			newEndPauseOption("continue", (int)EndPauseDecision::Load) COMMA
 			buildLevelSelectMenuOption(&homeLevelSelectMenu) COMMA
@@ -484,11 +513,13 @@ PauseState::PauseOption* PauseState::buildOptionsMenuOption() {
 		"options",
 		newPauseMenu(
 			"Options",
+			{},
 			{
 				newControlsNavigationOption(
 					"player controls",
 					newPauseMenu(
 						"Player Controls",
+						{},
 						{
 							newKeyBindingOption(&Config::upKeyBinding, "up") COMMA
 							newKeyBindingOption(&Config::rightKeyBinding, "right") COMMA
@@ -504,6 +535,7 @@ PauseState::PauseOption* PauseState::buildOptionsMenuOption() {
 					"map controls",
 					newPauseMenu(
 						"Map Controls",
+						{},
 						{
 							newKeyBindingOption(&Config::undoKeyBinding, "undo") COMMA
 							newKeyBindingOption(&Config::redoKeyBinding, "redo") COMMA
@@ -517,6 +549,7 @@ PauseState::PauseOption* PauseState::buildOptionsMenuOption() {
 					"kick indicators",
 					newPauseMenu(
 						"Kick Indicators",
+						{},
 						{
 							newMultiStateOption(&Config::climbKickIndicator, "climb indicator") COMMA
 							newMultiStateOption(&Config::fallKickIndicator, "fall indicator") COMMA
@@ -529,6 +562,7 @@ PauseState::PauseOption* PauseState::buildOptionsMenuOption() {
 					"visibility",
 					newPauseMenu(
 						"Visibility",
+						{},
 						{
 							newMultiStateOption(&Config::showConnectionsMode, "show-connections mode") COMMA
 							newMultiStateOption(&Config::heightBasedShading, "height-based shading") COMMA
@@ -541,6 +575,7 @@ PauseState::PauseOption* PauseState::buildOptionsMenuOption() {
 					"autosave",
 					newPauseMenu(
 						"Autosave",
+						{},
 						{
 							newMultiStateOption(&Config::autosaveAtIntervalsEnabled, "autosave at intervals") COMMA
 							newValueSelectionOption(&Config::autosaveInterval, "autosave interval") COMMA
@@ -551,6 +586,7 @@ PauseState::PauseOption* PauseState::buildOptionsMenuOption() {
 					"audio settings",
 					newPauseMenu(
 						"Audio Settings",
+						{},
 						{
 							newVolumeSettingOption(&Config::masterVolume, "master") COMMA
 							newVolumeSettingOption(&Config::musicVolume, "music") COMMA
