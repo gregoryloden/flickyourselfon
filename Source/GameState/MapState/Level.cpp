@@ -74,12 +74,16 @@ LevelTypes::Plane::ConnectionSwitch::ConnectionSwitch(const ConnectionSwitch& ot
 		case ConclusionsType::IsolatedArea:
 			new(&conclusionsData.isolatedArea) ConclusionsData::IsolatedArea(other.conclusionsData.isolatedArea);
 			break;
+		case ConclusionsType::DeadRail:
+			new(&conclusionsData.deadRail) ConclusionsData::DeadRail(other.conclusionsData.deadRail);
+			break;
 	}
 }
 LevelTypes::Plane::ConnectionSwitch::~ConnectionSwitch() {
 	switch (conclusionsType) {
 		case ConclusionsType::MiniPuzzle: conclusionsData.miniPuzzle.~MiniPuzzle(); break;
 		case ConclusionsType::IsolatedArea: conclusionsData.isolatedArea.~IsolatedArea(); break;
+		case ConclusionsType::DeadRail: conclusionsData.deadRail.~DeadRail(); break;
 	}
 }
 void LevelTypes::Plane::ConnectionSwitch::writeTileOffsetByteMasks(vector<unsigned int>& railByteMasks) {
@@ -108,6 +112,40 @@ void LevelTypes::Plane::ConnectionSwitch::setIsolatedArea(
 			conclusionsData.isolatedArea.otherGoalSwitchCanKickBits.push_back(
 				isolatedAreaSwitch->connectionSwitch->canKickBit.location);
 	}
+}
+void LevelTypes::Plane::ConnectionSwitch::setDeadRail(
+	RailByteMaskData::ByteMask deadRailBit,
+	vector<unsigned int>& requiredRailByteMasks,
+	vector<DetailedConnectionSwitch*>& deadRailCompletedSwitches,
+	RailByteMaskData::BitsLocation alwaysOffBitLocation)
+{
+	new(&conclusionsData.deadRail) ConclusionsData::DeadRail();
+	conclusionsType = ConclusionsType::DeadRail;
+	canKickBit = deadRailBit;
+	//go through and combine live rails and dead rails into one list the size of the switch's affected rails
+	for (int i = 0; i < (int)affectedRailByteMaskData.size(); i++) {
+		RailByteMaskData::BitsLocation::Data railBitsLocation = affectedRailByteMaskData[i]->railBits.data;
+		//live rails will use an absent bits location, indicating that we should check that the rail at the same index is live
+		if (((char)(requiredRailByteMasks[railBitsLocation.byteIndex] >> railBitsLocation.bitShift)
+					& (char)Level::baseRailTileOffsetByteMask)
+				== 0)
+			conclusionsData.deadRail.completedSwitches.push_back(Level::absentBits.location);
+		//dead rails will use a bits location pointing to an arbitrary completed-switch bit to check
+		else if (!deadRailCompletedSwitches.empty()) {
+			conclusionsData.deadRail.completedSwitches.push_back(
+				deadRailCompletedSwitches.back()->connectionSwitch->canKickBit.location);
+			deadRailCompletedSwitches.pop_back();
+		//in the event that there are fewer completed switches than dead rails, due to multiple rails being used for one switch,
+		//	we can just use the always-off bit which will be interpreted as a completed switch
+		} else
+			conclusionsData.deadRail.completedSwitches.push_back(alwaysOffBitLocation);
+	}
+	//in the event that there are more completed switches than dead rails, we can add all the remaining switches past the end of
+	//	the list
+	for (DetailedConnectionSwitch* deadRailCompletedSwitch : deadRailCompletedSwitches)
+		conclusionsData.deadRail.completedSwitches.push_back(deadRailCompletedSwitch->connectionSwitch->canKickBit.location);
+	//for consistency, clear the list
+	deadRailCompletedSwitches.clear();
 }
 
 //////////////////////////////// LevelTypes::Plane::Connection ////////////////////////////////
@@ -608,6 +646,76 @@ void LevelTypes::Plane::DetailedLevel::findReachablePlanes(
 			outPlanes->push_back(&planes[i]);
 	}
 }
+void LevelTypes::Plane::DetailedLevel::findDeadRails(RailByteMaskData::BitsLocation alwaysOffBitLocation, short alwaysOnBitId) {
+	//when we disable a dead rail, we can't abandon a plane if it has non-single-use switches, or is the victory plane
+	auto isAlwaysLivePlane = [this](DetailedPlane* detailedPlane) {
+		for (ConnectionSwitch& connectionSwitch : detailedPlane->plane->connectionSwitches) {
+			if (!connectionSwitch.isSingleUse)
+				return true;
+		}
+		return detailedPlane == victoryPlane;
+	};
+
+	//first step, find every rail that is required by any single-use switch, and every switch that could have dead rails
+	vector<DetailedConnectionSwitch*> deadRailSwitches;
+	vector<vector<DetailedConnectionSwitch*>> allDeadRailCompletedSwitches;
+	vector<unsigned int> requiredRailByteMasks ((size_t)level->getRailByteMaskCount(), 0);
+	for (DetailedConnectionSwitch* completedSwitch : allConnectionSwitches) {
+		if (!completedSwitch->connectionSwitch->isSingleUse)
+			continue;
+		for (DetailedConnection* requiredConnection : findRequiredConnectionsToPlane(completedSwitch->owningPlane)) {
+			//skip plane-plane connections, always-raised rails, and rails controlled by more than one switch
+			//rails controlled by more than one switch would have created a mini puzzle, and the switches for it would not be
+			//	eligible to be dead rail switches
+			if (requiredConnection->affectingSwitches.size() != 1)
+				continue;
+			//switches that already have can-kick bits are ineligible to be dead rail switches
+			DetailedConnectionSwitch* deadRailSwitch = requiredConnection->affectingSwitches[0];
+			if (deadRailSwitch->connectionSwitch->canKickBit.location.id != alwaysOnBitId)
+				continue;
+
+			//verify that this rail only restricts single-use switches, and does not restrict the victory plane
+			vector<DetailedPlane*> deadPlanes;
+			findReachablePlanes(excludeSingleConnection(requiredConnection), nullptr, &deadPlanes);
+			if (VectorUtils::anyMatch(deadPlanes, isAlwaysLivePlane))
+				continue;
+
+			//we now have a valid dead rail
+			//mark this rail as required
+			requiredRailByteMasks[requiredConnection->connection->railBits.data.byteIndex]
+				|= requiredConnection->connection->railTileOffsetByteMask;
+			//track the switch as a dead rail switch
+			unsigned int deadRailSwitchIndex = VectorUtils::indexOf(deadRailSwitches, deadRailSwitch);
+			if (deadRailSwitchIndex == deadRailSwitches.size()) {
+				deadRailSwitches.push_back(deadRailSwitch);
+				allDeadRailCompletedSwitches.push_back(vector<DetailedConnectionSwitch*>());
+			}
+			//track this single-use switch as a cause of dead rails for the switch
+			vector<DetailedConnectionSwitch*>& deadRailCompletedSwitches = allDeadRailCompletedSwitches[deadRailSwitchIndex];
+			if (!VectorUtils::includes(deadRailCompletedSwitches, completedSwitch))
+				deadRailCompletedSwitches.push_back(completedSwitch);
+		}
+	}
+
+	//at this point, these switches have dead rails and no other conclusions, so we can track them as dead rail switches
+	for (int i = 0; i < (int)deadRailSwitches.size(); i++) {
+		DetailedConnectionSwitch* deadRailSwitch = deadRailSwitches[i];
+		#ifdef LOG_FOUND_PLANE_CONCLUSIONS
+			stringstream deadRailMessage;
+			deadRailMessage << "level " << level->getLevelN() << " dead rail switch";
+			MapState::logSwitchDescriptor(deadRailSwitch->connectionSwitch->hint.data.switch0, &deadRailMessage);
+			deadRailMessage << " for completed switches";
+			for (DetailedConnectionSwitch* deadRailCompletedSwitch : allDeadRailCompletedSwitches[i])
+				MapState::logSwitchDescriptor(deadRailCompletedSwitch->connectionSwitch->hint.data.switch0, &deadRailMessage);
+			Logger::debugLogger.logString(deadRailMessage.str());
+		#endif
+		deadRailSwitch->connectionSwitch->setDeadRail(
+			level->trackRailByteMaskBits(1), requiredRailByteMasks, allDeadRailCompletedSwitches[i], alwaysOffBitLocation);
+		//if this is the only switch in the plane, this bit can also serve as the canVisitBit
+		if (deadRailSwitch->owningPlane->connectionSwitches.size() == 1)
+			deadRailSwitch->owningPlane->plane->canVisitBit = deadRailSwitch->connectionSwitch->canKickBit;
+	}
+}
 
 //////////////////////////////// LevelTypes::Plane ////////////////////////////////
 LevelTypes::Plane::Plane(objCounterParametersComma() Level* pOwningLevel, int pIndexInOwningLevel)
@@ -704,6 +812,7 @@ void LevelTypes::Plane::finalizeBuilding(
 
 	//find optimizations
 	detailedLevel.findMiniPuzzles(alwaysOnBit.location.id);
+	detailedLevel.findDeadRails(alwaysOffBit.location, alwaysOnBit.location.id);
 
 	//apply extended connections
 	for (Plane* plane : levelPlanes)
@@ -805,6 +914,8 @@ void LevelTypes::Plane::markStatusBitsInDraftState(vector<Plane*>& levelPlanes) 
 					~connectionSwitch.conclusionsData.isolatedArea.miniPuzzleBit.byteMask;
 		}
 	}
+
+	markStatusBitsInDraftStateOnMilestone(levelPlanes);
 }
 bool LevelTypes::Plane::draftRailBitsIsLowered(RailByteMaskData::BitsLocation railBitsLocation) {
 	return ((char)(HintState::PotentialLevelState::draftState.railByteMasks[railBitsLocation.data.byteIndex]
@@ -820,6 +931,41 @@ bool LevelTypes::Plane::draftBitIsActive(RailByteMaskData::BitsLocation bitLocat
 				>> bitLocation.data.bitShift)
 			& 1)
 		!= 0;
+}
+bool LevelTypes::Plane::markStatusBitsInDraftStateOnMilestone(vector<Plane*>& levelPlanes) {
+	bool hasChanges = false;
+
+	//check for dead rails
+	for (Plane* plane : levelPlanes) {
+		for (ConnectionSwitch& connectionSwitch : plane->connectionSwitches) {
+			if (connectionSwitch.conclusionsType != ConnectionSwitch::ConclusionsType::DeadRail)
+				continue;
+			//skip dead rail switches that are already disabled
+			if (!draftBitIsActive(connectionSwitch.canKickBit.location))
+				continue;
+			bool railsAreDead = true;
+			for (int i = 0; i < (int)connectionSwitch.conclusionsData.deadRail.completedSwitches.size(); i++) {
+				RailByteMaskData::BitsLocation completedSwitchBit =
+					connectionSwitch.conclusionsData.deadRail.completedSwitches[i];
+				if (completedSwitchBit.data.byteIndex == Level::absentRailByteIndex
+					//if a live rail is lowered, we can't disable this switch
+					? draftRailIsLowered(connectionSwitch.affectedRailByteMaskData[i])
+					//if a single-use switch has not been completed, we can't disable this switch
+					: draftBitIsActive(completedSwitchBit))
+				{
+					railsAreDead = false;
+					break;
+				}
+			}
+			if (railsAreDead) {
+				HintState::PotentialLevelState::draftState.railByteMasks[connectionSwitch.canKickBit.location.data.byteIndex] &=
+					~connectionSwitch.canKickBit.byteMask;
+				hasChanges = true;
+			}
+		}
+	}
+
+	return hasChanges;
 }
 void LevelTypes::Plane::pursueSolutionToPlanes(HintState::PotentialLevelState* currentState, int basePotentialLevelStateSteps) {
 	unsigned int bucket = currentState->railByteMasksHash % Level::PotentialLevelStatesByBucket::bucketSize;
@@ -987,8 +1133,11 @@ void LevelTypes::Plane::pursueSolutionAfterSwitches(HintState::PotentialLevelSta
 					}
 					//fall through, this is a single-use switch that flips canKickBit
 				case ConnectionSwitch::ConclusionsType::None:
+				case ConnectionSwitch::ConclusionsType::DeadRail:
 				default:
-					//this is a single-use switch, we can definitely flip canKickBit
+					//this is a single-use switch
+					//or, we stumbled upon a DeadRail switch that somehow got all its rails raised
+					//in any case, we can definitely flip canKickBit
 					HintState::PotentialLevelState::draftState.railByteMasks[
 							connectionSwitch.canKickBit.location.data.byteIndex] &=
 						~connectionSwitch.canKickBit.byteMask;
@@ -1007,15 +1156,23 @@ void LevelTypes::Plane::pursueSolutionAfterSwitches(HintState::PotentialLevelSta
 		if (nextPotentialLevelState == nullptr)
 			continue;
 
-		//fill out the new PotentialLevelState
-		nextPotentialLevelState->priorState = currentState;
-		nextPotentialLevelState->plane = this;
-		nextPotentialLevelState->hint = &connectionSwitch.hint;
-
 		//if this was a milestone switch, restart the hint search from here
 		if (connectionSwitch.isMilestone) {
+			//update the milestone state if needed and check that it's new
+			if (owningLevel->markStatusBitsInDraftStateOnMilestone()) {
+				nextPotentialLevelState =
+					HintState::PotentialLevelState::draftState.addNewState(potentialLevelStates, stepsAfterSwitchKick);
+				if (nextPotentialLevelState == nullptr)
+					continue;
+			}
+
 			Level::pushMilestone(currentState->steps);
 			#ifdef LOG_STEPS_AT_EVERY_MILESTONE
+				//it's ok to write these twice
+				nextPotentialLevelState->priorState = currentState;
+				nextPotentialLevelState->plane = this;
+				nextPotentialLevelState->hint = &connectionSwitch.hint;
+
 				#ifdef LOG_FOUND_HINT_STEPS
 					nextPotentialLevelState->logSteps();
 				#endif
@@ -1025,6 +1182,11 @@ void LevelTypes::Plane::pursueSolutionAfterSwitches(HintState::PotentialLevelSta
 				Logger::debugLogger.logString(milestoneMessage.str());
 			#endif
 		}
+
+		//fill out the new PotentialLevelState
+		nextPotentialLevelState->priorState = currentState;
+		nextPotentialLevelState->plane = this;
+		nextPotentialLevelState->hint = &connectionSwitch.hint;
 
 		//track it, and then afterwards, travel to all planes possible
 		Level::getNextPotentialLevelStatesForSteps(stepsAfterSwitchKick)->push_back(nextPotentialLevelState);

@@ -4,6 +4,10 @@ class VectorUtils {
 public:
 	//Prevent allocation
 	VectorUtils() = delete;
+	//returns the index of the given item if found, or the size of the vector if notMore actions
+	template <class Type> static unsigned int indexOf(vector<Type>& v, Type t) {
+		return (unsigned int)(std::find(v.begin(), v.end(), t) - v.begin());
+	}
 	//returns the number of items in the vector that match the given item
 	template <class Type> static int countOf(vector<Type>& v, Type t) {
 		return count(v.begin(), v.end(), t);

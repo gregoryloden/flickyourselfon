@@ -72,6 +72,7 @@ namespace LevelTypes {
 				None,
 				MiniPuzzle,
 				IsolatedArea,
+				DeadRail,
 			};
 			//Should only be allocated within an object, on the stack, or as a static object
 			union ConclusionsData {
@@ -86,11 +87,16 @@ namespace LevelTypes {
 
 					IsolatedArea(RailByteMaskData::ByteMask pMiniPuzzleBit);
 				};
+				//Should only be allocated within an object, on the stack, or as a static object
+				struct DeadRail {
+					vector<RailByteMaskData::BitsLocation> completedSwitches;
+				};
 
 				//make sure the default constructor doesn't construct any of the other members
 				bool none;
 				MiniPuzzle miniPuzzle;
 				IsolatedArea isolatedArea;
+				DeadRail deadRail;
 
 				ConclusionsData(): none() {}
 				~ConclusionsData() {}
@@ -115,6 +121,12 @@ namespace LevelTypes {
 			//set this ConnectionSwitch to be part of an isolated area
 			void setIsolatedArea(
 				vector<DetailedConnectionSwitch*>& isolatedAreaSwitches, RailByteMaskData::ByteMask miniPuzzleBit);
+			//set this ConnectionSwitch to track dead rails
+			void setDeadRail(
+				RailByteMaskData::ByteMask deadRailBit,
+				vector<unsigned int>& requiredRailByteMasks,
+				vector<DetailedConnectionSwitch*>& deadRailCompletedSwitches,
+				RailByteMaskData::BitsLocation alwaysOffBitLocation);
 		};
 		//Should only be allocated within an object, on the stack, or as a static object
 		class Connection {
@@ -229,6 +241,8 @@ namespace LevelTypes {
 				function<bool(DetailedConnection* connection)> excludeConnection,
 				vector<DetailedPlane*>* outReachablePlanes,
 				vector<DetailedPlane*>* outUnreachablePlanes);
+			//find switches with exclusive control over their rails with rails that are only used to get to milestones
+			void findDeadRails(RailByteMaskData::BitsLocation alwaysOffBitLocation, short alwaysOnBitId);
 		};
 
 		Level* owningLevel;
@@ -303,6 +317,10 @@ namespace LevelTypes {
 		static bool draftRailIsLowered(RailByteMaskData* railByteMaskData);
 		//returns whether the bit at the given location is active in the draft state
 		static bool draftBitIsActive(RailByteMaskData::BitsLocation bitLocation);
+		//set bits in the draft state where applicable:
+		//- clear bits where switches can no longer be kicked
+		//returns whether any bits were changed
+		static bool markStatusBitsInDraftStateOnMilestone(vector<Plane*>& levelPlanes);
 		//follow all possible paths to other planes, adding states at those planes to the current hint search queues
 		void pursueSolutionToPlanes(HintState::PotentialLevelState* currentState, int basePotentialLevelStateSteps);
 		//kick each switch in this plane, and then pursue solutions from those states
@@ -437,6 +455,7 @@ public:
 	LevelTypes::RailByteMaskData* getRailByteMaskData(int i) { return &allRailByteMaskData[i]; }
 	int getRailByteMaskCount() { return (railByteMaskBitsTracked + 31) / 32; }
 	LevelTypes::Plane* getVictoryPlane() { return victoryPlane; }
+	bool markStatusBitsInDraftStateOnMilestone() { return LevelTypes::Plane::markStatusBitsInDraftStateOnMilestone(planes); }
 	static void cancelHintSearch() { hintSearchIsRunning = false; }
 	//add a new plane to this level
 	LevelTypes::Plane* addNewPlane();
