@@ -172,7 +172,7 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 			mapState.get()->spawnGoalSparks(playerLevelN, gameTicksTime);
 		levelsUnlocked = playerLevelN;
 		//save the game if it's the last level, or autosaving at new levels is enabled
-		if (playerLevelN == MapState::getLevelCount() || Config::autosaveEveryNewLevelEnabled.isOn())
+		if (playerLevelN == MapState::getLevelCount() || (playerLevelN > 1 && Config::autosaveEveryNewLevelEnabled.isOn()))
 			saveState(gameTicksTime);
 	}
 
