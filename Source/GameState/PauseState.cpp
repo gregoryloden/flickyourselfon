@@ -34,8 +34,8 @@ PauseState::PauseMenu::~PauseMenu() {
 	for (PauseOption* option : options)
 		delete option;
 }
-void PauseState::PauseMenu::getTotalHeightAndMetrics(
-	KeyBindingOption* selectingKeyBindingOption, float* outTotalHeight, vector<Text::Metrics>* outOptionsMetrics)
+void PauseState::PauseMenu::getDisplayMetrics(
+	KeyBindingOption* selectingKeyBindingOption, float* outMenuTop, vector<Text::Metrics>* outOptionsMetrics)
 {
 	float totalHeight = titleMetrics.getTotalHeight() - titleMetrics.topPadding;
 	for (PauseOption* option : options) {
@@ -45,7 +45,8 @@ void PauseState::PauseMenu::getTotalHeightAndMetrics(
 		totalHeight += optionMetrics.getTotalHeight();
 		outOptionsMetrics->push_back(optionMetrics);
 	}
-	*outTotalHeight = totalHeight - outOptionsMetrics->back().bottomPadding;
+	totalHeight -= outOptionsMetrics->back().bottomPadding;
+	*outMenuTop = (Config::gameScreenHeight - totalHeight) * 0.5f;
 }
 void PauseState::PauseMenu::handleSelectOption(int pauseOption, int* outSelectedLevelN) {
 	PauseOption* pauseOptionVal = options[pauseOption];
@@ -55,11 +56,11 @@ void PauseState::PauseMenu::handleSelectOption(int pauseOption, int* outSelected
 int PauseState::PauseMenu::findHighlightedOption(int mouseX, int mouseY, float* outOptionX) {
 	float screenX = mouseX / Config::currentPixelWidth;
 	float screenY = mouseY / Config::currentPixelHeight;
-	float totalHeight;
+	float menuTop;
 	vector<Text::Metrics> optionsMetrics;
-	getTotalHeightAndMetrics(nullptr, &totalHeight, &optionsMetrics);
+	getDisplayMetrics(nullptr, &menuTop, &optionsMetrics);
 	float optionMiddle = Config::gameScreenWidth * 0.5f;
-	float optionTop = (Config::gameScreenHeight - totalHeight) * 0.5f + titleMetrics.getTotalHeight() - titleMetrics.topPadding;
+	float optionTop = menuTop + titleMetrics.getTotalHeight() - titleMetrics.topPadding;
 	for (int i = 0; i < (int)optionsMetrics.size(); i++) {
 		Text::Metrics& metrics = optionsMetrics[i];
 		float optionBottom = optionTop + metrics.getTotalHeight();
@@ -86,13 +87,13 @@ void PauseState::PauseMenu::render(int selectedOption, KeyBindingOption* selecti
 		0.0f, 0.0f, 0.0f, 0.5f, 0, 0, (GLint)Config::gameScreenWidth, (GLint)Config::gameScreenHeight);
 
 	//first find the height of the pause options so that we can vertically center them
-	float totalHeight;
+	float menuTop;
 	vector<Text::Metrics> optionsMetrics;
-	getTotalHeightAndMetrics(selectingKeyBindingOption, &totalHeight, &optionsMetrics);
+	getDisplayMetrics(selectingKeyBindingOption, &menuTop, &optionsMetrics);
 
 	//then render them all
 	float screenCenterX = (float)Config::gameScreenWidth * 0.5f;
-	float optionsBaseline = ((float)Config::gameScreenHeight - totalHeight) * 0.5f + titleMetrics.aboveBaseline;
+	float optionsBaseline = menuTop + titleMetrics.aboveBaseline;
 
 	Text::render(title.c_str(), screenCenterX - titleMetrics.charactersWidth * 0.5f, optionsBaseline, titleFontScale);
 	Text::Metrics* lastMetrics = &titleMetrics;

@@ -49,9 +49,9 @@ private:
 		int getOptionsCount() { return (int)options.size(); }
 		PauseOption* getOption(int optionIndex) { return options[optionIndex]; }
 	private:
-		//calculate the total height for this pause menu
-		void getTotalHeightAndMetrics(
-			KeyBindingOption* selectingKeyBindingOption, float* outTotalHeight, vector<Text::Metrics>* optionsMetrics);
+		//calculate render metrics for this pause menu
+		void getDisplayMetrics(
+			KeyBindingOption* selectingKeyBindingOption, float* outMenuTop, vector<Text::Metrics>* outOptionsMetrics);
 	public:
 		//handle selecting an option in this menu
 		void handleSelectOption(int pauseOption, int* outSelectedLevelN);
