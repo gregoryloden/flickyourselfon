@@ -23,7 +23,6 @@
 
 const int maxGameStates = 6;
 SDL_Window* window = nullptr;
-SDL_GLContext glContext = nullptr;
 bool renderThreadReadyForUpdates = false;
 bool renderThreadCriticalError = false;
 
@@ -220,7 +219,7 @@ void renderLoop(CircularStateQueue<GameState>* gameStateQueue) {
 
 	//setup opengl
 	Logger::debugLogger.log("Render thread began /// Setting up OpenGL...");
-	glContext = SDL_GL_CreateContext(window);
+	SDL_GLContext glContext = SDL_GL_CreateContext(window);
 	SDL_GL_LoadLibrary(nullptr);
 	if (!Opengl::initExtensions()) {
 		SDL_GL_UnloadLibrary();
