@@ -151,19 +151,17 @@ int gameMain(int argc, char* argv[]) {
 	Logger::gameplayLogger.log("----   end gameplay ----");
 
 	//cleanup anything that might have run a separate thread
-	#ifdef DEBUG
-		delete gameStateQueue;
-		ObjectPool<PlayerState>::clearPool();
-	#endif
+	delete gameStateQueue;
+	ObjectPool<PlayerState>::clearPool();
 
 	//stop the logging thread but keep the files open
 	Logger::endMultiThreadedLogging();
 
 	//cleanup
+	Audio::unloadSounds();
+	Audio::tearDown();
 	#ifdef DEBUG
 		MapState::deleteMap();
-		Audio::unloadSounds();
-		Audio::tearDown();
 		//the order that these object pools are cleared matters since some earlier classes in this list may have retained
 		//	objects from classes later in this list
 		ObjectPool<MapState>::clearPool();
@@ -207,10 +205,8 @@ int gameMain(int argc, char* argv[]) {
 	Logger::debugLogger.log("Game exit");
 	Logger::debugLogger.endLogging();
 	//end SDL after we end logging since we use SDL_GetTicks for logging
-	#ifdef DEBUG
-		SDL_DestroyWindow(window);
-		SDL_Quit();
-	#endif
+	SDL_DestroyWindow(window);
+	SDL_Quit();
 
 	return 0;
 }
@@ -295,9 +291,9 @@ void renderLoop(CircularStateQueue<GameState>* gameStateQueue) {
 		PauseState::unloadMenus();
 		SpriteRegistry::unloadAll();
 		Text::unloadFont();
-		SDL_GL_UnloadLibrary();
-		SDL_GL_DeleteContext(glContext);
 	#endif
+	SDL_GL_UnloadLibrary();
+	SDL_GL_DeleteContext(glContext);
 	Logger::debugLogger.log("Render thread ended");
 }
 int messageBox(const char* message, UINT messageBoxType) {
