@@ -3,8 +3,6 @@
 #define newResetSwitch(centerX, bottomY) newWithArgs(ResetSwitch, centerX, bottomY)
 #define newResetSwitchState(resetSwitch) newWithArgs(ResetSwitchState, resetSwitch)
 
-class RailState;
-
 class ResetSwitch onlyInDebug(: public ObjCounter) {
 private:
 	//Should only be allocated within an object, on the stack, or as a static object
