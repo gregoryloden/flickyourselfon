@@ -72,6 +72,7 @@ public:
 	static constexpr int switchTopInset = 1;
 	static constexpr int switchBottomInset = 2;
 	static constexpr char invalidHeight = -1;
+	static constexpr char groupCount = 64;
 	//animations
 	static constexpr int firstLevelTileOffsetX = 40;
 	static constexpr int firstLevelTileOffsetY = 113;

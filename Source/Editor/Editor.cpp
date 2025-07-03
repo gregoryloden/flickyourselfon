@@ -821,8 +821,7 @@ void Editor::loadButtons() {
 	for (char i = -1; i <= 1; i += 2)
 		buttons.push_back(newRailTileOffsetButton(Zone::Right, 103 + RailTileOffsetButton::buttonSize * i / 2, 112, i));
 	buttons.push_back(newRailToggleMovementDirectionButton(Zone::Right, 137, 112));
-	static constexpr int railSwitchGroupCount = MapState::floorRailSwitchGroupPostShiftBitmask + 1;
-	for (char i = 0; i < (char)railSwitchGroupCount; i++) {
+	for (char i = 0; i < MapState::groupCount; i++) {
 		RailSwitchGroupButton* button = newRailSwitchGroupButton(
 			Zone::Right,
 			5 + RailSwitchGroupButton::buttonSize * (i % 16),

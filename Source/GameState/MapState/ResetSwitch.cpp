@@ -20,9 +20,16 @@ void ResetSwitch::Segment::render(int screenLeftWorldX, int screenTopWorldY) {
 	GLint drawTopY = (GLint)(y * MapState::tileSize - screenTopWorldY);
 	(SpriteRegistry::rails->*SpriteSheet::renderSpriteAtScreenPosition)(spriteHorizontalIndex, 0, drawLeftX, drawTopY);
 }
-void ResetSwitch::Segment::renderGroup(int screenLeftWorldX, int screenTopWorldY) {
+void ResetSwitch::Segment::renderGroup(int screenLeftWorldX, int screenTopWorldY, bool* segmentsEnabled) {
 	if (group == 0)
 		return;
+	if (segmentsEnabled != nullptr) {
+		segmentsEnabled = &segmentsEnabled[color * MapState::groupCount + group];
+		if (*segmentsEnabled)
+			*segmentsEnabled = false;
+		else
+			return;
+	}
 	GLint drawLeftX = (GLint)(x * MapState::tileSize - screenLeftWorldX);
 	GLint drawTopY = (GLint)(y * MapState::tileSize - screenTopWorldY);
 	MapState::renderGroupRect(group, drawLeftX + 2, drawTopY + 2, drawLeftX + 4, drawTopY + 4);
@@ -101,16 +108,16 @@ void ResetSwitch::render(int screenLeftWorldX, int screenTopWorldY, bool isOn) {
 		segment.render(screenLeftWorldX, screenTopWorldY);
 	(SpriteRegistry::rails->*SpriteSheet::setSpriteColor)(1.0f, 1.0f, 1.0f, 1.0f);
 }
-void ResetSwitch::renderGroups(int screenLeftWorldX, int screenTopWorldY) {
+void ResetSwitch::renderGroups(int screenLeftWorldX, int screenTopWorldY, bool* segmentsEnabled) {
 	if (Editor::isActive && editorIsDeleted)
 		return;
 
 	for (Segment& segment : leftSegments)
-		segment.renderGroup(screenLeftWorldX, screenTopWorldY);
+		segment.renderGroup(screenLeftWorldX, screenTopWorldY, segmentsEnabled);
 	for (Segment& segment : bottomSegments)
-		segment.renderGroup(screenLeftWorldX, screenTopWorldY);
+		segment.renderGroup(screenLeftWorldX, screenTopWorldY, segmentsEnabled);
 	for (Segment& segment : rightSegments)
-		segment.renderGroup(screenLeftWorldX, screenTopWorldY);
+		segment.renderGroup(screenLeftWorldX, screenTopWorldY, segmentsEnabled);
 }
 void ResetSwitch::renderHint(int screenLeftWorldX, int screenTopWorldY, float alpha) {
 	SpriteSheet::setRectangleColor(1.0f, 1.0f, 1.0f, alpha);

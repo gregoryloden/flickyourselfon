@@ -1202,7 +1202,7 @@ void MapState::renderAbovePlayer(EntityState* camera, int ticksTime) {
 				switch0->renderGroup(screenLeftWorldX, screenTopWorldY);
 		}
 		for (ResetSwitch* resetSwitch : resetSwitches)
-			resetSwitch->renderGroups(screenLeftWorldX, screenTopWorldY);
+			resetSwitch->renderGroups(screenLeftWorldX, screenTopWorldY, nullptr);
 		glEnable(GL_BLEND);
 	}
 
@@ -1297,6 +1297,7 @@ void MapState::renderAbovePlayer(EntityState* camera, int ticksTime) {
 	#endif
 }
 bool MapState::renderGroupsForRailsToReset(EntityState* camera, short resetSwitchId, int ticksTime) {
+	static bool colorsBeingReset[colorCount * groupCount] {};
 	int screenLeftWorldX = getScreenLeftWorldX(camera, ticksTime);
 	int screenTopWorldY = getScreenTopWorldY(camera, ticksTime);
 	ResetSwitch* resetSwitch = resetSwitches[resetSwitchId & railSwitchIndexBitmask];
@@ -1306,12 +1307,15 @@ bool MapState::renderGroupsForRailsToReset(EntityState* camera, short resetSwitc
 		RailState* railState = railStates[railId & railSwitchIndexBitmask];
 		if (railState->isInDefaultState())
 			continue;
+		Rail* rail = railState->getRail();
 		railState->renderMovementDirections(screenLeftWorldX, screenTopWorldY);
-		railState->getRail()->renderGroups(screenLeftWorldX, screenTopWorldY);
+		rail->renderGroups(screenLeftWorldX, screenTopWorldY);
+		for (char group : rail->getGroups())
+			colorsBeingReset[rail->getColor() * groupCount + group] = true;
 		hasRailsToReset = true;
 	}
 	if (hasRailsToReset)
-		resetSwitch->renderGroups(screenLeftWorldX, screenTopWorldY);
+		resetSwitch->renderGroups(screenLeftWorldX, screenTopWorldY, colorsBeingReset);
 	glEnable(GL_BLEND);
 	return hasRailsToReset;
 }
@@ -1854,7 +1858,7 @@ void MapState::editorRenderRailsAndSwitches(SDL_Renderer* mapRenderer) {
 }
 void MapState::editorRenderGroupsAndMovementDirections(SDL_Renderer* mapRenderer) {
 	for (ResetSwitch* resetSwitch : resetSwitches)
-		resetSwitch->renderGroups(0, 0);
+		resetSwitch->renderGroups(0, 0, nullptr);
 	for (Rail* rail : rails) {
 		if (rail->getGroups().empty())
 			continue;

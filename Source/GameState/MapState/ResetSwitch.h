@@ -20,7 +20,7 @@ private:
 		//render this reset switch segment
 		void render(int screenLeftWorldX, int screenTopWorldY);
 		//render the group for this reset switch segment
-		void renderGroup(int screenLeftWorldX, int screenTopWorldY);
+		void renderGroup(int screenLeftWorldX, int screenTopWorldY, bool* segmentsEnabled);
 	};
 
 	int centerX;
@@ -53,7 +53,7 @@ public:
 	//render the reset switch body and its segments
 	void render(int screenLeftWorldX, int screenTopWorldY, bool isOn);
 	//render the groups for the segments
-	void renderGroups(int screenLeftWorldX, int screenTopWorldY);
+	void renderGroups(int screenLeftWorldX, int screenTopWorldY, bool* segmentsEnabled);
 	//render boxes over the tiles of this reset switch
 	void renderHint(int screenLeftWorldX, int screenTopWorldY, float alpha);
 	//remove a segment from this reset switch if it matches a segment in one of the branches
