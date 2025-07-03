@@ -31,7 +31,7 @@ int gameMain(int argc, char* argv[]) {
 	//initialize SDL before we do anything else, we need it to log timestamps
 	int initResult = SDL_Init(SDL_INIT_EVERYTHING);
 	if (initResult < 0) {
-		MessageBoxA(nullptr, "Error initializing SDL", "Initialization Error", MB_OK);
+		messageBox("Error initializing SDL", MB_OK);
 		return initResult;
 	}
 
@@ -223,7 +223,7 @@ void renderLoop(CircularStateQueue<GameState>* gameStateQueue) {
 	SDL_GL_LoadLibrary(nullptr);
 	if (!Opengl::initExtensions()) {
 		SDL_GL_UnloadLibrary();
-		MessageBoxA(nullptr, "Error initializing OpenGL extensions", "Initialization Error", MB_OK);
+		messageBox("Error initializing OpenGL extensions", MB_OK);
 		renderThreadCriticalError = true;
 		return;
 	}
@@ -299,4 +299,7 @@ void renderLoop(CircularStateQueue<GameState>* gameStateQueue) {
 		SDL_GL_DeleteContext(glContext);
 	#endif
 	Logger::debugLogger.log("Render thread ended");
+}
+int messageBox(const char* message, UINT messageBoxType) {
+	return MessageBoxA(nullptr, message, "Kick Yourself On: Initialization Error", messageBoxType);
 }
