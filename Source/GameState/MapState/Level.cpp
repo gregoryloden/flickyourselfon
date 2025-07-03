@@ -1563,8 +1563,9 @@ HintState::PotentialLevelState* Level::loadBasePotentialLevelState(Plane* curren
 		getRailState(railByteMaskData.railId, railByteMaskData.rail, &movementDirection, &tileOffset);
 		char movementDirectionBit = ((movementDirection + 1) / 2) << Level::railTileOffsetByteMaskBitCount;
 		RailByteMaskData::BitsLocation::Data railBitsLocation = railByteMaskData.railBits.data;
-		HintState::PotentialLevelState::draftState.railByteMasks[railBitsLocation.byteIndex] |=
-			(unsigned int)(movementDirectionBit | tileOffset) << railBitsLocation.bitShift;
+		if (railBitsLocation.byteIndex != absentRailByteIndex)
+			HintState::PotentialLevelState::draftState.railByteMasks[railBitsLocation.byteIndex] |=
+				(unsigned int)(movementDirectionBit | tileOffset) << railBitsLocation.bitShift;
 	}
 	HintState::PotentialLevelState::draftState.railByteMasks[alwaysOnBit.location.data.byteIndex] |= alwaysOnBit.byteMask;
 	Plane::markStatusBitsInDraftState(planes);
