@@ -20,6 +20,7 @@
 #include "Sprites/SpriteRegistry.h"
 #include "Sprites/SpriteSheet.h"
 #include "Sprites/Text.h"
+#include "ThirdParty/Steam.h"
 
 const int maxGameStates = 6;
 SDL_Window* window = nullptr;
@@ -34,6 +35,13 @@ int gameMain(int argc, char* argv[]) {
 		messageBox("Error initializing SDL", MB_OK);
 		return initResult;
 	}
+	#ifdef STEAM
+		if (Steam::restartAppIfNecessary())
+			return 1;
+		if (!Steam::init()
+				&& messageBox("Warning: unable to initialize with Steam.\nUnable to access achievements.", MB_OKCANCEL) != IDOK)
+			return 1;
+	#endif
 
 	for (int i = 1; i < argc; i++) {
 		if (strcmp(argv[i], "--editor") == 0 && !Editor::isActive) {
@@ -200,6 +208,9 @@ int gameMain(int argc, char* argv[]) {
 		ObjectPool<HintState>::clearPool();
 		ObjectPool<HintState::PotentialLevelState>::clearPool();
 		ObjCounter::end();
+	#endif
+	#ifdef STEAM
+		Steam::shutdown();
 	#endif
 	Logger::gameplayLogger.endLogging();
 	Logger::debugLogger.log("Game exit");

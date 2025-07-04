@@ -3,6 +3,8 @@
 builds/*
 Debug/*
 Release/*
+Steam_Debug/*
+Steam_Release/*
 *.vs
 *.sln
 *.sdf
