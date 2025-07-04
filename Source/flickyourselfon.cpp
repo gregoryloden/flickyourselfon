@@ -12,15 +12,15 @@
 #include "GameState/PauseState.h"
 #include "GameState/UndoState.h"
 #include "GameState/MapState/MapState.h"
+#include "Sprites/SpriteRegistry.h"
+#include "Sprites/SpriteSheet.h"
+#include "Sprites/Text.h"
+#include "ThirdParty/Steam.h"
 #include "Util/CircularStateQueue.h"
 #include "Util/Config.h"
 #include "Util/FileUtils.h"
 #include "Util/Logger.h"
 #include "Util/TimeUtils.h"
-#include "Sprites/SpriteRegistry.h"
-#include "Sprites/SpriteSheet.h"
-#include "Sprites/Text.h"
-#include "ThirdParty/Steam.h"
 
 const int maxGameStates = 6;
 SDL_Window* window = nullptr;
