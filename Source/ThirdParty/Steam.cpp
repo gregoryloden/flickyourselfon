@@ -6,6 +6,7 @@
 #pragma warning(pop)
 
 bool Steam::isActive = false;
+bool Steam::fixLevelEndAchievements = false;
 ISteamUserStats* Steam::steamUserStats = nullptr;
 bool Steam::restartAppIfNecessary() {
 	return SteamAPI_RestartAppIfNecessary(appId);
@@ -20,10 +21,22 @@ void Steam::shutdown() {
 	SteamAPI_Shutdown();
 }
 void Steam::unlockLevelEndAchievement(int level) {
-	if (!isActive || level < 1 || level > 7)
+	if (!isActive)
 		return;
-	string achievementName = "COMPLETED_LEVEL_" + to_string(level);
-	steamUserStats->SetAchievement(achievementName.c_str());
+	unlockLevelEndAchievements(level, level);
+}
+void Steam::unlockLevelEndAchievements(int levelMin, int levelMax) {
+	if (levelMin < 1 || levelMax > 7)
+		return;
+	for (int level = levelMin; level <= levelMax; level++) {
+		string achievementName = "COMPLETED_LEVEL_" + to_string(level);
+		steamUserStats->SetAchievement(achievementName.c_str());
+	}
 	steamUserStats->StoreStats();
+}
+void Steam::tryFixLevelEndAchievements(int upToLevel) {
+	if (!isActive || !fixLevelEndAchievements)
+		return;
+	unlockLevelEndAchievements(1, upToLevel);
 }
 #endif

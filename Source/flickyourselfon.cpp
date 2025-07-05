@@ -52,6 +52,10 @@ int gameMain(int argc, char* argv[]) {
 			Config::windowScreenHeight += Config::editorMarginBottom;
 			Logger::debugLogger.enableInEditor();
 		}
+		#ifdef STEAM
+			else if (strcmp(argv[i], "--fix-achievements") == 0)
+				Steam::setFixLevelEndAchievements();
+		#endif
 	}
 
 	//some things need to happen before logging can begin

@@ -600,6 +600,10 @@ void GameState::loadInitialState(int ticksTime) {
 		playerState.get()->setHomeScreenState();
 		PauseState::disableContinueOptions();
 	}
+
+	#ifdef STEAM
+		Steam::tryFixLevelEndAchievements(MathUtils::min(7, levelsUnlocked - 1));
+	#endif
 }
 void GameState::loadSaveFile() {
 	ifstream file;

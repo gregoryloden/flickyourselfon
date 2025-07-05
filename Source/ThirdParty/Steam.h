@@ -8,11 +8,13 @@ private:
 	static constexpr unsigned int appId = 3828290;
 	
 	static bool isActive;
+	static bool fixLevelEndAchievements;
 	static ISteamUserStats* steamUserStats;
 
 public:
 	//Prevent allocation
 	Steam() = delete;
+	static void setFixLevelEndAchievements() { fixLevelEndAchievements = true; }
 	//restart the program through steam if it wasn't run through Steam
 	static bool restartAppIfNecessary();
 	//initialize the Steam API and structures
@@ -21,5 +23,11 @@ public:
 	static void shutdown();
 	//unlock the achievement for the given level
 	static void unlockLevelEndAchievement(int level);
+private:
+	//unlock the achievements for the given range of levels
+	static void unlockLevelEndAchievements(int levelMin, int levelMax);
+public:
+	//unlock all achievements up to the given level, if applicable
+	static void tryFixLevelEndAchievements(int upToLevel);
 };
 #endif
