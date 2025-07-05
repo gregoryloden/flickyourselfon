@@ -19,6 +19,9 @@
 #define newEntityAnimationSwitchToPlayerCamera() produceWithoutArgs(EntityAnimation::SwitchToPlayerCamera)
 #define newEntityAnimationGenerateHint(useHint) produceWithArgs(EntityAnimation::GenerateHint, useHint)
 #define newEntityAnimationPlaySound(sound, loops) produceWithArgs(EntityAnimation::PlaySound, sound, loops)
+#ifdef STEAM
+	#define newEntityAnimationUnlockEndGameAchievement() produceWithoutArgs(EntityAnimation::UnlockEndGameAchievement)
+#endif
 
 class DynamicValue;
 class EntityState;
@@ -293,6 +296,20 @@ public:
 		//return that the animation should continue updating after playing the music
 		virtual bool handle(EntityState* entityState, int ticksTime);
 	};
+	#ifdef STEAM
+		class UnlockEndGameAchievement: public EntityAnimationTypes::Component {
+		public:
+			UnlockEndGameAchievement(objCounterParameters());
+			virtual ~UnlockEndGameAchievement();
+
+			//initialize and return an UnlockEndGameAchievement
+			static UnlockEndGameAchievement* produce(objCounterParameters());
+			//release a reference to this UnlockEndGameAchievement and return it to the pool if applicable
+			virtual void release();
+			//return that the animation should continue updating after unlocking the end-game achievement
+			virtual bool handle(EntityState* entityState, int ticksTime);
+		};
+	#endif
 
 private:
 	int lastUpdateTicksTime;

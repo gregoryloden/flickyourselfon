@@ -203,6 +203,9 @@ int gameMain(int argc, char* argv[]) {
 		ObjectPool<EntityAnimation::SpawnParticle>::clearPool();
 		ObjectPool<EntityAnimation::GenerateHint>::clearPool();
 		ObjectPool<EntityAnimation::PlaySound>::clearPool();
+		#ifdef STEAM
+			ObjectPool<EntityAnimation::UnlockEndGameAchievement>::clearPool();
+		#endif
 		ObjectPool<CollisionRect>::clearPool();
 		ObjectPool<KickAction>::clearPool();
 		ObjectPool<NoOpUndoState>::clearPool();

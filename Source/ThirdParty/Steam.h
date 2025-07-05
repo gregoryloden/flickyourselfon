@@ -29,5 +29,7 @@ private:
 public:
 	//unlock all achievements up to the given level, if applicable
 	static void tryFixLevelEndAchievements(int upToLevel);
+	//unlock the achievement for the end of the game
+	static void unlockEndGameAchievement();
 };
 #endif

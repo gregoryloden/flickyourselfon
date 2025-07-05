@@ -4,6 +4,9 @@
 #include "GameState/EntityState.h"
 #include "GameState/UndoState.h"
 #include "Sprites/SpriteAnimation.h"
+#ifdef STEAM
+	#include "ThirdParty/Steam.h"
+#endif
 
 //////////////////////////////// EntityAnimationTypes::Component ////////////////////////////////
 EntityAnimationTypes::Component::Component(objCounterParameters())
@@ -318,6 +321,23 @@ bool EntityAnimation::PlaySound::handle(EntityState* entityState, int ticksTime)
 	sound->play(loops);
 	return true;
 }
+
+#ifdef STEAM
+	//////////////////////////////// EntityAnimation::UnlockEndGameAchievement ////////////////////////////////
+	EntityAnimation::UnlockEndGameAchievement::UnlockEndGameAchievement(objCounterParameters())
+	: Component(objCounterArguments()) {
+	}
+	EntityAnimation::UnlockEndGameAchievement::~UnlockEndGameAchievement() {}
+	EntityAnimation::UnlockEndGameAchievement* EntityAnimation::UnlockEndGameAchievement::produce(objCounterParameters()) {
+		initializeWithNewFromPool(u, EntityAnimation::UnlockEndGameAchievement)
+		return u;
+	}
+	pooledReferenceCounterDefineRelease(EntityAnimation::UnlockEndGameAchievement)
+	bool EntityAnimation::UnlockEndGameAchievement::handle(EntityState* entityState, int ticksTime) {
+		Steam::unlockEndGameAchievement();
+		return true;
+	}
+#endif
 
 //////////////////////////////// EntityAnimation ////////////////////////////////
 EntityAnimation::EntityAnimation(objCounterParameters())

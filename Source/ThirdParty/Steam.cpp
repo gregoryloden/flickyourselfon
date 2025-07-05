@@ -39,4 +39,10 @@ void Steam::tryFixLevelEndAchievements(int upToLevel) {
 		return;
 	unlockLevelEndAchievements(1, upToLevel);
 }
+void Steam::unlockEndGameAchievement() {
+	if (!isActive)
+		return;
+	steamUserStats->SetAchievement("COMPLETED_GAME");
+	steamUserStats->StoreStats();
+}
 #endif

@@ -1096,6 +1096,9 @@ void GameState::beginOutroAnimation(int ticksTime) {
 			newEntityAnimationPlaySound(Audio::switchOnSound, 0),
 			newEntityAnimationPlaySound(Audio::endGameVictorySound, 0),
 			newEntityAnimationDelay(outroPostTurnOnPauseDuration),
+			#ifdef STEAM
+				newEntityAnimationUnlockEndGameAchievement(),
+			#endif
 		});
 	playerAnimationComponents.insert(
 		playerAnimationComponents.end(),

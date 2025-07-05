@@ -116,6 +116,9 @@ template class ObjectPool<EntityAnimation::SetVelocity>;
 template class ObjectPool<EntityAnimation::SetZoom>;
 template class ObjectPool<EntityAnimation::SpawnParticle>;
 template class ObjectPool<EntityAnimation::SwitchToPlayerCamera>;
+#ifdef STEAM
+	template class ObjectPool<EntityAnimation::UnlockEndGameAchievement>;
+#endif
 template class ObjectPool<ExponentialValue>;
 template class ObjectPool<LinearInterpolatedValue>;
 template class ObjectPool<KickSwitchUndoState>;
