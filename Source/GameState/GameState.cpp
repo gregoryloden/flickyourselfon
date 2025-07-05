@@ -12,6 +12,7 @@
 #include "Sprites/SpriteRegistry.h"
 #include "Sprites/SpriteSheet.h"
 #include "Sprites/Text.h"
+#include "ThirdParty/Steam.h"
 #include "Util/Config.h"
 #include "Util/FileUtils.h"
 #include "Util/Logger.h"
@@ -174,6 +175,9 @@ void GameState::updateWithPreviousGameState(GameState* prev, int ticksTime) {
 		//save the game if it's the last level, or autosaving at new levels is enabled
 		if (playerLevelN == MapState::getLevelCount() || (playerLevelN > 1 && Config::autosaveEveryNewLevelEnabled.isOn()))
 			saveState(gameTicksTime);
+		#ifdef STEAM
+			Steam::unlockLevelEndAchievement(playerLevelN - 1);
+		#endif
 	}
 
 	//debug
