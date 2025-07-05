@@ -12,7 +12,9 @@
 #include "Sprites/SpriteRegistry.h"
 #include "Sprites/SpriteSheet.h"
 #include "Sprites/Text.h"
-#include "ThirdParty/Steam.h"
+#ifdef STEAM
+	#include "ThirdParty/Steam.h"
+#endif
 #include "Util/Config.h"
 #include "Util/FileUtils.h"
 #include "Util/Logger.h"
