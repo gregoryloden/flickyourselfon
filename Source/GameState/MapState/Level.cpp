@@ -984,7 +984,7 @@ void LevelTypes::Plane::pursueSolutionToPlanes(HintState::PotentialLevelState* c
 			Plane* checkPlane = checkPlanes[i];
 			for (Connection& connection : checkPlane->connections) {
 				//skip it if we can't pass
-				if (connection.railBits.data.byteIndex >= 0
+				if (connection.railBits.data.byteIndex != Level::absentRailByteIndex
 						&& (railByteMasks[connection.railBits.data.byteIndex] & connection.railTileOffsetByteMask) != 0)
 					continue;
 
