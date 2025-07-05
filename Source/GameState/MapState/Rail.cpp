@@ -642,6 +642,13 @@ void RailState::renderMovementDirections(int screenLeftWorldX, int screenTopWorl
 	}
 	SpriteSheet::setRectangleColor(1.0f, 1.0f, 1.0f, 1.0f);
 }
+Rail::Segment* RailState::getSaveSegment() {
+	Rail::Segment* startSegment = rail->getSegment(0);
+	Rail::Segment* endSegment = rail->getSegment(rail->getSegmentCount() - 1);
+	return startSegment->y < endSegment->y || (startSegment->y == endSegment->y && startSegment->x < endSegment->x)
+		? startSegment
+		: endSegment;
+}
 bool RailState::loadState(char pTileOffset, char pNextMovementDirection, bool animateMovement) {
 	bool isDifferent = targetTileOffset != pTileOffset;
 	if (!animateMovement)

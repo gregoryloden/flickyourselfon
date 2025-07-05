@@ -1471,11 +1471,12 @@ void MapState::saveState(ofstream& file) {
 		file << lastActivatedSwitchColorFilePrefix << (int)(MapState::colorCount - 1) << "\n";
 		return;
 	}
-	for (int i = 0; i < (int)railStates.size(); i++) {
-		RailState* railState = railStates[i];
-		if (!railState->isInDefaultState())
-			file << railStateFilePrefix << i << ' '
-				<< (int)railState->getTargetTileOffset() << ' ' << (int)railState->getNextMovementDirection() << "\n";
+	for (RailState* railState : railStates) {
+		if (railState->isInDefaultState())
+			continue;
+		Rail::Segment* saveSegment = railState->getSaveSegment();
+		file << railStateFilePrefix << saveSegment->x << ' ' << saveSegment->y << ' '
+			<< (int)railState->getTargetTileOffset() << ' ' << (int)railState->getNextMovementDirection() << "\n";
 	}
 }
 bool MapState::loadState(string& line) {
@@ -1489,11 +1490,12 @@ bool MapState::loadState(string& line) {
 		showConnectionsEnabled = true;
 	else if (StringUtils::startsWith(line, railStateFilePrefix)) {
 		const char* dataString = line.c_str() + StringUtils::strlenConst(railStateFilePrefix);
-		int railIndex, tileOffset, movementDirection;
-		dataString = StringUtils::parseNextInt(dataString, &railIndex);
+		int railX, railY, tileOffset, movementDirection;
+		dataString = StringUtils::parseNextInt(dataString, &railX);
+		dataString = StringUtils::parseNextInt(dataString, &railY);
 		dataString = StringUtils::parseNextInt(dataString, &tileOffset);
 		StringUtils::parseNextInt(dataString, &movementDirection);
-		railStates[railIndex]->loadState(tileOffset, movementDirection, false);
+		getRailState(railX, railY)->loadState(tileOffset, movementDirection, false);
 	} else
 		return false;
 	return true;

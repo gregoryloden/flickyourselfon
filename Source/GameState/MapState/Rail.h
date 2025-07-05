@@ -159,6 +159,8 @@ public:
 	void setSegmentColor();
 	//render the movement direction over the ends of the rail
 	void renderMovementDirections(int screenLeftWorldX, int screenTopWorldY);
+	//get the segment that should be used to write this rail's state
+	Rail::Segment* getSaveSegment();
 	//set this rail to the initial tile offset and movement direction, with or without a moving animation
 	//returns whether this changes the state of the rail
 	bool loadState(char pTileOffset, char pNextMovementDirection, bool animateMovement);
