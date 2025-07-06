@@ -295,7 +295,7 @@ vector<LevelTypes::Plane::DetailedConnection*> LevelTypes::Plane::DetailedLevel:
 	//	that's how we found this plane in the first place
 	vector<DetailedPlane*> pathPlanes ({ &planes[0] });
 	vector<DetailedConnection*> pathConnections;
-	pathWalkToPlane(destination, excludeZeroConnections, pathPlanes, pathConnections, alwaysAcceptPath);
+	pathWalkToPlane(destination, true, excludeZeroConnections, pathPlanes, pathConnections, alwaysAcceptPath);
 
 	//prep some data about our path
 	vector<bool> connectionIsRequired (pathConnections.size(), true);
@@ -323,6 +323,7 @@ vector<LevelTypes::Plane::DetailedConnection*> LevelTypes::Plane::DetailedLevel:
 		};
 		pathWalkToPlane(
 			destination,
+			true,
 			excludeSingleConnection(reroutePathConnections.back()),
 			reroutePathPlanes,
 			reroutePathConnections,
@@ -356,7 +357,7 @@ vector<LevelTypes::Plane::DetailedConnection*> LevelTypes::Plane::DetailedLevel:
 		//if there is not a path to this plane after excluding the switch's connections, then it is a milestone switch
 		//mark this rail as required, and we'll handle marking the switch as a milestone in the below loop
 		if (!pathWalkToPlane(
-				destination, excludeSwitchConnections, reroutePathPlanes, reroutePathConnections, alwaysAcceptPath))
+				destination, true, excludeSwitchConnections, reroutePathPlanes, reroutePathConnections, alwaysAcceptPath))
 			connectionIsRequired[i] = true;
 	}
 
@@ -370,6 +371,7 @@ vector<LevelTypes::Plane::DetailedConnection*> LevelTypes::Plane::DetailedLevel:
 }
 bool LevelTypes::Plane::DetailedLevel::pathWalkToPlane(
 	DetailedPlane* destination,
+	bool excludeConnectionsFromSwitchesOnDestination,
 	function<bool(DetailedConnection* connection)> excludeConnection,
 	vector<DetailedPlane*>& inOutPathPlanes,
 	vector<DetailedConnection*>& inOutPathConnections,
@@ -390,7 +392,7 @@ bool LevelTypes::Plane::DetailedLevel::pathWalkToPlane(
 			//- it's been excluded
 			DetailedPlane* toPlane = detailedConnection.toPlane;
 			if (seenPlanes[toPlane->plane->indexInOwningLevel]
-					|| detailedConnection.requiresSwitchesOnPlane(destination)
+					|| (excludeConnectionsFromSwitchesOnDestination && detailedConnection.requiresSwitchesOnPlane(destination))
 					|| excludeConnection(&detailedConnection))
 				continue;
 			//we found a valid connection, track it
@@ -573,7 +575,7 @@ void LevelTypes::Plane::DetailedLevel::tryAddIsolatedArea(
 	for (DetailedPlane* detailedPlane : isolatedAreaPlanes) {
 		pathPlanes = { detailedPlane };
 		pathConnections.clear();
-		if (!pathWalkToPlane(&planes[0], excludeRailConnections, pathPlanes, pathConnections, alwaysAcceptPath))
+		if (!pathWalkToPlane(&planes[0], false, excludeRailConnections, pathPlanes, pathConnections, alwaysAcceptPath))
 			return;
 	}
 
@@ -635,7 +637,7 @@ void LevelTypes::Plane::DetailedLevel::findReachablePlanes(
 		reachablePlanes[pathPlanes.back()->plane->indexInOwningLevel] = true;
 		return pathPlanes.back() != victoryPlane;
 	};
-	pathWalkToPlane(victoryPlane, excludeConnection, pathPlanes, pathConnections, trackPlaneAndKeepSearching);
+	pathWalkToPlane(victoryPlane, false, excludeConnection, pathPlanes, pathConnections, trackPlaneAndKeepSearching);
 
 	//collect the planes that are reachable and unreachable
 	for (int i = 0; i < (int)reachablePlanes.size(); i++) {
