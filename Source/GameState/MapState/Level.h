@@ -213,6 +213,7 @@ namespace LevelTypes {
 			//	- inOutPathPlanes and inOutPathConnections will contain their original contents
 			bool pathWalkToPlane(
 				DetailedPlane* destination,
+				bool excludeConnectionsFromSwitchesOnDestination,
 				function<bool(DetailedConnection* connection)> excludeConnection,
 				vector<DetailedPlane*>& inOutPathPlanes,
 				vector<DetailedConnection*>& inOutPathConnections,
