@@ -241,6 +241,11 @@ namespace LevelTypes {
 				function<bool(DetailedConnection* connection)> excludeConnection,
 				vector<DetailedPlane*>* outReachablePlanes,
 				vector<DetailedPlane*>* outUnreachablePlanes);
+			//see if the given mini puzzle is part of an area with a single entrance and exit, and if so, track it
+			void tryAddPassThroughMiniPuzzle(
+				vector<DetailedPlane*>& isolatedAreaPlanes,
+				vector<DetailedConnectionSwitch*>& miniPuzzleSwitches,
+				RailByteMaskData::ByteMask miniPuzzleBit);
 			//find switches with exclusive control over their rails with rails that are only used to get to milestones
 			void findDeadRails(RailByteMaskData::BitsLocation alwaysOffBitLocation, short alwaysOnBitId);
 		};
@@ -387,7 +392,19 @@ public:
 		CheckedPlaneData();
 		virtual ~CheckedPlaneData();
 	};
+private:
+	//Should only be allocated within an object, on the stack, or as a static object
+	class PassThroughMiniPuzzle {
+	public:
+		vector<LevelTypes::RailByteMaskData*> passThroughRails;
+		LevelTypes::RailByteMaskData::ByteMask miniPuzzleBit;
 
+		PassThroughMiniPuzzle(
+			vector<LevelTypes::RailByteMaskData*>& pPassThroughRails, LevelTypes::RailByteMaskData::ByteMask pMiniPuzzleBit);
+		virtual ~PassThroughMiniPuzzle();
+	};
+
+public:
 	static constexpr char absentRailByteIndex = -1;
 	static constexpr int railTileOffsetByteMaskBitCount = 3;
 	static constexpr int railMovementDirectionByteMaskBitCount = 1;
@@ -441,6 +458,7 @@ private:
 	LevelTypes::RailByteMaskData::ByteMask alwaysOnBit;
 	int railByteMaskBitsTracked;
 	LevelTypes::Plane* victoryPlane;
+	vector<PassThroughMiniPuzzle> allPassThroughMiniPuzzles;
 	char minimumRailColor;
 	Hint radioTowerHint;
 	Hint undoResetHint;
@@ -455,7 +473,11 @@ public:
 	LevelTypes::RailByteMaskData* getRailByteMaskData(int i) { return &allRailByteMaskData[i]; }
 	int getRailByteMaskCount() { return (railByteMaskBitsTracked + 31) / 32; }
 	LevelTypes::Plane* getVictoryPlane() { return victoryPlane; }
-	bool markStatusBitsInDraftStateOnMilestone() { return LevelTypes::Plane::markStatusBitsInDraftStateOnMilestone(planes); }
+	void trackPassThroughMiniPuzzle(
+		vector<LevelTypes::RailByteMaskData*>& passThroughRails, LevelTypes::RailByteMaskData::ByteMask miniPuzzleBit)
+	{
+		allPassThroughMiniPuzzles.push_back(PassThroughMiniPuzzle(passThroughRails, miniPuzzleBit));
+	}
 	static void cancelHintSearch() { hintSearchIsRunning = false; }
 	//add a new plane to this level
 	LevelTypes::Plane* addNewPlane();
@@ -508,6 +530,10 @@ public:
 	//	better state
 	//returns whether the state was inserted
 	static bool frontloadMilestoneDestinationState(HintState::PotentialLevelState* state);
+	//set bits in the draft state where applicable:
+	//- clear bits where switches can no longer be kicked
+	//returns whether any bits were changed
+	bool markStatusBitsInDraftStateOnMilestone();
 	//save away the current states to check, and start over with a new set at the given number of steps
 	static void pushMilestone(int newPotentialLevelStateSteps);
 private:

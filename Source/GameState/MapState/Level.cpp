@@ -530,6 +530,9 @@ void LevelTypes::Plane::DetailedLevel::tryAddIsolatedArea(
 	if (VectorUtils::includes(isolatedAreaPlanes, victoryPlane))
 		return;
 
+	//first, check to see if this is a pass-through mini puzzle
+	tryAddPassThroughMiniPuzzle(isolatedAreaPlanes, miniPuzzleSwitches, miniPuzzleBit);
+
 	//go through all the isolated planes, and find the connections that are mutually required by all of them
 	vector<DetailedConnection*> requiredConnections = findRequiredConnectionsToPlane(isolatedAreaPlanes[0]);
 	for (int i = 1; i < (int)isolatedAreaPlanes.size(); i++) {
@@ -645,6 +648,50 @@ void LevelTypes::Plane::DetailedLevel::findReachablePlanes(
 		if (outPlanes != nullptr)
 			outPlanes->push_back(&planes[i]);
 	}
+}
+void LevelTypes::Plane::DetailedLevel::tryAddPassThroughMiniPuzzle(
+	vector<DetailedPlane*>& isolatedAreaPlanes,
+	vector<DetailedConnectionSwitch*>& miniPuzzleSwitches,
+	RailByteMaskData::ByteMask miniPuzzleBit)
+{
+	//check that there are no switches in the area besides mini puzzle switches
+	vector<DetailedConnection*> outsideConnections;
+	for (DetailedPlane* isolatedAreaPlane : isolatedAreaPlanes) {
+		//check that the switches in this plane are all mini puzzle switches
+		for (DetailedConnectionSwitch& isolatedAreaSwitch : isolatedAreaPlane->connectionSwitches) {
+			if (!VectorUtils::includes(miniPuzzleSwitches, &isolatedAreaSwitch))
+				return;
+		}
+		//track any connections extending to outside planes
+		for (DetailedConnection& isolatedAreaConnection : isolatedAreaPlane->connections) {
+			if (!VectorUtils::includes(isolatedAreaPlanes, isolatedAreaConnection.toPlane)
+					&& isolatedAreaConnection.switchRailByteMaskData != nullptr)
+				outsideConnections.push_back(&isolatedAreaConnection);
+		}
+	}
+
+	//check that there are exactly 2 planes connected to this area by exactly 2 rails, through exactly 1 plane
+	if (outsideConnections.size() != 2
+			|| outsideConnections[0]->toPlane == outsideConnections[1]->toPlane
+			|| outsideConnections[0]->owningPlane != outsideConnections[1]->owningPlane)
+		return;
+
+	//at this point, we have a pass-through mini puzzle
+	//we don't need to check that we can get out of the planes, because pass-through mini puzzles only get deactivated from
+	//	outside the mini puzzle area at a milestone somewhere else
+	#ifdef LOG_FOUND_PLANE_CONCLUSIONS
+		stringstream passThroughMiniPuzzleMessage;
+		passThroughMiniPuzzleMessage << "level " << level->getLevelN() << " pass-through mini puzzle with planes";
+		for (DetailedPlane* detailedPlane : isolatedAreaPlanes)
+			passThroughMiniPuzzleMessage << " " << detailedPlane->plane->indexInOwningLevel;
+		passThroughMiniPuzzleMessage << " and switches";
+		for (DetailedConnectionSwitch* miniPuzzleSwitch : miniPuzzleSwitches)
+			MapState::logSwitchDescriptor(miniPuzzleSwitch->connectionSwitch->hint.data.switch0, &passThroughMiniPuzzleMessage);
+		Logger::debugLogger.logString(passThroughMiniPuzzleMessage.str());
+	#endif
+	vector<RailByteMaskData*> passThroughRails =
+		{ outsideConnections[0]->switchRailByteMaskData, outsideConnections[1]->switchRailByteMaskData };
+	level->trackPassThroughMiniPuzzle(passThroughRails, miniPuzzleBit);
 }
 void LevelTypes::Plane::DetailedLevel::findDeadRails(RailByteMaskData::BitsLocation alwaysOffBitLocation, short alwaysOnBitId) {
 	//when we disable a dead rail, we can't abandon a plane if it has non-single-use switches, or is the victory plane
@@ -914,8 +961,6 @@ void LevelTypes::Plane::markStatusBitsInDraftState(vector<Plane*>& levelPlanes) 
 					~connectionSwitch.conclusionsData.isolatedArea.miniPuzzleBit.byteMask;
 		}
 	}
-
-	markStatusBitsInDraftStateOnMilestone(levelPlanes);
 }
 bool LevelTypes::Plane::draftRailBitsIsLowered(RailByteMaskData::BitsLocation railBitsLocation) {
 	return ((char)(HintState::PotentialLevelState::draftState.railByteMasks[railBitsLocation.data.byteIndex]
@@ -1312,6 +1357,14 @@ Level::CheckedPlaneData::~CheckedPlaneData() {
 	//don't delete hint, it's owned by something else
 }
 
+//////////////////////////////// Level::PassThroughMiniPuzzle ////////////////////////////////
+Level::PassThroughMiniPuzzle::PassThroughMiniPuzzle(
+	vector<RailByteMaskData*>& pPassThroughRails, RailByteMaskData::ByteMask pMiniPuzzleBit)
+: passThroughRails(pPassThroughRails)
+, miniPuzzleBit(pMiniPuzzleBit) {
+}
+Level::PassThroughMiniPuzzle::~PassThroughMiniPuzzle() {}
+
 //////////////////////////////// Level ////////////////////////////////
 RailByteMaskData::ByteMask Level::absentBits (RailByteMaskData::BitsLocation(absentRailByteIndex, 0), 0);
 bool Level::hintSearchIsRunning = false;
@@ -1354,6 +1407,7 @@ levelN(pLevelN)
 , alwaysOnBit(absentBits)
 , railByteMaskBitsTracked(0)
 , victoryPlane(nullptr)
+, allPassThroughMiniPuzzles()
 , minimumRailColor(0)
 , radioTowerHint(Hint::Type::None)
 , undoResetHint(Hint::Type::UndoReset)
@@ -1569,6 +1623,7 @@ HintState::PotentialLevelState* Level::loadBasePotentialLevelState(Plane* curren
 	}
 	HintState::PotentialLevelState::draftState.railByteMasks[alwaysOnBit.location.data.byteIndex] |= alwaysOnBit.byteMask;
 	Plane::markStatusBitsInDraftState(planes);
+	markStatusBitsInDraftStateOnMilestone();
 	HintState::PotentialLevelState::draftState.setHash();
 
 	//load the base potential level state
@@ -1881,6 +1936,23 @@ bool Level::frontloadMilestoneDestinationState(HintState::PotentialLevelState* s
 	currentNextPotentialLevelStates->push_front(state);
 	hintSearchCheckStateI++;
 	return true;
+}
+bool Level::markStatusBitsInDraftStateOnMilestone() {
+	bool hasChanges = LevelTypes::Plane::markStatusBitsInDraftStateOnMilestone(planes);
+
+	//check for any completed pass-through mini puzzles
+	for (PassThroughMiniPuzzle& passThroughMiniPuzzle : allPassThroughMiniPuzzles) {
+		if (Plane::draftBitIsActive(passThroughMiniPuzzle.miniPuzzleBit.location)
+			&& !VectorUtils::anyMatch(passThroughMiniPuzzle.passThroughRails, Plane::draftRailIsLowered))
+		{
+			HintState::PotentialLevelState::draftState.railByteMasks[
+					passThroughMiniPuzzle.miniPuzzleBit.location.data.byteIndex] &=
+				~passThroughMiniPuzzle.miniPuzzleBit.byteMask;
+			hasChanges = true;
+		}
+	}
+
+	return hasChanges;
 }
 void Level::pushMilestone(int newPotentialLevelStateSteps) {
 	#ifdef LOG_SEARCH_STEPS_STATS
