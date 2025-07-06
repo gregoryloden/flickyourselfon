@@ -172,7 +172,7 @@ bool LevelTypes::Plane::DetailedConnection::requiresSwitchesOnPlane(DetailedPlan
 	return true;
 }
 void LevelTypes::Plane::DetailedConnection::tryAddMilestoneSwitch(vector<DetailedPlane*>& outDestinationPlanes) {
-	//skip plane-plane connections, always-raised rails, and rails controlled by more than one switch
+	//skip plane-plane connections, always-raised rails, and rails affected by more than one switch
 	if (switchRail == nullptr || switchRail->affectingSwitches.size() != 1)
 		return;
 
