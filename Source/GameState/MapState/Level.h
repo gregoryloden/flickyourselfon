@@ -196,7 +196,8 @@ namespace LevelTypes {
 			//must be called before extending connections or removing connections to non-victory planes without switches
 			void findMilestones(RailByteMaskData::ByteMask alwaysOnBit);
 			//find all connections that must be crossed in order to get to the given plane from the start plane
-			vector<DetailedConnection*> findRequiredConnectionsToPlane(DetailedPlane* destination);
+			vector<DetailedConnection*> findRequiredConnectionsToPlane(
+				DetailedPlane* destination, bool excludeConnectionsFromSwitchesOnDestination);
 			//search for paths to every remaining plane until we reach the given plane, without going through any excluded
 			//	connections or connections that require access to switches on the given plane
 			//assumes there is at least one plane in inOutPathPlanes, and starts the walk from the end of the path described by

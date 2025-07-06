@@ -283,19 +283,25 @@ void LevelTypes::Plane::DetailedLevel::findMilestones(RailByteMaskData::ByteMask
 	vector<DetailedPlane*> destinationPlanes ({ victoryPlane });
 	for (int i = 0; i < (int)destinationPlanes.size(); i++) {
 		//try to add a milestone switch for each required connection
-		for (DetailedConnection* requiredConnection : findRequiredConnectionsToPlane(destinationPlanes[i]))
+		for (DetailedConnection* requiredConnection : findRequiredConnectionsToPlane(destinationPlanes[i], true))
 			requiredConnection->tryAddMilestoneSwitch(destinationPlanes);
 	}
 }
 vector<LevelTypes::Plane::DetailedConnection*> LevelTypes::Plane::DetailedLevel::findRequiredConnectionsToPlane(
-	DetailedPlane* destination)
+	DetailedPlane* destination, bool excludeConnectionsFromSwitchesOnDestination)
 {
 	//find any path to this plane
 	//assuming this plane can be found in levelPlanes, we know there must be a path to get here from the starting plane, because
 	//	that's how we found this plane in the first place
 	vector<DetailedPlane*> pathPlanes ({ &planes[0] });
 	vector<DetailedConnection*> pathConnections;
-	pathWalkToPlane(destination, true, excludeZeroConnections, pathPlanes, pathConnections, alwaysAcceptPath);
+	pathWalkToPlane(
+		destination,
+		excludeConnectionsFromSwitchesOnDestination,
+		excludeZeroConnections,
+		pathPlanes,
+		pathConnections,
+		alwaysAcceptPath);
 
 	//prep some data about our path
 	vector<bool> connectionIsRequired (pathConnections.size(), true);
@@ -323,7 +329,7 @@ vector<LevelTypes::Plane::DetailedConnection*> LevelTypes::Plane::DetailedLevel:
 		};
 		pathWalkToPlane(
 			destination,
-			true,
+			excludeConnectionsFromSwitchesOnDestination,
 			excludeSingleConnection(reroutePathConnections.back()),
 			reroutePathPlanes,
 			reroutePathConnections,
@@ -357,7 +363,12 @@ vector<LevelTypes::Plane::DetailedConnection*> LevelTypes::Plane::DetailedLevel:
 		//if there is not a path to this plane after excluding the switch's connections, then it is a milestone switch
 		//mark this rail as required, and we'll handle marking the switch as a milestone in the below loop
 		if (!pathWalkToPlane(
-				destination, true, excludeSwitchConnections, reroutePathPlanes, reroutePathConnections, alwaysAcceptPath))
+				destination,
+				excludeConnectionsFromSwitchesOnDestination,
+				excludeSwitchConnections,
+				reroutePathPlanes,
+				reroutePathConnections,
+				alwaysAcceptPath))
 			connectionIsRequired[i] = true;
 	}
 
@@ -531,9 +542,9 @@ void LevelTypes::Plane::DetailedLevel::tryAddIsolatedArea(
 	tryAddPassThroughMiniPuzzle(isolatedAreaPlanes, miniPuzzleSwitches, miniPuzzleBit);
 
 	//go through all the isolated planes, and find the connections that are mutually required by all of them
-	vector<DetailedConnection*> requiredConnections = findRequiredConnectionsToPlane(isolatedAreaPlanes[0]);
+	vector<DetailedConnection*> requiredConnections = findRequiredConnectionsToPlane(isolatedAreaPlanes[0], false);
 	for (int i = 1; i < (int)isolatedAreaPlanes.size(); i++) {
-		vector<DetailedConnection*> otherRequiredConnections = findRequiredConnectionsToPlane(isolatedAreaPlanes[i]);
+		vector<DetailedConnection*> otherRequiredConnections = findRequiredConnectionsToPlane(isolatedAreaPlanes[i], false);
 		auto notRequiredForOtherSwitch = [&otherRequiredConnections](DetailedConnection* connection) {
 			return !VectorUtils::includes(otherRequiredConnections, connection);
 		};
@@ -710,7 +721,7 @@ void LevelTypes::Plane::DetailedLevel::findDeadRails(RailByteMaskData::BitsLocat
 			continue;
 		//find all rails that are required for this switch and do not restrict any planes with non-single-use switches (or the
 		//	victory plane)
-		for (DetailedConnection* requiredConnection : findRequiredConnectionsToPlane(completedSwitch->owningPlane)) {
+		for (DetailedConnection* requiredConnection : findRequiredConnectionsToPlane(completedSwitch->owningPlane, false)) {
 			//skip plane-plane connections, always-raised rails, and rails controlled by more than one switch
 			//rails controlled by more than one switch would have created a mini puzzle, and the switches for it would not be
 			//	eligible to be dead rail switches
