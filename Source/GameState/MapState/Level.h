@@ -124,7 +124,7 @@ namespace LevelTypes {
 			//set this ConnectionSwitch to track dead rails
 			void setDeadRail(
 				RailByteMaskData::ByteMask deadRailBit,
-				vector<unsigned int>& requiredRailByteMasks,
+				vector<bool>& isDeadRail,
 				vector<DetailedConnectionSwitch*>& deadRailCompletedSwitches,
 				RailByteMaskData::BitsLocation alwaysOffBitLocation);
 		};
