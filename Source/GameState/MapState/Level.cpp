@@ -163,10 +163,10 @@ LevelTypes::Plane::Connection::~Connection() {
 //////////////////////////////// LevelTypes::Plane::DetailedConnection ////////////////////////////////
 bool LevelTypes::Plane::DetailedConnection::requiresSwitchesOnPlane(DetailedPlane* destination) {
 	//plane connections and rail connections without groups can't require switches, and rails that start raised don't apply
-	if (switchRailByteMaskData == nullptr || switchRailByteMaskData->rail->getInitialTileOffset() == 0)
+	if (switchRail == nullptr || switchRail->railByteMaskData->rail->getInitialTileOffset() == 0)
 		return false;
 	//if this rail is affected by any switch outside of the plane, then it doesn't require switches on the plane
-	for (DetailedConnectionSwitch* affectingSwitch : affectingSwitches) {
+	for (DetailedConnectionSwitch* affectingSwitch : switchRail->affectingSwitches) {
 		if (affectingSwitch->owningPlane != destination)
 			return false;
 	}
@@ -176,12 +176,12 @@ bool LevelTypes::Plane::DetailedConnection::requiresSwitchesOnPlane(DetailedPlan
 }
 void LevelTypes::Plane::DetailedConnection::tryAddMilestoneSwitch(vector<DetailedPlane*>& outDestinationPlanes) {
 	//skip plane-plane connections, always-raised rails, and rails controlled by more than one switch
-	if (affectingSwitches.size() != 1)
+	if (switchRail == nullptr || switchRail->affectingSwitches.size() != 1)
 		return;
 
 	//all connections at this point are rails with one switch
 	//if we already found this switch as a milestone, we don't need to mark or track it again
-	DetailedConnectionSwitch* matchingDetailedConnectionSwitch = affectingSwitches[0];
+	DetailedConnectionSwitch* matchingDetailedConnectionSwitch = switchRail->affectingSwitches[0];
 	ConnectionSwitch* matchingConnectionSwitch = matchingDetailedConnectionSwitch->connectionSwitch;
 	if (matchingConnectionSwitch->isMilestone)
 		return;
@@ -202,7 +202,7 @@ void LevelTypes::Plane::DetailedConnection::tryAddMilestoneSwitch(vector<Detaile
 			matchingPlane->milestoneIsNewBit = matchingPlane->owningLevel->trackRailByteMaskBits(1);
 	}
 	//if the rail starts out lowered, track the switch's plane as a destination plane, if it isn't already tracked
-	if (switchRailByteMaskData->rail->getInitialTileOffset() != 0
+	if (switchRail->railByteMaskData->rail->getInitialTileOffset() != 0
 		&& !VectorUtils::includes(outDestinationPlanes, matchingDetailedPlane))
 	{
 		#ifdef LOG_FOUND_PLANE_CONCLUSIONS
@@ -254,19 +254,17 @@ LevelTypes::Plane::DetailedLevel::DetailedLevel(Level* pLevel, vector<Plane*>& l
 		}
 	}
 
-	//connect all switches to connections
+	//connect all switch-connected rails to connections
 	for (DetailedPlane& detailedPlane : planes) {
 		for (DetailedConnection& detailedConnection : detailedPlane.connections) {
 			if (detailedConnection.connection->railBits.data.byteIndex == Level::absentRailByteIndex)
 				continue;
 			for (DetailedRail& detailedRail : rails[detailedConnection.connection->railBits.data.byteIndex]) {
-				if (detailedRail.railByteMaskData->railBits.id != detailedConnection.connection->railBits.id)
-					continue;
-				//we found the rail for this connection, add all the switches to this connection
-				detailedConnection.switchRailByteMaskData = detailedRail.railByteMaskData;
-				for (DetailedConnectionSwitch* detailedConnectionSwitch : detailedRail.affectingSwitches)
-					detailedConnection.affectingSwitches.push_back(detailedConnectionSwitch);
-				break;
+				//connect the rail to the connection if they match
+				if (detailedRail.railByteMaskData->railBits.id == detailedConnection.connection->railBits.id) {
+					detailedConnection.switchRail = &detailedRail;
+					break;
+				}
 			}
 		}
 	}
@@ -345,11 +343,11 @@ vector<LevelTypes::Plane::DetailedConnection*> LevelTypes::Plane::DetailedLevel:
 		if (connectionIsRequired[i])
 			continue;
 		//skip plane-plane connections and always-raised rails
-		DetailedConnection* railConnection = pathConnections[i];
-		if (railConnection->switchRailByteMaskData == nullptr)
+		DetailedRail* pathRail = pathConnections[i]->switchRail;
+		if (pathRail == nullptr)
 			continue;
 		//skip rails with switches that aren't single-use
-		ConnectionSwitch* matchingConnectionSwitch = railConnection->affectingSwitches[0]->connectionSwitch;
+		ConnectionSwitch* matchingConnectionSwitch = pathRail->affectingSwitches[0]->connectionSwitch;
 		if (!matchingConnectionSwitch->isSingleUse)
 			continue;
 		//we found a single-use switch that is not required
@@ -423,7 +421,7 @@ bool LevelTypes::Plane::DetailedLevel::pathWalkToPlane(
 	}
 }
 bool LevelTypes::Plane::DetailedLevel::excludeRailConnections(DetailedConnection* connection) {
-	return connection->switchRailByteMaskData != nullptr;
+	return connection->switchRail != nullptr;
 }
 function<bool(LevelTypes::Plane::DetailedConnection* connection)> LevelTypes::Plane::DetailedLevel::excludeSingleConnection(
 	DetailedConnection* excludedConnection)
@@ -665,7 +663,7 @@ void LevelTypes::Plane::DetailedLevel::tryAddPassThroughMiniPuzzle(
 		//track any connections extending to outside planes
 		for (DetailedConnection& isolatedAreaConnection : isolatedAreaPlane->connections) {
 			if (!VectorUtils::includes(isolatedAreaPlanes, isolatedAreaConnection.toPlane)
-					&& isolatedAreaConnection.switchRailByteMaskData != nullptr)
+					&& isolatedAreaConnection.switchRail != nullptr)
 				outsideConnections.push_back(&isolatedAreaConnection);
 		}
 	}
@@ -690,7 +688,7 @@ void LevelTypes::Plane::DetailedLevel::tryAddPassThroughMiniPuzzle(
 		Logger::debugLogger.logString(passThroughMiniPuzzleMessage.str());
 	#endif
 	vector<RailByteMaskData*> passThroughRails =
-		{ outsideConnections[0]->switchRailByteMaskData, outsideConnections[1]->switchRailByteMaskData };
+		{ outsideConnections[0]->switchRail->railByteMaskData, outsideConnections[1]->switchRail->railByteMaskData };
 	level->trackPassThroughMiniPuzzle(passThroughRails, miniPuzzleBit);
 }
 void LevelTypes::Plane::DetailedLevel::findDeadRails(RailByteMaskData::BitsLocation alwaysOffBitLocation, short alwaysOnBitId) {
@@ -714,10 +712,11 @@ void LevelTypes::Plane::DetailedLevel::findDeadRails(RailByteMaskData::BitsLocat
 			//skip plane-plane connections, always-raised rails, and rails controlled by more than one switch
 			//rails controlled by more than one switch would have created a mini puzzle, and the switches for it would not be
 			//	eligible to be dead rail switches
-			if (requiredConnection->affectingSwitches.size() != 1)
+			DetailedRail* requiredRail = requiredConnection->switchRail;
+			if (requiredRail == nullptr || requiredRail->affectingSwitches.size() != 1)
 				continue;
 			//switches that already have can-kick bits are ineligible to be dead rail switches
-			DetailedConnectionSwitch* deadRailSwitch = requiredConnection->affectingSwitches[0];
+			DetailedConnectionSwitch* deadRailSwitch = requiredRail->affectingSwitches[0];
 			if (deadRailSwitch->connectionSwitch->canKickBit.location.id != alwaysOnBitId)
 				continue;
 

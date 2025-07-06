@@ -151,8 +151,7 @@ namespace LevelTypes {
 			Connection* connection;
 			DetailedPlane* owningPlane;
 			DetailedPlane* toPlane;
-			RailByteMaskData* switchRailByteMaskData;
-			vector<DetailedConnectionSwitch*> affectingSwitches;
+			DetailedRail* switchRail;
 
 			//returns true if this is a rail connection that starts lowered, and can only be raised by switches on the given
 			//	plane
