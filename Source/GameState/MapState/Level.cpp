@@ -714,7 +714,7 @@ void LevelTypes::Plane::DetailedLevel::findDeadRails(RailByteMaskData::BitsLocat
 	//first step, find every rail that is required by any single-use switch, that only abandons single-use switches, and track
 	//	the single-use switches they abandon, as will as the list of all switches that affect them
 	vector<DetailedRail*> deadRails;
-	vector<vector<DetailedConnectionSwitch*>> allDeadRailCompletedSwitches;
+	vector<vector<DetailedConnectionSwitch*>> allDeadRailAbandonedSwitches;
 	vector<DetailedConnectionSwitch*> deadRailSwitches;
 	for (DetailedConnectionSwitch* completedSwitch : allConnectionSwitches) {
 		if (!completedSwitch->connectionSwitch->isSingleUse)
@@ -740,7 +740,7 @@ void LevelTypes::Plane::DetailedLevel::findDeadRails(RailByteMaskData::BitsLocat
 
 				//this is a valid dead rail
 				deadRails.push_back(requiredRail);
-				allDeadRailCompletedSwitches.push_back(vector<DetailedConnectionSwitch*>());
+				allDeadRailAbandonedSwitches.push_back(vector<DetailedConnectionSwitch*>());
 				//track all the switches that affect it
 				for (DetailedConnectionSwitch* deadRailSwitch : requiredRail->affectingSwitches) {
 					if (!VectorUtils::includes(deadRailSwitches, deadRailSwitch))
@@ -748,7 +748,7 @@ void LevelTypes::Plane::DetailedLevel::findDeadRails(RailByteMaskData::BitsLocat
 				}
 			}
 			//track this single-use switch as a cause of a dead rail
-			allDeadRailCompletedSwitches[deadRailIndex].push_back(completedSwitch);
+			allDeadRailAbandonedSwitches[deadRailIndex].push_back(completedSwitch);
 		}
 	}
 
@@ -765,7 +765,7 @@ void LevelTypes::Plane::DetailedLevel::findDeadRails(RailByteMaskData::BitsLocat
 		vector<bool> isDeadRail;
 		vector<DetailedConnectionSwitch*> deadRailSwitchCompletedSwitches;
 		auto isInvalidLiveRail =
-			[&deadRails, &allDeadRailCompletedSwitches, &isDeadRail, &deadRailSwitchCompletedSwitches](DetailedRail* switchRail)
+			[&deadRails, &allDeadRailAbandonedSwitches, &isDeadRail, &deadRailSwitchCompletedSwitches](DetailedRail* switchRail)
 		{
 			unsigned int deadRailIndex = VectorUtils::indexOf(deadRails, switchRail);
 			if (deadRailIndex == deadRails.size()) {
@@ -773,7 +773,7 @@ void LevelTypes::Plane::DetailedLevel::findDeadRails(RailByteMaskData::BitsLocat
 				return switchRail->affectingSwitches.size() > 1;
 			}
 			isDeadRail.push_back(true);
-			for (DetailedConnectionSwitch* deadRailCompletedSwitch : allDeadRailCompletedSwitches[deadRailIndex]) {
+			for (DetailedConnectionSwitch* deadRailCompletedSwitch : allDeadRailAbandonedSwitches[deadRailIndex]) {
 				if (!VectorUtils::includes(deadRailSwitchCompletedSwitches, deadRailCompletedSwitch))
 					deadRailSwitchCompletedSwitches.push_back(deadRailCompletedSwitch);
 			}
