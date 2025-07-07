@@ -114,6 +114,8 @@ namespace LevelTypes {
 			ConnectionSwitch(const ConnectionSwitch& other);
 			virtual ~ConnectionSwitch();
 
+			//destruct whichever ConclusionsData we currently have stored in conclusionsData, based on conclusionsType
+			void destructConclusions();
 			//go through every affected rail and write its tile offset byte mask to the given byte masks
 			void writeTileOffsetByteMasks(vector<unsigned int>& railByteMasks);
 			//set this ConnectionSwitch to be part of a mini puzzle

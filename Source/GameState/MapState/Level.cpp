@@ -80,6 +80,9 @@ LevelTypes::Plane::ConnectionSwitch::ConnectionSwitch(const ConnectionSwitch& ot
 	}
 }
 LevelTypes::Plane::ConnectionSwitch::~ConnectionSwitch() {
+	destructConclusions();
+}
+void LevelTypes::Plane::ConnectionSwitch::destructConclusions() {
 	switch (conclusionsType) {
 		case ConclusionsType::MiniPuzzle: conclusionsData.miniPuzzle.~MiniPuzzle(); break;
 		case ConclusionsType::IsolatedArea: conclusionsData.isolatedArea.~IsolatedArea(); break;
@@ -94,6 +97,7 @@ void LevelTypes::Plane::ConnectionSwitch::writeTileOffsetByteMasks(vector<unsign
 void LevelTypes::Plane::ConnectionSwitch::setMiniPuzzle(
 	RailByteMaskData::ByteMask miniPuzzleBit, vector<DetailedRail*>& miniPuzzleRails)
 {
+	destructConclusions();
 	new(&conclusionsData.miniPuzzle) ConclusionsData::MiniPuzzle();
 	conclusionsType = ConclusionsType::MiniPuzzle;
 	canKickBit = miniPuzzleBit;
@@ -105,6 +109,7 @@ void LevelTypes::Plane::ConnectionSwitch::setMiniPuzzle(
 void LevelTypes::Plane::ConnectionSwitch::setIsolatedArea(
 	vector<DetailedConnectionSwitch*>& isolatedAreaSwitches, RailByteMaskData::ByteMask miniPuzzleBit)
 {
+	destructConclusions();
 	new(&conclusionsData.isolatedArea) ConclusionsData::IsolatedArea(miniPuzzleBit);
 	conclusionsType = ConclusionsType::IsolatedArea;
 	for (DetailedConnectionSwitch* isolatedAreaSwitch : isolatedAreaSwitches) {
@@ -119,8 +124,7 @@ void LevelTypes::Plane::ConnectionSwitch::setDeadRail(
 	vector<DetailedConnectionSwitch*>& deadRailCompletedSwitches,
 	RailByteMaskData::BitsLocation alwaysOffBitLocation)
 {
-	if (conclusionsType == ConclusionsType::MiniPuzzle)
-		conclusionsData.miniPuzzle.~MiniPuzzle();
+	destructConclusions();
 	new(&conclusionsData.deadRail) ConclusionsData::DeadRail();
 	conclusionsType = ConclusionsType::DeadRail;
 	canKickBit = deadRailBit;
