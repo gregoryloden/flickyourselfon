@@ -1197,6 +1197,10 @@ void LevelTypes::Plane::pursueSolutionAfterSwitches(HintState::PotentialLevelSta
 							break;
 					}
 					break;
+				case ConnectionSwitch::ConclusionsType::DeadRail:
+					//dead rail switches might have rails connected to other switches from a mini puzzle, don't deactivate them
+					//	if we see all their rails raised
+					break;
 				case ConnectionSwitch::ConclusionsType::IsolatedArea:
 					for (int i = (int)connectionSwitch.conclusionsData.isolatedArea.otherGoalSwitchCanKickBits.size(); true; ) {
 						//we've looked at all switches and they're all can't-kick, we can flip the miniPuzzleBit now
@@ -1218,11 +1222,8 @@ void LevelTypes::Plane::pursueSolutionAfterSwitches(HintState::PotentialLevelSta
 					}
 					//fall through, this is a single-use switch that flips canKickBit
 				case ConnectionSwitch::ConclusionsType::None:
-				case ConnectionSwitch::ConclusionsType::DeadRail:
 				default:
-					//this is a single-use switch
-					//or, we stumbled upon a DeadRail switch that somehow got all its rails raised
-					//in any case, we can definitely flip canKickBit
+					//this is a single-use switch, we can definitely flip canKickBit
 					HintState::PotentialLevelState::draftState.railByteMasks[
 							connectionSwitch.canKickBit.location.data.byteIndex] &=
 						~connectionSwitch.canKickBit.byteMask;
