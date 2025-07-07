@@ -6,7 +6,7 @@ class ISteamUserStats;
 class Steam {
 private:
 	static constexpr unsigned int appId = 3828290;
-	
+
 	static bool isActive;
 	static bool fixLevelEndAchievements;
 	static ISteamUserStats* steamUserStats;
