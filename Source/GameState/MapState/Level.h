@@ -164,15 +164,19 @@ namespace LevelTypes {
 			vector<DetailedConnectionSwitch*> affectingSwitches;
 		};
 		//Should only be allocated within an object, on the stack, or as a static object
-		struct DetailedLevel {
+		class DetailedLevel {
+		private:
 			Level* level;
 			vector<DetailedPlane> planes;
 			vector<vector<DetailedRail>> rails;
 			vector<DetailedConnectionSwitch*> allConnectionSwitches;
 			DetailedPlane* victoryPlane;
 
+		public:
 			DetailedLevel(Level* pLevel, vector<Plane*>& levelPlanes);
+			virtual ~DetailedLevel();
 
+		private:
 			//indicates that a path-walk should not exclude any connections
 			static bool excludeZeroConnections(DetailedConnection* connection) { return false; }
 			//indicates that a path-walk should accept all paths
@@ -180,11 +184,13 @@ namespace LevelTypes {
 			//get a DetailedRail for the given RailByteMaskData, creating it if necessary
 			//the returned value should not be stored until every rail in the level has been created
 			DetailedRail* getDetailedRail(RailByteMaskData* railByteMaskData);
+		public:
 			//start from the first plane, go through all connections and planes, find planes and rails that are required to get
 			//	to the end, see which of them have single-use switches, and mark those switch connections as milestones
 			//then recursively repeat the process, instead ending at the planes of those milestone switches
 			//must be called before extending connections or removing connections to non-victory planes without switches
 			void findMilestones(RailByteMaskData::ByteMask alwaysOnBit);
+		private:
 			//find all connections that must be crossed in order to get to the given plane from the start plane
 			vector<DetailedConnection*> findRequiredConnectionsToPlane(
 				DetailedPlane* destination, bool excludeConnectionsFromSwitchesOnDestination);
@@ -216,10 +222,12 @@ namespace LevelTypes {
 				DetailedConnection* excludedConnection);
 			//indicates that a path-walk should exclude connections that match the given rail byte masks
 			static function<bool(DetailedConnection* connection)> excludeRailByteMasks(vector<unsigned int>& railByteMasks);
+		public:
 			//find sets of 2 or more switches that have rails in common
 			//must be called after setting default bits and before extending connections or removing connections to non-victory
 			//	planes without switches
 			void findMiniPuzzles(short alwaysOnBitId);
+		private:
 			//see if the given mini puzzle is part of an isolated area with single-use switches, and if so, track it in those
 			//	switches
 			void tryAddIsolatedArea(
@@ -237,6 +245,7 @@ namespace LevelTypes {
 				vector<DetailedPlane*>& isolatedAreaPlanes,
 				vector<DetailedConnectionSwitch*>& miniPuzzleSwitches,
 				RailByteMaskData::ByteMask miniPuzzleBit);
+		public:
 			//find switches with exclusive control over their rails with rails that are only used to get to milestones
 			void findDeadRails(RailByteMaskData::BitsLocation alwaysOffBitLocation, short alwaysOnBitId);
 		};

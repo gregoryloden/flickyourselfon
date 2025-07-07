@@ -248,6 +248,7 @@ LevelTypes::Plane::DetailedLevel::DetailedLevel(Level* pLevel, vector<Plane*>& l
 		}
 	}
 }
+LevelTypes::Plane::DetailedLevel::~DetailedLevel() {}
 LevelTypes::Plane::DetailedRail* LevelTypes::Plane::DetailedLevel::getDetailedRail(RailByteMaskData* railByteMaskData) {
 	vector<DetailedRail>& byteMaskRails = rails[railByteMaskData->railBits.data.byteIndex];
 	for (DetailedRail& detailedRail : byteMaskRails) {
