@@ -119,6 +119,8 @@ void LevelTypes::Plane::ConnectionSwitch::setDeadRail(
 	vector<DetailedConnectionSwitch*>& deadRailCompletedSwitches,
 	RailByteMaskData::BitsLocation alwaysOffBitLocation)
 {
+	if (conclusionsType == ConclusionsType::MiniPuzzle)
+		conclusionsData.miniPuzzle.~MiniPuzzle();
 	new(&conclusionsData.deadRail) ConclusionsData::DeadRail();
 	conclusionsType = ConclusionsType::DeadRail;
 	canKickBit = deadRailBit;
@@ -722,11 +724,9 @@ void LevelTypes::Plane::DetailedLevel::findDeadRails(RailByteMaskData::BitsLocat
 		//find all rails that are required for this switch and do not restrict any planes with non-single-use switches (or the
 		//	victory plane)
 		for (DetailedConnection* requiredConnection : findRequiredConnectionsToPlane(completedSwitch->owningPlane, false)) {
-			//skip plane-plane connections, always-raised rails, and rails controlled by more than one switch
-			//rails controlled by more than one switch would have created a mini puzzle, and the switches for it would not be
-			//	eligible to be dead rail switches
+			//skip plane-plane connections and always-raised rails
 			DetailedRail* requiredRail = requiredConnection->switchRail;
-			if (requiredRail == nullptr || requiredRail->affectingSwitches.size() != 1)
+			if (requiredRail == nullptr)
 				continue;
 
 			//check that we have a dead rail
@@ -755,8 +755,10 @@ void LevelTypes::Plane::DetailedLevel::findDeadRails(RailByteMaskData::BitsLocat
 	//now go through every switch that affects a dead rail, and mark it as a dead rail switch if all its live rails are only
 	//	affected by it
 	for (DetailedConnectionSwitch* deadRailSwitch : deadRailSwitches) {
-		//skip switches that already have can-kick bits (single-use switches and mini puzzle switches)
-		if (deadRailSwitch->connectionSwitch->canKickBit.location.id != alwaysOnBitId)
+		//skip switches that already have can-kick bits (single-use switches) but allow mini puzzle switches, which subsede
+		//	being dead rail switches
+		if (deadRailSwitch->connectionSwitch->canKickBit.location.id != alwaysOnBitId
+				&& deadRailSwitch->connectionSwitch->conclusionsType != ConnectionSwitch::ConclusionsType::MiniPuzzle)
 			continue;
 
 		//now go through every rail on this switch and mark it as a live rail or dead rail, and verify that all live rails
