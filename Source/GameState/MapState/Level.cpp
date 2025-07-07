@@ -1007,11 +1007,11 @@ bool LevelTypes::Plane::markStatusBitsInDraftStateOnMilestone(vector<Plane*>& le
 					break;
 				}
 			}
-			if (railsAreDead) {
-				HintState::PotentialLevelState::draftState.railByteMasks[connectionSwitch.canKickBit.location.data.byteIndex] &=
-					~connectionSwitch.canKickBit.byteMask;
-				hasChanges = true;
-			}
+			if (!railsAreDead)
+				continue;
+			HintState::PotentialLevelState::draftState.railByteMasks[connectionSwitch.canKickBit.location.data.byteIndex] &=
+				~connectionSwitch.canKickBit.byteMask;
+			hasChanges = true;
 		}
 	}
 
@@ -1938,14 +1938,12 @@ bool Level::markStatusBitsInDraftStateOnMilestone() {
 
 	//check for any completed pass-through mini puzzles
 	for (PassThroughMiniPuzzle& passThroughMiniPuzzle : allPassThroughMiniPuzzles) {
-		if (Plane::draftBitIsActive(passThroughMiniPuzzle.miniPuzzleBit.location)
-			&& !VectorUtils::anyMatch(passThroughMiniPuzzle.passThroughRails, Plane::draftRailIsLowered))
-		{
-			HintState::PotentialLevelState::draftState.railByteMasks[
-					passThroughMiniPuzzle.miniPuzzleBit.location.data.byteIndex] &=
-				~passThroughMiniPuzzle.miniPuzzleBit.byteMask;
-			hasChanges = true;
-		}
+		if (!Plane::draftBitIsActive(passThroughMiniPuzzle.miniPuzzleBit.location)
+				|| VectorUtils::anyMatch(passThroughMiniPuzzle.passThroughRails, Plane::draftRailIsLowered))
+			continue;
+		HintState::PotentialLevelState::draftState.railByteMasks[passThroughMiniPuzzle.miniPuzzleBit.location.data.byteIndex] &=
+			~passThroughMiniPuzzle.miniPuzzleBit.byteMask;
+		hasChanges = true;
 	}
 
 	//check for any completed isolated areas
