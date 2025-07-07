@@ -41,14 +41,6 @@ LevelTypes::Plane::Tile::Tile(int pX, int pY)
 }
 LevelTypes::Plane::Tile::~Tile() {}
 
-////////////////////////////////
-// LevelTypes::Plane::ConnectionSwitch::ConclusionsData::IsolatedArea
-////////////////////////////////
-LevelTypes::Plane::ConnectionSwitch::ConclusionsData::IsolatedArea::IsolatedArea(RailByteMaskData::ByteMask pMiniPuzzleBit)
-: otherGoalSwitchCanKickBits()
-, miniPuzzleBit(pMiniPuzzleBit) {
-}
-
 //////////////////////////////// LevelTypes::Plane::ConnectionSwitch ////////////////////////////////
 LevelTypes::Plane::ConnectionSwitch::ConnectionSwitch(Switch* switch0)
 : affectedRailByteMaskData()
@@ -71,9 +63,6 @@ LevelTypes::Plane::ConnectionSwitch::ConnectionSwitch(const ConnectionSwitch& ot
 		case ConclusionsType::MiniPuzzle:
 			new(&conclusionsData.miniPuzzle) ConclusionsData::MiniPuzzle(other.conclusionsData.miniPuzzle);
 			break;
-		case ConclusionsType::IsolatedArea:
-			new(&conclusionsData.isolatedArea) ConclusionsData::IsolatedArea(other.conclusionsData.isolatedArea);
-			break;
 		case ConclusionsType::DeadRail:
 			new(&conclusionsData.deadRail) ConclusionsData::DeadRail(other.conclusionsData.deadRail);
 			break;
@@ -85,7 +74,6 @@ LevelTypes::Plane::ConnectionSwitch::~ConnectionSwitch() {
 void LevelTypes::Plane::ConnectionSwitch::destructConclusions() {
 	switch (conclusionsType) {
 		case ConclusionsType::MiniPuzzle: conclusionsData.miniPuzzle.~MiniPuzzle(); break;
-		case ConclusionsType::IsolatedArea: conclusionsData.isolatedArea.~IsolatedArea(); break;
 		case ConclusionsType::DeadRail: conclusionsData.deadRail.~DeadRail(); break;
 	}
 }
@@ -104,18 +92,6 @@ void LevelTypes::Plane::ConnectionSwitch::setMiniPuzzle(
 	for (DetailedRail* miniPuzzleRail : miniPuzzleRails) {
 		if (!VectorUtils::includes(affectedRailByteMaskData, miniPuzzleRail->railByteMaskData))
 			conclusionsData.miniPuzzle.otherRailBits.push_back(miniPuzzleRail->railByteMaskData->railBits);
-	}
-}
-void LevelTypes::Plane::ConnectionSwitch::setIsolatedArea(
-	vector<DetailedConnectionSwitch*>& isolatedAreaSwitches, RailByteMaskData::ByteMask miniPuzzleBit)
-{
-	destructConclusions();
-	new(&conclusionsData.isolatedArea) ConclusionsData::IsolatedArea(miniPuzzleBit);
-	conclusionsType = ConclusionsType::IsolatedArea;
-	for (DetailedConnectionSwitch* isolatedAreaSwitch : isolatedAreaSwitches) {
-		if (isolatedAreaSwitch->connectionSwitch != this)
-			conclusionsData.isolatedArea.otherGoalSwitchCanKickBits.push_back(
-				isolatedAreaSwitch->connectionSwitch->canKickBit.location);
 	}
 }
 void LevelTypes::Plane::ConnectionSwitch::setDeadRail(
@@ -630,9 +606,11 @@ void LevelTypes::Plane::DetailedLevel::tryAddIsolatedArea(
 			MapState::logSwitchDescriptor(isolatedAreaSwitch->connectionSwitch->hint.data.switch0, &isolatedAreaMessage);
 		Logger::debugLogger.logString(isolatedAreaMessage.str());
 	#endif
-	//assign it to all the switches in the area
+	//track it
+	vector<RailByteMaskData::BitsLocation> goalSwitchCanKickBits;
 	for (DetailedConnectionSwitch* isolatedAreaSwitch : isolatedAreaSwitches)
-		isolatedAreaSwitch->connectionSwitch->setIsolatedArea(isolatedAreaSwitches, miniPuzzleBit);
+		goalSwitchCanKickBits.push_back(isolatedAreaSwitch->connectionSwitch->canKickBit.location);
+	level->trackIsolatedArea(goalSwitchCanKickBits, vector<RailByteMaskData::BitsLocation>({ miniPuzzleBit.location }));
 	//and set all always-can-visit planes in the area to be can't-visit after completing the isolated area
 	//some of these may already be set to this bit
 	for (DetailedPlane* detailedPlane : isolatedAreaPlanes) {
@@ -988,21 +966,6 @@ void LevelTypes::Plane::markStatusBitsInDraftState(vector<Plane*>& levelPlanes) 
 					connectionSwitch.canKickBit.byteMask;
 		}
 	}
-
-	//reset any mini puzzle bits for completed isolated areas
-	//isolated areas with more than one goal switch will reset the bits once per switch, but that's fine
-	for (Plane* plane : levelPlanes) {
-		for (ConnectionSwitch& connectionSwitch : plane->connectionSwitches) {
-			if (connectionSwitch.conclusionsType != ConnectionSwitch::ConclusionsType::IsolatedArea)
-				continue;
-			if (!draftBitIsActive(connectionSwitch.canKickBit.location)
-					&& !VectorUtils::anyMatch(
-						connectionSwitch.conclusionsData.isolatedArea.otherGoalSwitchCanKickBits, draftBitIsActive))
-				HintState::PotentialLevelState::draftState.railByteMasks[
-						connectionSwitch.conclusionsData.isolatedArea.miniPuzzleBit.location.data.byteIndex] &=
-					~connectionSwitch.conclusionsData.isolatedArea.miniPuzzleBit.byteMask;
-		}
-	}
 }
 bool LevelTypes::Plane::draftRailBitsIsLowered(RailByteMaskData::BitsLocation railBitsLocation) {
 	return ((char)(HintState::PotentialLevelState::draftState.railByteMasks[railBitsLocation.data.byteIndex]
@@ -1201,26 +1164,6 @@ void LevelTypes::Plane::pursueSolutionAfterSwitches(HintState::PotentialLevelSta
 					//dead rail switches might have rails connected to other switches from a mini puzzle, don't deactivate them
 					//	if we see all their rails raised
 					break;
-				case ConnectionSwitch::ConclusionsType::IsolatedArea:
-					for (int i = (int)connectionSwitch.conclusionsData.isolatedArea.otherGoalSwitchCanKickBits.size(); true; ) {
-						//we've looked at all switches and they're all can't-kick, we can flip the miniPuzzleBit now
-						if (i == 0) {
-							HintState::PotentialLevelState::draftState.railByteMasks[
-									connectionSwitch.conclusionsData.isolatedArea.miniPuzzleBit.location.data.byteIndex] &=
-								~connectionSwitch.conclusionsData.isolatedArea.miniPuzzleBit.byteMask;
-							break;
-						}
-						i--;
-						RailByteMaskData::BitsLocation::Data canKickBitLocation =
-							connectionSwitch.conclusionsData.isolatedArea.otherGoalSwitchCanKickBits[i].data;
-						//this switch is can-kick, we can't flip miniPuzzleBit
-						if (((char)(HintState::PotentialLevelState::draftState.railByteMasks[canKickBitLocation.byteIndex]
-										>> canKickBitLocation.bitShift)
-									& 1)
-								!= 0)
-							break;
-					}
-					//fall through, this is a single-use switch that flips canKickBit
 				case ConnectionSwitch::ConclusionsType::None:
 				default:
 					//this is a single-use switch, we can definitely flip canKickBit
@@ -1408,6 +1351,15 @@ Level::PassThroughMiniPuzzle::PassThroughMiniPuzzle(
 }
 Level::PassThroughMiniPuzzle::~PassThroughMiniPuzzle() {}
 
+//////////////////////////////// Level::IsolatedArea ////////////////////////////////
+Level::IsolatedArea::IsolatedArea(
+	vector<RailByteMaskData::BitsLocation>& pGoalSwitchCanKickBits,
+	vector<RailByteMaskData::BitsLocation>& pAbandonCanVisitBits)
+: goalSwitchCanKickBits(pGoalSwitchCanKickBits)
+, abandonCanVisitBits(pAbandonCanVisitBits) {
+}
+Level::IsolatedArea::~IsolatedArea() {}
+
 //////////////////////////////// Level ////////////////////////////////
 RailByteMaskData::ByteMask Level::absentBits (RailByteMaskData::BitsLocation(absentRailByteIndex, 0), 0);
 bool Level::hintSearchIsRunning = false;
@@ -1451,6 +1403,7 @@ levelN(pLevelN)
 , railByteMaskBitsTracked(0)
 , victoryPlane(nullptr)
 , allPassThroughMiniPuzzles()
+, allIsolatedAreas()
 , minimumRailColor(0)
 , radioTowerHint(Hint::Type::None)
 , undoResetHint(Hint::Type::UndoReset)
@@ -1993,6 +1946,17 @@ bool Level::markStatusBitsInDraftStateOnMilestone() {
 				~passThroughMiniPuzzle.miniPuzzleBit.byteMask;
 			hasChanges = true;
 		}
+	}
+
+	//check for any completed isolated areas
+	for (IsolatedArea& isolatedArea : allIsolatedAreas) {
+		if (!VectorUtils::anyMatch(isolatedArea.abandonCanVisitBits, Plane::draftBitIsActive)
+				|| VectorUtils::anyMatch(isolatedArea.goalSwitchCanKickBits, Plane::draftBitIsActive))
+			continue;
+		for (RailByteMaskData::BitsLocation abandonCanVisitBit : isolatedArea.abandonCanVisitBits)
+			HintState::PotentialLevelState::draftState.railByteMasks[abandonCanVisitBit.data.byteIndex] &=
+				~(1 << abandonCanVisitBit.data.bitShift);
+		hasChanges = true;
 	}
 
 	return hasChanges;

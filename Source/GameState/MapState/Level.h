@@ -71,7 +71,6 @@ namespace LevelTypes {
 			enum class ConclusionsType: unsigned char {
 				None,
 				MiniPuzzle,
-				IsolatedArea,
 				DeadRail,
 			};
 			//Should only be allocated within an object, on the stack, or as a static object
@@ -81,13 +80,6 @@ namespace LevelTypes {
 					vector<RailByteMaskData::BitsLocation> otherRailBits;
 				};
 				//Should only be allocated within an object, on the stack, or as a static object
-				struct IsolatedArea {
-					vector<RailByteMaskData::BitsLocation> otherGoalSwitchCanKickBits;
-					RailByteMaskData::ByteMask miniPuzzleBit;
-
-					IsolatedArea(RailByteMaskData::ByteMask pMiniPuzzleBit);
-				};
-				//Should only be allocated within an object, on the stack, or as a static object
 				struct DeadRail {
 					vector<RailByteMaskData::BitsLocation> completedSwitches;
 				};
@@ -95,7 +87,6 @@ namespace LevelTypes {
 				//make sure the default constructor doesn't construct any of the other members
 				bool none;
 				MiniPuzzle miniPuzzle;
-				IsolatedArea isolatedArea;
 				DeadRail deadRail;
 
 				ConclusionsData(): none() {}
@@ -120,9 +111,6 @@ namespace LevelTypes {
 			void writeTileOffsetByteMasks(vector<unsigned int>& railByteMasks);
 			//set this ConnectionSwitch to be part of a mini puzzle
 			void setMiniPuzzle(RailByteMaskData::ByteMask miniPuzzleBit, vector<DetailedRail*>& miniPuzzleRails);
-			//set this ConnectionSwitch to be part of an isolated area
-			void setIsolatedArea(
-				vector<DetailedConnectionSwitch*>& isolatedAreaSwitches, RailByteMaskData::ByteMask miniPuzzleBit);
 			//set this ConnectionSwitch to track dead rails
 			void setDeadRail(
 				RailByteMaskData::ByteMask deadRailBit,
@@ -406,6 +394,17 @@ private:
 			vector<LevelTypes::RailByteMaskData*>& pPassThroughRails, LevelTypes::RailByteMaskData::ByteMask pMiniPuzzleBit);
 		virtual ~PassThroughMiniPuzzle();
 	};
+	//Should only be allocated within an object, on the stack, or as a static object
+	class IsolatedArea {
+	public:
+		vector<LevelTypes::RailByteMaskData::BitsLocation> goalSwitchCanKickBits;
+		vector<LevelTypes::RailByteMaskData::BitsLocation> abandonCanVisitBits;
+
+		IsolatedArea(
+			vector<LevelTypes::RailByteMaskData::BitsLocation>& pGoalSwitchCanKickBits,
+			vector<LevelTypes::RailByteMaskData::BitsLocation>& pAbandonCanVisitBits);
+		virtual ~IsolatedArea();
+	};
 
 public:
 	static constexpr char absentRailByteIndex = -1;
@@ -462,6 +461,7 @@ private:
 	int railByteMaskBitsTracked;
 	LevelTypes::Plane* victoryPlane;
 	vector<PassThroughMiniPuzzle> allPassThroughMiniPuzzles;
+	vector<IsolatedArea> allIsolatedAreas;
 	char minimumRailColor;
 	Hint radioTowerHint;
 	Hint undoResetHint;
@@ -480,6 +480,12 @@ public:
 		vector<LevelTypes::RailByteMaskData*>& passThroughRails, LevelTypes::RailByteMaskData::ByteMask miniPuzzleBit)
 	{
 		allPassThroughMiniPuzzles.push_back(PassThroughMiniPuzzle(passThroughRails, miniPuzzleBit));
+	}
+	void trackIsolatedArea(
+		vector<LevelTypes::RailByteMaskData::BitsLocation>& goalSwitchCanKickBits,
+		vector<LevelTypes::RailByteMaskData::BitsLocation>& abandonCanVisitBits)
+	{
+		allIsolatedAreas.push_back(IsolatedArea(goalSwitchCanKickBits, abandonCanVisitBits));
 	}
 	static void cancelHintSearch() { hintSearchIsRunning = false; }
 	//add a new plane to this level
