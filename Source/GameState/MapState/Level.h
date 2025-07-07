@@ -407,11 +407,11 @@ private:
 	class IsolatedArea {
 	public:
 		vector<LevelTypes::RailByteMaskData::BitsLocation> goalSwitchCanKickBits;
-		vector<LevelTypes::RailByteMaskData::BitsLocation> abandonCanVisitBits;
+		vector<LevelTypes::RailByteMaskData::BitsLocation> abandonCanUseBits;
 
 		IsolatedArea(
 			vector<LevelTypes::RailByteMaskData::BitsLocation>& pGoalSwitchCanKickBits,
-			vector<LevelTypes::RailByteMaskData::BitsLocation>& pAbandonCanVisitBits);
+			vector<LevelTypes::RailByteMaskData::BitsLocation>& pAbandonCanUseBits);
 		virtual ~IsolatedArea();
 	};
 

@@ -1355,9 +1355,9 @@ Level::PassThroughMiniPuzzle::~PassThroughMiniPuzzle() {}
 //////////////////////////////// Level::IsolatedArea ////////////////////////////////
 Level::IsolatedArea::IsolatedArea(
 	vector<RailByteMaskData::BitsLocation>& pGoalSwitchCanKickBits,
-	vector<RailByteMaskData::BitsLocation>& pAbandonCanVisitBits)
+	vector<RailByteMaskData::BitsLocation>& pAbandonCanUseBits)
 : goalSwitchCanKickBits(pGoalSwitchCanKickBits)
-, abandonCanVisitBits(pAbandonCanVisitBits) {
+, abandonCanUseBits(pAbandonCanUseBits) {
 }
 Level::IsolatedArea::~IsolatedArea() {}
 
@@ -1949,12 +1949,12 @@ bool Level::markStatusBitsInDraftStateOnMilestone() {
 
 	//check for any completed isolated areas
 	for (IsolatedArea& isolatedArea : allIsolatedAreas) {
-		if (!VectorUtils::anyMatch(isolatedArea.abandonCanVisitBits, Plane::draftBitIsActive)
+		if (!VectorUtils::anyMatch(isolatedArea.abandonCanUseBits, Plane::draftBitIsActive)
 				|| VectorUtils::anyMatch(isolatedArea.goalSwitchCanKickBits, Plane::draftBitIsActive))
 			continue;
-		for (RailByteMaskData::BitsLocation abandonCanVisitBit : isolatedArea.abandonCanVisitBits)
-			HintState::PotentialLevelState::draftState.railByteMasks[abandonCanVisitBit.data.byteIndex] &=
-				~(1 << abandonCanVisitBit.data.bitShift);
+		for (RailByteMaskData::BitsLocation abandonCanUseBit : isolatedArea.abandonCanUseBits)
+			HintState::PotentialLevelState::draftState.railByteMasks[abandonCanUseBit.data.byteIndex] &=
+				~(1 << abandonCanUseBit.data.bitShift);
 		hasChanges = true;
 	}
 
