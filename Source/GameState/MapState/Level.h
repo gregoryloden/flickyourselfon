@@ -32,6 +32,8 @@ namespace LevelTypes {
 			unsigned short id;
 
 			BitsLocation(char byteIndex, char bitShift): data({ byteIndex, bitShift }) {}
+
+			bool operator==(const BitsLocation& other) { return id == other.id; }
 		};
 		//Should only be allocated within an object, on the stack, or as a static object
 		struct ByteMask {
@@ -228,12 +230,6 @@ namespace LevelTypes {
 			//	planes without switches
 			void findMiniPuzzles(short alwaysOnBitId);
 		private:
-			//see if the given mini puzzle is part of an isolated area with single-use switches, and if so, track it in those
-			//	switches
-			void tryAddIsolatedArea(
-				vector<DetailedConnectionSwitch*>& miniPuzzleSwitches,
-				RailByteMaskData::ByteMask miniPuzzleBit,
-				short alwaysOnBitId);
 			//find all planes that are reachable or unreachable when certain connections are excluded, and write them to
 			//	outReachablePlanes or outUnreachablePlanes respectively, if provided
 			void findReachablePlanes(
@@ -248,6 +244,16 @@ namespace LevelTypes {
 		public:
 			//find switches with exclusive control over their rails with rails that are only used to get to milestones
 			void findDeadRails(RailByteMaskData::BitsLocation alwaysOffBitLocation, short alwaysOnBitId);
+			//find areas that are not reachable by rail outside the area
+			void findIsolatedAreas(short alwaysOnBitId);
+		private:
+			//follow the given connection and see if it leads to a valid isolated area
+			void tryAddIsolatedAreaThroughConnection(
+				DetailedConnection* baseRailConnection,
+				vector<DetailedPlane*>& basePlanes,
+				vector<bool>& seenPlanes,
+				vector<DetailedConnection*>& ignorePathConnections,
+				short alwaysOnBitId);
 		};
 
 		Level* owningLevel;
@@ -408,10 +414,12 @@ private:
 	public:
 		vector<LevelTypes::RailByteMaskData::BitsLocation> goalSwitchCanKickBits;
 		vector<LevelTypes::RailByteMaskData::BitsLocation> abandonCanUseBits;
+		LevelTypes::RailByteMaskData::ByteMask sharedAbandonBit;
 
 		IsolatedArea(
 			vector<LevelTypes::RailByteMaskData::BitsLocation>& pGoalSwitchCanKickBits,
-			vector<LevelTypes::RailByteMaskData::BitsLocation>& pAbandonCanUseBits);
+			vector<LevelTypes::RailByteMaskData::BitsLocation>& pAbandonCanUseBits,
+			LevelTypes::RailByteMaskData::ByteMask pSharedAbandonBit);
 		virtual ~IsolatedArea();
 	};
 
@@ -492,9 +500,10 @@ public:
 	}
 	void trackIsolatedArea(
 		vector<LevelTypes::RailByteMaskData::BitsLocation>& goalSwitchCanKickBits,
-		vector<LevelTypes::RailByteMaskData::BitsLocation>& abandonCanVisitBits)
+		vector<LevelTypes::RailByteMaskData::BitsLocation>& abandonCanUseBits,
+		LevelTypes::RailByteMaskData::ByteMask sharedAbandonBit)
 	{
-		allIsolatedAreas.push_back(IsolatedArea(goalSwitchCanKickBits, abandonCanVisitBits));
+		allIsolatedAreas.push_back(IsolatedArea(goalSwitchCanKickBits, abandonCanUseBits, sharedAbandonBit));
 	}
 	static void cancelHintSearch() { hintSearchIsRunning = false; }
 	//add a new plane to this level
@@ -530,6 +539,9 @@ private:
 	void resetPlaneSearchHelpers();
 	//create a potential level state set with the given state retriever, loading it into potentialLevelStatesByBucketByPlane
 	HintState::PotentialLevelState* loadBasePotentialLevelState(LevelTypes::Plane* currentPlane, GetRailState getRailState);
+	//set bits in the draft state where applicable:
+	//- set bits where switches can be kicked and planes can be visited
+	void markStatusBitsInDraftState();
 	//begin the hint search after all the helpers have been set up
 	Hint* performHintSearch(HintState::PotentialLevelState* baseLevelState, LevelTypes::Plane* currentPlane, int startTime);
 	//release all potential level states used and clear the structures that held them

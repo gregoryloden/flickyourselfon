@@ -487,136 +487,6 @@ void LevelTypes::Plane::DetailedLevel::findMiniPuzzles(short alwaysOnBitId) {
 			if (VectorUtils::countMatches(miniPuzzleSwitches, isSwitchInPlane) == (int)owningPlane->connectionSwitches.size())
 				owningPlane->plane->canVisitBit = miniPuzzleBit;
 		}
-
-		tryAddIsolatedArea(miniPuzzleSwitches, miniPuzzleBit, alwaysOnBitId);
-	}
-}
-//TODO: try to find isolated areas without relying on mini puzzles
-//this is a graph set partition problem
-//split the level planes into an "in" set and an "out" set such that:
-//- every switch has:
-//	- exclusively rail connections between planes in the "out" set, or
-//	- exclusively rail connections that connect to planes in the "in" set
-//- there are no connections from the "out" set to the "in" set except for the above rail connections
-//- the victory plane and the plane that connects to it can never be allowed in the "in" set
-//then, if the "in" set only has single-use switches or the switches for those rails, it's an isolated area
-//possible limited implementation:
-//- start from a single-use switch, find its required rails, and going down the list, exclude that single rail and see what
-//	rails are or aren't reachable
-//- if every rail/switch group is either fully reachable or fully not reachable, then this creates a proper "in" set and "out"
-//	set, and thus a mini puzzle and an isolated area
-void LevelTypes::Plane::DetailedLevel::tryAddIsolatedArea(
-	vector<DetailedConnectionSwitch*>& miniPuzzleSwitches, RailByteMaskData::ByteMask miniPuzzleBit, short alwaysOnBitId)
-{
-	//start by finding all planes that can't be reached without going through part of this mini puzzle
-	vector<unsigned int> miniPuzzleRailByteMasks ((size_t)level->getRailByteMaskCount(), 0);
-	for (DetailedConnectionSwitch* miniPuzzleSwitch : miniPuzzleSwitches)
-		miniPuzzleSwitch->connectionSwitch->writeTileOffsetByteMasks(miniPuzzleRailByteMasks);
-	vector<DetailedPlane*> isolatedAreaPlanes;
-	findReachablePlanes(excludeRailByteMasks(miniPuzzleRailByteMasks), nullptr, &isolatedAreaPlanes);
-	//nothing to do if the mini puzzle isn't required for any planes
-	if (isolatedAreaPlanes.empty())
-		return;
-	//don't allow isolating the victory plane
-	if (VectorUtils::includes(isolatedAreaPlanes, victoryPlane))
-		return;
-
-	//first, check to see if this is a pass-through mini puzzle
-	tryAddPassThroughMiniPuzzle(isolatedAreaPlanes, miniPuzzleSwitches, miniPuzzleBit);
-
-	//go through all the isolated planes, and find the connections that are mutually required by all of them
-	vector<DetailedConnection*> requiredConnections = findRequiredConnectionsToPlane(isolatedAreaPlanes[0], false);
-	for (int i = 1; i < (int)isolatedAreaPlanes.size(); i++) {
-		vector<DetailedConnection*> otherRequiredConnections = findRequiredConnectionsToPlane(isolatedAreaPlanes[i], false);
-		auto notRequiredForOtherSwitch = [&otherRequiredConnections](DetailedConnection* connection) {
-			return !VectorUtils::includes(otherRequiredConnections, connection);
-		};
-		VectorUtils::filterErase(requiredConnections, notRequiredForOtherSwitch);
-	}
-	//nothing to do if the planes don't share any required connections
-	if (requiredConnections.empty())
-		return;
-
-	//at this point, we found the last connection that is required by every plane that also requires a mini puzzle rail
-	//start the search over, excluding this connection this time
-	DetailedConnection* entryConnection = requiredConnections.back();
-	isolatedAreaPlanes.clear();
-	vector<DetailedPlane*> outsideAreaPlanes;
-	findReachablePlanes(excludeSingleConnection(entryConnection), &outsideAreaPlanes, &isolatedAreaPlanes);
-
-	//if any rail in the mini puzzle is reachable, the area is not isolated
-	for (DetailedPlane* detailedPlane : outsideAreaPlanes) {
-		for (Connection& connection : detailedPlane->plane->connections) {
-			if (connection.railBits.data.byteIndex != Level::absentRailByteIndex
-					&& (miniPuzzleRailByteMasks[connection.railBits.data.byteIndex] & connection.railTileOffsetByteMask) != 0)
-				return;
-		}
-	}
-	//if any rail that is not in the mini puzzle (and isn't the excluded entry connection) is unreachable, the area is not
-	//	isolated
-	for (DetailedPlane* detailedPlane : isolatedAreaPlanes) {
-		for (Connection& connection : detailedPlane->plane->connections) {
-			if (connection.railBits.data.byteIndex != Level::absentRailByteIndex
-					&& (miniPuzzleRailByteMasks[connection.railBits.data.byteIndex] & connection.railTileOffsetByteMask) == 0
-					&& connection.railBits.id != entryConnection->connection->railBits.id)
-				return;
-		}
-	}
-
-	//also make sure that we can get out of each plane in the isolated area without going through any rails
-	vector<DetailedPlane*> pathPlanes;
-	vector<DetailedConnection*> pathConnections;
-	for (DetailedPlane* detailedPlane : isolatedAreaPlanes) {
-		pathPlanes = { detailedPlane };
-		pathConnections.clear();
-		if (!pathWalkToPlane(&planes[0], false, excludeRailConnections, pathPlanes, pathConnections, alwaysAcceptPath))
-			return;
-	}
-
-	//we now have the plane and rail contents of an isolated area
-	//the last step is to ensure that all switches inside are either single-use, or part of the mini puzzle
-	vector<DetailedConnectionSwitch*> isolatedAreaSwitches;
-	for (DetailedPlane* detailedPlane : isolatedAreaPlanes) {
-		for (DetailedConnectionSwitch& detailedConnectionSwitch : detailedPlane->connectionSwitches) {
-			if (detailedConnectionSwitch.connectionSwitch->isSingleUse)
-				isolatedAreaSwitches.push_back(&detailedConnectionSwitch);
-			else if (!VectorUtils::includes(miniPuzzleSwitches, &detailedConnectionSwitch))
-				return;
-		}
-	}
-	//nothing to do if there are no switches in this area
-	//should never happen with an umodified floor file once the game is released
-	if (isolatedAreaSwitches.empty()) {
-		stringstream message;
-		message << "ERROR: level " << level->getLevelN() << " isolated area with rails";
-		for (DetailedConnectionSwitch* miniPuzzleSwitch : miniPuzzleSwitches)
-			MapState::logSwitchDescriptor(miniPuzzleSwitch->connectionSwitch->hint.data.switch0, &message);
-		message << " was empty";
-		Logger::debugLogger.logString(message.str());
-		return;
-	}
-
-	//we now have a complete isolated area
-	#ifdef LOG_FOUND_PLANE_CONCLUSIONS
-		stringstream isolatedAreaMessage;
-		isolatedAreaMessage << "level " << level->getLevelN() << " isolated area with planes";
-		for (DetailedPlane* detailedPlane : isolatedAreaPlanes)
-			isolatedAreaMessage << " " << detailedPlane->plane->indexInOwningLevel;
-		isolatedAreaMessage << " and switches";
-		for (DetailedConnectionSwitch* isolatedAreaSwitch : isolatedAreaSwitches)
-			MapState::logSwitchDescriptor(isolatedAreaSwitch->connectionSwitch->hint.data.switch0, &isolatedAreaMessage);
-		Logger::debugLogger.logString(isolatedAreaMessage.str());
-	#endif
-	//track it
-	vector<RailByteMaskData::BitsLocation> goalSwitchCanKickBits;
-	for (DetailedConnectionSwitch* isolatedAreaSwitch : isolatedAreaSwitches)
-		goalSwitchCanKickBits.push_back(isolatedAreaSwitch->connectionSwitch->canKickBit.location);
-	level->trackIsolatedArea(goalSwitchCanKickBits, vector<RailByteMaskData::BitsLocation>({ miniPuzzleBit.location }));
-	//and set all always-can-visit planes in the area to be can't-visit after completing the isolated area
-	//some of these may already be set to this bit
-	for (DetailedPlane* detailedPlane : isolatedAreaPlanes) {
-		if (detailedPlane->plane->canVisitBit.location.id == alwaysOnBitId)
-			detailedPlane->plane->canVisitBit = miniPuzzleBit;
 	}
 }
 void LevelTypes::Plane::DetailedLevel::findReachablePlanes(
@@ -784,6 +654,140 @@ void LevelTypes::Plane::DetailedLevel::findDeadRails(RailByteMaskData::BitsLocat
 			deadRailSwitch->owningPlane->plane->canVisitBit = deadRailSwitch->connectionSwitch->canKickBit;
 	}
 }
+//TODO: maybe? try to find isolated areas without relying on areas separated from base planes by rails
+//this is a graph set partition problem
+//split the level planes into an "in" set and an "out" set such that:
+//- every switch has:
+//	- exclusively rail connections between planes in the "out" set, or
+//	- exclusively rail connections that connect to planes in the "in" set
+//- there are no connections from the "out" set to the "in" set except for the above rail connections
+//- the victory plane and the plane that connects to it can never be allowed in the "in" set
+//then, if the "in" set only has single-use switches or the switches for those rails, it's an isolated area
+//possible limited implementation:
+//- start from a single-use switch, find its required rails, and going down the list, exclude that single rail and see what
+//	rails are or aren't reachable
+//- if every rail/switch group is either fully reachable or fully not reachable, then this creates a proper "in" set and "out"
+//	set, and thus a mini puzzle and an isolated area
+void LevelTypes::Plane::DetailedLevel::findIsolatedAreas(short alwaysOnBitId) {
+	//first step, collect all planes reachable without rails
+	vector<DetailedPlane*> basePlanes;
+	findReachablePlanes(excludeRailConnections, &basePlanes, nullptr);
+	vector<bool> seenPlanes (planes.size());
+	for (DetailedPlane* basePlane : basePlanes)
+		seenPlanes[basePlane->plane->indexInOwningLevel] = true;
+
+	//then, go through and find every rail connection on those planes
+	vector<DetailedConnection*> baseRailConnections;
+	for (DetailedPlane* basePlane : basePlanes) {
+		for (DetailedConnection& baseConnection : basePlane->connections) {
+			if (baseConnection.switchRail != nullptr)
+				baseRailConnections.push_back(&baseConnection);
+		}
+	}
+
+	//then, go through every connection, and find the area it connects to, if we haven't already seen that area
+	vector<DetailedConnection*> ignorePathConnections;
+	for (DetailedConnection* baseRailConnection : baseRailConnections) {
+		//this is a new plane, and thus a new area
+		if (!seenPlanes[baseRailConnection->toPlane->plane->indexInOwningLevel])
+			tryAddIsolatedAreaThroughConnection(
+				baseRailConnection, basePlanes, seenPlanes, ignorePathConnections, alwaysOnBitId);
+	}
+}
+void LevelTypes::Plane::DetailedLevel::tryAddIsolatedAreaThroughConnection(
+	DetailedConnection* baseRailConnection,
+	vector<DetailedPlane*>& basePlanes,
+	vector<bool>& seenPlanes,
+	vector<DetailedConnection*>& ignorePathConnections,
+	short alwaysOnBitId)
+{
+	//find all the planes this area reaches, the switches they contain, and all the rails they connect to
+	vector<DetailedPlane*> isolatedAreaPlanes;
+	vector<DetailedConnectionSwitch*> isolatedAreaSwitches;
+	vector<unsigned int> isolatedAreaRailByteMasks ((size_t)level->getRailByteMaskCount(), 0);
+	auto trackPlaneAndKeepSearching =
+		[&basePlanes, &seenPlanes, &isolatedAreaPlanes, &isolatedAreaSwitches, &isolatedAreaRailByteMasks, this]()
+	{
+		DetailedPlane* isolatedAreaPlane = basePlanes.back();
+		seenPlanes[isolatedAreaPlane->plane->indexInOwningLevel] = true;
+		isolatedAreaPlanes.push_back(isolatedAreaPlane);
+		for (DetailedConnectionSwitch& isolatedAreaSwitch : isolatedAreaPlane->connectionSwitches)
+			isolatedAreaSwitches.push_back(&isolatedAreaSwitch);
+		for (DetailedConnection& isolatedAreaConnection : isolatedAreaPlane->connections) {
+			if (isolatedAreaConnection.connection->railBits.data.byteIndex != Level::absentRailByteIndex)
+				isolatedAreaRailByteMasks[isolatedAreaConnection.connection->railBits.data.byteIndex] |=
+					isolatedAreaConnection.connection->railTileOffsetByteMask;
+		}
+		return true;
+	};
+	basePlanes.push_back(baseRailConnection->toPlane);
+	trackPlaneAndKeepSearching();
+	pathWalkToPlane(
+		&planes[0], false, excludeZeroConnections, basePlanes, ignorePathConnections, trackPlaneAndKeepSearching);
+	basePlanes.pop_back();
+
+	//we can't abandon the victory plane
+	if (VectorUtils::includes(isolatedAreaPlanes, victoryPlane))
+		return;
+
+	//we now have the contents of an isolated area
+	//find all the switches that affect rails outside of the area
+	vector<DetailedConnectionSwitch*> goalSwitches;
+	auto isExternalRail = [&isolatedAreaRailByteMasks](DetailedRail* detailedRail) {
+		RailByteMaskData::BitsLocation railBits = detailedRail->railByteMaskData->railBits;
+		return ((isolatedAreaRailByteMasks[railBits.data.byteIndex] >> railBits.data.bitShift)
+				& Level::baseRailTileOffsetByteMask)
+			== 0;
+	};
+	for (DetailedConnectionSwitch* isolatedAreaSwitch : isolatedAreaSwitches) {
+		if (!VectorUtils::anyMatch(isolatedAreaSwitch->affectedRails, isExternalRail))
+			continue;
+		//if any switch with external rails doesn't already have a bit to disable it, this is not a valid isolated area
+		if (isolatedAreaSwitch->connectionSwitch->canKickBit.location.id == alwaysOnBitId)
+			return;
+		goalSwitches.push_back(isolatedAreaSwitch);
+	}
+
+	//collect all the goal bits to check for, and also the bits that we'll be abandoning
+	vector<RailByteMaskData::BitsLocation> goalSwitchCanKickBits;
+	vector<RailByteMaskData::BitsLocation> abandonCanUseBits;
+	vector<RailByteMaskData::ByteMask*> needsSharedAbandonBit;
+	for (DetailedConnectionSwitch* goalSwitch : goalSwitches)
+		goalSwitchCanKickBits.push_back(goalSwitch->connectionSwitch->canKickBit.location);
+	for (DetailedConnectionSwitch* isolatedAreaSwitch : isolatedAreaSwitches) {
+		for (RailByteMaskData::ByteMask* canUseBit
+			: { &isolatedAreaSwitch->connectionSwitch->canKickBit, &isolatedAreaSwitch->owningPlane->plane->canVisitBit })
+		{
+			if (canUseBit->location.id == alwaysOnBitId)
+				needsSharedAbandonBit.push_back(canUseBit);
+			else if (!VectorUtils::includes(goalSwitchCanKickBits, canUseBit->location)
+					&& !VectorUtils::includes(abandonCanUseBits, canUseBit->location))
+				abandonCanUseBits.push_back(canUseBit->location);
+		}
+	}
+	//if there are no bits to disable after completing the isolated area, drop it
+	if (abandonCanUseBits.empty() && needsSharedAbandonBit.empty())
+		return;
+
+	//at this point, we have a complete isolated area, with planes, goal switches and abandon bits
+	#ifdef LOG_FOUND_PLANE_CONCLUSIONS
+		stringstream isolatedAreaMessage;
+		isolatedAreaMessage << "level " << level->getLevelN() << " isolated area with planes";
+		for (DetailedPlane* detailedPlane : isolatedAreaPlanes)
+			isolatedAreaMessage << " " << detailedPlane->plane->indexInOwningLevel;
+		isolatedAreaMessage << " and switches";
+		for (DetailedConnectionSwitch* isolatedAreaSwitch : goalSwitches)
+			MapState::logSwitchDescriptor(isolatedAreaSwitch->connectionSwitch->hint.data.switch0, &isolatedAreaMessage);
+		Logger::debugLogger.logString(isolatedAreaMessage.str());
+	#endif
+	RailByteMaskData::ByteMask sharedAbandonBit = Level::absentBits;
+	if (!needsSharedAbandonBit.empty()) {
+		sharedAbandonBit = level->trackRailByteMaskBits(1);
+		for (RailByteMaskData::ByteMask* canUseBit : needsSharedAbandonBit)
+			*canUseBit = sharedAbandonBit;
+	}
+	level->trackIsolatedArea(goalSwitchCanKickBits, abandonCanUseBits, sharedAbandonBit);
+}
 
 //////////////////////////////// LevelTypes::Plane ////////////////////////////////
 LevelTypes::Plane::Plane(objCounterParametersComma() Level* pOwningLevel, int pIndexInOwningLevel)
@@ -881,6 +885,7 @@ void LevelTypes::Plane::finalizeBuilding(
 	//find optimizations
 	detailedLevel.findMiniPuzzles(alwaysOnBit.location.id);
 	detailedLevel.findDeadRails(alwaysOffBit.location, alwaysOnBit.location.id);
+	detailedLevel.findIsolatedAreas(alwaysOnBit.location.id);
 
 	//apply extended connections
 	for (Plane* plane : levelPlanes)
@@ -1355,9 +1360,11 @@ Level::PassThroughMiniPuzzle::~PassThroughMiniPuzzle() {}
 //////////////////////////////// Level::IsolatedArea ////////////////////////////////
 Level::IsolatedArea::IsolatedArea(
 	vector<RailByteMaskData::BitsLocation>& pGoalSwitchCanKickBits,
-	vector<RailByteMaskData::BitsLocation>& pAbandonCanUseBits)
+	vector<RailByteMaskData::BitsLocation>& pAbandonCanUseBits,
+	LevelTypes::RailByteMaskData::ByteMask pSharedAbandonBit)
 : goalSwitchCanKickBits(pGoalSwitchCanKickBits)
-, abandonCanUseBits(pAbandonCanUseBits) {
+, abandonCanUseBits(pAbandonCanUseBits)
+, sharedAbandonBit(pSharedAbandonBit) {
 }
 Level::IsolatedArea::~IsolatedArea() {}
 
@@ -1619,8 +1626,7 @@ HintState::PotentialLevelState* Level::loadBasePotentialLevelState(Plane* curren
 				(unsigned int)(movementDirectionBit | tileOffset) << railBitsLocation.bitShift;
 	}
 	HintState::PotentialLevelState::draftState.railByteMasks[alwaysOnBit.location.data.byteIndex] |= alwaysOnBit.byteMask;
-	Plane::markStatusBitsInDraftState(planes);
-	markStatusBitsInDraftStateOnMilestone();
+	markStatusBitsInDraftState();
 	HintState::PotentialLevelState::draftState.setHash();
 
 	//load the base potential level state
@@ -1633,6 +1639,19 @@ HintState::PotentialLevelState* Level::loadBasePotentialLevelState(Plane* curren
 	baseLevelState->hint = nullptr;
 
 	return baseLevelState;
+}
+void Level::markStatusBitsInDraftState() {
+	Plane::markStatusBitsInDraftState(planes);
+
+	//enable all dedicated isolated area bits where applicable
+	for (IsolatedArea& isolatedArea : allIsolatedAreas) {
+		if (isolatedArea.sharedAbandonBit.location.data.byteIndex == Level::absentRailByteIndex)
+			continue;
+		HintState::PotentialLevelState::draftState.railByteMasks[isolatedArea.sharedAbandonBit.location.data.byteIndex] |=
+			isolatedArea.sharedAbandonBit.byteMask;
+	}
+
+	markStatusBitsInDraftStateOnMilestone();
 }
 Hint* Level::performHintSearch(HintState::PotentialLevelState* baseLevelState, Plane* currentPlane, int startTime) {
 	//find all visitable planes reachable from the current plane to start the search, including the current plane if applicable
@@ -1949,12 +1968,22 @@ bool Level::markStatusBitsInDraftStateOnMilestone() {
 
 	//check for any completed isolated areas
 	for (IsolatedArea& isolatedArea : allIsolatedAreas) {
-		if (!VectorUtils::anyMatch(isolatedArea.abandonCanUseBits, Plane::draftBitIsActive)
-				|| VectorUtils::anyMatch(isolatedArea.goalSwitchCanKickBits, Plane::draftBitIsActive))
+		//shared bit is present: skip if the shared bit is present and disabled
+		if (isolatedArea.sharedAbandonBit.location.data.byteIndex != Level::absentRailByteIndex) {
+			if (!Plane::draftBitIsActive(isolatedArea.sharedAbandonBit.location))
+				continue;
+		//shared bit is absent: skip if all the can-use bits are disabled
+		} else if (!VectorUtils::anyMatch(isolatedArea.abandonCanUseBits, Plane::draftBitIsActive))
+			continue;
+		//skip if the isolated area is not complete
+		if (VectorUtils::anyMatch(isolatedArea.goalSwitchCanKickBits, Plane::draftBitIsActive))
 			continue;
 		for (RailByteMaskData::BitsLocation abandonCanUseBit : isolatedArea.abandonCanUseBits)
 			HintState::PotentialLevelState::draftState.railByteMasks[abandonCanUseBit.data.byteIndex] &=
 				~(1 << abandonCanUseBit.data.bitShift);
+		if (isolatedArea.sharedAbandonBit.location.data.byteIndex != Level::absentRailByteIndex)
+			HintState::PotentialLevelState::draftState.railByteMasks[isolatedArea.sharedAbandonBit.location.data.byteIndex] &=
+				~isolatedArea.sharedAbandonBit.byteMask;
 		hasChanges = true;
 	}
 
