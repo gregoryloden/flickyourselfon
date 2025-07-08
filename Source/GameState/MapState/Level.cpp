@@ -225,11 +225,11 @@ LevelTypes::Plane::DetailedLevel::DetailedLevel(Level* pLevel, vector<Plane*>& l
 		}
 	}
 
-	//connect all rails to switches
-	for (vector<DetailedRail>& byteMaskRails : rails) {
-		for (DetailedRail& detailedRail : byteMaskRails) {
-			for (DetailedConnectionSwitch* detailedConnectionSwitch : detailedRail.affectingSwitches)
-				detailedConnectionSwitch->affectedRails.push_back(&detailedRail);
+	//go back through all the switches and connect rails to them now that we've allocated them all
+	for (DetailedPlane& detailedPlane : planes) {
+		for (DetailedConnectionSwitch& detailedConnectionSwitch : detailedPlane.connectionSwitches) {
+			for (RailByteMaskData* railByteMaskData : detailedConnectionSwitch.connectionSwitch->affectedRailByteMaskData)
+				detailedConnectionSwitch.affectedRails.push_back(getDetailedRail(railByteMaskData));
 		}
 	}
 
