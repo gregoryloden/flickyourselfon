@@ -95,6 +95,8 @@ private:
 	//start the music as indicated by the map state
 	void startMusic();
 public:
+	//render a loading screen
+	static void renderLoading(int ticksTime);
 	//render this state, which was deemed to be the last state to need rendering
 	void render(int ticksTime);
 private:

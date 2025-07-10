@@ -1,5 +1,4 @@
 #include "GameState/MapState/MapState.h"
-#include <mutex>
 #include <random>
 #include "Sprites/Text.h"
 

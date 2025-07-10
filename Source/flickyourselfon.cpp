@@ -26,8 +26,9 @@
 
 const int maxGameStates = 6;
 SDL_Window* window = nullptr;
-bool renderThreadReadyForUpdates = false;
-bool renderThreadCriticalError = false;
+mutex renderThreadInitializingMutex;
+bool renderThreadInitialized = false;
+bool criticalError = false;
 
 int gameMain(int argc, char* argv[]) {
 	srand((unsigned int)time(nullptr));
@@ -91,40 +92,44 @@ int gameMain(int argc, char* argv[]) {
 	SDL_GetCurrentDisplayMode(SDL_GetWindowDisplayIndex(window), &displayMode);
 	if (displayMode.refresh_rate > 0)
 		Config::refreshRate = displayMode.refresh_rate;
-	Logger::debugLogger.log("Window set up /// Loading game state...");
+	Logger::debugLogger.log("Window set up /// Waiting for render thread...");
 
-	//load audio, settings, the map, and save file which don't depend on the render thread
+	//create our state queue, but don't load the initial state yet
+	//we need to wait for the the render thread to load because states store the SpriteSheets they use, which requires the
+	//	sprites to have been loaded, which requires an OpenGL context, which has to be initialized on the render thread
+	//once we have the state queue, we can start the render thread
+	CircularStateQueue<GameState>* gameStateQueue = newCircularStateQueue(GameState, newGameState(), newGameState());
+	GameState* prevGameState = gameStateQueue->getNextWritableState();
+
+	//wait for it to load
+	thread renderLoopThread(renderLoop, gameStateQueue);
+	waitForOtherThread(renderThreadInitializingMutex, &renderThreadInitialized);
+	if (criticalError) {
+		renderLoopThread.join();
+		return 1;
+	}
+
+	//now that the render thread is loaded, we'll load game world and state
+	//load audio, settings, and the map first which we need before we can load game state
+	Logger::debugLogger.log("Render thread loaded /// Loading game world...");
 	Audio::setUp();
 	Audio::loadSounds();
 	Config::loadSettings();
 	Audio::applyVolume();
 	MapState::buildMap();
+	PauseState::loadMenus();
+	if (Editor::isActive)
+		Editor::loadButtons();
 
-	//create our state queue
-	//the render thread has to handle updating our initial state because states store the SpriteSheets they use, which requires
-	//	the sprites to have been loaded, which requires an OpenGL context, which has to be initialized on the render thread
+	//load the initial game state
+	Logger::debugLogger.log("Game world loaded /// Loading game state...");
+	prevGameState->loadInitialState((int)SDL_GetTicks());
+	gameStateQueue->finishWritingToState();
 	stringstream beginGameplayMessage;
 	beginGameplayMessage << "---- begin gameplay ---- ";
 	TimeUtils::appendTimestamp(&beginGameplayMessage);
 	Logger::gameplayLogger.logString(beginGameplayMessage.str());
-	CircularStateQueue<GameState>* gameStateQueue = newCircularStateQueue(GameState, newGameState(), newGameState());
-	//the render thread will finish writing to this state
-	GameState* prevGameState = gameStateQueue->getNextWritableState();
-	Logger::debugLogger.log("Game state loaded");
-
-	//now that our initial state is ready, start the render thread
-	thread renderLoopThread (renderLoop, gameStateQueue);
-
-	//wait for the render thread to sync up
-	Logger::debugLogger.log("Render thread created, waiting for it to be ready for updates...");
-	while (!renderThreadReadyForUpdates) {
-		if (renderThreadCriticalError) {
-			renderLoopThread.join();
-			return 1;
-		}
-		SDL_Delay(1);
-	}
-	Logger::debugLogger.log("Beginning update loop");
+	Logger::debugLogger.log("Game state loaded /// Beginning update loop");
 
 	//begin the update loop
 	int updateDelay = -1;
@@ -231,6 +236,7 @@ int gameMain(int argc, char* argv[]) {
 	return 0;
 }
 void renderLoop(CircularStateQueue<GameState>* gameStateQueue) {
+	renderThreadInitializingMutex.lock();
 	Logger::setupLogQueue("R");
 
 	//setup opengl
@@ -239,8 +245,10 @@ void renderLoop(CircularStateQueue<GameState>* gameStateQueue) {
 	SDL_GL_LoadLibrary(nullptr);
 	if (!Opengl::initExtensions()) {
 		SDL_GL_UnloadLibrary();
+		Logger::debugLogger.log("ERROR: Unable to initialize OpenGL extensions");
 		messageBox("Error initializing OpenGL extensions", MB_OK);
-		renderThreadCriticalError = true;
+		criticalError = true;
+		renderThreadInitializingMutex.unlock();
 		return;
 	}
 	EntityState::setupZoomFrameBuffers();
@@ -250,19 +258,12 @@ void renderLoop(CircularStateQueue<GameState>* gameStateQueue) {
 	Opengl::orientRenderTarget(true);
 
 	//load all the sprites now that our context has been created
-	Logger::debugLogger.log("OpenGL set up /// Loading sprites and game state...");
+	Logger::debugLogger.log("OpenGL set up /// Loading sprites...");
 	Text::loadFont();
 	SpriteRegistry::loadAll();
-	PauseState::loadMenus();
-	if (Editor::isActive)
-		Editor::loadButtons();
-	//load the initial state after loading all sprites
-	//the render thread normally shouldn't be writing updates to states, but because we load SpriteSheets here, we have to load
-	//	the state here too. The update thread is currently waiting for this to finish so we don't have to worry about threads
-	//	both writing to the same state.
-	gameStateQueue->getNextWritableState()->loadInitialState((int)SDL_GetTicks());
-	gameStateQueue->finishWritingToState();
-	Logger::debugLogger.log("Sprites and game state loaded /// Beginning render loop");
+	renderThreadInitialized = true;
+	renderThreadInitializingMutex.unlock();
+	Logger::debugLogger.log("Sprites loaded /// Beginning render loop");
 
 	//begin the render loop
 	int lastWindowDisplayWidth = 0;
@@ -271,11 +272,6 @@ void renderLoop(CircularStateQueue<GameState>* gameStateQueue) {
 	int lagFrameMs = minMsPerFrame * 3 / 2;
 	while (true) {
 		int preRenderTicksTime = (int)SDL_GetTicks();
-
-		//since we start this thread with a readable state and we always leave the most recent state as readable,
-		//	this will never be nullptr and we'll still always be looking at the newest readable state
-		//even if it's the same state as before, we just interpolate animations
-		GameState* gameState = gameStateQueue->advanceToLastReadableState();
 
 		//adjust the viewport so that we scale the game window with the size of the screen
 		SDL_GetWindowSize(window, &Config::windowDisplayWidth, &Config::windowDisplayHeight);
@@ -287,12 +283,15 @@ void renderLoop(CircularStateQueue<GameState>* gameStateQueue) {
 			lastWindowDisplayHeight = Config::windowDisplayHeight;
 		}
 
-		gameState->render(preRenderTicksTime);
-		renderThreadReadyForUpdates = true;
+		GameState* gameState = gameStateQueue->advanceToLastReadableState();
+		if (gameState == nullptr)
+			GameState::renderLoading(preRenderTicksTime);
+		else
+			gameState->render(preRenderTicksTime);
 		glFlush();
 		SDL_GL_SwapWindow(window);
 
-		if (gameState->getShouldQuitGame())
+		if (gameState != nullptr && gameState->getShouldQuitGame())
 			break;
 
 		int renderTime = (int)SDL_GetTicks() - preRenderTicksTime;
@@ -318,4 +317,11 @@ void renderLoop(CircularStateQueue<GameState>* gameStateQueue) {
 }
 int messageBox(const char* message, UINT messageBoxType) {
 	return MessageBoxA(nullptr, message, "Kick Yourself On: Initialization Error", messageBoxType);
+}
+void waitForOtherThread(mutex& waitMutex, bool* resumeCondition) {
+	while (!*resumeCondition && !criticalError) {
+		SDL_Delay(1);
+		waitMutex.lock();
+		waitMutex.unlock();
+	}
 }

@@ -378,6 +378,26 @@ void GameState::startMusic() {
 	if (lastActivatedSwitchColor >= 0 && lastActivatedSwitchColor < 4)
 		Audio::musics[lastActivatedSwitchColor]->play(-1);
 }
+void GameState::renderLoading(int ticksTime) {
+	static constexpr char* loadingText = "Loading...";
+	static constexpr float loadingFontScale = 2.0f;
+	static constexpr float loadingFlashPeriod = 2000.0f;
+	static constexpr float loadingFlashMinAlpha = 0.5f;
+	static constexpr float loadingFlashMedianAlpha = (1.0f + loadingFlashMinAlpha) / 2.0f;
+	static constexpr float loadingFlashAlphaVariance = (1.0f - loadingFlashMinAlpha) / 2.0f;
+
+	static Text::Metrics loadingMetrics = Text::getMetrics(loadingText, loadingFontScale);
+	static float leftX = (Config::gameScreenWidth - loadingMetrics.charactersWidth) * 0.5f;
+	static float baselineY = (Config::gameScreenHeight + loadingMetrics.aboveBaseline - loadingMetrics.belowBaseline) * 0.5f;
+
+	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT);
+	float alpha =
+		loadingFlashMedianAlpha + sinf(MathUtils::twoPi * (ticksTime / loadingFlashPeriod)) * loadingFlashAlphaVariance;
+	Text::setRenderColor(0.0f, 0.0f, 0.0f, (GLfloat)alpha);
+	Text::render(loadingText, leftX, baselineY, loadingFontScale);
+	Text::setRenderColor(1.0f, 1.0f, 1.0f, 1.0f);
+}
 void GameState::render(int ticksTime) {
 	Editor::EditingMutexLocker editingMutexLocker;
 	int gameTicksTime = (pauseState.get() != nullptr ? pauseStartTicksTime : ticksTime) - gameTimeOffsetTicksDuration;
