@@ -346,9 +346,8 @@ namespace LevelTypes {
 				vector<HintState::PotentialLevelState*>& states,
 				char color,
 				const char* switchGroupName,
-				Plane** outPlaneWithAllSwitches,
-				vector<Plane*>& outSingleSwitchPlanes,
-				bool* outSwitchIsMilestone);
+				bool* outSwitchIsMilestone,
+				Switch** outMatchingSwitch);
 		#endif
 		//get the bounds of the hint to render for this plane
 		void getHintRenderBounds(int* outLeftWorldX, int* outTopWorldY, int* outRightWorldX, int* outBottomWorldY);

@@ -1233,9 +1233,8 @@ void LevelTypes::Plane::pursueSolutionAfterSwitches(HintState::PotentialLevelSta
 		vector<HintState::PotentialLevelState*>& states,
 		char color,
 		const char* switchGroupName,
-		Plane** outPlaneWithAllSwitches,
-		vector<Plane*>& outSingleSwitchPlanes,
-		bool* outSwitchIsMilestone)
+		bool* outSwitchIsMilestone,
+		Switch** outMatchingSwitch)
 	{
 		stringstream checkGroupName;
 		for (HintState::PotentialLevelState* state : states) {
@@ -1249,14 +1248,8 @@ void LevelTypes::Plane::pursueSolutionAfterSwitches(HintState::PotentialLevelSta
 					checkGroupName.str(string());
 					continue;
 				}
-				//we found a matching switch, write the original plane to outPlaneWithAllSwitches, clone it to contain only that
-				//	single switch, and then return the state at that plane before kicking it, with the cloned plane
-				*outPlaneWithAllSwitches = state->plane;
-				state->plane = newPlane(plane->owningLevel, plane->indexInOwningLevel);
-				state->plane->connectionSwitches.push_back(connectionSwitch);
-				state->plane->connections = plane->connections;
-				outSingleSwitchPlanes.push_back(state->plane);
 				*outSwitchIsMilestone = connectionSwitch.isMilestone;
+				*outMatchingSwitch = switch0;
 				return state;
 			}
 		}
@@ -1822,9 +1815,27 @@ int Level::clearPotentialLevelStateHolders() {
 		getNextPotentialLevelStatesForSteps(0)->push_back(baseLevelState);
 		baseLevelState->plane->pursueSolutionToPlanes(baseLevelState, 0);
 
-		//go through each step in the file and make sure we can activate that switch
+		//collect all the initially reachable states
 		vector<HintState::PotentialLevelState*> statesAtSolutionStep;
-		vector<Plane*> singleSwitchPlanes;
+		auto collectAllStates = [&statesAtSolutionStep]() {
+			statesAtSolutionStep.clear();
+			while (true) {
+				for (int i = currentPotentialLevelStateSteps; i <= maxPotentialLevelStateSteps; i++) {
+					deque<HintState::PotentialLevelState*>* nextPotentialLevelStates =
+						(*currentNextPotentialLevelStatesBySteps)[i];
+					statesAtSolutionStep.insert(
+						statesAtSolutionStep.end(), nextPotentialLevelStates->begin(), nextPotentialLevelStates->end());
+					nextPotentialLevelStates->clear();
+				}
+				if (currentMilestones > 0)
+					popMilestone();
+				else
+					break;
+			}
+		};
+		collectAllStates();
+
+		//go through each step in the file and make sure we can activate that switch
 		string line;
 		while (getline(file, line)) {
 			lineN++;
@@ -1856,17 +1867,11 @@ int Level::clearPotentialLevelStateHolders() {
 			}
 			const char* switchGroupName = line.c_str() + strlen(switchColorPrefixes[color]);
 
-			//collect all the states and then check that we can reach the specified switch
-			for (int i = currentPotentialLevelStateSteps; i <= maxPotentialLevelStateSteps; i++) {
-				deque<HintState::PotentialLevelState*>* nextPotentialLevelStates = (*currentNextPotentialLevelStatesBySteps)[i];
-				statesAtSolutionStep.insert(
-					statesAtSolutionStep.end(), nextPotentialLevelStates->begin(), nextPotentialLevelStates->end());
-				nextPotentialLevelStates->clear();
-			}
-			Plane* planeWithAllSwitches;
+			//check that we can reach the specified switch
 			bool switchIsMilestone;
-			HintState::PotentialLevelState* stateAtSwitch = Plane::findStateAtSwitch(
-				statesAtSolutionStep, color, switchGroupName, &planeWithAllSwitches, singleSwitchPlanes, &switchIsMilestone);
+			Switch* matchingSwitch;
+			HintState::PotentialLevelState* stateAtSwitch =
+				Plane::findStateAtSwitch(statesAtSolutionStep, color, switchGroupName, &switchIsMilestone, &matchingSwitch);
 			if (stateAtSwitch == nullptr) {
 				Logger::debugLogger.logString(
 					"ERROR: level " + to_string(levelN) + " solution line " + to_string(lineN)
@@ -1884,15 +1889,16 @@ int Level::clearPotentialLevelStateHolders() {
 			currentPotentialLevelStateSteps = stateAtSwitch->steps;
 			currentNextPotentialLevelStates = getNextPotentialLevelStatesForSteps(currentPotentialLevelStateSteps);
 			stateAtSwitch->plane->pursueSolutionAfterSwitches(stateAtSwitch);
-			statesAtSolutionStep.clear();
-
-			//if kicking the switch resulted in a new state, we need to restore the original plane in case it had multiple
-			//	switches
-			deque<HintState::PotentialLevelState*>* postKickPotentialLevelStates =
-				getNextPotentialLevelStatesForSteps(currentPotentialLevelStateSteps + 1);
-			if (!postKickPotentialLevelStates->empty())
-				postKickPotentialLevelStates->front()->plane = planeWithAllSwitches;
-			else {
+			collectAllStates();
+			auto stateKickedOtherSwitch = [stateAtSwitch, matchingSwitch](HintState::PotentialLevelState* newState) {
+				for (; newState != stateAtSwitch; newState = newState->priorState) {
+					if (newState->hint->type == Hint::Type::Switch && newState->hint->data.switch0 == matchingSwitch)
+						return false;
+				}
+				return true;
+			};
+			VectorUtils::filterErase(statesAtSolutionStep, stateKickedOtherSwitch);
+			if (statesAtSolutionStep.empty()) {
 				Logger::debugLogger.logString(
 					"ERROR: level " + to_string(levelN) + " solution line " + to_string(lineN)
 						+ ": kicking switch resulted in old state: \"" + line + "\"");
@@ -1903,22 +1909,21 @@ int Level::clearPotentialLevelStateHolders() {
 		if (line != "end")
 			Logger::debugLogger.logString(
 				"ERROR: level " + to_string(levelN) + " solution: missing \"end\"");
-		else if (currentNextPotentialLevelStates->empty() || currentNextPotentialLevelStates->front()->plane != victoryPlane)
+		else if (statesAtSolutionStep.empty() || statesAtSolutionStep.front()->plane != victoryPlane)
 			Logger::debugLogger.logString(
 				"ERROR: level " + to_string(levelN) + " solution: unable to reach victory plane after all steps");
 		else {
 			#ifdef LOG_FOUND_HINT_STEPS
-				currentNextPotentialLevelStates->front()->logSteps();
+				statesAtSolutionStep.front()->logSteps();
 			#endif
-			foundHintSearchTotalSteps = currentNextPotentialLevelStates->front()->steps;
-			currentNextPotentialLevelStates->front()->getHint();
+			foundHintSearchTotalSteps = statesAtSolutionStep.front()->steps;
+			//do this to calculate foundHintSearchTotalHintSteps
+			statesAtSolutionStep.front()->getHint();
 			Logger::debugLogger.logString(
 				"level " + to_string(levelN) + " solution verified, "
 					+ to_string(foundHintSearchTotalSteps) + "(" + to_string(foundHintSearchTotalHintSteps) + ")" + " steps");
 		}
 		clearPotentialLevelStateHolders();
-		for (Plane* singleSwitchPlane : singleSwitchPlanes)
-			delete singleSwitchPlane;
 	}
 #endif
 deque<HintState::PotentialLevelState*>* Level::getNextPotentialLevelStatesForSteps(int nextPotentialLevelStateSteps) {
