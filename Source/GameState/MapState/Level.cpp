@@ -1081,7 +1081,7 @@ void LevelTypes::Plane::pursueSolutionToPlanes(HintState::PotentialLevelState* c
 						== 0)
 					continue;
 
-				//if it is hasAction, add a state to it
+				//if it can be visited, add a state to it
 				vector<HintState::PotentialLevelState*>& potentialLevelStates =
 					Level::potentialLevelStatesByBucketByPlane[toPlaneIndex].buckets[bucket];
 				HintState::PotentialLevelState* nextPotentialLevelState =
