@@ -50,19 +50,19 @@ end
 #hint-found
 start
 #starting area
-milestone: red: cyan-red
 milestone: green: red-green
 milestone: white: green-green
 milestone: red: black-yellow
-milestone: white: magenta-red
-milestone: green: cyan-green
 milestone: blue: red-green
+milestone: white: magenta-red
 milestone: green: blue-green
-milestone: blue: white-black
 milestone: red: magenta-yellow
 milestone: blue: white-red
+milestone: green: cyan-green
+milestone: blue: white-black
 milestone: red: red-blue
 milestone: green: green-magenta
+milestone: red: cyan-red
 green: white-green
 red: red-green
 white: yellow-red
