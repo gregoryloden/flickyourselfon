@@ -1819,7 +1819,7 @@ int Level::clearPotentialLevelStateHolders() {
 		vector<HintState::PotentialLevelState*> statesAtSolutionStep;
 		auto collectAllStates = [&statesAtSolutionStep]() {
 			statesAtSolutionStep.clear();
-			while (true) {
+			do {
 				for (int i = currentPotentialLevelStateSteps; i <= maxPotentialLevelStateSteps; i++) {
 					deque<HintState::PotentialLevelState*>* nextPotentialLevelStates =
 						(*currentNextPotentialLevelStatesBySteps)[i];
@@ -1827,11 +1827,7 @@ int Level::clearPotentialLevelStateHolders() {
 						statesAtSolutionStep.end(), nextPotentialLevelStates->begin(), nextPotentialLevelStates->end());
 					nextPotentialLevelStates->clear();
 				}
-				if (currentMilestones > 0)
-					popMilestone();
-				else
-					break;
-			}
+			} while (popMilestone());
 		};
 		collectAllStates();
 
@@ -2015,13 +2011,17 @@ void Level::pushMilestone(int newPotentialLevelStateSteps) {
 	hintSearchCheckStateI = 1;
 }
 bool Level::popMilestone() {
+	if (currentMilestones == 0) {
+		#ifdef LOG_SEARCH_STEPS_STATS
+			Logger::debugLogger.logString("milestone- : (0 > 0)");
+		#endif
+		return false;
+	}
 	#ifdef LOG_SEARCH_STEPS_STATS
 		Logger::debugLogger.logString(
 			"milestone- : " + to_string(currentMilestones) + " > " + to_string(currentMilestones - 1));
 	#endif
 	currentMilestones--;
-	if (currentMilestones < 0)
-		return false;
 	currentPotentialLevelStateSteps = currentPotentialLevelStateStepsForMilestones.back();
 	currentPotentialLevelStateStepsForMilestones.pop_back();
 	maxPotentialLevelStateSteps = maxPotentialLevelStateStepsForMilestones.back();
