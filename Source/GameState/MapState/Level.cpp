@@ -1026,7 +1026,7 @@ bool LevelTypes::Plane::markStatusBitsInDraftStateOnMilestone(vector<Plane*>& le
 void LevelTypes::Plane::pursueSolutionToPlanes(HintState::PotentialLevelState* currentState, int basePotentialLevelStateSteps) {
 	unsigned int bucket = currentState->railByteMasksHash % Level::PotentialLevelStatesByBucket::bucketSize;
 	unsigned int* railByteMasks = currentState->railByteMasks;
-	Level::CheckedPlaneData* checkedPlaneData = Level::checkedPlaneDatas + indexInOwningLevel;
+	Level::CheckedPlaneData* checkedPlaneData = &Level::checkedPlaneDatas[indexInOwningLevel];
 	checkedPlaneData->steps = 0;
 	checkedPlaneData->checkPlanesIndex = 0;
 	Level::allCheckPlanes[0][0] = this;
