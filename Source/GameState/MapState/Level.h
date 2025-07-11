@@ -336,6 +336,9 @@ namespace LevelTypes {
 		void pursueSolutionToPlanes(HintState::PotentialLevelState* currentState, int basePotentialLevelStateSteps);
 		//kick each switch in this plane, and then pursue solutions from those states
 		void pursueSolutionAfterSwitches(HintState::PotentialLevelState* currentState);
+		//attempt a basic hint search for the victory plane through the draft state
+		//returns whether we're certain the victory plane is unreachable
+		bool quickFailDraftState();
 		#ifdef TEST_SOLUTIONS
 			//go through all the given states and see if one has a plane with a switch matching the given description
 			//if there is one, the state will have a clone of the original plane containing only that matching switch, and the
@@ -491,6 +494,7 @@ public:
 	LevelTypes::RailByteMaskData* getRailByteMaskData(int i) { return &allRailByteMaskData[i]; }
 	int getRailByteMaskCount() { return (railByteMaskBitsTracked + 31) / 32; }
 	LevelTypes::Plane* getVictoryPlane() { return victoryPlane; }
+	int getPlanesCount() { return (int)planes.size(); }
 	void trackPassThroughMiniPuzzle(
 		vector<LevelTypes::RailByteMaskData*>& passThroughRails, LevelTypes::RailByteMaskData::ByteMask miniPuzzleBit)
 	{

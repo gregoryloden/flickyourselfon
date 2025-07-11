@@ -1201,6 +1201,10 @@ void LevelTypes::Plane::pursueSolutionAfterSwitches(HintState::PotentialLevelSta
 					continue;
 			}
 
+			//reject this state if it's not valid
+			if (quickFailDraftState())
+				continue;
+
 			Level::pushMilestone(currentState->steps);
 			#ifdef LOG_STEPS_AT_EVERY_MILESTONE
 				//it's ok to write these twice
@@ -1226,6 +1230,72 @@ void LevelTypes::Plane::pursueSolutionAfterSwitches(HintState::PotentialLevelSta
 		//track it, and then afterwards, travel to all planes possible
 		Level::getNextPotentialLevelStatesForSteps(stepsAfterSwitchKick)->push_back(nextPotentialLevelState);
 		pursueSolutionToPlanes(nextPotentialLevelState, stepsAfterSwitchKick);
+	}
+}
+bool LevelTypes::Plane::quickFailDraftState() {
+	Plane* cachedVictoryPlane = owningLevel->getVictoryPlane();
+	//checkPlanes contains the list of all planes whose connections need to be checked
+	//these are planes we haven't checked yet, or planes who had lowered connections the last time we checked them
+	//we can assume allCheckPlanes has at least 2 lists because it's sized to be at least as big as this level's plane count,
+	//	which we can assume is at least 2 because we only call quickFailDraftState for levels with a victory plane (+ start
+	//	plane)
+	Plane** checkPlanes = Level::allCheckPlanes[0];
+	checkPlanes[0] = this;
+	int checkPlanesCount = 1;
+	//foundPlanes is used as a boolean tracker for which planes we've seen
+	Plane** foundPlanes = Level::allCheckPlanes[1];
+	for (int i = owningLevel->getPlanesCount() - 1; i >= 0; i--)
+		foundPlanes[i] = nullptr;
+	foundPlanes[indexInOwningLevel] = this;
+	//start by raising all rails for all switches in this plane
+	for (ConnectionSwitch& connectionSwitch : connectionSwitches) {
+		for (RailByteMaskData* railByteMaskData : connectionSwitch.affectedRailByteMaskData) {
+			RailByteMaskData::BitsLocation::Data railBitsLocation = railByteMaskData->railBits.data;
+			HintState::PotentialLevelState::draftState.railByteMasks[railBitsLocation.byteIndex] &=
+				~(Level::baseRailTileOffsetByteMask << railBitsLocation.bitShift);
+		}
+	}
+	//now go through all planes we can reach
+	while (true) {
+		bool foundNewPlanes = false;
+		for (int i = 0; i < checkPlanesCount; ) {
+			//if we can reach a new plane, track it and trigger its switches
+			bool allConnectionsAreRaised = true;
+			for (Connection& connection : checkPlanes[i]->connections) {
+				if (connection.railBits.data.byteIndex != Level::absentRailByteIndex
+					&& (HintState::PotentialLevelState::draftState.railByteMasks[connection.railBits.data.byteIndex]
+							& connection.railTileOffsetByteMask)
+						!= 0)
+				{
+					allConnectionsAreRaised = false;
+					continue;
+				}
+				Plane* toPlane = connection.toPlane;
+				if (foundPlanes[toPlane->indexInOwningLevel] != nullptr)
+					continue;
+				if (toPlane == cachedVictoryPlane)
+					return false;
+				checkPlanes[checkPlanesCount++] = toPlane;
+				foundPlanes[toPlane->indexInOwningLevel] = toPlane;
+				foundNewPlanes = true;
+
+				//we reached this plane for the first time, trigger its switches
+				for (ConnectionSwitch& connectionSwitch : toPlane->connectionSwitches) {
+					for (RailByteMaskData* railByteMaskData : connectionSwitch.affectedRailByteMaskData) {
+						RailByteMaskData::BitsLocation::Data railBitsLocation = railByteMaskData->railBits.data;
+						HintState::PotentialLevelState::draftState.railByteMasks[railBitsLocation.byteIndex] &=
+							~(Level::baseRailTileOffsetByteMask << railBitsLocation.bitShift);
+					}
+				}
+			}
+			//remove planes once we've traversed all their connections
+			if (allConnectionsAreRaised)
+				checkPlanes[i] = checkPlanes[--checkPlanesCount];
+			else
+				i++;
+		}
+		if (!foundNewPlanes)
+			return true;
 	}
 }
 #ifdef TEST_SOLUTIONS
@@ -1646,6 +1716,10 @@ void Level::markStatusBitsInDraftState() {
 	markStatusBitsInDraftStateOnMilestone();
 }
 Hint* Level::performHintSearch(HintState::PotentialLevelState* baseLevelState, Plane* currentPlane, int startTime) {
+	//first things first, quit if we're sure the level is unsolvable
+	//we can assume the draft state was just used to construct baseLevelState and is still in the same state
+	if (currentPlane->quickFailDraftState())
+		return &undoResetHint;
 	//find all visitable planes reachable from the current plane to start the search, including the current plane if applicable
 	currentPlane->pursueSolutionToPlanes(baseLevelState, 0);
 	if (currentPlane->hasSwitches())
