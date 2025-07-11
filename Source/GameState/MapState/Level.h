@@ -443,7 +443,6 @@ public:
 	static int* checkPlaneCounts;
 	static CheckedPlaneData* checkedPlaneDatas;
 	static int* checkedPlaneIndices;
-	static int checkedPlanesCount;
 private:
 	static int currentPotentialLevelStateSteps;
 	static vector<int> currentPotentialLevelStateStepsForMilestones;

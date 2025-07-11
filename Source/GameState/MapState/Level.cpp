@@ -1032,7 +1032,7 @@ void LevelTypes::Plane::pursueSolutionToPlanes(HintState::PotentialLevelState* c
 	Level::allCheckPlanes[0][0] = this;
 	Level::checkPlaneCounts[0] = 1;
 	Level::checkedPlaneIndices[0] = indexInOwningLevel;
-	Level::checkedPlanesCount = 1;
+	int checkedPlanesCount = 1;
 	int maxStepsSeen = 0;
 	for (int steps = 0; steps <= maxStepsSeen; steps++) {
 		Plane** checkPlanes = Level::allCheckPlanes[steps];
@@ -1055,7 +1055,7 @@ void LevelTypes::Plane::pursueSolutionToPlanes(HintState::PotentialLevelState* c
 
 				//if we haven't seen this plane before, add its index in the list to remember
 				if (checkedPlaneSteps == Level::CheckedPlaneData::maxStepsLimit)
-					Level::checkedPlaneIndices[Level::checkedPlanesCount++] = toPlaneIndex;
+					Level::checkedPlaneIndices[checkedPlanesCount++] = toPlaneIndex;
 				//if we have seen this plane before, remove it from its spot in further steps
 				else {
 					int checkPlaneCount = --Level::checkPlaneCounts[checkedPlaneSteps];
@@ -1109,8 +1109,8 @@ void LevelTypes::Plane::pursueSolutionToPlanes(HintState::PotentialLevelState* c
 		Level::checkPlaneCounts[steps] = 0;
 	}
 	//reset checked plane data
-	while (Level::checkedPlanesCount > 0)
-		Level::checkedPlaneDatas[Level::checkedPlaneIndices[--Level::checkedPlanesCount]].steps =
+	while (checkedPlanesCount > 0)
+		Level::checkedPlaneDatas[Level::checkedPlaneIndices[--checkedPlanesCount]].steps =
 			Level::CheckedPlaneData::maxStepsLimit;
 }
 void LevelTypes::Plane::pursueSolutionAfterSwitches(HintState::PotentialLevelState* currentState) {
@@ -1378,7 +1378,6 @@ Plane*** Level::allCheckPlanes = nullptr;
 int* Level::checkPlaneCounts = nullptr;
 Level::CheckedPlaneData* Level::checkedPlaneDatas = nullptr;
 int* Level::checkedPlaneIndices = nullptr;
-int Level::checkedPlanesCount = 0;
 int Level::currentPotentialLevelStateSteps = 0;
 vector<int> Level::currentPotentialLevelStateStepsForMilestones;
 int Level::maxPotentialLevelStateSteps = -1;
