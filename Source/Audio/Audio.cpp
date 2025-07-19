@@ -315,7 +315,7 @@ using namespace AudioTypes;
 //////////////////////////////// Audio ////////////////////////////////
 int Audio::sampleRate = 44100;
 Uint16 Audio::format = AUDIO_S16SYS;
-int Audio::channels = 1;
+int Audio::channels = 2;
 Music::WaveformMusicSet Audio::musics;
 Music::WaveformMusicSet Audio::radioWavesSounds;
 Music::WaveformMusicSet Audio::switchesFadeInSounds;
@@ -341,7 +341,7 @@ Sound* Audio::selectSound = nullptr;
 Sound* Audio::confirmSound = nullptr;
 void Audio::setUp() {
 	Mix_Init(0);
-	Mix_OpenAudio(sampleRate, format, channels, 2048);
+	Mix_OpenAudioDevice(sampleRate, format, channels, 2048, nullptr, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE);
 	Mix_QuerySpec(&sampleRate, &format, &channels);
 	Mix_ReserveChannels(1);
 }
