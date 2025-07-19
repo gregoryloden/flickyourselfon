@@ -205,7 +205,7 @@ void AudioTypes::Music::load() {
 	chunk = new Mix_Chunk();
 	chunk->allocated = 1;
 	chunk->alen = (totalSampleCount + reverbExtraSamples) * bytesPerSample;
-	chunk->abuf = new Uint8[chunk->alen]();
+	chunk->abuf = new Uint8[chunk->alen] {};
 	chunk->volume = MIX_MAX_VOLUME;
 
 	//finally, go through all the notes and write their samples
